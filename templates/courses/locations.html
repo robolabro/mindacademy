@@ -16,47 +16,96 @@
     <section style="padding: 5rem 0; background: var(--washi-cream);">
         <div class="container">
             {% if locations %}
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 3rem;">
-                {% for location in locations %}
-                <div style="background: white; /*border: 3px solid var(--sumi-black);*/ border-radius: var(--border-radius); overflow: hidden; box-shadow: var(--shadow); transition: var(--transition);"
-                     onmouseover="this.style.transform='translateY(-10px)'; this.style.boxShadow='var(--shadow-hover)'"
-                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow)'">
+                <!-- Separate physical and online locations -->
+                {% with physical_locations=locations|dictsort:"is_online" online_locations=locations|dictsort:"is_online" %}
 
-                    <!-- Location Header -->
-                    <div style="background: linear-gradient(135deg, var(--vermillion), var(--murasaki)); padding: 2.5rem 2rem; text-align: center; color: white;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">📍</div>
-                        <h2 style="color: white; margin-bottom: 0.5rem; font-size: 1.8rem;">{{ location.name }}</h2>
-                        {% if location.is_online %}
-                        <span style="display: inline-block; background: rgba(255,255,255,0.3); padding: 6px 16px; border-radius: 20px; font-size: 0.9rem; margin-top: 0.5rem;">
-                            💻 Online Disponibil
-                        </span>
-                        {% endif %}
-                    </div>
+                <!-- Physical Locations -->
+                <div style="margin-bottom: 4rem;">
+                    <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Locații Fizice</h2>
 
-                    <!-- Location Content -->
-                    <div style="padding: 2rem;">
-                        <div style="margin-bottom: 1.5rem;">
-                            <strong style="color: var(--bamboo-green); display: block; margin-bottom: 0.5rem;">📍 Adresă:</strong>
-                            <p style="color: var(--ink-blue); line-height: 1.8;">{{ location.address|linebreaks }}</p>
-                        </div>
+                    {% for location in locations %}
+                        {% if not location.is_online %}
+                        <div style="background: white; border-radius: var(--border-radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 2.5rem; transition: var(--transition);"
+                             onmouseover="this.style.boxShadow='var(--shadow-hover)'"
+                             onmouseout="this.style.boxShadow='var(--shadow)'">
 
-                        {% if location.google_maps_embed %}
-                        <div style="margin-bottom: 1.5rem;">
-                            <strong style="color: var(--bamboo-green); display: block; margin-bottom: 0.5rem;">🗺️ Hartă:</strong>
-                            <div style="width: 100%; height: 250px; border-radius: var(--border-radius); overflow: hidden; border: 2px solid var(--aged-paper);">
-                                {{ location.google_maps_embed|safe }}
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0;">
+                                <!-- Location Info -->
+                                <div style="padding: 3rem; background: linear-gradient(135deg, var(--vermillion), var(--murasaki)); color: white; display: flex; flex-direction: column; justify-content: center;">
+                                    <div style="font-size: 4rem; margin-bottom: 1.5rem;">📍</div>
+                                    <h3 style="color: white; margin-bottom: 1rem; font-size: 2rem; font-weight: 900;">{{ location.name }}</h3>
+                                    <div style="margin-bottom: 2rem;">
+                                        <p style="color: rgba(255,255,255,0.95); line-height: 1.8; font-size: 1.1rem;">{{ location.address|linebreaks }}</p>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                        <a href="{% url 'demo_lesson' %}" class="btn btn-secondary" style="text-align: center;">Lecție Demo</a>
+                                        <a href="{% url 'contact' %}" class="btn" style="background: white; color: var(--vermillion); text-align: center;">Contact</a>
+                                    </div>
+                                </div>
+
+                                <!-- Google Maps -->
+                                {% if location.google_maps_embed %}
+                                <div style="position: relative; min-height: 350px;">
+                                    {{ location.google_maps_embed|safe }}
+                                </div>
+                                {% else %}
+                                <div style="background: var(--aged-paper); display: flex; align-items: center; justify-content: center; min-height: 350px;">
+                                    <div style="text-align: center; padding: 2rem;">
+                                        <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;">🗺️</div>
+                                        <p style="color: var(--ink-blue);">Harta va fi disponibilă în curând</p>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         {% endif %}
+                    {% endfor %}
+                </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem;">
-                            <a href="{% url 'demo_lesson' %}" class="btn btn-primary btn-sm">Lecție Demo</a>
-                            <a href="{% url 'contact' %}" class="btn btn-outline btn-sm">Contactează-ne</a>
+                <!-- Online Location -->
+                {% for location in locations %}
+                    {% if location.is_online %}
+                    <div style="margin-top: 4rem;">
+                        <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Cursuri Online</h2>
+
+                        <div style="background: linear-gradient(135deg, var(--bamboo-green), var(--ink-blue)); border-radius: var(--border-radius); padding: 4rem; text-align: center; box-shadow: var(--shadow); position: relative; overflow: hidden;">
+                            <!-- Decorative elements -->
+                            <div style="position: absolute; top: -20px; right: -20px; font-size: 15rem; opacity: 0.1;">💻</div>
+
+                            <div style="position: relative; z-index: 1;">
+                                <div style="font-size: 5rem; margin-bottom: 1.5rem;">💻</div>
+                                <h3 style="color: white; margin-bottom: 1rem; font-size: 2.5rem; font-weight: 900;">{{ location.name }}</h3>
+                                <p style="color: rgba(255,255,255,0.95); font-size: 1.2rem; line-height: 1.8; max-width: 800px; margin: 0 auto 2.5rem;">
+                                    {{ location.address }}
+                                </p>
+
+                                <!-- Benefits -->
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin: 3rem 0; max-width: 900px; margin-left: auto; margin-right: auto;">
+                                    <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: var(--border-radius); backdrop-filter: blur(10px);">
+                                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🏠</div>
+                                        <p style="color: white; font-weight: 600;">Confort de Acasă</p>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: var(--border-radius); backdrop-filter: blur(10px);">
+                                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏰</div>
+                                        <p style="color: white; font-weight: 600;">Program Flexibil</p>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: var(--border-radius); backdrop-filter: blur(10px);">
+                                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎓</div>
+                                        <p style="color: white; font-weight: 600;">Aceiași Profesori</p>
+                                    </div>
+                                </div>
+
+                                <div style="display: inline-flex; gap: 1.5rem; margin-top: 2rem;">
+                                    <a href="{% url 'demo_lesson' %}" class="btn btn-secondary" style="padding: 1.2rem 3rem; font-size: 1.1rem;">Începe Online</a>
+                                    <a href="{% url 'contact' %}" class="btn" style="background: white; color: var(--bamboo-green); padding: 1.2rem 3rem; font-size: 1.1rem;">Mai Multe Detalii</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    {% endif %}
                 {% endfor %}
-            </div>
+
+                {% endwith %}
             {% else %}
             <div style="text-align: center; padding: 4rem 2rem; background: white; border-radius: var(--border-radius); border: 2px solid var(--aged-paper);">
                 <div style="font-size: 5rem; margin-bottom: 1rem; opacity: 0.5;">📍</div>

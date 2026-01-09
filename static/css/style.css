@@ -12,7 +12,7 @@
 :root {
     --sumi-black: #1C1C1C;
     --vermillion: #D32F2F;
-    --washi-cream: #F5F1E8;
+    --washi-cream: #FCFBF4;
     --aged-paper: #E8DCC4;
     --ink-blue: #2C3E50;
     --gold-leaf: #C9A961;
@@ -291,10 +291,8 @@ h1, h2, h3, h4, h5, h6 {
 /* ==================== HERO SECTION ==================== */
 .hero {
     padding: 5rem 0;
-    background: linear-gradient(135deg, rgba(245, 241, 232, 0.95), rgba(232, 220, 196, 0.95));
     position: relative;
     overflow: hidden;
-    border-bottom: 4px solid var(--vermillion);
 }
 
 .hero::before {
