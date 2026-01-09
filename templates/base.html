@@ -1,0 +1,175 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}MindAcademy - Cursuri de matematică pentru copii și adolescenți. Învățare eficientă cu profesori dedicați.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}matematică, cursuri matematică, meditații matematică, pregătire bacalaureat, olimpiade matematică{% endblock %}">
+    <meta name="author" content="MindAcademy">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}MindAcademy - Academia ta de matematică{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Transformăm matematica dintr-o provocare într-o aventură captivantă{% endblock %}">
+
+    <title>{% block title %}MindAcademy - 心の学院{% endblock %}</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div>
+                <span>📧 {{ site_email|default:"contact@mindacademy.ro" }}</span>
+                <span>📞 {{ site_phone|default:"0740 123 456" }}</span>
+            </div>
+            <div>
+                <a href="#inscriere">Înscrieri Deschise</a>
+                <a href="{% url 'demo_lesson' %}">Lecție Demo Gratuită</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="{% url 'home' %}" class="logo">
+                    <div class="logo-seal">心</div>
+                    <div class="logo-text">
+                        <div class="logo-main">Mind.Academy</div>
+                        <div class="logo-japanese">心の学院</div>
+                    </div>
+                </a>
+
+                <button class="menu-toggle" id="menuToggle">
+                    <span>☰</span>
+                </button>
+
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Acasă</a></li>
+                    <li><a href="{% url 'courses_list' %}" class="nav-link {% if request.resolver_match.url_name == 'courses_list' %}active{% endif %}">Cursuri</a></li>
+                    <li><a href="{% url 'locations' %}" class="nav-link {% if request.resolver_match.url_name == 'locations' %}active{% endif %}">Locații</a></li>
+                    <li><a href="{% url 'contact' %}" class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a></li>
+                    <li><a href="{% url 'demo_lesson' %}" class="btn-demo">Lecție Demo</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages Django -->
+    {% if messages %}
+    <div class="messages-container" style="position: fixed; top: 100px; right: 20px; z-index: 10000; max-width: 400px;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" style="background: {% if message.tags == 'success' %}var(--bamboo-green){% elif message.tags == 'error' %}var(--vermillion){% else %}var(--ink-blue){% endif %}; color: white; padding: 1rem 1.5rem; border-radius: var(--border-radius); margin-bottom: 1rem; box-shadow: var(--shadow); border: 2px solid var(--sumi-black); animation: slideIn 0.3s ease;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+    <script>
+        // Auto-hide messages after 5 seconds
+        setTimeout(() => {
+            const messages = document.querySelector('.messages-container');
+            if (messages) {
+                messages.style.opacity = '0';
+                messages.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => messages.remove(), 500);
+            }
+        }, 5000);
+    </script>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <!-- Secțiunea 1: Logo și Descriere -->
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <div class="footer-logo-seal">心</div>
+                        <div class="footer-logo-text">MindAcademy</div>
+                    </div>
+                    <p>Academia ta de matematică, unde pasiunea întâlnește performanța. Transformăm fiecare lecție într-o experiență de neuitat.</p>
+                    <div class="social-links">
+                        <a href="{{ social_facebook|default:'#' }}" target="_blank" class="social-link" aria-label="Facebook">📘</a>
+                        <a href="{{ social_instagram|default:'#' }}" target="_blank" class="social-link" aria-label="Instagram">📷</a>
+                        <a href="{{ social_twitter|default:'#' }}" target="_blank" class="social-link" aria-label="Twitter">🐦</a>
+                        <a href="{{ social_linkedin|default:'#' }}" target="_blank" class="social-link" aria-label="LinkedIn">💼</a>
+                    </div>
+                </div>
+
+                <!-- Secțiunea 2: Navigare Rapidă -->
+                <div class="footer-section">
+                    <h3>Navigare Rapidă</h3>
+                    <ul class="footer-links">
+                        <li><a href="{% url 'home' %}">Acasă</a></li>
+                        <li><a href="{% url 'courses_list' %}">Toate Cursurile</a></li>
+                        <li><a href="{% url 'locations' %}">Locații</a></li>
+                        <li><a href="{% url 'demo_lesson' %}">Lecție Demo Gratuită</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
+                        <li><a href="{% url 'terms' %}">Termeni și Condiții</a></li>
+                    </ul>
+                </div>
+
+                <!-- Secțiunea 3: Cursuri Populare -->
+                <div class="footer-section">
+                    <h3>Cursuri Populare</h3>
+                    <ul class="footer-links">
+                        {% if popular_courses %}
+                            {% for course in popular_courses %}
+                            <li><a href="{% url 'course_detail' course.slug %}">{{ course.title }}</a></li>
+                            {% endfor %}
+                        {% else %}
+                        <li><a href="{% url 'courses_list' %}">Vezi Toate Cursurile</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <!-- Secțiunea 4: Contact -->
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <ul class="footer-links">
+                        <li>📍 {{ site_address|default:"Str. Educației Nr. 15, București" }}</li>
+                        <li>📧 <a href="mailto:{{ site_email|default:'contact@mindacademy.ro' }}">{{ site_email|default:"contact@mindacademy.ro" }}</a></li>
+                        <li>📞 <a href="tel:{{ site_phone_clean|default:'+40740123456' }}">{{ site_phone|default:"0740 123 456" }}</a></li>
+                        <li>⏰ Luni-Vineri: 14:00-20:00</li>
+                        <li>⏰ Sâmbătă: 10:00-18:00</li>
+                        <li>⏰ Duminică: Închis</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <p>&copy; {% now "Y" %} MindAcademy - 心の学院 (Academia Minții). Toate drepturile rezervate.</p>
+                <p style="margin-top: 0.5rem; font-size: 0.85rem;">
+                    Design inspirat de cultura japoneză |
+                    <a href="{% url 'terms' %}" style="color: var(--gold-leaf);">Termeni și Condiții</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{% static 'js/script.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

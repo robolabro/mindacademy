@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}MindAcademy - 心の学院 | Academia ta de matematică{% endblock %}
+
+{% block meta_description %}MindAcademy oferă cursuri de matematică de calitate pentru copii și adolescenți. Metode moderne, profesori experți, rezultate garantate.{% endblock %}
+
+{% block og_title %}MindAcademy - Descoperă Frumusețea Matematicii{% endblock %}
+{% block og_description %}Transformăm matematica dintr-o provocare într-o aventură captivantă. Cursuri personalizate pentru fiecare copil.{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div>
+                    <h1 class="hero-title">
+                        Descoperă <span class="highlight">Frumusețea</span> Matematicii<br>
+                        <span class="hero-japanese">日本の伝統</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Transformăm matematica dintr-o provocare într-o aventură captivantă.
+                        Cursuri personalizate pentru fiecare copil, cu profesori pasionați și metode moderne de predare.
+                    </p>
+                    <div class="hero-calligraphy">
+                        "Călătoria de o mie de kilometri începe cu un singur pas"<br>
+                        - Proverb japonez
+                    </div>
+                    <div class="hero-buttons">
+                        <a href="{% url 'courses_list' %}" class="btn btn-primary">Explorează Cursurile</a>
+                        <a href="{% url 'demo_lesson' %}" class="btn btn-secondary">Lecție Demo Gratuită</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    🧮
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">De Ce MindAcademy?</h2>
+            <p class="section-subtitle">道 - Calea către excelență în matematică</p>
+
+            <div class="features-grid">
+                <!-- Feature 1 - Calcul Mental -->
+                <div class="feature-card">
+                    <div class="feature-icon">暗算</div>
+                    <div class="feature-content">
+                        <h3>Calcul Mental</h3>
+                        <p>Dezvoltăm capacitatea de calcul mental rapid prin metode tradiționale japoneze de aritmetică mentală.</p>
+                    </div>
+                </div>
+
+                <!-- Feature 2 - Soroban (Abac) -->
+                <div class="feature-card">
+                    <div class="feature-icon">算盤</div>
+                    <div class="feature-content">
+                        <h3>Soroban - Abacul Japonez</h3>
+                        <p>Învățăm tehnica tradițională soroban pentru dezvoltarea abilităților matematice și vizualizare.</p>
+                    </div>
+                </div>
+
+                <!-- Feature 3 - Atenție/Concentrare -->
+                <div class="feature-card">
+                    <div class="feature-icon">集中</div>
+                    <div class="feature-content">
+                        <h3>Atenție și Concentrare</h3>
+                        <p>Antrenăm copiii să își îmbunătățească concentrarea și atenția prin exerciții regulate și structurate.</p>
+                    </div>
+                </div>
+
+                <!-- Feature 4 - Creier Antrenat -->
+                <div class="feature-card">
+                    <div class="feature-icon">右脳</div>
+                    <div class="feature-content">
+                        <h3>Creier Antrenat</h3>
+                        <p>Stimulăm ambele emisfere ale creierului pentru dezvoltare cognitivă armonioasă și gândire creativă.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Courses Preview -->
+    <section class="courses-preview">
+        <div class="container">
+            <h2 class="section-title">Cursurile Noastre</h2>
+            <p class="section-subtitle">学び - Învățare pentru toate nivelurile</p>
+
+            <div class="courses-grid">
+                {% if featured_courses %}
+                    {% for course in featured_courses %}
+                    <div class="course-card">
+                        <div class="course-image" {% if course.image %}style="background-image: url('{{ course.image.url }}'); background-size: cover; background-position: center;"{% endif %}>
+                            {% if not course.image %}
+                            <span class="course-image-placeholder">🎓</span>
+                            {% endif %}
+                        </div>
+                        <div class="course-content">
+                            {% if course.featured %}
+                            <span class="badge badge-featured">Cel Mai Popular</span>
+                            {% endif %}
+                            <h3>{{ course.title }}</h3>
+                            <p>{{ course.description|truncatewords:20 }}</p>
+                            <div class="course-info">
+                                <span>📅 {{ course.frequency }}</span>
+                                <span>👥 Max {{ course.group_size }} copii</span>
+                                {% if course.age_group %}
+                                <span>🎯 {{ course.age_group.name }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="course-meta">
+                                <div class="course-price">{{ course.price }} RON<span class="course-frequency">/lună</span></div>
+                                <a href="{% url 'course_detail' course.slug %}" class="btn btn-outline btn-sm">Detalii</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Mesaj dacă nu există cursuri -->
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                        <p style="font-size: 1.2rem; color: var(--ink-blue);">Cursurile vor fi disponibile în curând!</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="{% url 'courses_list' %}" class="btn btn-primary">Vezi Toate Cursurile</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section (Opțional - dacă ai statistici în views) -->
+    {% if stats %}
+    <section class="stats-section" style="background: var(--sumi-black); color: white; padding: 4rem 0;">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 3rem; text-align: center;">
+                <div>
+                    <div class="counter" data-target="{{ stats.students }}" style="font-size: 3rem; font-weight: 900; color: var(--gold-leaf); font-family: 'Noto Serif JP', serif;">0</div>
+                    <p style="margin-top: 0.5rem; opacity: 0.9;">Elevi Activi</p>
+                </div>
+                <div>
+                    <div class="counter" data-target="{{ stats.courses }}" style="font-size: 3rem; font-weight: 900; color: var(--gold-leaf); font-family: 'Noto Serif JP', serif;">0</div>
+                    <p style="margin-top: 0.5rem; opacity: 0.9;">Cursuri Disponibile</p>
+                </div>
+                <div>
+                    <div class="counter" data-target="{{ stats.success_rate }}" style="font-size: 3rem; font-weight: 900; color: var(--gold-leaf); font-family: 'Noto Serif JP', serif;">0</div>
+                    <p style="margin-top: 0.5rem; opacity: 0.9;">% Rată de Succes</p>
+                </div>
+                <div>
+                    <div class="counter" data-target="{{ stats.experience }}" style="font-size: 3rem; font-weight: 900; color: var(--gold-leaf); font-family: 'Noto Serif JP', serif;">0</div>
+                    <p style="margin-top: 0.5rem; opacity: 0.9;">Ani de Experiență</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="container">
+            <h2 class="section-title">Ce Spun Elevii Noștri</h2>
+            <p class="section-subtitle">証 - Mărturii autentice</p>
+
+            <div class="testimonials-grid">
+                {% if testimonials %}
+                    {% for testimonial in testimonials %}
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">
+                            {% for i in "12345"|make_list %}
+                                {% if forloop.counter <= testimonial.rating %}⭐{% endif %}
+                            {% endfor %}
+                        </div>
+                        <p class="testimonial-text">{{ testimonial.text }}</p>
+                        <div class="testimonial-author">{{ testimonial.parent_name }}</div>
+                        <div class="testimonial-course">{{ testimonial.course.title }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Mesaj dacă nu există testimoniale -->
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                        <p>Testimonialele elevilor noștri vor apărea în curând!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section" id="inscriere">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Gata să Începi Călătoria?</h2>
+                <p>始まり - Un nou început în lumea matematicii te așteaptă</p>
+                <div class="hero-buttons" style="justify-content: center;">
+                    <a href="{% url 'demo_lesson' %}" class="btn btn-secondary">Rezervă Lecția Demo</a>
+                    <a href="{% url 'contact' %}" class="btn btn-outline">Contactează-ne</a>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // JavaScript specific pentru homepage (dacă e necesar)
+    console.log('Homepage loaded successfully - 心の学院');
+</script>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lecție Demo Gratuită - MindAcademy{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1>Lecție Demo Gratuită</h1>
+            <p>体験 - Experimentează magia matematicii fără niciun angajament!</p>
+        </div>
+    </div>
+
+    <!-- Demo Lesson Section -->
+    <section class="demo-lesson-section">
+        <div class="container">
+            <div class="demo-lesson-grid">
+                <!-- Info Section -->
+                <div class="demo-info">
+                    <h2>De Ce O Lecție Demo?</h2>
+
+                    <div class="demo-benefits">
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🎓</span>
+                            <div>
+                                <h3>Cunoaște Profesorii</h3>
+                                <p>Descoperă echipa noastră de profesori pasionați și experimentați care vor lucra cu copilul tău.</p>
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <span class="benefit-icon">📚</span>
+                            <div>
+                                <h3>Metodologia Noastră</h3>
+                                <p>Vezi cum facem matematica distractivă și ușor de înțeles prin metode interactive și moderne.</p>
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🏫</span>
+                            <div>
+                                <h3>Vizitează Locația</h3>
+                                <p>Explorează spațiile noastre de învățare moderne și confortabile, special amenajate pentru copii.</p>
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🎯</span>
+                            <div>
+                                <h3>Fără Obligații</h3>
+                                <p>Lecția demo este complet gratuită și fără niciun angajament de înscriere!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="demo-testimonial">
+                        <p class="testimonial-quote">
+                            "Lecția demo i-a plăcut atât de mult că acum abia așteaptă fiecare ședință de matematică!
+                            Profesorii sunt fantastici și atmosfera este prietenoasă."
+                        </p>
+                        <strong class="testimonial-author">— Ana M., Mamă</strong>
+                    </div>
+                </div>
+
+                <!-- Form Section -->
+                <div class="demo-form-container">
+                    <h3>Programează Lecția Demo</h3>
+                    <p class="form-subtitle">Completează formularul și te vom contacta în maximum 24 de ore!</p>
+
+                    <form method="POST" class="demo-form">
+                        {% csrf_token %}
+
+                        <div class="form-group">
+                            <label for="{{ form.parent_name.id_for_label }}">{{ form.parent_name.label }}</label>
+                            {{ form.parent_name }}
+                            {% if form.parent_name.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.parent_name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.parent_email.id_for_label }}">{{ form.parent_email.label }}</label>
+                            {{ form.parent_email }}
+                            {% if form.parent_email.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.parent_email.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.parent_phone.id_for_label }}">{{ form.parent_phone.label }}</label>
+                            {{ form.parent_phone }}
+                            {% if form.parent_phone.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.parent_phone.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.child_age.id_for_label }}">{{ form.child_age.label }}</label>
+                            {{ form.child_age }}
+                            {% if form.child_age.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.child_age.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.course.id_for_label }}">{{ form.course.label }}</label>
+                            {{ form.course }}
+                            {% if form.course.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.course.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.location.id_for_label }}">{{ form.location.label }}</label>
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.location.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group" style="display: flex; align-items: flex-start; gap: 1rem;">
+                            {{ form.terms_accepted }}
+                            <label for="{{ form.terms_accepted.id_for_label }}" style="margin-bottom: 0; flex: 1;">
+                                {{ form.terms_accepted.label }}
+                                <a href="{% url 'terms' %}" target="_blank" style="color: var(--vermillion);">Vezi termenii și condițiile</a>
+                            </label>
+                        </div>
+
+                        {% if form.terms_accepted.errors %}
+                            <div style="color: var(--vermillion); font-size: 0.9rem; margin-bottom: 1rem;">
+                                {{ form.terms_accepted.errors }}
+                            </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-primary btn-block btn-large">
+                            📝 Trimite Cererea
+                        </button>
+
+                        <p style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: var(--ink-blue);">
+                            Te vom contacta în maximum 24 de ore pentru a stabili data lecției demo!
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Section -->
+    <section style="background: white; padding: 4rem 0;">
+        <div class="container">
+            <h2 class="section-title">Ce Se Întâmplă După Cerere?</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 3rem;">
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📞</div>
+                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">1. Te Contactăm</h3>
+                    <p>Îți vom trimite un email de confirmare și te vom suna pentru a stabili data lecției demo.</p>
+                </div>
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📅</div>
+                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">2. Programăm Lecția</h3>
+                    <p>Alegem împreună o dată și oră convenabilă pentru tine și copilul tău.</p>
+                </div>
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🎓</div>
+                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">3. Lecția Demo</h3>
+                    <p>Copilul tău participă la o lecție completă de matematică, gratuită și fără obligații!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

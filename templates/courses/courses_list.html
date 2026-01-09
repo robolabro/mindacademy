@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cursuri de Matematică - MindAcademy{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1>Cursurile Noastre</h1>
+            <p>学び - Găsește cursul perfect pentru copilul tău</p>
+        </div>
+    </div>
+
+    <!-- Courses Filter -->
+    <section class="courses-filter">
+        <div class="container">
+            <form method="GET" action="{% url 'courses_list' %}" class="filter-form" id="courseFilters">
+                <div class="filter-group">
+                    <label for="locationFilter">📍 Locație</label>
+                    <select name="location" id="locationFilter" class="form-control">
+                        <option value="">Toate locațiile</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}" {% if selected_location == location.id|stringformat:"s" %}selected{% endif %}>
+                            {{ location.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="ageGroupFilter">👶 Grupă de Vârstă</label>
+                    <select name="age_group" id="ageGroupFilter" class="form-control">
+                        <option value="">Toate vârstele</option>
+                        {% for age_group in age_groups %}
+                        <option value="{{ age_group.id }}" {% if selected_age_group == age_group.id|stringformat:"s" %}selected{% endif %}>
+                            {{ age_group.name }} ({{ age_group.min_age }}-{{ age_group.max_age }} ani)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">Filtrează</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Courses Grid -->
+    <section class="courses-section">
+        <div class="container">
+            {% if courses %}
+            <div class="courses-grid">
+                {% for course in courses %}
+                <div class="course-card" data-level="{{ course.age_group.id }}" data-price="{{ course.price }}">
+                    <div class="course-image" {% if course.image %}style="background-image: url('{{ course.image.url }}'); background-size: cover; background-position: center;"{% endif %}>
+                        {% if not course.image %}
+                        <span class="course-image-placeholder">🎓</span>
+                        {% endif %}
+                    </div>
+                    <div class="course-content">
+                        {% if course.featured %}
+                        <span class="badge badge-featured">Recomandat</span>
+                        {% endif %}
+
+                        <h3>{{ course.title }}</h3>
+                        <p>{{ course.description|truncatewords:25 }}</p>
+
+                        <div class="course-info">
+                            <span>📅 {{ course.frequency }}</span>
+                            <span>👥 Max {{ course.group_size }} copii</span>
+                            {% if course.age_group %}
+                            <span>🎯 {{ course.age_group.name }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Locații -->
+                        {% if course.locations.all %}
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--aged-paper);">
+                            <strong style="font-size: 0.9rem; color: var(--bamboo-green);">📍 Disponibil în:</strong>
+                            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--ink-blue);">
+                                {% for location in course.locations.all %}
+                                    {{ location.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="course-meta">
+                            <div class="course-price">{{ course.price }} RON<span class="course-frequency">/lună</span></div>
+                            <a href="{% url 'course_detail' course.slug %}" class="btn btn-outline btn-sm">Detalii</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-results" id="noResults">
+                <p>📚 Nu am găsit cursuri care să corespundă filtrelor tale.</p>
+                <a href="{% url 'courses_list' %}" class="btn btn-primary">Resetează Filtrele</a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Nu știi ce curs să alegi?</h2>
+                <p>Programează o lecție demonstrativă gratuită și descoperă care este cursul potrivit!</p>
+                <div class="hero-buttons" style="justify-content: center;">
+                    <a href="{% url 'demo_lesson' %}" class="btn btn-secondary">Lecție Demo Gratuită</a>
+                    <a href="{% url 'contact' %}" class="btn btn-outline">Contactează-ne</a>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

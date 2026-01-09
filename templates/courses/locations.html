@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Locațiile Noastre - MindAcademy{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1>Locațiile Noastre</h1>
+            <p>場所 - Găsește centrul MindAcademy cel mai aproape de tine!</p>
+        </div>
+    </div>
+
+    <!-- Locations Section -->
+    <section style="padding: 5rem 0; background: var(--washi-cream);">
+        <div class="container">
+            {% if locations %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 3rem;">
+                {% for location in locations %}
+                <div style="background: white; /*border: 3px solid var(--sumi-black);*/ border-radius: var(--border-radius); overflow: hidden; box-shadow: var(--shadow); transition: var(--transition);"
+                     onmouseover="this.style.transform='translateY(-10px)'; this.style.boxShadow='var(--shadow-hover)'"
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow)'">
+
+                    <!-- Location Header -->
+                    <div style="background: linear-gradient(135deg, var(--vermillion), var(--murasaki)); padding: 2.5rem 2rem; text-align: center; color: white;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">📍</div>
+                        <h2 style="color: white; margin-bottom: 0.5rem; font-size: 1.8rem;">{{ location.name }}</h2>
+                        {% if location.is_online %}
+                        <span style="display: inline-block; background: rgba(255,255,255,0.3); padding: 6px 16px; border-radius: 20px; font-size: 0.9rem; margin-top: 0.5rem;">
+                            💻 Online Disponibil
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Location Content -->
+                    <div style="padding: 2rem;">
+                        <div style="margin-bottom: 1.5rem;">
+                            <strong style="color: var(--bamboo-green); display: block; margin-bottom: 0.5rem;">📍 Adresă:</strong>
+                            <p style="color: var(--ink-blue); line-height: 1.8;">{{ location.address|linebreaks }}</p>
+                        </div>
+
+                        {% if location.google_maps_embed %}
+                        <div style="margin-bottom: 1.5rem;">
+                            <strong style="color: var(--bamboo-green); display: block; margin-bottom: 0.5rem;">🗺️ Hartă:</strong>
+                            <div style="width: 100%; height: 250px; border-radius: var(--border-radius); overflow: hidden; border: 2px solid var(--aged-paper);">
+                                {{ location.google_maps_embed|safe }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem;">
+                            <a href="{% url 'demo_lesson' %}" class="btn btn-primary btn-sm">Lecție Demo</a>
+                            <a href="{% url 'contact' %}" class="btn btn-outline btn-sm">Contactează-ne</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 4rem 2rem; background: white; border-radius: var(--border-radius); border: 2px solid var(--aged-paper);">
+                <div style="font-size: 5rem; margin-bottom: 1rem; opacity: 0.5;">📍</div>
+                <h2 style="color: var(--sumi-black); margin-bottom: 1rem;">Locațiile vor fi disponibile în curând!</h2>
+                <p style="color: var(--ink-blue); margin-bottom: 2rem;">Ne extindem constant pentru a fi mai aproape de tine.</p>
+                <a href="{% url 'contact' %}" class="btn btn-primary">Contactează-ne pentru Informații</a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Features of Our Locations -->
+    <section style="background: white; padding: 5rem 0;">
+        <div class="container">
+            <h2 class="section-title">De Ce Să Alegi Locațiile Noastre?</h2>
+            <p class="section-subtitle">特徴 - Caracteristici care ne fac speciali</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🏫</span>
+                    <h3>Spații Moderne</h3>
+                    <p>Săli de clasă luminoase, dotate cu tehnologie modernă și mobilier ergonomic adaptat copiilor.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">🚌</span>
+                    <h3>Acces Facil</h3>
+                    <p>Locații strategice cu acces ușor cu transportul în comun și parcare disponibilă.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">🔒</span>
+                    <h3>Siguranță</h3>
+                    <p>Sisteme de securitate, monitorizare video și personal dedicat pentru siguranța copiilor.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">☕</span>
+                    <h3>Zone de Așteptare</h3>
+                    <p>Spații confortabile unde părinții pot aștepta în timpul lecțiilor, cu Wi-Fi gratuit.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Vino să Ne Cunoști!</h2>
+                <p>訪問 - Programează o vizită la cea mai apropiată locație MindAcademy</p>
+                <div class="hero-buttons" style="justify-content: center;">
+                    <a href="{% url 'demo_lesson' %}" class="btn btn-secondary">Programează Lecție Demo</a>
+                    <a href="{% url 'contact' %}" class="btn btn-outline">Contactează-ne</a>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

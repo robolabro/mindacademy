@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ course.title }} - MindAcademy{% endblock %}
+
+{% block content %}
+    <!-- Course Detail Header -->
+    <div class="course-detail-header" style="background: linear-gradient(135deg, var(--sumi-black), var(--ink-blue)); padding: 3rem 0; color: white;">
+        <div class="container">
+            <div style="max-width: 800px;">
+                {% if course.featured %}
+                <span class="badge badge-featured" style="margin-bottom: 1rem;">Curs Recomandat</span>
+                {% endif %}
+                <h1 style="color: white; margin-bottom: 1rem;">{{ course.title }}</h1>
+                {% if course.age_group %}
+                <p style="font-size: 1.2rem; opacity: 0.95;">🎯 {{ course.age_group.name }} ({{ course.age_group.min_age }}-{{ course.age_group.max_age }} ani)</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Detail Content -->
+    <section style="padding: 3rem 0; background: var(--washi-cream);">
+        <div class="container">
+            <div class="course-detail-grid">
+                <!-- Main Content -->
+                <div class="course-main">
+                    <!-- Image or Video -->
+                    {% if course.video_url %}
+                    <div class="course-video">
+                        <iframe src="{{ course.video_url }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                    {% elif course.image %}
+                    <img src="{{ course.image.url }}" alt="{{ course.title }}" class="course-detail-image">
+                    {% endif %}
+
+                    <!-- Description -->
+                    <h2>Despre Curs</h2>
+                    <div class="course-description">
+                        {{ course.description|linebreaks }}
+                    </div>
+
+                    <!-- Projects Link -->
+                    {% if course.projects_link %}
+                    <div class="course-projects">
+                        <h3 style="margin-bottom: 1rem; color: var(--vermillion);">🎨 Proiectele Copiilor Noștri</h3>
+                        <p>Descoperă proiectele creative realizate de elevii noștri!</p>
+                        <a href="{{ course.projects_link }}" target="_blank" class="btn btn-primary" style="margin-top: 1rem;">Vezi Galeria de Proiecte</a>
+                    </div>
+                    {% endif %}
+
+                    <!-- PDF Presentation -->
+                    {% if course.pdf_presentation %}
+                    <div style="background: var(--aged-paper); padding: 2rem; border-radius: var(--border-radius); margin: 2rem 0; border: 2px solid var(--sumi-black);">
+                        <h3 style="margin-bottom: 1rem; color: var(--vermillion);">📄 Prezentare Detaliată</h3>
+                        <p>Descarcă prezentarea completă a cursului în format PDF.</p>
+                        <a href="{{ course.pdf_presentation.url }}" download class="btn btn-outline" style="margin-top: 1rem;">📥 Descarcă Prezentarea (PDF)</a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Locations -->
+                    {% if course.locations.all %}
+                    <h2>Locații Disponibile</h2>
+                    <div class="locations-list">
+                        {% for location in course.locations.all %}
+                        <div class="location-item">
+                            <strong>{{ location.name }}</strong>
+                            <p style="margin-top: 0.5rem;">{{ location.address }}</p>
+                            {% if location.is_online %}
+                            <span style="display: inline-block; background: var(--bamboo-green); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; margin-top: 0.5rem;">💻 Online Disponibil</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Testimonials for this course -->
+                    {% if testimonials %}
+                    <div class="course-testimonials">
+                        <h2>Ce Spun Părinții</h2>
+                        <div class="testimonials-grid">
+                            {% for testimonial in testimonials %}
+                            <div class="testimonial-card">
+                                <div class="testimonial-rating">
+                                    {% for i in "12345"|make_list %}
+                                        {% if forloop.counter <= testimonial.rating %}⭐{% endif %}
+                                    {% endfor %}
+                                </div>
+                                <p class="testimonial-text">{{ testimonial.text }}</p>
+                                <div class="testimonial-author">{{ testimonial.parent_name }}</div>
+                                {% if testimonial.child_name %}
+                                <div class="testimonial-course" style="font-size: 0.85rem;">Părinte: {{ testimonial.child_name }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Sidebar -->
+                <div class="course-sidebar">
+                    <!-- Course Info Card -->
+                    <div class="course-info-card">
+                        <h3>Informații Curs</h3>
+
+                        <div class="info-item">
+                            <span class="info-label">💰 Preț</span>
+                            <span class="info-value price-highlight">{{ course.price }} RON/lună</span>
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-label">📅 Frecvență</span>
+                            <span class="info-value">{{ course.frequency }}</span>
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-label">👥 Mărime Grupă</span>
+                            <span class="info-value">Max {{ course.group_size }} copii</span>
+                        </div>
+
+                        {% if course.age_group %}
+                        <div class="info-item">
+                            <span class="info-label">🎯 Vârstă</span>
+                            <span class="info-value">{{ course.age_group.min_age }}-{{ course.age_group.max_age }} ani</span>
+                        </div>
+                        {% endif %}
+
+                        <a href="{% url 'demo_lesson' %}" class="btn btn-primary btn-block" style="margin-top: 1.5rem;">Înscrie-te Acum</a>
+                        <a href="{% url 'contact' %}" class="btn btn-outline btn-block" style="margin-top: 1rem;">Contactează-ne</a>
+                    </div>
+
+                    <!-- Recommended Courses -->
+                    {% if recommended_courses %}
+                    <div class="recommended-courses">
+                        <h3>Cursuri Recomandate</h3>
+                        {% for rec_course in recommended_courses %}
+                        <div class="recommended-item">
+                            <h4>{{ rec_course.title }}</h4>
+                            <p>{{ rec_course.price }} RON/lună</p>
+                            <a href="{% url 'course_detail' rec_course.slug %}" class="btn btn-sm btn-outline">Vezi Detalii</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

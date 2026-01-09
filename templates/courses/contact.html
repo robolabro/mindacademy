@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact - MindAcademy{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1>Contactează-ne</h1>
+            <p>連絡 - Suntem aici să răspundem întrebărilor tale!</p>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <section class="contact-section">
+        <div class="container">
+            <div class="contact-grid">
+                <!-- Contact Info -->
+                <div class="contact-info">
+                    <h2>Hai să Discutăm!</h2>
+                    <p class="contact-description">
+                        Ai întrebări despre cursurile noastre? Vrei să afli mai multe despre metoda noastră de predare?
+                        Sau poate vrei doar să ne cunoști echipa? Nu ezita să ne contactezi - suntem mereu bucuroși să vorbim despre pasiunea noastră pentru matematică!
+                    </p>
+
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <span class="contact-icon">📍</span>
+                            <div>
+                                <h3>Adresa</h3>
+                                <p>Str. Educației Nr. 15<br>București, Sector 1<br>România</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-item">
+                            <span class="contact-icon">📧</span>
+                            <div>
+                                <h3>Email</h3>
+                                <p><a href="mailto:contact@mindacademy.ro">contact@mindacademy.ro</a></p>
+                            </div>
+                        </div>
+
+                        <div class="contact-item">
+                            <span class="contact-icon">📞</span>
+                            <div>
+                                <h3>Telefon</h3>
+                                <p><a href="tel:+40740123456">0740 123 456</a></p>
+                            </div>
+                        </div>
+
+                        <div class="contact-item">
+                            <span class="contact-icon">⏰</span>
+                            <div>
+                                <h3>Program</h3>
+                                <p>Luni - Vineri: 14:00 - 20:00<br>
+                                   Sâmbătă: 10:00 - 18:00<br>
+                                   Duminică: Închis</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <h3>Acțiuni Rapide</h3>
+                        <a href="{% url 'demo_lesson' %}" class="btn btn-primary">📝 Programează Lecție Demo</a>
+                        <a href="{% url 'courses_list' %}" class="btn btn-outline">📚 Vezi Cursurile</a>
+                        <a href="{% url 'locations' %}" class="btn btn-outline">📍 Vezi Locațiile</a>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="contact-form-container">
+                    <h3>Trimite-ne un Mesaj</h3>
+                    <p class="form-subtitle">Completează formularul și îți vom răspunde în cel mai scurt timp!</p>
+
+                    <form method="POST" class="contact-form">
+                        {% csrf_token %}
+
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.email.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.phone.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+                            {{ form.message }}
+                            {% if form.message.errors %}
+                                <div style="color: var(--vermillion); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    {{ form.message.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-large">
+                            ✉️ Trimite Mesajul
+                        </button>
+
+                        <p style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: var(--ink-blue);">
+                            De obicei răspundem în maximum 24 de ore!
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Section (Opțional) -->
+    <section style="padding: 0; margin-top: 4rem;">
+        <div style="width: 100%; height: 400px; background: var(--aged-paper); display: flex; align-items: center; justify-content: center; border-top: 4px solid var(--vermillion); border-bottom: 4px solid var(--vermillion);">
+            <!-- Adaugă aici Google Maps embed dacă ai -->
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">🗺️</div>
+                <h3 style="color: var(--sumi-black); margin-bottom: 0.5rem;">Vino să Ne Cunoști!</h3>
+                <p style="color: var(--ink-blue);">Str. Educației Nr. 15, București, Sector 1</p>
+                <a href="https://maps.google.com" target="_blank" class="btn btn-primary" style="margin-top: 1rem;">
+                    📍 Deschide în Google Maps
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section (Opțional) -->
+    <section style="background: white; padding: 5rem 0;">
+        <div class="container">
+            <h2 class="section-title">Întrebări Frecvente</h2>
+            <p class="section-subtitle">Răspunsuri rapide la cele mai comune întrebări</p>
+
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div style="background: var(--aged-paper); padding: 2rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; border-left: 4px solid var(--vermillion);">
+                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">Care este vârsta minimă pentru înscriere?</h3>
+                    <p>Acceptăm copii începând de la 3 ani. Avem grupe special adaptate pentru fiecare vârstă.</p>
+                </div>
+
+                <div style="background: var(--aged-paper); padding: 2rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; border-left: 4px solid var(--vermillion);">
+                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">Câți copii sunt într-o grupă?</h3>
+                    <p>Grupele noastre au maxim 6-8 copii pentru a asigura atenție individualizată fiecărui elev.</p>
+                </div>
+
+                <div style="background: var(--aged-paper); padding: 2rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; border-left: 4px solid var(--vermillion);">
+                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">Oferiți și cursuri online?</h3>
+                    <p>Da! Avem cursuri atât fizice cât și online, pentru flexibilitate maximă.</p>
+                </div>
+
+                <div style="background: var(--aged-paper); padding: 2rem; border-radius: var(--border-radius); border-left: 4px solid var(--vermillion);">
+                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">Pot participa la o lecție demonstrativă?</h3>
+                    <p>Absolut! Oferim lecții demo gratuite. <a href="{% url 'demo_lesson' %}" style="color: var(--vermillion); font-weight: 600;">Programează aici</a>.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
