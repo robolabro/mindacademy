@@ -9,8 +9,13 @@ python manage.py migrate --no-input
 echo "Collecting static files..."
 python manage.py collectstatic --no-input
 
-echo "Creating superuser if needed..."
-python manage.py create_superuser_if_none
+# Create superuser only if password is set
+if [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
+    echo "Creating superuser if needed..."
+    python manage.py create_superuser_if_none || echo "Superuser creation skipped or failed"
+else
+    echo "DJANGO_SUPERUSER_PASSWORD not set, skipping superuser creation"
+fi
 
 echo "Starting gunicorn..."
 exec gunicorn mathcourses.wsgi --log-file -
