@@ -21,14 +21,14 @@ class Command(BaseCommand):
             return
 
         # Get credentials from environment variables
-        username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
-        email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@mindacademy.ro')
-        password = os.environ.get('DJANGO_SUPERUSER_PASSWORD')
+        username = os.environ.get('SUPERUSER_USERNAME', 'admin')
+        email = os.environ.get('SUPERUSER_EMAIL', 'admin@mindacademy.ro')
+        password = os.environ.get('SUPERUSER_PASSWORD')
 
         if not password:
             self.stdout.write(
                 self.style.ERROR(
-                    'DJANGO_SUPERUSER_PASSWORD environment variable is required!'
+                    'SUPERUSER_PASSWORD environment variable is required!'
                 )
             )
             return
