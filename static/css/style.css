@@ -1474,6 +1474,24 @@ select,
         font-size: 2rem;
     }
 
+    /* Soroban SVG mai mic pe mobile */
+    .hero-image svg {
+        max-width: 200px !important;
+        margin: 0 auto;
+    }
+
+    /* Centrează butoanele hero pe mobile */
+    .hero-buttons {
+        justify-content: center;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .hero-buttons .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+
     .features-grid,
     .courses-grid,
     .testimonials-grid {
