@@ -14,10 +14,10 @@ def global_settings(request):
     return {
         # Informații contact
         'site_name': 'MindAcademy',
-        'site_email': 'contact@mindacademy.ro',
-        'site_phone': '0740 123 456',
-        'site_phone_clean': '+40740123456',
-        'site_address': 'Str. Educației Nr. 15, București, Sector 1',
+        'site_email': 'train@mindacademy.ro',
+        'site_phone': '0751 746 746',
+        'site_phone_clean': '+40751746746',
+        'site_address': 'Str. Mitropolit Varlaam nr. 127, Sector 1, București',
 
         # Social media
         'social_facebook': 'https://facebook.com/mindacademy',
