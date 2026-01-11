@@ -144,33 +144,101 @@
         </div>
     </section>
 
-    <!-- FAQ Section (Opțional) -->
+    <!-- FAQ Section -->
     <section style="background: white; padding: 5rem 0;">
         <div class="container">
             <h2 class="section-title">Întrebări Frecvente</h2>
-            <p class="section-subtitle">Răspunsuri rapide la cele mai comune întrebări</p>
+            <p class="section-subtitle">Răspunsuri rapide la cele mai comune întrebări - Click pentru a deschide</p>
 
             <div style="max-width: 800px; margin: 0 auto;">
-                <div style="background: var(--aged-paper); padding: 2rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; border-left: 4px solid var(--vermillion);">
-                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">Care este vârsta minimă pentru înscriere?</h3>
-                    <p>Acceptăm copii începând de la 3 ani. Avem grupe special adaptate pentru fiecare vârstă.</p>
+                <div class="faq-item" style="background: var(--aged-paper); border-radius: var(--border-radius); margin-bottom: 1rem; border-left: 4px solid var(--vermillion); overflow: hidden;">
+                    <div class="faq-question" style="padding: 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: var(--transition);">
+                        <h3 style="color: var(--vermillion); margin: 0; font-size: 1.1rem;">Care este vârsta minimă pentru înscriere?</h3>
+                        <span class="faq-toggle" style="font-size: 1.5rem; color: var(--vermillion); font-weight: bold;">+</span>
+                    </div>
+                    <div class="faq-answer" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+                        <p style="padding: 0 1.5rem 1.5rem 1.5rem; margin: 0;">Acceptăm copii începând de la 5 ani. Avem grupe special adaptate pentru fiecare vârstă.</p>
+                    </div>
                 </div>
 
-                <div style="background: var(--aged-paper); padding: 2rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; border-left: 4px solid var(--vermillion);">
-                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">Câți copii sunt într-o grupă?</h3>
-                    <p>Grupele noastre au maxim 6-8 copii pentru a asigura atenție individualizată fiecărui elev.</p>
+                <div class="faq-item" style="background: var(--aged-paper); border-radius: var(--border-radius); margin-bottom: 1rem; border-left: 4px solid var(--vermillion); overflow: hidden;">
+                    <div class="faq-question" style="padding: 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: var(--transition);">
+                        <h3 style="color: var(--vermillion); margin: 0; font-size: 1.1rem;">Câți copii sunt într-o grupă?</h3>
+                        <span class="faq-toggle" style="font-size: 1.5rem; color: var(--vermillion); font-weight: bold;">+</span>
+                    </div>
+                    <div class="faq-answer" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+                        <p style="padding: 0 1.5rem 1.5rem 1.5rem; margin: 0;">Grupele noastre au maxim 6-8 copii pentru a asigura atenție individualizată fiecărui elev.</p>
+                    </div>
                 </div>
 
-                <div style="background: var(--aged-paper); padding: 2rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; border-left: 4px solid var(--vermillion);">
-                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">Oferiți și cursuri online?</h3>
-                    <p>Da! Avem cursuri atât fizice cât și online, pentru flexibilitate maximă.</p>
+                <div class="faq-item" style="background: var(--aged-paper); border-radius: var(--border-radius); margin-bottom: 1rem; border-left: 4px solid var(--vermillion); overflow: hidden;">
+                    <div class="faq-question" style="padding: 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: var(--transition);">
+                        <h3 style="color: var(--vermillion); margin: 0; font-size: 1.1rem;">Oferiți și cursuri online?</h3>
+                        <span class="faq-toggle" style="font-size: 1.5rem; color: var(--vermillion); font-weight: bold;">+</span>
+                    </div>
+                    <div class="faq-answer" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+                        <p style="padding: 0 1.5rem 1.5rem 1.5rem; margin: 0;">Da! Avem cursuri atât fizice cât și online, pentru flexibilitate maximă.</p>
+                    </div>
                 </div>
 
-                <div style="background: var(--aged-paper); padding: 2rem; border-radius: var(--border-radius); border-left: 4px solid var(--vermillion);">
-                    <h3 style="color: var(--vermillion); margin-bottom: 0.5rem;">Pot participa la o lecție demonstrativă?</h3>
-                    <p>Absolut! Oferim lecții demo gratuite. <a href="{% url 'demo_lesson' %}" style="color: var(--vermillion); font-weight: 600;">Programează aici</a>.</p>
+                <div class="faq-item" style="background: var(--aged-paper); border-radius: var(--border-radius); margin-bottom: 1rem; border-left: 4px solid var(--vermillion); overflow: hidden;">
+                    <div class="faq-question" style="padding: 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: var(--transition);">
+                        <h3 style="color: var(--vermillion); margin: 0; font-size: 1.1rem;">Pot participa la o lecție demonstrativă?</h3>
+                        <span class="faq-toggle" style="font-size: 1.5rem; color: var(--vermillion); font-weight: bold;">+</span>
+                    </div>
+                    <div class="faq-answer" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+                        <p style="padding: 0 1.5rem 1.5rem 1.5rem; margin: 0;">Absolut! Oferim lecții demo gratuite. <a href="{% url 'demo_lesson' %}" style="color: var(--vermillion); font-weight: 600;">Programează aici</a>.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// FAQ Accordion functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const faqItems = document.querySelectorAll('.faq-item');
+
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        const toggle = item.querySelector('.faq-toggle');
+
+        question.addEventListener('click', function() {
+            const isOpen = answer.style.maxHeight && answer.style.maxHeight !== '0px';
+
+            // Close all other FAQ items
+            faqItems.forEach(otherItem => {
+                const otherAnswer = otherItem.querySelector('.faq-answer');
+                const otherToggle = otherItem.querySelector('.faq-toggle');
+                otherAnswer.style.maxHeight = '0';
+                otherToggle.textContent = '+';
+                otherItem.querySelector('.faq-question').style.background = '';
+            });
+
+            // Toggle current item
+            if (!isOpen) {
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+                toggle.textContent = '−';
+                question.style.background = 'rgba(211, 47, 47, 0.05)';
+            }
+        });
+
+        // Hover effect
+        question.addEventListener('mouseenter', function() {
+            if (!answer.style.maxHeight || answer.style.maxHeight === '0px') {
+                question.style.background = 'rgba(211, 47, 47, 0.03)';
+            }
+        });
+
+        question.addEventListener('mouseleave', function() {
+            if (!answer.style.maxHeight || answer.style.maxHeight === '0px') {
+                question.style.background = '';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
