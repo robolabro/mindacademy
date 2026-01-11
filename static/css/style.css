@@ -1483,6 +1483,7 @@ select,
     /* Centrează butoanele hero pe mobile */
     .hero-buttons {
         justify-content: center;
+        align-items: center;
         flex-direction: column;
         gap: 1rem;
     }
@@ -1490,6 +1491,7 @@ select,
     .hero-buttons .btn {
         width: 100%;
         max-width: 300px;
+        text-align: center;
     }
 
     .features-grid,
