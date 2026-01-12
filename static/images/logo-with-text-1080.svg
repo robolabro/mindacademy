@@ -1,0 +1,40 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circle background - Vermillion Red -->
+  <circle cx="540" cy="540" r="540" fill="#D32F2F"/>
+
+  <!-- Japanese character 心 (kokoro/shin - heart/mind) -->
+  <text
+    x="540"
+    y="600"
+    font-family="'Noto Serif JP', 'Yu Mincho', 'MS Mincho', serif"
+    font-size="450"
+    font-weight="900"
+    fill="#FCFBF4"
+    text-anchor="middle"
+    dominant-baseline="auto"
+    style="letter-spacing: 0;">心</text>
+
+  <!-- MindAcademy text -->
+  <text
+    x="540"
+    y="820"
+    font-family="'Noto Sans JP', 'Arial', sans-serif"
+    font-size="72"
+    font-weight="700"
+    fill="#FCFBF4"
+    text-anchor="middle"
+    dominant-baseline="auto"
+    letter-spacing="2">MindAcademy</text>
+
+  <!-- Japanese subtitle -->
+  <text
+    x="540"
+    y="900"
+    font-family="'Noto Serif JP', serif"
+    font-size="42"
+    font-weight="400"
+    fill="#C9A961"
+    text-anchor="middle"
+    dominant-baseline="auto"
+    letter-spacing="8">心の学院</text>
+</svg>
