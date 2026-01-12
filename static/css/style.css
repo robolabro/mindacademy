@@ -1494,6 +1494,42 @@ select,
         text-align: center;
     }
 
+    /* Locations Page Mobile Styles */
+    .location-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .location-info {
+        padding: 2rem !important;
+    }
+
+    .location-buttons {
+        grid-template-columns: 1fr !important;
+    }
+
+    .location-map {
+        min-height: 300px !important;
+    }
+
+    .location-map iframe {
+        width: 100%;
+        height: 300px;
+    }
+
+    /* Online Location Buttons - Centered on Mobile */
+    .online-location-buttons {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    .online-location-buttons .btn {
+        width: 100%;
+        max-width: 300px;
+        text-align: center;
+    }
+
     .features-grid,
     .courses-grid,
     .testimonials-grid {
