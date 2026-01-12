@@ -20,7 +20,10 @@
     {% block extra_css %}{% endblock %}
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+    <link rel="alternate icon" type="image/png" sizes="32x32" href="{% static 'images/favicon.svg' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicon.svg' %}">
+    <meta name="theme-color" content="#D32F2F">
 </head>
 <body>
     <!-- Top Bar -->
