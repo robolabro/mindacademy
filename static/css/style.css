@@ -402,17 +402,18 @@ section {
 .features-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 3rem;
+    gap: 3rem 4rem;
+    margin-top: 3rem;
 }
 
 .feature-card {
-    text-align: left;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
     padding: 0;
     background: transparent;
     border: none;
     transition: var(--transition);
-    display: flex;
-    gap: 2rem;
 }
 
 .feature-card:hover {
@@ -427,31 +428,32 @@ section {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Noto Serif JP', serif;
     font-size: 2.5rem;
     color: white;
-    font-weight: 900;
     flex-shrink: 0;
-    /*border: 3px solid var(--sumi-black);*/
     box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
 }
 
 .feature-content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .feature-card h3 {
     font-family: 'Zen Old Mincho', serif;
-    font-size: 1.3rem;
-    margin-bottom: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
     color: var(--sumi-black);
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .feature-card p {
+    margin: 0;
     color: var(--ink-blue);
-    line-height: 1.8;
+    line-height: 1.7;
     font-size: 0.95rem;
 }
 
@@ -1534,12 +1536,23 @@ select,
     .courses-grid,
     .testimonials-grid {
         grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .feature-card {
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
     }
 
     .feature-icon {
         width: 80px;
         height: 80px;
         font-size: 2rem;
+    }
+
+    .feature-content {
+        text-align: center;
     }
 
     .feature-card h3 {
