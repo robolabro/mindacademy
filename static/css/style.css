@@ -412,11 +412,18 @@ section {
     border: none;
     transition: var(--transition);
     display: flex;
-    gap: 2rem;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
 .feature-card:hover {
     transform: translateY(-5px);
+}
+
+.feature-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
 }
 
 .feature-icon {
@@ -443,7 +450,7 @@ section {
 .feature-card h3 {
     font-family: 'Zen Old Mincho', serif;
     font-size: 1.3rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
     color: var(--sumi-black);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -453,6 +460,7 @@ section {
     color: var(--ink-blue);
     line-height: 1.8;
     font-size: 0.95rem;
+    margin: 0;
 }
 
 /* ==================== COURSES ==================== */
@@ -1534,6 +1542,20 @@ select,
     .courses-grid,
     .testimonials-grid {
         grid-template-columns: 1fr;
+    }
+
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+    }
+
+    .feature-card h3 {
+        font-size: 1.1rem;
+    }
+
+    .feature-card p {
+        font-size: 0.9rem;
     }
 
     .footer-content {
