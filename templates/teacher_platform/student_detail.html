@@ -1,0 +1,211 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}{{ student.get_full_name }}{% endblock %}
+{% block page_title %}🎓 {{ student.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{% url 'teacher_platform:students_list' %}">Studenți</a>
+        <span>/</span>
+        <span>{{ student.get_full_name }}</span>
+    </div>
+
+    <!-- Student Overview -->
+    <div class="detail-card">
+        <div class="student-header-section">
+            <div class="student-avatar-large">
+                {% if student.student_profile %}
+                    <span class="avatar-icon-xl">{% if student.student_profile.avatar == 'boy' %}👦{% else %}👧{% endif %}</span>
+                {% else %}
+                    <span class="avatar-icon-xl">🎓</span>
+                {% endif %}
+            </div>
+            <div class="student-header-info">
+                <h2>{{ student.get_full_name }}</h2>
+                {% if student.student_profile %}
+                <div class="student-meta-large">
+                    {% if student.student_profile.school_name %}
+                        <span>🏫 {{ student.student_profile.school_name }}</span>
+                    {% endif %}
+                    {% if student.student_profile.grade %}
+                        <span>📚 Clasa {{ student.student_profile.grade }}</span>
+                    {% endif %}
+                    {% if student.student_profile.soroban_level %}
+                        <span>🧮 Nivel Soroban: {{ student.student_profile.soroban_level }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="student-header-actions">
+                <a href="/admin/accounts/user/{{ student.id }}/change/" class="btn-secondary">Editează Profil</a>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid-student">
+            <div class="stat-card-student">
+                <div class="stat-label">Prezență</div>
+                <div class="stat-value-large">{{ attendance_rate }}%</div>
+            </div>
+            {% if avg_performance %}
+            <div class="stat-card-student">
+                <div class="stat-label">Performanță Medie</div>
+                <div class="stat-value-large">{{ avg_performance }}/5</div>
+            </div>
+            {% endif %}
+            {% if student.student_profile %}
+            <div class="stat-card-student">
+                <div class="stat-label">Lecții Absolvite</div>
+                <div class="stat-value-large">{{ student.student_profile.total_lessons_attended }}</div>
+            </div>
+            <div class="stat-card-student">
+                <div class="stat-label">Puncte Totale</div>
+                <div class="stat-value-large">{{ student.student_profile.total_points }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Contact Info -->
+        {% if student.email or student.phone or student.parent_email or student.parent_phone %}
+        <div class="contact-info">
+            <h3>Informații de Contact</h3>
+            <div class="contact-grid">
+                {% if student.email %}
+                <div><strong>Email Student:</strong> <a href="mailto:{{ student.email }}">{{ student.email }}</a></div>
+                {% endif %}
+                {% if student.phone %}
+                <div><strong>Telefon Student:</strong> {{ student.phone }}</div>
+                {% endif %}
+                {% if student.parent_email %}
+                <div><strong>Email Părinte:</strong> <a href="mailto:{{ student.parent_email }}">{{ student.parent_email }}</a></div>
+                {% endif %}
+                {% if student.parent_phone %}
+                <div><strong>Telefon Părinte:</strong> {{ student.parent_phone }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="groups">👥 Grupe ({{ student_groups.count }})</button>
+        <button class="tab-btn" data-tab="attendance">📊 Prezență ({{ attendances.count }})</button>
+        <button class="tab-btn" data-tab="submissions">📝 Teme Predate ({{ submissions.count }})</button>
+    </div>
+
+    <!-- Tab Content: Groups -->
+    <div class="tab-content active" id="groups">
+        {% if student_groups %}
+        <div class="groups-list-simple">
+            {% for gs in student_groups %}
+            <a href="{% url 'teacher_platform:group_detail' gs.group.id %}" class="group-item-simple">
+                <div class="group-info">
+                    <h4>{{ gs.group.name }} <span class="group-code-small">({{ gs.group.code }})</span></h4>
+                    <div class="group-meta-small">
+                        <span>{{ gs.group.course.title }}</span>
+                        {% if gs.group.module %}
+                            <span class="module-badge-small" style="background-color: {{ gs.group.module.color }}20; color: {{ gs.group.module.color }};">
+                                {{ gs.group.module.name }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="group-stats-small">
+                    <span>📊 {{ gs.get_attendance_rate }}% prezență</span>
+                    <span>📚 {{ gs.lessons_attended }} lecții</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Studentul nu este înscris în nicio grupă.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab Content: Attendance -->
+    <div class="tab-content" id="attendance">
+        {% if attendances %}
+        <div class="attendance-list">
+            {% for att in attendances %}
+            <div class="attendance-item {% if not att.is_present %}absent{% endif %}">
+                <div class="attendance-icon">
+                    {% if att.is_present %}✓{% else %}✗{% endif %}
+                </div>
+                <div class="attendance-info">
+                    <div class="attendance-lesson">
+                        <strong>{{ att.lesson.group.name }}</strong> - {{ att.lesson.date|date:"d M Y" }}
+                    </div>
+                    {% if att.performance_rating %}
+                    <div class="performance-rating">
+                        Performanță: {% for i in "12345" %}{% if forloop.counter <= att.performance_rating %}⭐{% else %}☆{% endif %}{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if att.notes %}
+                    <div class="attendance-notes">{{ att.notes }}</div>
+                    {% endif %}
+                </div>
+                <div class="attendance-status">
+                    {% if att.is_present %}
+                        <span class="status-badge status-present">Prezent</span>
+                    {% else %}
+                        <span class="status-badge status-absent">Absent</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Nu există înregistrări de prezență pentru acest student.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab Content: Submissions -->
+    <div class="tab-content" id="submissions">
+        {% if submissions %}
+        <div class="submissions-list">
+            {% for sub in submissions %}
+            <a href="{% url 'teacher_platform:assignment_detail' sub.assignment.id %}" class="submission-item">
+                <div class="submission-info">
+                    <h4>{{ sub.assignment.title }}</h4>
+                    <div class="submission-meta">
+                        <span>{{ sub.assignment.group.name }}</span>
+                        <span>Predat: {{ sub.submitted_at|date:"d M Y H:i" }}</span>
+                    </div>
+                </div>
+                <div class="submission-score">
+                    {% if sub.is_graded %}
+                        <div class="score-badge">{{ sub.score }}/{{ sub.assignment.max_points }}</div>
+                    {% else %}
+                        <div class="score-badge ungraded">Nenоtat</div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Studentul nu a predat nicio temă.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+});
+</script>
+{% endblock %}

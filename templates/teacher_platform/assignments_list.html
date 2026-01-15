@@ -1,0 +1,93 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Teme{% endblock %}
+{% block page_title %}📝 Temele Mele{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Filters -->
+    <div class="filters-bar">
+        <div class="filter-group">
+            <label>Filtrează:</label>
+            <a href="?status=all{% if group_filter %}&group={{ group_filter }}{% endif %}"
+               class="filter-btn {% if status_filter == 'all' %}active{% endif %}">
+                Toate
+            </a>
+            <a href="?status=upcoming{% if group_filter %}&group={{ group_filter }}{% endif %}"
+               class="filter-btn {% if status_filter == 'upcoming' %}active{% endif %}">
+                Viitoare
+            </a>
+            <a href="?status=past{% if group_filter %}&group={{ group_filter }}{% endif %}"
+               class="filter-btn {% if status_filter == 'past' %}active{% endif %}">
+                Trecute
+            </a>
+        </div>
+        <div class="filter-group">
+            <label>Grupă:</label>
+            <a href="?status={{ status_filter }}" class="filter-btn {% if not group_filter %}active{% endif %}">Toate</a>
+            {% for group in groups %}
+            <a href="?status={{ status_filter }}&group={{ group.id }}"
+               class="filter-btn {% if group_filter == group.id|stringformat:'s' %}active{% endif %}">
+                {{ group.name }}
+            </a>
+            {% endfor %}
+        </div>
+        <a href="/admin/teacher_platform/assignment/add/" class="btn-primary">➕ Creează Temă Nouă</a>
+    </div>
+
+    <!-- Assignments List -->
+    {% if assignments %}
+    <div class="assignments-grid">
+        {% for assignment in assignments %}
+        <a href="{% url 'teacher_platform:assignment_detail' assignment.id %}" class="assignment-card-large">
+            <div class="assignment-header-large">
+                <h3>{{ assignment.title }}</h3>
+                <span class="due-date-badge {% if assignment.due_date < today %}overdue{% elif assignment.due_date == today %}today{% endif %}">
+                    📅 {{ assignment.due_date|date:"d M Y" }}
+                </span>
+            </div>
+
+            <div class="assignment-group-info">
+                <span>👥 {{ assignment.group.name }}</span>
+                {% if assignment.group.module %}
+                <span class="module-badge-small" style="background-color: {{ assignment.group.module.color }}20; color: {{ assignment.group.module.color }};">
+                    {{ assignment.group.module.name }}
+                </span>
+                {% endif %}
+            </div>
+
+            <p class="assignment-description">{{ assignment.description|truncatewords:25 }}</p>
+
+            <div class="assignment-stats-bar">
+                <div class="stat-item">
+                    <span class="stat-icon">📝</span>
+                    <span class="stat-text">{{ assignment.submissions.count }} predări</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">💯</span>
+                    <span class="stat-text">Max: {{ assignment.max_points }} pct</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">📅</span>
+                    <span class="stat-text">Asignat: {{ assignment.assigned_date|date:"d M" }}</span>
+                </div>
+            </div>
+
+            {% if assignment.attachment %}
+            <div class="assignment-attachment">
+                <span>📎 Are fișier atașat</span>
+            </div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state-large">
+        <div class="empty-icon">📝</div>
+        <h2>Nu ai teme create</h2>
+        <p>Creează prima ta temă pentru a o asigna studenților.</p>
+        <a href="/admin/teacher_platform/assignment/add/" class="btn-primary">➕ Creează Prima Temă</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard - Bine ai venit, {{ teacher.first_name }}!{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">👥</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_groups }}</div>
+                <div class="stat-label">Grupe Active</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🎓</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_students }}</div>
+                <div class="stat-label">Studenți Totali</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">📅</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ weekly_lessons }}</div>
+                <div class="stat-label">Lecții Săptămâna Asta</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">📝</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ ungraded_assignments }}</div>
+                <div class="stat-label">Teme de Notat</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Upcoming Lessons -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>📚 Lecții Următoare</h2>
+                <a href="{% url 'teacher_platform:calendar' %}" class="btn-link">Vezi Calendar</a>
+            </div>
+            <div class="card-body">
+                {% if upcoming_lessons %}
+                    <div class="lessons-list">
+                        {% for lesson in upcoming_lessons %}
+                        <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}" class="lesson-item">
+                            <div class="lesson-date">
+                                <div class="date-day">{{ lesson.date|date:"d" }}</div>
+                                <div class="date-month">{{ lesson.date|date:"M" }}</div>
+                            </div>
+                            <div class="lesson-info">
+                                <div class="lesson-title">{{ lesson.group.name }}</div>
+                                <div class="lesson-meta">
+                                    {{ lesson.start_time|date:"H:i" }}
+                                    {% if lesson.lesson_template %}
+                                        • {{ lesson.lesson_template.name }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="lesson-status status-{{ lesson.status }}">
+                                {{ lesson.get_status_display }}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p>Nu ai lecții programate în perioada următoare.</p>
+                        <a href="{% url 'teacher_platform:calendar' %}" class="btn-primary">Programează o Lecție</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Active Groups -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>👥 Grupele Mele</h2>
+                <a href="{% url 'teacher_platform:groups_list' %}" class="btn-link">Vezi Toate</a>
+            </div>
+            <div class="card-body">
+                {% if active_groups %}
+                    <div class="groups-grid">
+                        {% for group in active_groups %}
+                        <a href="{% url 'teacher_platform:group_detail' group.id %}" class="group-card">
+                            <div class="group-header">
+                                <h3>{{ group.name }}</h3>
+                                <span class="group-code">{{ group.code }}</span>
+                            </div>
+                            <div class="group-info">
+                                <div class="group-meta">
+                                    <span>{{ group.course.title }}</span>
+                                    {% if group.module %}
+                                        <span class="module-badge" style="background-color: {{ group.module.color }}20; color: {{ group.module.color }};">
+                                            {{ group.module.name }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="group-stats">
+                                    <span>👥 {{ group.student_count }}/{{ group.max_students }}</span>
+                                    <span>{{ group.get_weekday_display }} {{ group.start_time|date:"H:i" }}</span>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p>Nu ai grupe active momentan.</p>
+                        <a href="/admin/teacher_platform/group/add/" class="btn-primary">Creează o Grupă</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Grid -->
+    <div class="dashboard-grid-secondary">
+        <!-- Upcoming Assignments -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>⏰ Teme cu Deadline Apropiat</h2>
+                <a href="{% url 'teacher_platform:assignments_list' %}" class="btn-link">Vezi Toate</a>
+            </div>
+            <div class="card-body">
+                {% if upcoming_assignments %}
+                    <div class="assignments-list">
+                        {% for assignment in upcoming_assignments %}
+                        <a href="{% url 'teacher_platform:assignment_detail' assignment.id %}" class="assignment-item">
+                            <div class="assignment-info">
+                                <div class="assignment-title">{{ assignment.title }}</div>
+                                <div class="assignment-group">{{ assignment.group.name }}</div>
+                            </div>
+                            <div class="assignment-due {% if assignment.due_date == today %}due-today{% endif %}">
+                                <div class="due-date">{{ assignment.due_date|date:"d M Y" }}</div>
+                                <div class="submissions-count">
+                                    {{ assignment.submissions.count }} predări
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p>Nu ai teme cu deadline în perioada următoare.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>⚡ Acțiuni Rapide</h2>
+            </div>
+            <div class="card-body">
+                <div class="quick-actions">
+                    <a href="/admin/teacher_platform/group/add/" class="action-btn">
+                        <span class="action-icon">➕</span>
+                        <span class="action-text">Creează Grupă Nouă</span>
+                    </a>
+                    <a href="/admin/teacher_platform/lesson/add/" class="action-btn">
+                        <span class="action-icon">📅</span>
+                        <span class="action-text">Programează Lecție</span>
+                    </a>
+                    <a href="/admin/teacher_platform/assignment/add/" class="action-btn">
+                        <span class="action-icon">📝</span>
+                        <span class="action-text">Creează Temă</span>
+                    </a>
+                    <a href="{% url 'teacher_platform:students_list' %}" class="action-btn">
+                        <span class="action-icon">🎓</span>
+                        <span class="action-text">Vezi Studenți</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

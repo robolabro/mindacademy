@@ -139,8 +139,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
 # ==================== AUTHENTICATION ====================
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard_redirect'
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/teacher/'  # Redirect la teacher dashboard după login
 LOGOUT_REDIRECT_URL = 'home'
 
 # ==================== EMAIL CONFIGURATION ====================

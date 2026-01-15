@@ -1,0 +1,177 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Lecție {{ lesson.date|date:"d M Y" }}{% endblock %}
+{% block page_title %}📚 Lecție - {{ lesson.group.name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{% url 'teacher_platform:calendar' %}">Calendar</a>
+        <span>/</span>
+        <a href="{% url 'teacher_platform:group_detail' lesson.group.id %}">{{ lesson.group.name }}</a>
+        <span>/</span>
+        <span>Lecție {{ lesson.date|date:"d M Y" }}</span>
+    </div>
+
+    <!-- Lesson Overview -->
+    <div class="detail-card">
+        <div class="detail-header">
+            <div>
+                <h2>
+                    {% if lesson.lesson_template %}
+                        {{ lesson.lesson_template.name }}
+                    {% elif lesson.topic %}
+                        {{ lesson.topic }}
+                    {% else %}
+                        Lecție {{ lesson.date|date:"d M Y" }}
+                    {% endif %}
+                </h2>
+                <span class="lesson-status-badge status-{{ lesson.status }}">{{ lesson.get_status_display }}</span>
+            </div>
+            <div class="header-actions">
+                <a href="/admin/teacher_platform/lesson/{{ lesson.id }}/change/" class="btn-secondary">Editează Lecție</a>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">👥 Grupă:</span>
+                <span class="info-value">
+                    <a href="{% url 'teacher_platform:group_detail' lesson.group.id %}">{{ lesson.group.name }}</a>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">📅 Data:</span>
+                <span class="info-value">{{ lesson.date|date:"l, d F Y" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">🕐 Oră:</span>
+                <span class="info-value">
+                    {{ lesson.start_time|date:"H:i" }}
+                    {% if lesson.end_time %} - {{ lesson.end_time|date:"H:i" }}{% endif %}
+                </span>
+            </div>
+            {% if lesson.group.module %}
+            <div class="info-item">
+                <span class="info-label">📖 Modul:</span>
+                <span class="info-value">
+                    <span class="module-badge" style="background-color: {{ lesson.group.module.color }}20; color: {{ lesson.group.module.color }};">
+                        {{ lesson.group.module.name }}
+                    </span>
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if lesson.description %}
+        <div class="lesson-section">
+            <h3>Descriere</h3>
+            <p>{{ lesson.description }}</p>
+        </div>
+        {% endif %}
+
+        {% if lesson.homework %}
+        <div class="lesson-section">
+            <h3>Temă pentru Acasă</h3>
+            <p>{{ lesson.homework }}</p>
+        </div>
+        {% endif %}
+
+        {% if lesson.teacher_notes %}
+        <div class="lesson-section">
+            <h3>Notițe Profesor</h3>
+            <p>{{ lesson.teacher_notes }}</p>
+        </div>
+        {% endif %}
+
+        {% if lesson.lesson_template and lesson.lesson_template.lesson_plan_file %}
+        <div class="lesson-section">
+            <h3>Plan de Lecție</h3>
+            <a href="{{ lesson.lesson_template.lesson_plan_file.url }}" target="_blank" class="btn-secondary">📄 Vezi Plan de Lecție</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Attendance Tracking -->
+    <div class="detail-card">
+        <div class="card-header">
+            <h2>📊 Prezență Studenți</h2>
+            <div class="attendance-summary">
+                {% with present_count=students_data|length %}
+                <span>Studenți în grupă: {{ present_count }}</span>
+                {% endwith %}
+            </div>
+        </div>
+
+        <div class="card-body">
+            {% if students_data %}
+            <div class="attendance-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Prezență</th>
+                            <th>Performanță</th>
+                            <th>Observații</th>
+                            <th>Acțiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in students_data %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'teacher_platform:student_detail' data.student.id %}" class="student-link">
+                                    {{ data.student.get_full_name }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if data.attendance %}
+                                    {% if data.attendance.is_present %}
+                                        <span class="status-badge status-present">✓ Prezent</span>
+                                    {% else %}
+                                        <span class="status-badge status-absent">✗ Absent</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="status-badge status-pending">⊝ Nemarcat</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if data.attendance and data.attendance.performance_rating %}
+                                    <div class="performance-stars">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= data.attendance.performance_rating %}⭐{% else %}☆{% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if data.attendance and data.attendance.notes %}
+                                    <span class="notes-preview">{{ data.attendance.notes|truncatewords:10 }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if data.attendance %}
+                                    <a href="/admin/teacher_platform/attendance/{{ data.attendance.id }}/change/" class="btn-small">Editează</a>
+                                {% else %}
+                                    <a href="/admin/teacher_platform/attendance/add/?lesson={{ lesson.id }}&student={{ data.student.id }}" class="btn-small btn-primary-small">Marchează</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>Nu sunt studenți înscriși în această grupă.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

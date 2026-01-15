@@ -1,0 +1,121 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Grupele Mele{% endblock %}
+{% block page_title %}👥 Grupele Mele{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Filters -->
+    <div class="filters-bar">
+        <div class="filter-group">
+            <label>Filtrează:</label>
+            <a href="?status=active" class="filter-btn {% if status_filter == 'active' %}active{% endif %}">
+                Active ({{ groups|length }})
+            </a>
+            <a href="?status=inactive" class="filter-btn {% if status_filter == 'inactive' %}active{% endif %}">
+                Inactive
+            </a>
+            <a href="?status=all" class="filter-btn {% if status_filter == 'all' %}active{% endif %}">
+                Toate
+            </a>
+        </div>
+        <a href="/admin/teacher_platform/group/add/" class="btn-primary">➕ Creează Grupă Nouă</a>
+    </div>
+
+    <!-- Groups Grid -->
+    {% if groups %}
+    <div class="groups-grid-full">
+        {% for group in groups %}
+        <div class="group-card-full">
+            <div class="group-card-header">
+                <div>
+                    <h3>{{ group.name }}</h3>
+                    <span class="group-code-badge">{{ group.code }}</span>
+                </div>
+                <div class="group-actions">
+                    <a href="{% url 'teacher_platform:group_detail' group.id %}" class="btn-secondary">Vezi Detalii</a>
+                    <a href="/admin/teacher_platform/group/{{ group.id }}/change/" class="btn-secondary">Editează</a>
+                </div>
+            </div>
+
+            <div class="group-card-body">
+                <div class="group-info-grid">
+                    <div class="info-item">
+                        <span class="info-label">📚 Curs:</span>
+                        <span class="info-value">{{ group.course.title }}</span>
+                    </div>
+                    {% if group.module %}
+                    <div class="info-item">
+                        <span class="info-label">📖 Modul:</span>
+                        <span class="info-value">
+                            <span class="module-badge" style="background-color: {{ group.module.color }}20; color: {{ group.module.color }};">
+                                {{ group.module.name }}
+                            </span>
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if group.location %}
+                    <div class="info-item">
+                        <span class="info-label">📍 Locație:</span>
+                        <span class="info-value">{{ group.location.name }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <span class="info-label">📅 Program:</span>
+                        <span class="info-value">{{ group.get_weekday_display }}, {{ group.start_time|date:"H:i" }} ({{ group.duration_minutes }} min)</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">👥 Studenți:</span>
+                        <span class="info-value">
+                            <span class="student-count {% if group.student_count >= group.max_students %}full{% endif %}">
+                                {{ group.student_count }} / {{ group.max_students }}
+                            </span>
+                            {% if group.student_count < group.max_students %}
+                                <span class="status-badge status-available">Locuri disponibile</span>
+                            {% else %}
+                                <span class="status-badge status-full">Complet</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">📆 Perioada:</span>
+                        <span class="info-value">
+                            {{ group.start_date|date:"d M Y" }}
+                            {% if group.end_date %}
+                                - {{ group.end_date|date:"d M Y" }}
+                            {% else %}
+                                - Continuu
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                {% if group.description %}
+                <div class="group-description">
+                    <strong>Descriere:</strong>
+                    <p>{{ group.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="group-card-footer">
+                <div class="footer-stats">
+                    <span>Creată: {{ group.created_date|date:"d M Y" }}</span>
+                    {% if not group.is_active %}
+                        <span class="status-badge status-inactive">Inactivă</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state-large">
+        <div class="empty-icon">👥</div>
+        <h2>Nu ai grupe {% if status_filter == 'active' %}active{% elif status_filter == 'inactive' %}inactive{% endif %}</h2>
+        <p>Creează prima ta grupă pentru a începe să organizezi lecții și studenți.</p>
+        <a href="/admin/teacher_platform/group/add/" class="btn-primary">➕ Creează Grupă Nouă</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

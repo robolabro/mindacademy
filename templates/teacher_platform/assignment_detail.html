@@ -1,0 +1,157 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block page_title %}📝 {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{% url 'teacher_platform:assignments_list' %}">Teme</a>
+        <span>/</span>
+        <span>{{ assignment.title }}</span>
+    </div>
+
+    <!-- Assignment Overview -->
+    <div class="detail-card">
+        <div class="detail-header">
+            <div>
+                <h2>{{ assignment.title }}</h2>
+                <span class="due-date-badge {% if assignment.due_date < today %}overdue{% elif assignment.due_date == today %}today{% endif %}">
+                    {% if assignment.due_date < today %}
+                        ⚠️ Termen depășit: {{ assignment.due_date|date:"d M Y" }}
+                    {% elif assignment.due_date == today %}
+                        🔔 Termen astăzi!
+                    {% else %}
+                        📅 Termen: {{ assignment.due_date|date:"d M Y" }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="header-actions">
+                <a href="/admin/teacher_platform/assignment/{{ assignment.id }}/change/" class="btn-secondary">Editează Temă</a>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">👥 Grupă:</span>
+                <span class="info-value">
+                    <a href="{% url 'teacher_platform:group_detail' assignment.group.id %}">{{ assignment.group.name }}</a>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">📅 Data Asignare:</span>
+                <span class="info-value">{{ assignment.assigned_date|date:"d M Y" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">⏰ Termen Limită:</span>
+                <span class="info-value">{{ assignment.due_date|date:"d M Y" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">💯 Punctaj Maxim:</span>
+                <span class="info-value">{{ assignment.max_points }} puncte</span>
+            </div>
+        </div>
+
+        <div class="assignment-description-section">
+            <h3>Descriere</h3>
+            <p>{{ assignment.description }}</p>
+        </div>
+
+        {% if assignment.attachment %}
+        <div class="assignment-attachment-section">
+            <h3>Fișier Atașat</h3>
+            <a href="{{ assignment.attachment.url }}" download class="btn-secondary">📎 Descarcă Fișier</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Submissions -->
+    <div class="detail-card">
+        <div class="card-header">
+            <h2>📝 Predări ({{ submissions.count }})</h2>
+            <div class="submissions-summary">
+                {% with graded_count=submissions|length %}
+                {% with total=assignment.group.students.count %}
+                <span>{{ submissions.count }}/{{ total }} predate</span>
+                {% endwith %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <div class="card-body">
+            {% if submissions %}
+            <div class="submissions-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Data Predării</th>
+                            <th>Status</th>
+                            <th>Punctaj</th>
+                            <th>Acțiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in submissions %}
+                        <tr class="{% if sub.is_late %}late-submission{% endif %}">
+                            <td>
+                                <a href="{% url 'teacher_platform:student_detail' sub.student.id %}" class="student-link">
+                                    {{ sub.student.get_full_name }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ sub.submitted_at|date:"d M Y, H:i" }}
+                                {% if sub.is_late %}
+                                    <span class="late-badge">⚠️ Întârziat</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub.is_graded %}
+                                    <span class="status-badge status-graded">✓ Notat</span>
+                                {% else %}
+                                    <span class="status-badge status-ungraded">⊝ Nenotat</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub.is_graded %}
+                                    <strong class="score-display">{{ sub.score }}/{{ assignment.max_points }}</strong>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/admin/teacher_platform/assignmentsubmission/{{ sub.id }}/change/" class="btn-small">
+                                    {% if sub.is_graded %}Vezi/Editează{% else %}Notează{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- Students who haven't submitted -->
+            {% if students_not_submitted %}
+            <div class="not-submitted-section">
+                <h3>❌ Nu au predat ({{ students_not_submitted.count }})</h3>
+                <div class="not-submitted-list">
+                    {% for gs in students_not_submitted %}
+                    <a href="{% url 'teacher_platform:student_detail' gs.student.id %}" class="not-submitted-item">
+                        {{ gs.student.get_full_name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not submissions and not students_not_submitted %}
+            <div class="empty-state">
+                <p>Nu au fost predate teme încă.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

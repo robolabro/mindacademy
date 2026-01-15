@@ -1,0 +1,93 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Calendar{% endblock %}
+{% block page_title %}📅 Calendar Lecții{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Calendar Navigation -->
+    <div class="calendar-nav">
+        <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn-secondary">← Luna Anterioară</a>
+        <h2 class="current-month">{{ month_name }} {{ current_year }}</h2>
+        <a href="?year={{ next_year }}&month={{ next_month }}" class="btn-secondary">Luna Următoare →</a>
+    </div>
+
+    <!-- Lessons List View (simple for now) -->
+    <div class="calendar-lessons">
+        {% if lessons %}
+        <div class="lessons-timeline">
+            {% regroup lessons by date as lessons_by_date %}
+            {% for date_group in lessons_by_date %}
+            <div class="timeline-day">
+                <div class="timeline-date">
+                    <div class="date-day">{{ date_group.grouper|date:"d" }}</div>
+                    <div class="date-info">
+                        <div class="date-weekday">{{ date_group.grouper|date:"l" }}</div>
+                        <div class="date-month">{{ date_group.grouper|date:"F Y" }}</div>
+                    </div>
+                </div>
+                <div class="timeline-lessons">
+                    {% for lesson in date_group.list %}
+                    <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}" class="timeline-lesson" style="border-left: 4px solid {% if lesson.group.module %}{{ lesson.group.module.color }}{% else %}#667eea{% endif %};">
+                        <div class="lesson-time">{{ lesson.start_time|date:"H:i" }}</div>
+                        <div class="lesson-content">
+                            <h4>{{ lesson.group.name }}</h4>
+                            {% if lesson.lesson_template %}
+                            <p>{{ lesson.lesson_template.name }}</p>
+                            {% elif lesson.topic %}
+                            <p>{{ lesson.topic }}</p>
+                            {% endif %}
+                            {% if lesson.group.module %}
+                            <span class="module-badge-small" style="background-color: {{ lesson.group.module.color }}20; color: {{ lesson.group.module.color }};">
+                                {{ lesson.group.module.name }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="lesson-status-small status-{{ lesson.status }}">
+                            {{ lesson.get_status_display }}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state-large">
+            <div class="empty-icon">📅</div>
+            <h2>Nu ai lecții programate în {{ month_name }} {{ current_year }}</h2>
+            <p>Programează lecții pentru a le vedea aici.</p>
+            <a href="/admin/teacher_platform/lesson/add/" class="btn-primary">➕ Programează o Lecție</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Legend -->
+    <div class="calendar-legend">
+        <h3>Legendă Status:</h3>
+        <div class="legend-items">
+            <span class="legend-item"><span class="status-dot status-scheduled"></span> Programată</span>
+            <span class="legend-item"><span class="status-dot status-ongoing"></span> În Desfășurare</span>
+            <span class="legend-item"><span class="status-dot status-completed"></span> Finalizată</span>
+            <span class="legend-item"><span class="status-dot status-cancelled"></span> Anulată</span>
+        </div>
+    </div>
+
+    <!-- Groups Legend (colors) -->
+    {% if groups %}
+    <div class="calendar-legend">
+        <h3>Grupele Tale:</h3>
+        <div class="legend-items">
+            {% for group in groups %}
+            {% if group.module %}
+            <span class="legend-item">
+                <span class="color-dot" style="background-color: {{ group.module.color }};"></span>
+                {{ group.name }}
+            </span>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
