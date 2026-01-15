@@ -518,6 +518,16 @@ def student_add(request):
     Adaugă un elev nou
     """
     teacher = request.user
+    group_id = request.GET.get('group')
+    selected_group = None
+
+    # Verifică dacă există un parametru de grup și dacă profesorul are acces la acel grup
+    if group_id:
+        try:
+            selected_group = Group.objects.get(id=group_id, teacher=teacher, is_active=True)
+        except Group.DoesNotExist:
+            messages.error(request, 'Grupa selectată nu a fost găsită.')
+            return redirect('teacher_platform:groups_list')
 
     if request.method == 'POST':
         form = StudentForm(request.POST, teacher=teacher)
@@ -536,19 +546,26 @@ def student_add(request):
                 f'Username: {student.username}, Parolă: {student.username} (trebuie schimbată la prima autentificare)'
             )
 
-            # Redirect către detalii doar dacă studentul e în grupă, altfel către lista de studenți
-            if group_student:
+            # Redirect către detalii grupă dacă a fost adăugat dintr-o grupă
+            if group_student and selected_group:
+                return redirect('teacher_platform:group_detail', group_id=selected_group.id)
+            elif group_student:
                 return redirect('teacher_platform:student_detail', student_id=student.id)
             else:
                 return redirect('teacher_platform:students_list')
         else:
             messages.error(request, 'Te rog corectează erorile din formular.')
     else:
-        form = StudentForm(teacher=teacher)
+        # Pre-selectează grupa în formular dacă este furnizată
+        initial_data = {}
+        if selected_group:
+            initial_data['group'] = selected_group
+        form = StudentForm(teacher=teacher, initial=initial_data)
 
     context = {
         'form': form,
-        'title': 'Adaugă Elev Nou'
+        'title': 'Adaugă Elev Nou',
+        'selected_group': selected_group
     }
     return render(request, 'teacher_platform/student_form.html', context)
 

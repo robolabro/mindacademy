@@ -103,12 +103,12 @@
             {% endfor %}
         </div>
         <div class="card-footer">
-            <a href="/admin/teacher_platform/groupstudent/add/?group={{ group.id }}" class="btn-primary">➕ Adaugă Student în Grupă</a>
+            <a href="{% url 'teacher_platform:student_add' %}?group={{ group.id }}" class="btn-primary">➕ Adaugă Student în Grupă</a>
         </div>
         {% else %}
         <div class="empty-state">
             <p>Nu sunt studenți înscriși în această grupă.</p>
-            <a href="/admin/teacher_platform/groupstudent/add/?group={{ group.id }}" class="btn-primary">➕ Adaugă Primul Student</a>
+            <a href="{% url 'teacher_platform:student_add' %}?group={{ group.id }}" class="btn-primary">➕ Adaugă Primul Student</a>
         </div>
         {% endif %}
     </div>
