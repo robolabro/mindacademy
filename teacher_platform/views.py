@@ -282,12 +282,17 @@ def student_detail(request, student_id):
     student = get_object_or_404(User, id=student_id, role='student')
 
     # Verifică dacă profesorul are acces la acest student
+    # (fie prin grupă, fie dacă l-a creat el direct)
     group_student = GroupStudent.objects.filter(
         student=student,
         group__teacher=request.user
     ).first()
 
-    if not group_student:
+    # Verifică și dacă profesorul a creat acest student
+    is_creator = (hasattr(student, 'student_profile') and
+                  student.student_profile.teacher == request.user)
+
+    if not group_student and not is_creator:
         messages.error(request, 'Nu aveți acces la acest student.')
         return redirect('teacher_platform:students_list')
 
