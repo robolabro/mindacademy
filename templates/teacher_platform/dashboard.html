@@ -75,7 +75,7 @@
                 {% else %}
                     <div class="empty-state">
                         <p>Nu ai lecții programate în perioada următoare.</p>
-                        <a href="{% url 'teacher_platform:calendar' %}" class="btn-primary">Programează o Lecție</a>
+                        <a href="{% url 'teacher_platform:lesson_create' %}" class="btn-primary">Programează o Lecție</a>
                     </div>
                 {% endif %}
             </div>
@@ -116,7 +116,7 @@
                 {% else %}
                     <div class="empty-state">
                         <p>Nu ai grupe active momentan.</p>
-                        <a href="/admin/teacher_platform/group/add/" class="btn-primary">Creează o Grupă</a>
+                        <a href="{% url 'teacher_platform:group_add' %}" class="btn-primary">Creează o Grupă</a>
                     </div>
                 {% endif %}
             </div>

@@ -24,6 +24,10 @@ urlpatterns = [
 
     # Lecții
     path('lectii/<int:lesson_id>/', views.lesson_detail, name='lesson_detail'),
+    path('lectii/adauga/', views.lesson_create, name='lesson_create'),
+    path('lectii/adauga/<int:group_id>/', views.lesson_create, name='lesson_create_for_group'),
+    path('lectii/<int:lesson_id>/editeaza/', views.lesson_edit, name='lesson_edit'),
+    path('lectii/<int:lesson_id>/prezenta/', views.mark_attendance, name='mark_attendance'),
 
     # Teme
     path('teme/', views.assignments_list, name='assignments_list'),

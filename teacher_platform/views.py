@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote
 from accounts.models import User, StudentProfile
 from courses.models import Module, LessonTemplate
-from .forms import GroupForm, StudentForm, EditStudentForm
+from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm
 
 
 def teacher_required(view_func):
@@ -601,3 +601,200 @@ def get_modules_for_course(request):
         modules = Module.objects.filter(course_id=course_id, is_active=True).values('id', 'title')
         return JsonResponse(list(modules), safe=False)
     return JsonResponse([], safe=False)
+
+
+@login_required
+@teacher_required
+def lesson_create(request, group_id=None):
+    """
+    Creează lecții noi (ad-hoc sau recurente)
+    """
+    teacher = request.user
+
+    # Dacă e specificat group_id, precompletează grupul
+    initial_data = {}
+    if group_id:
+        group = get_object_or_404(Group, id=group_id, teacher=teacher)
+        initial_data['group'] = group
+        initial_data['start_time'] = group.start_time
+        # Calculează end_time bazat pe durată
+        if group.duration_minutes:
+            start_datetime = datetime.combine(datetime.today(), group.start_time)
+            end_datetime = start_datetime + timedelta(minutes=group.duration_minutes)
+            initial_data['end_time'] = end_datetime.time()
+
+    if request.method == 'POST':
+        form = LessonForm(request.POST, teacher=teacher)
+        if form.is_valid():
+            lesson_type = form.cleaned_data['lesson_type']
+
+            if lesson_type == 'single':
+                # Creează o singură lecție
+                lesson = form.save(commit=False)
+                lesson.status = 'scheduled'
+                lesson.save()
+
+                messages.success(request, f'Lecția a fost creată cu succes pentru {lesson.date.strftime("%d %B %Y")}!')
+                return redirect('teacher_platform:lesson_detail', lesson_id=lesson.id)
+
+            else:  # recurring
+                # Creează lecții recurente
+                group = form.cleaned_data['group']
+                recurrence_count = form.cleaned_data['recurrence_count']
+                recurrence_weekday = int(form.cleaned_data['recurrence_weekday'])
+                start_date = form.cleaned_data['date']
+
+                # Găsește prima dată care corespunde zilei săptămânii
+                days_ahead = recurrence_weekday - start_date.weekday()
+                if days_ahead < 0:
+                    days_ahead += 7
+                first_lesson_date = start_date + timedelta(days=days_ahead)
+
+                # Creează lecțiile
+                created_lessons = []
+                for i in range(recurrence_count):
+                    lesson_date = first_lesson_date + timedelta(weeks=i)
+
+                    # Verifică dacă nu există deja lecție în această dată
+                    existing = Lesson.objects.filter(
+                        group=group,
+                        date=lesson_date,
+                        start_time=form.cleaned_data['start_time']
+                    ).exists()
+
+                    if not existing:
+                        lesson = Lesson.objects.create(
+                            group=group,
+                            lesson_template=form.cleaned_data.get('lesson_template'),
+                            date=lesson_date,
+                            start_time=form.cleaned_data['start_time'],
+                            end_time=form.cleaned_data.get('end_time'),
+                            topic=form.cleaned_data.get('topic', ''),
+                            description=form.cleaned_data.get('description', ''),
+                            homework=form.cleaned_data.get('homework', ''),
+                            teacher_notes=form.cleaned_data.get('teacher_notes', ''),
+                            status='scheduled'
+                        )
+                        created_lessons.append(lesson)
+
+                messages.success(
+                    request,
+                    f'{len(created_lessons)} lecții au fost create cu succes! '
+                    f'Prima lecție: {first_lesson_date.strftime("%d %B %Y")}'
+                )
+                return redirect('teacher_platform:group_detail', group_id=group.id)
+        else:
+            messages.error(request, 'Te rog corectează erorile din formular.')
+    else:
+        form = LessonForm(teacher=teacher, initial=initial_data)
+
+    context = {
+        'form': form,
+        'title': 'Adaugă Lecție Nouă',
+        'group_id': group_id,
+    }
+    return render(request, 'teacher_platform/lesson_form.html', context)
+
+
+@login_required
+@teacher_required
+def mark_attendance(request, lesson_id):
+    """
+    AJAX endpoint pentru marcarea/actualizarea prezenței
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    lesson = get_object_or_404(
+        Lesson.objects.select_related('group'),
+        id=lesson_id,
+        group__teacher=request.user
+    )
+
+    student_id = request.POST.get('student_id')
+    is_present = request.POST.get('is_present') == 'true'
+    performance_rating = request.POST.get('performance_rating')
+    notes = request.POST.get('notes', '')
+
+    if not student_id:
+        return JsonResponse({'error': 'Student ID is required'}, status=400)
+
+    student = get_object_or_404(User, id=student_id, role='student')
+
+    # Verifică că studentul e în grupă
+    if not GroupStudent.objects.filter(group=lesson.group, student=student, is_active=True).exists():
+        return JsonResponse({'error': 'Student not in this group'}, status=400)
+
+    # Creează sau actualizează attendance
+    attendance, created = Attendance.objects.update_or_create(
+        lesson=lesson,
+        student=student,
+        defaults={
+            'is_present': is_present,
+            'notes': notes,
+            'performance_rating': int(performance_rating) if performance_rating and performance_rating != '' else None
+        }
+    )
+
+    # Actualizează contoarele în GroupStudent
+    group_student = GroupStudent.objects.get(group=lesson.group, student=student)
+    total_lessons = Attendance.objects.filter(
+        lesson__group=lesson.group,
+        student=student
+    ).count()
+
+    attended_lessons = Attendance.objects.filter(
+        lesson__group=lesson.group,
+        student=student,
+        is_present=True
+    ).count()
+
+    group_student.lessons_attended = attended_lessons
+    group_student.lessons_missed = total_lessons - attended_lessons
+    group_student.save()
+
+    return JsonResponse({
+        'success': True,
+        'created': created,
+        'attendance': {
+            'is_present': attendance.is_present,
+            'performance_rating': attendance.performance_rating,
+            'notes': attendance.notes,
+        }
+    })
+
+
+@login_required
+@teacher_required
+def lesson_edit(request, lesson_id):
+    """
+    Editează o lecție existentă
+    """
+    lesson = get_object_or_404(
+        Lesson.objects.select_related('group'),
+        id=lesson_id,
+        group__teacher=request.user
+    )
+
+    if request.method == 'POST':
+        # Pentru editare, folosim doar câmpurile relevante (nu lesson_type)
+        form = LessonForm(request.POST, instance=lesson, teacher=request.user)
+        # Ignorăm câmpurile de recurență pentru editare
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Lecția a fost actualizată cu succes!')
+            return redirect('teacher_platform:lesson_detail', lesson_id=lesson.id)
+        else:
+            messages.error(request, 'Te rog corectează erorile din formular.')
+    else:
+        form = LessonForm(instance=lesson, teacher=request.user)
+        # Setează lesson_type la single pentru editare
+        form.initial['lesson_type'] = 'single'
+
+    context = {
+        'form': form,
+        'lesson': lesson,
+        'title': f'Editează Lecție: {lesson.date.strftime("%d %B %Y")}',
+        'is_edit': True,
+    }
+    return render(request, 'teacher_platform/lesson_form.html', context)

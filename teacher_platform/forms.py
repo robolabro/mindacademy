@@ -279,3 +279,120 @@ class EditStudentForm(forms.ModelForm):
             profile.save()
 
         return user
+
+
+class LessonForm(forms.ModelForm):
+    """
+    Formular pentru crearea lecțiilor (recurente sau ad-hoc)
+    """
+    LESSON_TYPE_CHOICES = [
+        ('single', 'Lecție unică (ad-hoc)'),
+        ('recurring', 'Lecții recurente (serie)'),
+    ]
+
+    lesson_type = forms.ChoiceField(
+        choices=LESSON_TYPE_CHOICES,
+        initial='single',
+        label="Tip Lecție",
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
+    )
+
+    # Pentru lecții recurente
+    recurrence_count = forms.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=52,
+        initial=8,
+        label="Număr de lecții",
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ex: 8 (pentru 8 săptămâni)'
+        }),
+        help_text="Câte lecții să fie create automat (săptămânal)"
+    )
+
+    recurrence_weekday = forms.ChoiceField(
+        required=False,
+        choices=[
+            (0, 'Luni'),
+            (1, 'Marți'),
+            (2, 'Miercuri'),
+            (3, 'Joi'),
+            (4, 'Vineri'),
+            (5, 'Sâmbătă'),
+            (6, 'Duminică'),
+        ],
+        label="Zi săptămână",
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        help_text="În ce zi a săptămânii să se repete lecțiile"
+    )
+
+    class Meta:
+        model = Lesson
+        fields = ['group', 'lesson_template', 'date', 'start_time', 'end_time',
+                  'topic', 'description', 'homework', 'teacher_notes']
+        widgets = {
+            'group': forms.Select(attrs={'class': 'form-select'}),
+            'lesson_template': forms.Select(attrs={'class': 'form-select'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'topic': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Introducere în fracții'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'homework': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'teacher_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+        labels = {
+            'group': 'Grupă',
+            'lesson_template': 'Template Lecție (opțional)',
+            'date': 'Data primei lecții',
+            'start_time': 'Ora de început',
+            'end_time': 'Ora de sfârșit',
+            'topic': 'Subiect',
+            'description': 'Descriere',
+            'homework': 'Temă pentru acasă',
+            'teacher_notes': 'Notițe profesor',
+        }
+
+    def __init__(self, *args, teacher=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.teacher = teacher
+
+        # Filtrează grupele la cele ale profesorului
+        if teacher:
+            self.fields['group'].queryset = Group.objects.filter(
+                teacher=teacher,
+                is_active=True
+            ).select_related('course', 'module')
+
+            # Filtrează template-urile la cele din cursurile profesorului
+            from courses.models import LessonTemplate
+            teacher_courses = Group.objects.filter(
+                teacher=teacher
+            ).values_list('course_id', flat=True).distinct()
+
+            self.fields['lesson_template'].queryset = LessonTemplate.objects.filter(
+                module__course_id__in=teacher_courses
+            ).select_related('module', 'module__course')
+
+        # Fă template-ul opțional
+        self.fields['lesson_template'].required = False
+        self.fields['end_time'].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        lesson_type = cleaned_data.get('lesson_type')
+
+        if lesson_type == 'recurring':
+            if not cleaned_data.get('recurrence_count'):
+                self.add_error('recurrence_count', 'Te rog specifică numărul de lecții pentru seria recurentă.')
+            if not cleaned_data.get('recurrence_weekday'):
+                self.add_error('recurrence_weekday', 'Te rog selectează ziua săptămânii.')
+
+        # Verifică că start_time < end_time
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        if start_time and end_time and start_time >= end_time:
+            self.add_error('end_time', 'Ora de sfârșit trebuie să fie după ora de început.')
+
+        return cleaned_data

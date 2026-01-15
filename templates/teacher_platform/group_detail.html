@@ -20,8 +20,8 @@
                 <span class="group-code-badge">{{ group.code }}</span>
             </div>
             <div class="header-actions">
-                <a href="/admin/teacher_platform/group/{{ group.id }}/change/" class="btn-secondary">Editează Grupă</a>
-                <a href="/admin/teacher_platform/lesson/add/?group={{ group.id }}" class="btn-primary">➕ Adaugă Lecție</a>
+                <a href="{% url 'teacher_platform:group_edit' group.id %}" class="btn-secondary">Editează Grupă</a>
+                <a href="{% url 'teacher_platform:lesson_create_for_group' group.id %}" class="btn-primary">➕ Adaugă Lecție</a>
             </div>
         </div>
 

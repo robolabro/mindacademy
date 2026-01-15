@@ -10,6 +10,7 @@
         <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn-secondary">← Luna Anterioară</a>
         <h2 class="current-month">{{ month_name }} {{ current_year }}</h2>
         <a href="?year={{ next_year }}&month={{ next_month }}" class="btn-secondary">Luna Următoare →</a>
+        <a href="{% url 'teacher_platform:lesson_create' %}" class="btn-primary">➕ Adaugă Lecție</a>
     </div>
 
     <!-- Lessons List View (simple for now) -->
@@ -57,7 +58,7 @@
             <div class="empty-icon">📅</div>
             <h2>Nu ai lecții programate în {{ month_name }} {{ current_year }}</h2>
             <p>Programează lecții pentru a le vedea aici.</p>
-            <a href="/admin/teacher_platform/lesson/add/" class="btn-primary">➕ Programează o Lecție</a>
+            <a href="{% url 'teacher_platform:lesson_create' %}" class="btn-primary">➕ Programează o Lecție</a>
         </div>
         {% endif %}
     </div>

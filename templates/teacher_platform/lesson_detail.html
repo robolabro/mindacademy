@@ -30,7 +30,7 @@
                 <span class="lesson-status-badge status-{{ lesson.status }}">{{ lesson.get_status_display }}</span>
             </div>
             <div class="header-actions">
-                <a href="/admin/teacher_platform/lesson/{{ lesson.id }}/change/" class="btn-secondary">Editează Lecție</a>
+                <a href="{% url 'teacher_platform:lesson_edit' lesson.id %}" class="btn-secondary">Editează Lecție</a>
             </div>
         </div>
 
@@ -119,47 +119,56 @@
                     </thead>
                     <tbody>
                         {% for data in students_data %}
-                        <tr>
+                        <tr data-student-id="{{ data.student.id }}" class="attendance-row">
                             <td>
                                 <a href="{% url 'teacher_platform:student_detail' data.student.id %}" class="student-link">
                                     {{ data.student.get_full_name }}
                                 </a>
                             </td>
                             <td>
-                                {% if data.attendance %}
-                                    {% if data.attendance.is_present %}
-                                        <span class="status-badge status-present">✓ Prezent</span>
+                                <span class="attendance-status">
+                                    {% if data.attendance %}
+                                        {% if data.attendance.is_present %}
+                                            <span class="status-badge status-present">✓ Prezent</span>
+                                        {% else %}
+                                            <span class="status-badge status-absent">✗ Absent</span>
+                                        {% endif %}
                                     {% else %}
-                                        <span class="status-badge status-absent">✗ Absent</span>
+                                        <span class="status-badge status-pending">⊝ Nemarcat</span>
                                     {% endif %}
-                                {% else %}
-                                    <span class="status-badge status-pending">⊝ Nemarcat</span>
-                                {% endif %}
+                                </span>
                             </td>
                             <td>
-                                {% if data.attendance and data.attendance.performance_rating %}
-                                    <div class="performance-stars">
-                                        {% for i in "12345" %}
-                                            {% if forloop.counter <= data.attendance.performance_rating %}⭐{% else %}☆{% endif %}
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
+                                <span class="performance-display">
+                                    {% if data.attendance and data.attendance.performance_rating %}
+                                        <div class="performance-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= data.attendance.performance_rating %}⭐{% else %}☆{% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </span>
                             </td>
                             <td>
-                                {% if data.attendance and data.attendance.notes %}
-                                    <span class="notes-preview">{{ data.attendance.notes|truncatewords:10 }}</span>
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
+                                <span class="notes-display">
+                                    {% if data.attendance and data.attendance.notes %}
+                                        <span class="notes-preview">{{ data.attendance.notes|truncatewords:10 }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </span>
                             </td>
                             <td>
-                                {% if data.attendance %}
-                                    <a href="/admin/teacher_platform/attendance/{{ data.attendance.id }}/change/" class="btn-small">Editează</a>
-                                {% else %}
-                                    <a href="/admin/teacher_platform/attendance/add/?lesson={{ lesson.id }}&student={{ data.student.id }}" class="btn-small btn-primary-small">Marchează</a>
-                                {% endif %}
+                                <button class="btn-small btn-edit-attendance"
+                                        data-student-id="{{ data.student.id }}"
+                                        data-student-name="{{ data.student.get_full_name }}"
+                                        data-is-present="{{ data.attendance.is_present|default:'false' }}"
+                                        data-performance="{{ data.attendance.performance_rating|default:'' }}"
+                                        data-notes="{{ data.attendance.notes|default:'' }}">
+                                    {% if data.attendance %}📝 Editează{% else %}✓ Marchează{% endif %}
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -174,4 +183,392 @@
         </div>
     </div>
 </div>
+
+<!-- Modal pentru marcarea prezenței -->
+<div id="attendanceModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Marchează Prezență</h3>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="attendanceForm">
+                <input type="hidden" id="student_id" name="student_id">
+
+                <div class="form-group">
+                    <label class="student-name-label"></label>
+                </div>
+
+                <div class="form-group">
+                    <label>Prezență *</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="is_present" value="true" required>
+                            <span>✓ Prezent</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="is_present" value="false" required>
+                            <span>✗ Absent</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="performance_rating">Performanță (1-5 stele)</label>
+                    <div class="star-rating">
+                        <input type="radio" name="performance_rating" value="5" id="star5">
+                        <label for="star5">⭐</label>
+                        <input type="radio" name="performance_rating" value="4" id="star4">
+                        <label for="star4">⭐</label>
+                        <input type="radio" name="performance_rating" value="3" id="star3">
+                        <label for="star3">⭐</label>
+                        <input type="radio" name="performance_rating" value="2" id="star2">
+                        <label for="star2">⭐</label>
+                        <input type="radio" name="performance_rating" value="1" id="star1">
+                        <label for="star1">⭐</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Observații</label>
+                    <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Notițe despre comportament, progres, etc."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">💾 Salvează</button>
+                    <button type="button" class="btn-secondary modal-cancel">Anulează</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('attendanceModal');
+    const closeBtn = modal.querySelector('.modal-close');
+    const cancelBtn = modal.querySelector('.modal-cancel');
+    const form = document.getElementById('attendanceForm');
+    const editButtons = document.querySelectorAll('.btn-edit-attendance');
+
+    // Deschide modalul
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const studentId = this.dataset.studentId;
+            const studentName = this.dataset.studentName;
+            const isPresent = this.dataset.isPresent;
+            const performance = this.dataset.performance;
+            const notes = this.dataset.notes;
+
+            // Populează formularul
+            document.getElementById('student_id').value = studentId;
+            modal.querySelector('.student-name-label').textContent = studentName;
+
+            // Setează prezența
+            const presentRadio = document.querySelector('input[name="is_present"][value="true"]');
+            const absentRadio = document.querySelector('input[name="is_present"][value="false"]');
+            if (isPresent === 'True') {
+                presentRadio.checked = true;
+            } else if (isPresent === 'False') {
+                absentRadio.checked = true;
+            }
+
+            // Setează performanța
+            document.querySelectorAll('input[name="performance_rating"]').forEach(r => r.checked = false);
+            if (performance) {
+                const perfRadio = document.querySelector(`input[name="performance_rating"][value="${performance}"]`);
+                if (perfRadio) perfRadio.checked = true;
+            }
+
+            // Setează notițele
+            document.getElementById('notes').value = notes || '';
+
+            // Arată modalul
+            modal.style.display = 'block';
+        });
+    });
+
+    // Închide modalul
+    function closeModal() {
+        modal.style.display = 'none';
+        form.reset();
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    window.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Trimite formularul
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch('{% url "teacher_platform:mark_attendance" lesson.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizează UI-ul
+                const studentId = formData.get('student_id');
+                const row = document.querySelector(`tr[data-student-id="${studentId}"]`);
+
+                const isPresent = formData.get('is_present') === 'true';
+                const performance = formData.get('performance_rating');
+                const notes = formData.get('notes');
+
+                // Actualizează status prezență
+                const statusHtml = isPresent
+                    ? '<span class="status-badge status-present">✓ Prezent</span>'
+                    : '<span class="status-badge status-absent">✗ Absent</span>';
+                row.querySelector('.attendance-status').innerHTML = statusHtml;
+
+                // Actualizează performanță
+                let perfHtml = '<span class="text-muted">-</span>';
+                if (performance) {
+                    const stars = parseInt(performance);
+                    perfHtml = '<div class="performance-stars">';
+                    for (let i = 1; i <= 5; i++) {
+                        perfHtml += i <= stars ? '⭐' : '☆';
+                    }
+                    perfHtml += '</div>';
+                }
+                row.querySelector('.performance-display').innerHTML = perfHtml;
+
+                // Actualizează notițe
+                const notesHtml = notes
+                    ? `<span class="notes-preview">${notes.substring(0, 50)}${notes.length > 50 ? '...' : ''}</span>`
+                    : '<span class="text-muted">-</span>';
+                row.querySelector('.notes-display').innerHTML = notesHtml;
+
+                // Actualizează butonul
+                row.querySelector('.btn-edit-attendance').textContent = '📝 Editează';
+
+                // Închide modalul
+                closeModal();
+
+                // Mesaj de succes
+                alert('Prezența a fost salvată cu succes!');
+            } else {
+                alert('Eroare: ' + (data.error || 'Nu s-a putut salva prezența'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('A apărut o eroare la salvarea prezenței');
+        });
+    });
+});
+</script>
+
+<style>
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    animation: slideDown 0.3s;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    padding: 20px 30px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.modal-close {
+    font-size: 28px;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.student-name-label {
+    font-size: 16px;
+    color: #667eea;
+    padding: 10px;
+    background: rgba(102,126,234,0.1);
+    border-radius: 6px;
+}
+
+.radio-group {
+    display: flex;
+    gap: 12px;
+}
+
+.radio-label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.radio-label:hover {
+    border-color: #667eea;
+    background: #f8f9fa;
+}
+
+.radio-label input[type="radio"] {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.radio-label:has(input:checked) {
+    border-color: #667eea;
+    background: rgba(102,126,234,0.1);
+    font-weight: 600;
+}
+
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+.star-rating input[type="radio"] {
+    display: none;
+}
+
+.star-rating label {
+    font-size: 30px;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.3;
+}
+
+.star-rating input[type="radio"]:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    opacity: 1;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    background: #667eea;
+    color: white;
+    transition: all 0.2s;
+}
+
+.btn-small:hover {
+    background: #5568d3;
+    transform: translateY(-1px);
+}
+
+.btn-edit-attendance {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    background: #667eea;
+    color: white;
+    transition: all 0.2s;
+}
+
+.btn-edit-attendance:hover {
+    background: #5568d3;
+    transform: translateY(-1px);
+}
+</style>
 {% endblock %}
