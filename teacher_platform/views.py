@@ -365,11 +365,14 @@ def student_detail(request, student_id):
         is_active=True
     ).select_related('group', 'group__course', 'group__module')
 
-    # Prezențe
-    attendances = Attendance.objects.filter(
+    # Prezențe - queryset complet pentru statistici
+    attendances_full = Attendance.objects.filter(
         student=student,
         lesson__group__teacher=request.user
-    ).select_related('lesson', 'lesson__group').order_by('-lesson__date')[:20]
+    ).select_related('lesson', 'lesson__group')
+
+    # Prezențe - limitate pentru afișare
+    attendances = attendances_full.order_by('-lesson__date')[:20]
 
     # Teme predate
     submissions = AssignmentSubmission.objects.filter(
@@ -377,12 +380,12 @@ def student_detail(request, student_id):
         assignment__group__teacher=request.user
     ).select_related('assignment', 'assignment__group').order_by('-submitted_at')[:20]
 
-    # Statistici
-    total_lessons = attendances.count()
-    present_count = attendances.filter(is_present=True).count()
+    # Statistici - calculăm pe queryset-ul complet, nu cel sliced
+    total_lessons = attendances_full.count()
+    present_count = attendances_full.filter(is_present=True).count()
     attendance_rate = round((present_count / total_lessons * 100), 2) if total_lessons > 0 else 0
 
-    avg_performance = attendances.filter(
+    avg_performance = attendances_full.filter(
         performance_rating__isnull=False
     ).aggregate(Avg('performance_rating'))['performance_rating__avg']
 
