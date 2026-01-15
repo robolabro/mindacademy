@@ -1,8 +1,9 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from accounts.models import User
-from courses.models import Course
+from courses.models import Course, Location, Module, LessonTemplate
 from django.utils import timezone
+from django.utils.text import slugify
 
 
 class Group(models.Model):
@@ -32,6 +33,44 @@ class Group(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="Curs"
+    )
+
+    # Modul din curs
+    module = models.ForeignKey(
+        Module,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='groups',
+        verbose_name="Modul",
+        help_text="Modulul din curs pe care îl parcurge această grupă"
+    )
+
+    # Locație
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='groups',
+        verbose_name="Locație"
+    )
+
+    # Cod auto-generat (ex: ARITMETICA-12-001)
+    code = models.CharField(
+        max_length=100,
+        unique=True,
+        editable=False,
+        blank=True,
+        verbose_name="Cod Grupă",
+        help_text="Generat automat: CURS-MODUL-NUMĂR"
+    )
+
+    # Data creare editabilă
+    created_date = models.DateField(
+        default=timezone.now,
+        verbose_name="Data Creare",
+        help_text="Data la care a fost creată grupa (editabilă)"
     )
 
     # Program recurent
@@ -65,7 +104,34 @@ class Group(models.Model):
         verbose_name_plural = "Grupe"
         ordering = ['weekday', 'start_time']
 
+    def generate_code(self):
+        """
+        Generează cod unic pentru grupă în formatul: CURS-MODUL-NUMĂR
+        Ex: ARITMETICA-12-001
+        """
+        if self.code:  # Dacă deja are cod, nu-l regenera
+            return self.code
+
+        course_slug = slugify(self.course.slug if self.course else 'CURS').upper()
+        module_id = str(self.module.id) if self.module else '0'
+
+        # Găsește numărul următor pentru acest curs și modul
+        existing_groups = Group.objects.filter(
+            code__startswith=f"{course_slug}-{module_id}-"
+        ).count()
+
+        next_number = existing_groups + 1
+        return f"{course_slug}-{module_id}-{next_number:03d}"
+
+    def save(self, *args, **kwargs):
+        """Override save pentru a genera cod automat"""
+        if not self.code:
+            self.code = self.generate_code()
+        super().save(*args, **kwargs)
+
     def __str__(self):
+        if self.code:
+            return f"{self.name} ({self.code})"
         return f"{self.name} - {self.get_weekday_display()} {self.start_time}"
 
     def get_current_students_count(self):
@@ -143,6 +209,18 @@ class Lesson(models.Model):
     ]
 
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='lessons', verbose_name="Grupă")
+
+    # Șablon de lecție (opțional, pentru a lega lecția programată de șablonul din modul)
+    lesson_template = models.ForeignKey(
+        LessonTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='scheduled_lessons',
+        verbose_name="Șablon Lecție",
+        help_text="Lecția template din modul (opțional)"
+    )
+
     date = models.DateField(verbose_name="Data")
     start_time = models.TimeField(verbose_name="Ora Start")
     end_time = models.TimeField(null=True, blank=True, verbose_name="Ora Sfârșit")
@@ -289,3 +367,42 @@ class AssignmentSubmission(models.Model):
     def is_late(self):
         """Verifică dacă tema a fost predată târziu"""
         return self.submitted_at.date() > self.assignment.due_date
+
+
+class LessonNote(models.Model):
+    """
+    Notițe ale profesorului pentru o lecție template dintr-o grupă
+    Profesorii pot adăuga notițe specifice pentru fiecare lecție din modul
+    """
+    lesson_template = models.ForeignKey(
+        LessonTemplate,
+        on_delete=models.CASCADE,
+        related_name='teacher_notes',
+        verbose_name="Șablon Lecție"
+    )
+    group = models.ForeignKey(
+        Group,
+        on_delete=models.CASCADE,
+        related_name='lesson_notes',
+        verbose_name="Grupă"
+    )
+    teacher = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'teacher'},
+        related_name='lesson_notes',
+        verbose_name="Profesor"
+    )
+
+    notes = models.TextField(verbose_name="Notițe", help_text="Notițe și observații pentru această lecție")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Notiță Lecție"
+        verbose_name_plural = "Notițe Lecții"
+        unique_together = ['lesson_template', 'group', 'teacher']
+
+    def __str__(self):
+        return f"{self.teacher.get_full_name()} - {self.lesson_template.name} ({self.group.name})"

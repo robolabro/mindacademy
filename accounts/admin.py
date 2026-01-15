@@ -66,25 +66,44 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(TeacherProfile)
 class TeacherProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'specialization', 'experience_years', 'is_active')
-    list_filter = ('is_active', 'experience_years')
+    list_display = ('user', 'specialization', 'experience_years', 'get_locations', 'is_active')
+    list_filter = ('is_active', 'experience_years', 'locations')
     search_fields = ('user__first_name', 'user__last_name', 'user__email', 'specialization')
+    filter_horizontal = ('locations',)
 
     fieldsets = (
         ('Utilizator', {'fields': ('user',)}),
         ('Detalii Profesionale', {'fields': ('bio', 'specialization', 'experience_years')}),
+        ('Alocare Locații', {
+            'fields': ('locations',),
+            'description': 'Selectează locațiile/centrele la care predă acest profesor'
+        }),
         ('Status', {'fields': ('is_active',)}),
     )
+
+    def get_locations(self, obj):
+        """Afișează locațiile profesorului"""
+        return ", ".join([loc.name for loc in obj.locations.all()]) or "-"
+
+    get_locations.short_description = 'Locații'
 
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'school_name', 'grade', 'total_lessons_attended', 'total_points', 'soroban_level')
-    list_filter = ('grade', 'soroban_level')
+    list_display = ('user', 'sex', 'avatar', 'group', 'location', 'teacher', 'account_created_date', 'total_lessons_attended')
+    list_filter = ('sex', 'avatar', 'group', 'location', 'teacher', 'soroban_level')
     search_fields = ('user__first_name', 'user__last_name', 'user__email', 'school_name')
 
     fieldsets = (
         ('Utilizator', {'fields': ('user',)}),
+        ('Informații Personale', {
+            'fields': ('sex', 'avatar', 'account_created_date'),
+            'description': 'Informații de bază ale elevului'
+        }),
+        ('Alocare', {
+            'fields': ('location', 'teacher', 'group'),
+            'description': 'Locație, profesor coordonator și grupă'
+        }),
         ('Informații Școlare', {'fields': ('school_name', 'grade')}),
         ('Progres', {'fields': ('total_lessons_attended', 'total_points', 'soroban_level')}),
     )
