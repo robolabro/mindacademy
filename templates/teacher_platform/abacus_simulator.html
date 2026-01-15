@@ -347,7 +347,7 @@
         width: 45px;
         height: 55px;
         background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-        border-radius: 50%;
+        clip-path: polygon(50% 0%, 90% 25%, 90% 75%, 50% 100%, 10% 75%, 10% 25%);
         margin: 2px 0;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -361,22 +361,34 @@
     .bead::before {
         content: '';
         position: absolute;
-        width: 70%;
-        height: 70%;
-        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent);
-        border-radius: 50%;
-        top: 10%;
-        left: 10%;
+        width: 60%;
+        height: 60%;
+        background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.4), transparent);
+        clip-path: polygon(50% 5%, 85% 30%, 85% 70%, 50% 95%, 15% 70%, 15% 30%);
+        top: 20%;
+        left: 20%;
     }
 
     .bead:hover {
         transform: scale(1.05);
         box-shadow: 0 4px 12px rgba(255, 165, 0, 0.5);
+        filter: brightness(1.1);
     }
 
     .bead.active {
         background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
         box-shadow: 0 4px 12px rgba(255, 140, 0, 0.6);
+    }
+
+    .bead::after {
+        content: '';
+        position: absolute;
+        width: 30%;
+        height: 30%;
+        background: radial-gradient(circle at center, rgba(0, 0, 0, 0.15), transparent);
+        clip-path: polygon(50% 10%, 80% 35%, 80% 65%, 50% 90%, 20% 65%, 20% 35%);
+        bottom: 15%;
+        right: 15%;
     }
 
     @media (max-width: 768px) {
