@@ -350,7 +350,7 @@
         clip-path: polygon(50% 0%, 90% 25%, 90% 75%, 50% 100%, 10% 75%, 10% 25%);
         margin: 2px 0;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         position: relative;
         display: flex;
@@ -643,9 +643,44 @@
             columnValues[columnIndex] += value;
         }
 
+        // Update bead positions for this column
+        updateBeadPositions(columnIndex);
+
         // Update counter for this column
         updateCounter(columnIndex);
         updateResultDisplay();
+    }
+
+    // Update bead positions to stick to separator
+    function updateBeadPositions(columnIndex) {
+        const rods = document.querySelectorAll('.rod');
+        const rod = rods[columnIndex];
+
+        // Top bead (heaven - value 5)
+        const topBead = rod.querySelector('.beads-section.top .bead');
+        if (topBead && topBead.classList.contains('active')) {
+            // Move down towards separator
+            topBead.style.transform = 'translateY(40px)';
+        } else if (topBead) {
+            topBead.style.transform = 'translateY(0)';
+        }
+
+        // Bottom beads (earth - value 1 each)
+        const bottomBeads = rod.querySelectorAll('.beads-section.bottom .bead');
+        let activeCount = 0;
+
+        // Move active beads up towards separator, stacking them
+        bottomBeads.forEach((bead) => {
+            if (bead.classList.contains('active')) {
+                const beadHeight = 57; // 55px bead + 2px margin on each side
+                const baseOffset = 200; // Base distance to reach separator
+                const offset = baseOffset + (activeCount * beadHeight);
+                bead.style.transform = `translateY(-${offset}px)`;
+                activeCount++;
+            } else {
+                bead.style.transform = 'translateY(0)';
+            }
+        });
     }
 
     // Update counter display
@@ -678,6 +713,7 @@
         const beads = document.querySelectorAll('.bead');
         beads.forEach(bead => {
             bead.classList.remove('active');
+            bead.style.transform = 'translateY(0)';
         });
 
         columnValues.fill(0);
