@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
-from .models import Group, GroupStudent
+from .models import Group, GroupStudent, Lesson
 from accounts.models import User, StudentProfile
 from courses.models import Course, Module, Location
 
