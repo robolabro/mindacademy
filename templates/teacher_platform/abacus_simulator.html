@@ -129,6 +129,30 @@
         transform: translateX(30px);
     }
 
+    .back-to-list-btn {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        background: #f0f0f0;
+        color: var(--text-color);
+        border: 2px solid #e0e0e0;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .back-to-list-btn:hover {
+        background: #e0e0e0;
+        border-color: #d0d0d0;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
     .start-btn {
         width: 100%;
         padding: 1rem;
@@ -420,6 +444,9 @@
             </div>
         </div>
 
+        <a href="{% url 'teacher_platform:simulators_list' %}" class="back-to-list-btn">
+            ← Înapoi la Simulatoare
+        </a>
         <button class="start-btn" id="startBtn">Start</button>
     </div>
 
