@@ -19,7 +19,7 @@
                 Toate
             </a>
         </div>
-        <a href="/admin/teacher_platform/group/add/" class="btn-primary">➕ Creează Grupă Nouă</a>
+        <a href="{% url 'teacher_platform:group_add' %}" class="btn-primary">➕ Creează Grupă Nouă</a>
     </div>
 
     <!-- Groups Grid -->
@@ -34,7 +34,7 @@
                 </div>
                 <div class="group-actions">
                     <a href="{% url 'teacher_platform:group_detail' group.id %}" class="btn-secondary">Vezi Detalii</a>
-                    <a href="/admin/teacher_platform/group/{{ group.id }}/change/" class="btn-secondary">Editează</a>
+                    <a href="{% url 'teacher_platform:group_edit' group.id %}" class="btn-secondary">Editează</a>
                 </div>
             </div>
 
@@ -114,7 +114,7 @@
         <div class="empty-icon">👥</div>
         <h2>Nu ai grupe {% if status_filter == 'active' %}active{% elif status_filter == 'inactive' %}inactive{% endif %}</h2>
         <p>Creează prima ta grupă pentru a începe să organizezi lecții și studenți.</p>
-        <a href="/admin/teacher_platform/group/add/" class="btn-primary">➕ Creează Grupă Nouă</a>
+        <a href="{% url 'teacher_platform:group_add' %}" class="btn-primary">➕ Creează Grupă Nouă</a>
     </div>
     {% endif %}
 </div>

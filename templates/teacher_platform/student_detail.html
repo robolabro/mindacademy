@@ -39,7 +39,7 @@
                 {% endif %}
             </div>
             <div class="student-header-actions">
-                <a href="/admin/accounts/user/{{ student.id }}/change/" class="btn-secondary">Editează Profil</a>
+                <a href="{% url 'teacher_platform:student_edit' student.id %}" class="btn-secondary">Editează Profil</a>
             </div>
         </div>
 

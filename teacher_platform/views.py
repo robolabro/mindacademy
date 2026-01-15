@@ -3,10 +3,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q, Avg
 from django.utils import timezone
+from django.http import JsonResponse
 from datetime import datetime, timedelta
 from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote
 from accounts.models import User, StudentProfile
 from courses.models import Module, LessonTemplate
+from .forms import GroupForm, StudentForm, EditStudentForm
 
 
 def teacher_required(view_func):
@@ -445,3 +447,140 @@ def assignment_detail(request, assignment_id):
     }
 
     return render(request, 'teacher_platform/assignment_detail.html', context)
+
+
+@login_required
+@teacher_required
+def group_add(request):
+    """
+    Adaugă o grupă nouă
+    """
+    teacher = request.user
+
+    if request.method == 'POST':
+        form = GroupForm(request.POST, teacher=teacher)
+        if form.is_valid():
+            group = form.save(commit=False)
+            group.teacher = teacher
+            group.save()
+            group.generate_code()
+            group.save()
+            messages.success(request, f'Grupa "{group.name}" a fost creată cu succes! Cod: {group.code}')
+            return redirect('teacher_platform:group_detail', group_id=group.id)
+        else:
+            messages.error(request, 'Te rog corectează erorile din formular.')
+    else:
+        form = GroupForm(teacher=teacher)
+
+    context = {
+        'form': form,
+        'title': 'Adaugă Grupă Nouă'
+    }
+    return render(request, 'teacher_platform/group_form.html', context)
+
+
+@login_required
+@teacher_required
+def group_edit(request, group_id):
+    """
+    Editează o grupă existentă
+    """
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+
+    if request.method == 'POST':
+        form = GroupForm(request.POST, instance=group, teacher=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Grupa "{group.name}" a fost actualizată cu succes!')
+            return redirect('teacher_platform:group_detail', group_id=group.id)
+        else:
+            messages.error(request, 'Te rog corectează erorile din formular.')
+    else:
+        form = GroupForm(instance=group, teacher=request.user)
+
+    context = {
+        'form': form,
+        'group': group,
+        'title': f'Editează Grupa {group.name}'
+    }
+    return render(request, 'teacher_platform/group_form.html', context)
+
+
+@login_required
+@teacher_required
+def student_add(request):
+    """
+    Adaugă un elev nou
+    """
+    teacher = request.user
+
+    if request.method == 'POST':
+        form = StudentForm(request.POST, teacher=teacher)
+        if form.is_valid():
+            student = form.save()
+            messages.success(
+                request,
+                f'Elevul {student.get_full_name()} a fost creat cu succes! '
+                f'Username: {student.username}, Parolă: {student.username} (trebuie schimbată la prima autentificare)'
+            )
+            return redirect('teacher_platform:student_detail', student_id=student.id)
+        else:
+            messages.error(request, 'Te rog corectează erorile din formular.')
+    else:
+        form = StudentForm(teacher=teacher)
+
+    context = {
+        'form': form,
+        'title': 'Adaugă Elev Nou'
+    }
+    return render(request, 'teacher_platform/student_form.html', context)
+
+
+@login_required
+@teacher_required
+def student_edit(request, student_id):
+    """
+    Editează informațiile unui elev
+    """
+    student = get_object_or_404(User, id=student_id, role='student')
+
+    # Verifică dacă profesorul are acces la acest student
+    group_student = GroupStudent.objects.filter(
+        student=student,
+        group__teacher=request.user
+    ).first()
+
+    if not group_student:
+        messages.error(request, 'Nu aveți acces la acest student.')
+        return redirect('teacher_platform:students_list')
+
+    if request.method == 'POST':
+        form = EditStudentForm(request.POST, instance=student)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Datele elevului {student.get_full_name()} au fost actualizate cu succes!')
+            return redirect('teacher_platform:student_detail', student_id=student.id)
+        else:
+            messages.error(request, 'Te rog corectează erorile din formular.')
+    else:
+        form = EditStudentForm(instance=student)
+
+    context = {
+        'form': form,
+        'student': student,
+        'title': f'Editează Elev: {student.get_full_name()}'
+    }
+    return render(request, 'teacher_platform/student_form.html', context)
+
+
+@login_required
+@teacher_required
+def get_modules_for_course(request):
+    """
+    API endpoint pentru a obține modulele unui curs (pentru AJAX)
+    """
+    course_id = request.GET.get('course_id')
+    if course_id:
+        modules = Module.objects.filter(course_id=course_id, is_active=True).values('id', 'title')
+        return JsonResponse(list(modules), safe=False)
+    return JsonResponse([], safe=False)

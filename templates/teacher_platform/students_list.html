@@ -18,6 +18,7 @@
             </a>
             {% endfor %}
         </div>
+        <a href="{% url 'teacher_platform:student_add' %}" class="btn-primary">➕ Adaugă Elev Nou</a>
     </div>
 
     <!-- Students Grid -->
@@ -63,7 +64,7 @@
         <div class="empty-icon">🎓</div>
         <h2>Nu ai studenți</h2>
         <p>Adaugă studenți în grupele tale pentru a-i gestiona aici.</p>
-        <a href="/admin/teacher_platform/groupstudent/add/" class="btn-primary">➕ Adaugă Student</a>
+        <a href="{% url 'teacher_platform:student_add' %}" class="btn-primary">➕ Adaugă Elev Nou</a>
     </div>
     {% endif %}
 </div>
