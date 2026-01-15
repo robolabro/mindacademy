@@ -179,6 +179,7 @@ def group_detail(request, group_id):
 def calendar_view(request):
     """
     Calendar cu toate lecțiile profesorului
+    Suportă view_mode: 'list' (timeline) sau 'calendar' (grid)
     """
     teacher = request.user
 
@@ -186,6 +187,7 @@ def calendar_view(request):
     now = timezone.now()
     year = int(request.GET.get('year', now.year))
     month = int(request.GET.get('month', now.month))
+    view_mode = request.GET.get('view', 'list')  # 'list' sau 'calendar'
 
     # Prima și ultima zi a lunii
     first_day = datetime(year, month, 1).date()
@@ -221,6 +223,35 @@ def calendar_view(request):
         next_month = month + 1
         next_year = year
 
+    # Pentru calendar grid view, calculează săptămânile și zilele
+    calendar_weeks = []
+    if view_mode == 'calendar':
+        import calendar as cal
+        month_calendar = cal.monthcalendar(year, month)
+
+        # Creează un dicționar cu lecțiile organizate pe zile
+        lessons_by_date = {}
+        for lesson in lessons:
+            if lesson.date not in lessons_by_date:
+                lessons_by_date[lesson.date] = []
+            lessons_by_date[lesson.date].append(lesson)
+
+        # Construiește săptămânile cu informații despre lecții
+        for week in month_calendar:
+            week_days = []
+            for day in week:
+                if day == 0:
+                    week_days.append({'day': None, 'lessons': []})
+                else:
+                    date_obj = datetime(year, month, day).date()
+                    week_days.append({
+                        'day': day,
+                        'date': date_obj,
+                        'lessons': lessons_by_date.get(date_obj, []),
+                        'is_today': date_obj == timezone.now().date()
+                    })
+            calendar_weeks.append(week_days)
+
     context = {
         'lessons': lessons,
         'groups': groups,
@@ -232,6 +263,8 @@ def calendar_view(request):
         'next_month': next_month,
         'next_year': next_year,
         'today': timezone.now().date(),
+        'view_mode': view_mode,
+        'calendar_weeks': calendar_weeks,
     }
 
     return render(request, 'teacher_platform/calendar.html', context)
@@ -307,6 +340,11 @@ def student_detail(request, student_id):
     """
     student = get_object_or_404(User, id=student_id, role='student')
 
+    # Verifică dacă există student_profile
+    if not hasattr(student, 'student_profile'):
+        messages.error(request, 'Profilul de student nu a fost găsit.')
+        return redirect('teacher_platform:students_list')
+
     # Verifică dacă profesorul are acces la acest student
     # (fie prin grupă, fie dacă l-a creat el direct)
     group_student = GroupStudent.objects.filter(
@@ -315,8 +353,7 @@ def student_detail(request, student_id):
     ).first()
 
     # Verifică și dacă profesorul a creat acest student
-    is_creator = (hasattr(student, 'student_profile') and
-                  student.student_profile.teacher == request.user)
+    is_creator = (student.student_profile.teacher == request.user)
 
     if not group_student and not is_creator:
         messages.error(request, 'Nu aveți acces la acest student.')
@@ -572,13 +609,8 @@ def student_add(request):
                 f'Username: {student.username}, Parolă: {student.username} (trebuie schimbată la prima autentificare)'
             )
 
-            # Redirect către detalii grupă dacă a fost adăugat dintr-o grupă
-            if group_student and selected_group:
-                return redirect('teacher_platform:group_detail', group_id=selected_group.id)
-            elif group_student:
-                return redirect('teacher_platform:student_detail', student_id=student.id)
-            else:
-                return redirect('teacher_platform:students_list')
+            # Redirect către detalii student după creare
+            return redirect('teacher_platform:student_detail', student_id=student.id)
         else:
             messages.error(request, 'Te rog corectează erorile din formular.')
     else:
