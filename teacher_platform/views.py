@@ -906,3 +906,35 @@ def teacher_profile(request):
         'teacher_profile': teacher_profile,
     }
     return render(request, 'teacher_platform/teacher_profile.html', context)
+
+
+@login_required
+@teacher_required
+def simulators_list(request):
+    """
+    Lista tuturor simulatoarelor disponibile
+    """
+    simulators = [
+        {
+            'name': 'Abac Online',
+            'description': 'Simulator interactiv de abac pentru învățarea matematicii',
+            'icon': '🧮',
+            'url': 'teacher_platform:abacus_simulator',
+            'color': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        },
+        # Aici se vor adăuga alte simulatoare în viitor
+    ]
+
+    context = {
+        'simulators': simulators,
+    }
+    return render(request, 'teacher_platform/simulators_list.html', context)
+
+
+@login_required
+@teacher_required
+def abacus_simulator(request):
+    """
+    Simulator interactiv de abac
+    """
+    return render(request, 'teacher_platform/abacus_simulator.html')

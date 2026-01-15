@@ -72,6 +72,10 @@
                     <span class="nav-icon">📝</span>
                     <span class="nav-text">Teme</span>
                 </a>
+                <a href="{% url 'teacher_platform:simulators_list' %}" class="nav-item {% if 'simulator' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="nav-icon">🧮</span>
+                    <span class="nav-text">Simulatoare</span>
+                </a>
                 <div class="sidebar-divider"></div>
                 <a href="{% url 'teacher_platform:teacher_profile' %}" class="nav-item {% if request.resolver_match.url_name == 'teacher_profile' %}active{% endif %}">
                     <span class="nav-icon">👤</span>
