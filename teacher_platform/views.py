@@ -518,12 +518,24 @@ def student_add(request):
         form = StudentForm(request.POST, teacher=teacher)
         if form.is_valid():
             student = form.save()
+
+            # Verifică dacă studentul a fost adăugat într-o grupă
+            group_student = GroupStudent.objects.filter(
+                student=student,
+                group__teacher=teacher
+            ).first()
+
             messages.success(
                 request,
                 f'Elevul {student.get_full_name()} a fost creat cu succes! '
                 f'Username: {student.username}, Parolă: {student.username} (trebuie schimbată la prima autentificare)'
             )
-            return redirect('teacher_platform:student_detail', student_id=student.id)
+
+            # Redirect către detalii doar dacă studentul e în grupă, altfel către lista de studenți
+            if group_student:
+                return redirect('teacher_platform:student_detail', student_id=student.id)
+            else:
+                return redirect('teacher_platform:students_list')
         else:
             messages.error(request, 'Te rog corectează erorile din formular.')
     else:
