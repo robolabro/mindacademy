@@ -36,7 +36,11 @@
             <div class="student-details">
                 <h3>{{ gs.student.get_full_name }}</h3>
                 <div class="student-meta">
-                    <span>👥 {{ gs.group.name }}</span>
+                    {% if gs.group %}
+                        <span>👥 {{ gs.group.name }}</span>
+                    {% else %}
+                        <span>⚠️ Fără grupă</span>
+                    {% endif %}
                     {% if gs.student.student_profile and gs.student.student_profile.grade %}
                         <span>📚 Clasa {{ gs.student.student_profile.grade }}</span>
                     {% endif %}

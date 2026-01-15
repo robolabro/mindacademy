@@ -7,6 +7,9 @@ urlpatterns = [
     # Dashboard principal
     path('', views.dashboard, name='dashboard'),
 
+    # Profil profesor
+    path('profil/', views.teacher_profile, name='teacher_profile'),
+
     # Grupe
     path('grupe/', views.groups_list, name='groups_list'),
     path('grupe/adauga/', views.group_add, name='group_add'),

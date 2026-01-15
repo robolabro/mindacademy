@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 from .models import Group, GroupStudent, Lesson
-from accounts.models import User, StudentProfile
+from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Course, Module, Location
 
 
@@ -396,3 +396,91 @@ class LessonForm(forms.ModelForm):
             self.add_error('end_time', 'Ora de sfârșit trebuie să fie după ora de început.')
 
         return cleaned_data
+
+
+class TeacherProfileForm(forms.ModelForm):
+    """
+    Formular pentru editarea profilului profesorului
+    """
+    # Câmpuri din User
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+        label="Prenume",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=True,
+        label="Nume",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    email = forms.EmailField(
+        required=True,
+        label="Email",
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    phone = forms.CharField(
+        max_length=15,
+        required=False,
+        label="Telefon",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+40...'})
+    )
+
+    # Câmpuri din TeacherProfile
+    class Meta:
+        model = TeacherProfile
+        fields = ['bio', 'specialization', 'experience_years', 'locations']
+        widgets = {
+            'bio': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Scrie câteva cuvinte despre tine...'
+            }),
+            'specialization': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: Programare, Matematică, Robotică...'
+            }),
+            'experience_years': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'placeholder': 'Ani de experiență în predare'
+            }),
+            'locations': forms.CheckboxSelectMultiple(),
+        }
+        labels = {
+            'bio': 'Biografie',
+            'specialization': 'Specializare',
+            'experience_years': 'Ani de experiență',
+            'locations': 'Locații'
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        # Populează câmpurile User dacă există
+        if user:
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            self.fields['email'].initial = user.email
+            self.fields['phone'].initial = user.phone
+
+    def save(self, commit=True):
+        """Salvează atât User cât și TeacherProfile"""
+        profile = super().save(commit=False)
+        user = profile.user
+
+        # Actualizează câmpurile User
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        user.email = self.cleaned_data['email']
+        user.phone = self.cleaned_data['phone']
+
+        if commit:
+            user.save()
+            profile.save()
+            # Salvează relația ManyToMany pentru locations
+            self.save_m2m()
+
+        return profile

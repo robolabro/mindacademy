@@ -73,6 +73,11 @@
                     <span class="nav-text">Teme</span>
                 </a>
                 <div class="sidebar-divider"></div>
+                <a href="{% url 'teacher_platform:teacher_profile' %}" class="nav-item {% if request.resolver_match.url_name == 'teacher_profile' %}active{% endif %}">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">Profilul Meu</span>
+                </a>
+                <div class="sidebar-divider"></div>
                 <a href="{% url 'home' %}" class="nav-item">
                     <span class="nav-icon">🏠</span>
                     <span class="nav-text">Site Public</span>

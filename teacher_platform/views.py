@@ -6,9 +6,9 @@ from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote
-from accounts.models import User, StudentProfile
+from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
-from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm
+from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm, TeacherProfileForm
 
 
 def teacher_required(view_func):
@@ -248,15 +248,41 @@ def students_list(request):
     # Filtrare după grupă
     group_filter = request.GET.get('group', '')
 
-    students_query = GroupStudent.objects.filter(
+    # Obține elevii din grupe
+    students_in_groups = GroupStudent.objects.filter(
         group__teacher=teacher,
         is_active=True
     ).select_related('student', 'student__student_profile', 'group')
 
     if group_filter:
-        students_query = students_query.filter(group_id=group_filter)
+        students_in_groups = students_in_groups.filter(group_id=group_filter)
 
-    students = students_query.order_by('student__first_name', 'student__last_name')
+    # Obține și elevii creați de profesor dar care nu sunt într-o grupă
+    students_without_group = []
+    if not group_filter:  # Doar când nu e filtru de grupă
+        student_profiles = StudentProfile.objects.filter(
+            teacher=teacher
+        ).select_related('user')
+
+        # Exclude elevii care sunt deja în grupe
+        students_with_groups_ids = students_in_groups.values_list('student_id', flat=True)
+        for profile in student_profiles:
+            if profile.user.id not in students_with_groups_ids:
+                # Creează un obiect pseudo-GroupStudent pentru consistență în template
+                class StudentWithoutGroup:
+                    def __init__(self, student):
+                        self.student = student
+                        self.group = None
+                        self.lessons_attended = 0
+                        self.lessons_missed = 0
+
+                    def get_attendance_rate(self):
+                        return 0
+
+                students_without_group.append(StudentWithoutGroup(profile.user))
+
+    students = list(students_in_groups.order_by('student__first_name', 'student__last_name'))
+    students.extend(students_without_group)
 
     # Grupele pentru filtru
     groups = Group.objects.filter(
@@ -815,3 +841,33 @@ def lesson_edit(request, lesson_id):
         'is_edit': True,
     }
     return render(request, 'teacher_platform/lesson_form.html', context)
+
+
+@login_required
+@teacher_required
+def teacher_profile(request):
+    """
+    Vizualizare și editare profil profesor
+    """
+    teacher = request.user
+
+    # Creează profil dacă nu există
+    teacher_profile, created = TeacherProfile.objects.get_or_create(user=teacher)
+
+    if request.method == 'POST':
+        form = TeacherProfileForm(request.POST, instance=teacher_profile, user=teacher)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profilul tău a fost actualizat cu succes!')
+            return redirect('teacher_platform:teacher_profile')
+        else:
+            messages.error(request, 'Te rog corectează erorile din formular.')
+    else:
+        form = TeacherProfileForm(instance=teacher_profile, user=teacher)
+
+    context = {
+        'form': form,
+        'teacher': teacher,
+        'teacher_profile': teacher_profile,
+    }
+    return render(request, 'teacher_platform/teacher_profile.html', context)
