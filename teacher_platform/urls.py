@@ -39,6 +39,7 @@ urlpatterns = [
     # Simulatoare
     path('simulatoare/', views.simulators_list, name='simulators_list'),
     path('simulatoare/abac/', views.abacus_simulator, name='abacus_simulator'),
+    path('simulatoare/cartonase-flash/', views.flashcard_simulator, name='flashcard_simulator'),
 
     # API
     path('api/get-modules/', views.get_modules_for_course, name='get_modules_for_course'),

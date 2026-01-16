@@ -922,6 +922,13 @@ def simulators_list(request):
             'url': 'teacher_platform:abacus_simulator',
             'color': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
         },
+        {
+            'name': 'Cartonașe Flash',
+            'description': 'Învață să recunoști numerele pe soroban prin exerciții interactive',
+            'icon': '🎴',
+            'url': 'teacher_platform:flashcard_simulator',
+            'color': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+        },
         # Aici se vor adăuga alte simulatoare în viitor
     ]
 
@@ -938,3 +945,12 @@ def abacus_simulator(request):
     Simulator interactiv de abac
     """
     return render(request, 'teacher_platform/abacus_simulator.html')
+
+
+@login_required
+@teacher_required
+def flashcard_simulator(request):
+    """
+    Simulator de cartonașe flash pentru recunoașterea numerelor pe soroban
+    """
+    return render(request, 'teacher_platform/flashcard_simulator.html')

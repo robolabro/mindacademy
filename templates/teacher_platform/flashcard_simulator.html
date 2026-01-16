@@ -1,0 +1,1834 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Simulator Cartonașe Flash{% endblock %}
+{% block page_title %}Cartonașe Flash{% endblock %}
+
+{% block extra_css %}
+<style>
+    .flashcard-container {
+        padding: 2rem;
+        max-width: 100%;
+        min-height: calc(100vh - 180px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    }
+
+    /* Mode Selection Screen */
+    .mode-selection {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        max-width: 900px;
+        width: 95%;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .mode-title {
+        text-align: center;
+        font-size: 2rem;
+        color: var(--text-primary);
+        margin-bottom: 2.5rem;
+        font-weight: 600;
+    }
+
+    .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .mode-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 2rem 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .mode-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+    }
+
+    .mode-card-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .mode-card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .mode-card-desc {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+    }
+
+    /* Common Styles for All Modes */
+    .mode-screen {
+        display: none;
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        max-width: 1200px;
+        width: 95%;
+        min-height: 600px;
+    }
+
+    .mode-screen.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mode-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .mode-header h2 {
+        font-size: 1.8rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .back-btn {
+        padding: 0.6rem 1.5rem;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .settings-panel {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .settings-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .settings-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .setting-label {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        min-width: 150px;
+    }
+
+    .setting-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .number-input {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .number-btn {
+        width: 35px;
+        height: 35px;
+        border: none;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .number-btn:hover {
+        background: var(--secondary-color);
+        transform: scale(1.1);
+    }
+
+    .number-display {
+        min-width: 50px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .toggle-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .toggle-btn {
+        padding: 0.5rem 1.2rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .toggle-btn:hover {
+        border-color: var(--primary-color);
+    }
+
+    .toggle-btn.active {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .start-btn {
+        padding: 0.8rem 2.5rem;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+        align-self: center;
+    }
+
+    .start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .instructions-panel {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .instructions-panel h3 {
+        color: #856404;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .instructions-panel p {
+        color: #856404;
+        line-height: 1.6;
+        margin-bottom: 0.5rem;
+    }
+
+    .instructions-panel ul {
+        color: #856404;
+        margin-left: 1.5rem;
+        line-height: 1.8;
+    }
+
+    /* Exercise Area */
+    .exercise-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: #f8f9fa;
+        border-radius: 15px;
+        min-height: 400px;
+    }
+
+    .countdown {
+        font-size: 6rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    .mini-abacus {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .abacus-frame-mini {
+        display: inline-flex;
+        gap: 0.8rem;
+        padding: 1rem;
+        background: #8b4513;
+        border-radius: 10px;
+        border: 4px solid #654321;
+    }
+
+    .rod-mini {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        position: relative;
+    }
+
+    .rod-line-mini {
+        width: 4px;
+        height: 120px;
+        background: #654321;
+        position: relative;
+    }
+
+    .divider-mini {
+        position: absolute;
+        top: 35px;
+        left: -8px;
+        width: 20px;
+        height: 3px;
+        background: #654321;
+    }
+
+    .bead-mini {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        position: absolute;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .bead-mini.top {
+        background: #ff6b6b;
+        top: -5px;
+    }
+
+    .bead-mini.top.active {
+        top: 40px;
+    }
+
+    .bead-mini.bottom {
+        background: #4ecdc4;
+    }
+
+    .bead-mini.bottom.b1 {
+        bottom: 80px;
+    }
+
+    .bead-mini.bottom.b2 {
+        bottom: 55px;
+    }
+
+    .bead-mini.bottom.b3 {
+        bottom: 30px;
+    }
+
+    .bead-mini.bottom.b4 {
+        bottom: 5px;
+    }
+
+    .bead-mini.bottom.b1.active {
+        bottom: 40px;
+    }
+
+    .bead-mini.bottom.b2.active {
+        bottom: 40px;
+    }
+
+    .bead-mini.bottom.b3.active {
+        bottom: 40px;
+    }
+
+    .bead-mini.bottom.b4.active {
+        bottom: 40px;
+    }
+
+    .answer-input {
+        width: 300px;
+        padding: 1rem;
+        font-size: 2rem;
+        text-align: center;
+        border: 3px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .answer-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .submit-btn {
+        padding: 0.8rem 2.5rem;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .feedback {
+        font-size: 1.5rem;
+        font-weight: 600;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        margin-top: 1rem;
+    }
+
+    .feedback.correct {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .feedback.incorrect {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .stat-item {
+        padding: 0.5rem 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .stat-value {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1.3rem;
+    }
+
+    /* Classwork Mode */
+    .classwork-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .classwork-controls {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .control-btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .settings-btn {
+        background: #6c757d;
+        color: white;
+    }
+
+    .settings-btn:hover {
+        background: #5a6268;
+    }
+
+    .start-all-btn {
+        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        color: white;
+    }
+
+    .start-all-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
+    }
+
+    .results-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .results-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .students-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        height: 600px;
+    }
+
+    .student-panel {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 15px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .student-name-input {
+        padding: 0.5rem;
+        font-size: 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        flex: 1;
+        max-width: 200px;
+    }
+
+    .delete-student-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 0.4rem 0.8rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+    .delete-student-btn:hover {
+        background: #c82333;
+    }
+
+    .student-exercise {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Modal for Settings */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .close-modal:hover {
+        color: var(--text-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .mode-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .students-grid {
+            grid-template-columns: 1fr;
+            height: auto;
+        }
+
+        .settings-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .answer-input {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flashcard-container">
+    <!-- Mode Selection Screen -->
+    <div id="modeSelection" class="mode-selection">
+        <h1 class="mode-title">Alege Modul de Lucru</h1>
+        <div class="mode-grid">
+            <div class="mode-card" onclick="selectMode('training')">
+                <div class="mode-card-icon">📚</div>
+                <div class="mode-card-title">Mod Antrenament</div>
+                <div class="mode-card-desc">Învață să recunoști numerele pe soroban</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('flash')">
+                <div class="mode-card-icon">⚡</div>
+                <div class="mode-card-title">Mod Flash</div>
+                <div class="mode-card-desc">Exercițiu de viteză pentru recunoaștere rapidă</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('exercises')">
+                <div class="mode-card-icon">🧮</div>
+                <div class="mode-card-title">Exerciții</div>
+                <div class="mode-card-desc">Rezolvă probleme de matematică cu soroban</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('classwork')">
+                <div class="mode-card-icon">👥</div>
+                <div class="mode-card-title">Lucru în Clasă</div>
+                <div class="mode-card-desc">Practică împreună cu 4 elevi simultan</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Mode -->
+    <div id="trainingMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Mod Antrenament</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>Instrucțiuni</h3>
+            <p>Modul de antrenament te ajută să înveți să percepi numerele exprimate pe un soroban.</p>
+            <p>În etapa inițială, este necesar să te obișnuiești cu numerele reprezentate pe soroban.</p>
+            <ul>
+                <li><strong>Soroban → Număr:</strong> Va apărea un număr pe ecran pe care trebuie să îl introduci</li>
+                <li><strong>Număr → Soroban:</strong> Va apărea un număr pe care trebuie să îl setezi pe soroban</li>
+            </ul>
+        </div>
+
+        <div class="settings-panel">
+            <div class="settings-row">
+                <span class="setting-label">Direcție:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-direction="abacus-to-number">Soroban → Număr</button>
+                        <button class="toggle-btn" data-direction="number-to-abacus">Număr → Soroban</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">De la:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('training-from', -1)">−</button>
+                        <span class="number-display" id="trainingFrom">1</span>
+                        <button class="number-btn" onclick="adjustNumber('training-from', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Până la:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('training-to', -1)">−</button>
+                        <span class="number-display" id="trainingTo">99</span>
+                        <button class="number-btn" onclick="adjustNumber('training-to', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Mod simplu:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-simple="ordinary">Obișnuit</button>
+                        <button class="toggle-btn" data-simple="simple">Mod simplu</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Sunete:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-sound="signals">Semnale</button>
+                        <button class="toggle-btn" data-sound="no-sound">Fără sunet</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Efecte:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-effects="on">Activate</button>
+                        <button class="toggle-btn" data-effects="off">Dezactivate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startTraining()">Start!</button>
+
+        <div id="trainingExercise" class="exercise-area" style="display: none;">
+            <div id="trainingContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Corecte</div>
+                    <div class="stat-value" id="trainingCorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Greșite</div>
+                    <div class="stat-value" id="trainingIncorrect">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Mode -->
+    <div id="flashMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Mod Flash</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>Instrucțiuni</h3>
+            <p>Modul "Flash" este un exercițiu de viteză!</p>
+            <ul>
+                <li><strong>Soroban → Număr:</strong> Va apărea o imagine a unui soroban pe care trebuie să scrii numerele</li>
+                <li><strong>Număr → Soroban:</strong> Va apărea un număr pe care trebuie să îl scrii</li>
+            </ul>
+            <p>Opțiunea "spune răspunsul" este pentru lucrul în clasă. În acest caz, trebuie să scrii răspunsurile pentru a le verifica la sfârșitul sesiunii.</p>
+        </div>
+
+        <div class="settings-panel">
+            <div class="settings-row">
+                <span class="setting-label">Direcție:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-direction="abacus-to-number">Soroban → Număr</button>
+                        <button class="toggle-btn" data-direction="number-to-abacus">Număr → Soroban</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">De la:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('flash-from', -1)">−</button>
+                        <span class="number-display" id="flashFrom">1</span>
+                        <button class="number-btn" onclick="adjustNumber('flash-from', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Până la:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('flash-to', -1)">−</button>
+                        <span class="number-display" id="flashTo">99</span>
+                        <button class="number-btn" onclick="adjustNumber('flash-to', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Viteză (sec.):</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustSpeed(-0.1)">−</button>
+                        <span class="number-display" id="flashSpeed">1.0</span>
+                        <button class="number-btn" onclick="adjustSpeed(0.1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Formă de răspuns:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-response="enter">Introdu răspunsul</button>
+                        <button class="toggle-btn" data-response="say">Spune răspunsul</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Durata seriei:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn" data-duration="one-minute">Un minut</button>
+                        <button class="toggle-btn active" data-duration="unlimited">Nelimitat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Mod simplu:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-simple="ordinary">Obișnuit</button>
+                        <button class="toggle-btn" data-simple="simple">Mod simplu</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Sunete:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-sound="signals">Semnale</button>
+                        <button class="toggle-btn" data-sound="no-sound">Fără sunet</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Efecte:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-effects="on">Activate</button>
+                        <button class="toggle-btn" data-effects="off">Dezactivate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startFlash()">Start!</button>
+
+        <div id="flashExercise" class="exercise-area" style="display: none;">
+            <div id="flashContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Corecte</div>
+                    <div class="stat-value" id="flashCorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Greșite</div>
+                    <div class="stat-value" id="flashIncorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Timp rămas</div>
+                    <div class="stat-value" id="flashTimer">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercises Mode -->
+    <div id="exercisesMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Exerciții</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>Instrucțiuni</h3>
+            <p>Hai să încercăm să rezolvăm probleme matematice cu cartonașe flash?</p>
+            <p>Exemplele vor apărea pe ecran compuse din doi termeni, afișați pe soroban.</p>
+            <p>Alege formula și mărimea termenilor care ar trebui incluși în exemple. Poți introduce răspunsul tastând un număr sau folosind sorobanul.</p>
+        </div>
+
+        <div class="settings-panel">
+            <div class="settings-row">
+                <span class="setting-label">Formula:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-formula="addition">Adunare</button>
+                        <button class="toggle-btn" data-formula="subtraction">Scădere</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Secțiune:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group" id="sectionButtons">
+                        <button class="toggle-btn active" data-section="1">1</button>
+                        <button class="toggle-btn" data-section="2">2</button>
+                        <button class="toggle-btn" data-section="3">3</button>
+                        <button class="toggle-btn" data-section="4">4</button>
+                        <button class="toggle-btn" data-section="5">5</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Termeni:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('exercise-addends', -1)">−</button>
+                        <span class="number-display" id="exerciseAddends">2</span>
+                        <button class="number-btn" onclick="adjustNumber('exercise-addends', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Răspuns prin:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-answer="number">Număr</button>
+                        <button class="toggle-btn" data-answer="abacus">Pe soroban</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Mod simplu:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-simple="ordinary">Obișnuit</button>
+                        <button class="toggle-btn" data-simple="simple">Mod simplu</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Sunete:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-sound="signals">Semnale</button>
+                        <button class="toggle-btn" data-sound="no-sound">Fără sunet</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Efecte:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-effects="on">Activate</button>
+                        <button class="toggle-btn" data-effects="off">Dezactivate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startExercises()">Start!</button>
+
+        <div id="exercisesArea" class="exercise-area" style="display: none;">
+            <div id="exercisesContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Corecte</div>
+                    <div class="stat-value" id="exercisesCorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Greșite</div>
+                    <div class="stat-value" id="exercisesIncorrect">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classwork Mode -->
+    <div id="classworkMode" class="mode-screen">
+        <div class="classwork-header">
+            <h2>Lucru în Clasă</h2>
+            <div class="classwork-controls">
+                <button class="control-btn settings-btn" onclick="openClassworkSettings()">⚙️ Setări</button>
+                <button class="control-btn start-all-btn" onclick="startAllStudents()">▶️ Start</button>
+                <button class="control-btn results-btn" onclick="showResults()">📊 Rezultate</button>
+                <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+            </div>
+        </div>
+
+        <div class="students-grid" id="studentsGrid">
+            <div class="student-panel">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Ученик 1" placeholder="Nume elev">
+                    <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="1"></div>
+                    </div>
+                    <input type="text" class="answer-input" placeholder="Răspuns" style="display: none;">
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Ученик 2" placeholder="Nume elev">
+                    <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="2"></div>
+                    </div>
+                    <input type="text" class="answer-input" placeholder="Răspuns" style="display: none;">
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Ученик 3" placeholder="Nume elev">
+                    <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="3"></div>
+                    </div>
+                    <input type="text" class="answer-input" placeholder="Răspuns" style="display: none;">
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Ученик 4" placeholder="Nume elev">
+                    <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="4"></div>
+                    </div>
+                    <input type="text" class="answer-input" placeholder="Răspuns" style="display: none;">
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classwork Settings Modal -->
+    <div id="classworkSettingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Setări Lucru în Clasă</h3>
+                <button class="close-modal" onclick="closeClassworkSettings()">×</button>
+            </div>
+
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direcție:</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-direction="abacus-to-number">Soroban → Număr</button>
+                            <button class="toggle-btn" data-direction="number-to-abacus">Număr → Soroban</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">De la:</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustNumber('classwork-from', -1)">−</button>
+                            <span class="number-display" id="classworkFrom">1</span>
+                            <button class="number-btn" onclick="adjustNumber('classwork-from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Până la:</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustNumber('classwork-to', -1)">−</button>
+                            <span class="number-display" id="classworkTo">99</span>
+                            <button class="number-btn" onclick="adjustNumber('classwork-to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Timp afișare (sec.):</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustDisplayTime(-0.1)">−</button>
+                            <span class="number-display" id="classworkDisplayTime">1.0</span>
+                            <button class="number-btn" onclick="adjustDisplayTime(0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Mod simplu:</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-simple="ordinary">Obișnuit</button>
+                            <button class="toggle-btn" data-simple="simple">Mod simplu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="start-btn" onclick="closeClassworkSettings()">Salvează</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global state
+    let currentMode = null;
+    let currentSettings = {
+        training: {
+            direction: 'abacus-to-number',
+            from: 1,
+            to: 99,
+            simple: 'ordinary',
+            sound: 'signals',
+            effects: 'on'
+        },
+        flash: {
+            direction: 'abacus-to-number',
+            from: 1,
+            to: 99,
+            speed: 1.0,
+            response: 'enter',
+            duration: 'unlimited',
+            simple: 'ordinary',
+            sound: 'signals',
+            effects: 'on'
+        },
+        exercises: {
+            formula: 'addition',
+            section: 1,
+            addends: 2,
+            answer: 'number',
+            simple: 'ordinary',
+            sound: 'signals',
+            effects: 'on'
+        },
+        classwork: {
+            direction: 'abacus-to-number',
+            from: 1,
+            to: 99,
+            displayTime: 1.0,
+            simple: 'ordinary'
+        }
+    };
+
+    let stats = {
+        correct: 0,
+        incorrect: 0
+    };
+
+    let currentNumber = 0;
+    let exerciseTimer = null;
+    let flashTimer = null;
+
+    // Mode selection
+    function selectMode(mode) {
+        document.getElementById('modeSelection').style.display = 'none';
+
+        if (mode === 'training') {
+            document.getElementById('trainingMode').classList.add('active');
+            currentMode = 'training';
+        } else if (mode === 'flash') {
+            document.getElementById('flashMode').classList.add('active');
+            currentMode = 'flash';
+        } else if (mode === 'exercises') {
+            document.getElementById('exercisesMode').classList.add('active');
+            currentMode = 'exercises';
+        } else if (mode === 'classwork') {
+            document.getElementById('classworkMode').classList.add('active');
+            currentMode = 'classwork';
+        }
+    }
+
+    function backToModes() {
+        // Hide all mode screens
+        document.querySelectorAll('.mode-screen').forEach(screen => {
+            screen.classList.remove('active');
+        });
+
+        // Reset exercise areas
+        document.getElementById('trainingExercise').style.display = 'none';
+        document.getElementById('flashExercise').style.display = 'none';
+        document.getElementById('exercisesArea').style.display = 'none';
+
+        // Reset stats
+        stats.correct = 0;
+        stats.incorrect = 0;
+
+        // Clear timers
+        if (exerciseTimer) clearInterval(exerciseTimer);
+        if (flashTimer) clearInterval(flashTimer);
+
+        // Show mode selection
+        document.getElementById('modeSelection').style.display = 'block';
+        currentMode = null;
+    }
+
+    // Number adjustment
+    function adjustNumber(elementId, delta) {
+        const element = document.getElementById(elementId);
+        let currentValue = parseInt(element.textContent);
+        let newValue = currentValue + delta;
+
+        // Set boundaries based on element
+        if (elementId.includes('from')) {
+            newValue = Math.max(0, Math.min(999, newValue));
+        } else if (elementId.includes('to')) {
+            newValue = Math.max(1, Math.min(999, newValue));
+        } else if (elementId.includes('addends')) {
+            newValue = Math.max(2, Math.min(5, newValue));
+        }
+
+        element.textContent = newValue;
+
+        // Update settings
+        if (elementId.startsWith('training')) {
+            if (elementId.includes('from')) currentSettings.training.from = newValue;
+            if (elementId.includes('to')) currentSettings.training.to = newValue;
+        } else if (elementId.startsWith('flash')) {
+            if (elementId.includes('from')) currentSettings.flash.from = newValue;
+            if (elementId.includes('to')) currentSettings.flash.to = newValue;
+        } else if (elementId.startsWith('exercise')) {
+            if (elementId.includes('addends')) currentSettings.exercises.addends = newValue;
+        } else if (elementId.startsWith('classwork')) {
+            if (elementId.includes('from')) currentSettings.classwork.from = newValue;
+            if (elementId.includes('to')) currentSettings.classwork.to = newValue;
+        }
+    }
+
+    function adjustSpeed(delta) {
+        const element = document.getElementById('flashSpeed');
+        let currentValue = parseFloat(element.textContent);
+        let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
+        element.textContent = newValue.toFixed(1);
+        currentSettings.flash.speed = newValue;
+    }
+
+    function adjustDisplayTime(delta) {
+        const element = document.getElementById('classworkDisplayTime');
+        let currentValue = parseFloat(element.textContent);
+        let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
+        element.textContent = newValue.toFixed(1);
+        currentSettings.classwork.displayTime = newValue;
+    }
+
+    // Toggle button handlers
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const group = this.parentElement;
+            group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            // Update settings based on data attributes
+            const dataKeys = Object.keys(this.dataset);
+            dataKeys.forEach(key => {
+                const mode = this.closest('.mode-screen').id.replace('Mode', '');
+                if (currentSettings[mode]) {
+                    currentSettings[mode][key] = this.dataset[key];
+                }
+            });
+        });
+    });
+
+    // Generate random number in range
+    function getRandomNumber(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Create mini abacus representation
+    function createMiniAbacus(number, container) {
+        container.innerHTML = '';
+        const digits = String(number).padStart(3, '0').split('').reverse();
+
+        digits.forEach((digit, index) => {
+            const rod = document.createElement('div');
+            rod.className = 'rod-mini';
+
+            const rodLine = document.createElement('div');
+            rodLine.className = 'rod-line-mini';
+
+            const divider = document.createElement('div');
+            divider.className = 'divider-mini';
+            rodLine.appendChild(divider);
+
+            // Top bead (value 5)
+            const topBead = document.createElement('div');
+            topBead.className = 'bead-mini top';
+            const digitValue = parseInt(digit);
+            if (digitValue >= 5) {
+                topBead.classList.add('active');
+            }
+            rodLine.appendChild(topBead);
+
+            // Bottom beads (value 1 each)
+            const bottomValue = digitValue % 5;
+            for (let i = 1; i <= 4; i++) {
+                const bottomBead = document.createElement('div');
+                bottomBead.className = `bead-mini bottom b${i}`;
+                if (i <= bottomValue) {
+                    bottomBead.classList.add('active');
+                }
+                rodLine.appendChild(bottomBead);
+            }
+
+            rod.appendChild(rodLine);
+            container.appendChild(rod);
+        });
+    }
+
+    // Training Mode
+    function startTraining() {
+        stats.correct = 0;
+        stats.incorrect = 0;
+        document.getElementById('trainingCorrect').textContent = '0';
+        document.getElementById('trainingIncorrect').textContent = '0';
+        document.getElementById('trainingExercise').style.display = 'flex';
+        nextTrainingExercise();
+    }
+
+    function nextTrainingExercise() {
+        const { from, to, direction } = currentSettings.training;
+        currentNumber = getRandomNumber(from, to);
+        const content = document.getElementById('trainingContent');
+        content.innerHTML = '';
+
+        if (direction === 'abacus-to-number') {
+            // Show abacus, ask for number
+            const abacusDiv = document.createElement('div');
+            abacusDiv.className = 'mini-abacus';
+            const frame = document.createElement('div');
+            frame.className = 'abacus-frame-mini';
+            abacusDiv.appendChild(frame);
+            createMiniAbacus(currentNumber, frame);
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'answer-input';
+            input.placeholder = 'Introdu numărul';
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkTrainingAnswer(parseInt(this.value));
+                }
+            });
+
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkTrainingAnswer(parseInt(input.value));
+
+            content.appendChild(abacusDiv);
+            content.appendChild(input);
+            content.appendChild(submitBtn);
+
+            setTimeout(() => input.focus(), 100);
+        } else {
+            // Show number, ask to set on abacus
+            const numberDiv = document.createElement('div');
+            numberDiv.style.fontSize = '3rem';
+            numberDiv.style.fontWeight = '700';
+            numberDiv.style.marginBottom = '2rem';
+            numberDiv.textContent = currentNumber;
+
+            const abacusDiv = document.createElement('div');
+            abacusDiv.className = 'mini-abacus';
+            const frame = document.createElement('div');
+            frame.className = 'abacus-frame-mini';
+            abacusDiv.appendChild(frame);
+            createMiniAbacus(0, frame);
+            makeAbacusInteractive(frame);
+
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkTrainingAbacus(frame);
+
+            content.appendChild(numberDiv);
+            content.appendChild(abacusDiv);
+            content.appendChild(submitBtn);
+        }
+    }
+
+    function checkTrainingAnswer(answer) {
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (answer === currentNumber) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('trainingCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${currentNumber}`;
+            stats.incorrect++;
+            document.getElementById('trainingIncorrect').textContent = stats.incorrect;
+        }
+
+        const content = document.getElementById('trainingContent');
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextTrainingExercise();
+        }, 2000);
+    }
+
+    function makeAbacusInteractive(frame) {
+        const rods = frame.querySelectorAll('.rod-mini');
+        rods.forEach(rod => {
+            const beads = rod.querySelectorAll('.bead-mini');
+            beads.forEach(bead => {
+                bead.style.cursor = 'pointer';
+                bead.addEventListener('click', function() {
+                    if (this.classList.contains('top')) {
+                        this.classList.toggle('active');
+                    } else {
+                        // For bottom beads, toggle this and all beads below
+                        const isActive = this.classList.contains('active');
+                        const beadNum = parseInt(this.className.match(/b(\d)/)[1]);
+                        const bottomBeads = rod.querySelectorAll('.bead-mini.bottom');
+
+                        if (isActive) {
+                            // Deactivate this and beads above
+                            bottomBeads.forEach(b => {
+                                const bNum = parseInt(b.className.match(/b(\d)/)[1]);
+                                if (bNum >= beadNum) {
+                                    b.classList.remove('active');
+                                }
+                            });
+                        } else {
+                            // Activate this and beads below
+                            bottomBeads.forEach(b => {
+                                const bNum = parseInt(b.className.match(/b(\d)/)[1]);
+                                if (bNum <= beadNum) {
+                                    b.classList.add('active');
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+        });
+    }
+
+    function checkTrainingAbacus(frame) {
+        const rods = frame.querySelectorAll('.rod-mini');
+        let abacusNumber = 0;
+
+        rods.forEach((rod, index) => {
+            let digitValue = 0;
+            const topBead = rod.querySelector('.bead-mini.top');
+            if (topBead.classList.contains('active')) {
+                digitValue += 5;
+            }
+
+            const bottomBeads = rod.querySelectorAll('.bead-mini.bottom');
+            bottomBeads.forEach(bead => {
+                if (bead.classList.contains('active')) {
+                    digitValue += 1;
+                }
+            });
+
+            abacusNumber += digitValue * Math.pow(10, index);
+        });
+
+        checkTrainingAnswer(abacusNumber);
+    }
+
+    // Flash Mode
+    function startFlash() {
+        stats.correct = 0;
+        stats.incorrect = 0;
+        document.getElementById('flashCorrect').textContent = '0';
+        document.getElementById('flashIncorrect').textContent = '0';
+        document.getElementById('flashExercise').style.display = 'flex';
+
+        if (currentSettings.flash.duration === 'one-minute') {
+            let timeLeft = 60;
+            document.getElementById('flashTimer').textContent = timeLeft;
+            flashTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('flashTimer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(flashTimer);
+                    alert(`Sesiune terminată! Corecte: ${stats.correct}, Greșite: ${stats.incorrect}`);
+                    backToModes();
+                }
+            }, 1000);
+        } else {
+            document.getElementById('flashTimer').textContent = '∞';
+        }
+
+        nextFlashExercise();
+    }
+
+    function nextFlashExercise() {
+        const { from, to, direction, speed, response } = currentSettings.flash;
+        currentNumber = getRandomNumber(from, to);
+        const content = document.getElementById('flashContent');
+        content.innerHTML = '';
+
+        if (direction === 'abacus-to-number') {
+            const abacusDiv = document.createElement('div');
+            abacusDiv.className = 'mini-abacus';
+            const frame = document.createElement('div');
+            frame.className = 'abacus-frame-mini';
+            abacusDiv.appendChild(frame);
+            createMiniAbacus(currentNumber, frame);
+
+            content.appendChild(abacusDiv);
+
+            setTimeout(() => {
+                abacusDiv.style.display = 'none';
+
+                if (response === 'enter') {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = 'answer-input';
+                    input.placeholder = 'Introdu numărul';
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            checkFlashAnswer(parseInt(this.value));
+                        }
+                    });
+
+                    const submitBtn = document.createElement('button');
+                    submitBtn.className = 'submit-btn';
+                    submitBtn.textContent = 'Verifică';
+                    submitBtn.onclick = () => checkFlashAnswer(parseInt(input.value));
+
+                    content.appendChild(input);
+                    content.appendChild(submitBtn);
+                    input.focus();
+                } else {
+                    // Say answer mode - just show next button
+                    const nextBtn = document.createElement('button');
+                    nextBtn.className = 'submit-btn';
+                    nextBtn.textContent = 'Următorul';
+                    nextBtn.onclick = () => nextFlashExercise();
+                    content.appendChild(nextBtn);
+                }
+            }, speed * 1000);
+        }
+    }
+
+    function checkFlashAnswer(answer) {
+        const content = document.getElementById('flashContent');
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (answer === currentNumber) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('flashCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${currentNumber}`;
+            stats.incorrect++;
+            document.getElementById('flashIncorrect').textContent = stats.incorrect;
+        }
+
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextFlashExercise();
+        }, 1500);
+    }
+
+    // Exercises Mode
+    function startExercises() {
+        stats.correct = 0;
+        stats.incorrect = 0;
+        document.getElementById('exercisesCorrect').textContent = '0';
+        document.getElementById('exercisesIncorrect').textContent = '0';
+        document.getElementById('exercisesArea').style.display = 'flex';
+        nextExercise();
+    }
+
+    function nextExercise() {
+        const { formula, section, addends } = currentSettings.exercises;
+        const content = document.getElementById('exercisesContent');
+        content.innerHTML = '';
+
+        // Generate random numbers based on section
+        const maxDigits = section;
+        const maxNum = Math.pow(10, maxDigits) - 1;
+        const numbers = [];
+
+        for (let i = 0; i < addends; i++) {
+            numbers.push(getRandomNumber(1, maxNum));
+        }
+
+        // Calculate correct answer
+        let correctAnswer;
+        if (formula === 'addition') {
+            correctAnswer = numbers.reduce((a, b) => a + b, 0);
+        } else {
+            correctAnswer = numbers[0] - numbers.slice(1).reduce((a, b) => a + b, 0);
+        }
+
+        // Display problem
+        const problemDiv = document.createElement('div');
+        problemDiv.style.fontSize = '2rem';
+        problemDiv.style.marginBottom = '2rem';
+        problemDiv.style.textAlign = 'center';
+
+        numbers.forEach((num, index) => {
+            const abacusDiv = document.createElement('div');
+            abacusDiv.style.display = 'inline-block';
+            abacusDiv.style.margin = '0 1rem';
+            const frame = document.createElement('div');
+            frame.className = 'abacus-frame-mini';
+            abacusDiv.appendChild(frame);
+            createMiniAbacus(num, frame);
+            problemDiv.appendChild(abacusDiv);
+
+            if (index < numbers.length - 1) {
+                const operator = document.createElement('span');
+                operator.textContent = formula === 'addition' ? ' + ' : ' - ';
+                operator.style.fontSize = '2rem';
+                operator.style.margin = '0 1rem';
+                problemDiv.appendChild(operator);
+            }
+        });
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'answer-input';
+        input.placeholder = 'Introdu răspunsul';
+        input.dataset.correctAnswer = correctAnswer;
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
+            }
+        });
+
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'submit-btn';
+        submitBtn.textContent = 'Verifică';
+        submitBtn.onclick = () => checkExerciseAnswer(parseInt(input.value), correctAnswer);
+
+        content.appendChild(problemDiv);
+        content.appendChild(input);
+        content.appendChild(submitBtn);
+
+        setTimeout(() => input.focus(), 100);
+    }
+
+    function checkExerciseAnswer(answer, correctAnswer) {
+        const content = document.getElementById('exercisesContent');
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (answer === correctAnswer) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('exercisesCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${correctAnswer}`;
+            stats.incorrect++;
+            document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
+        }
+
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextExercise();
+        }, 2000);
+    }
+
+    // Classwork Mode
+    function openClassworkSettings() {
+        document.getElementById('classworkSettingsModal').classList.add('active');
+    }
+
+    function closeClassworkSettings() {
+        document.getElementById('classworkSettingsModal').classList.remove('active');
+    }
+
+    function startAllStudents() {
+        const panels = document.querySelectorAll('.student-panel');
+
+        // Show countdown 3, 2, 1
+        panels.forEach(panel => {
+            const countdown = panel.querySelector('.countdown');
+            countdown.style.display = 'block';
+        });
+
+        let count = 3;
+        const countdownInterval = setInterval(() => {
+            panels.forEach(panel => {
+                const countdown = panel.querySelector('.countdown');
+                countdown.textContent = count;
+            });
+
+            count--;
+
+            if (count < 0) {
+                clearInterval(countdownInterval);
+                showStudentExercise();
+            }
+        }, 1000);
+    }
+
+    function showStudentExercise() {
+        const { from, to, direction, displayTime } = currentSettings.classwork;
+        const panels = document.querySelectorAll('.student-panel');
+
+        panels.forEach(panel => {
+            const countdown = panel.querySelector('.countdown');
+            countdown.style.display = 'none';
+
+            const number = getRandomNumber(from, to);
+            const abacusContainer = panel.querySelector('.abacus-frame-mini');
+            const abacusDiv = panel.querySelector('.mini-abacus');
+            const input = panel.querySelector('.answer-input');
+
+            if (direction === 'abacus-to-number') {
+                createMiniAbacus(number, abacusContainer);
+                abacusDiv.style.display = 'block';
+                abacusDiv.dataset.correctAnswer = number;
+
+                setTimeout(() => {
+                    abacusDiv.style.display = 'none';
+                    input.style.display = 'block';
+                    input.dataset.correctAnswer = number;
+                    input.focus();
+                }, displayTime * 1000);
+            }
+        });
+    }
+
+    function showResults() {
+        const panels = document.querySelectorAll('.student-panel');
+        let results = 'Rezultate:\n\n';
+
+        panels.forEach((panel, index) => {
+            const name = panel.querySelector('.student-name-input').value;
+            const input = panel.querySelector('.answer-input');
+            const userAnswer = parseInt(input.value) || 0;
+            const correctAnswer = parseInt(input.dataset.correctAnswer) || 0;
+            const isCorrect = userAnswer === correctAnswer;
+
+            results += `${name}: ${userAnswer} ${isCorrect ? '✓' : `✗ (Corect: ${correctAnswer})`}\n`;
+        });
+
+        alert(results);
+    }
+
+    function removeStudent(btn) {
+        // Placeholder - in a full implementation this would remove the panel
+        alert('Funcționalitatea de eliminare a elevilor va fi implementată');
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Flashcard Simulator Initialized');
+    });
+</script>
+{% endblock %}
