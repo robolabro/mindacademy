@@ -253,17 +253,18 @@
 
     /* Abacus Structure */
     .abacus-frame {
-        background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, #3eadcf 0%, #abe9cd 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(62, 173, 207, 0.2);
         margin-top: 1rem;
+        border: 4px solid #2c3e50;
     }
 
     .counters-row {
         display: flex;
         justify-content: center;
-        gap: 1.3rem;
+        gap: 2.2rem;
         margin-bottom: 1rem;
         padding: 0;
     }
@@ -282,7 +283,7 @@
 
     .abacus-rods {
         display: flex;
-        gap: 4rem;
+        gap: 3rem;
         justify-content: center;
         position: relative;
     }
@@ -305,7 +306,7 @@
 
     .rod {
         width: 8px;
-        height: 320px;
+        height: 400px;
         background: linear-gradient(to bottom, #555 0%, #333 100%);
         border-radius: 4px;
         position: relative;
@@ -315,14 +316,28 @@
     .divider {
         position: absolute;
         left: 50%;
-        top: 22%;
+        top: 25%;
         transform: translate(-50%, -50%);
         width: calc(100% + 40px);
-        height: 6px;
-        background: white;
-        border-radius: 3px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        height: 8px;
+        background: #2c3e50;
+        border-radius: 4px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
         z-index: 10;
+    }
+
+    .divider.has-marker::before {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: #e74c3c;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        z-index: 11;
     }
 
     .beads-section {
@@ -335,26 +350,26 @@
 
     .beads-section.top {
         top: 0;
-        padding-top: 0px;
+        padding-top: 10px;
     }
 
     .beads-section.bottom {
         bottom: 0;
-        padding-bottom: 10px;
+        padding-bottom: 15px;
     }
 
     .bead {
         width: 50px;
-        height: 50px;
-        background: linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #CD853F 100%);
-        clip-path: ellipse(40% 50%);
-        margin: 3px 0;
+        height: 45px;
+        background: linear-gradient(135deg, #f39c12 0%, #f1c40f 50%, #f9e79f 100%);
+        border-radius: 50% / 45%;
+        margin: 5px 0;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
         box-shadow:
-            0 3px 8px rgba(0, 0, 0, 0.4),
-            inset -2px -3px 5px rgba(0, 0, 0, 0.3),
-            inset 2px 3px 5px rgba(255, 255, 255, 0.2);
+            0 4px 10px rgba(0, 0, 0, 0.3),
+            inset -3px -4px 6px rgba(0, 0, 0, 0.2),
+            inset 3px 4px 6px rgba(255, 255, 255, 0.4);
         position: relative;
         display: flex;
         align-items: center;
@@ -364,42 +379,40 @@
     .bead::before {
         content: '';
         position: absolute;
-        width: 50%;
-        height: 50%;
-        background: radial-gradient(ellipse at 35% 35%, rgba(255, 255, 255, 0.5), transparent 60%);
-        clip-path: ellipse(40% 50%);
-        top: 15%;
-        left: 15%;
+        width: 60%;
+        height: 60%;
+        background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.6), transparent 65%);
         border-radius: 50%;
+        top: 10%;
+        left: 10%;
     }
 
     .bead:hover {
         transform: scale(1.08);
         box-shadow:
-            0 5px 15px rgba(0, 0, 0, 0.5),
-            inset -2px -3px 5px rgba(0, 0, 0, 0.3),
-            inset 2px 3px 5px rgba(255, 255, 255, 0.3);
-        filter: brightness(1.15);
+            0 6px 16px rgba(0, 0, 0, 0.4),
+            inset -3px -4px 6px rgba(0, 0, 0, 0.2),
+            inset 3px 4px 6px rgba(255, 255, 255, 0.5);
+        filter: brightness(1.1);
     }
 
     .bead.active {
-        background: linear-gradient(135deg, #A0522D 0%, #D2691E 50%, #DEB887 100%);
+        background: linear-gradient(135deg, #e67e22 0%, #f39c12 50%, #f1c40f 100%);
         box-shadow:
-            0 5px 15px rgba(210, 105, 30, 0.6),
-            inset -2px -3px 5px rgba(0, 0, 0, 0.2),
-            inset 2px 3px 6px rgba(255, 255, 255, 0.3);
+            0 6px 16px rgba(230, 126, 34, 0.5),
+            inset -3px -4px 6px rgba(0, 0, 0, 0.15),
+            inset 3px 4px 7px rgba(255, 255, 255, 0.4);
     }
 
     .bead::after {
         content: '';
         position: absolute;
-        width: 35%;
-        height: 35%;
-        background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2), transparent 70%);
-        clip-path: ellipse(40% 50%);
-        bottom: 20%;
-        right: 20%;
+        width: 40%;
+        height: 40%;
+        background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15), transparent 70%);
         border-radius: 50%;
+        bottom: 15%;
+        right: 15%;
     }
 
     @media (max-width: 768px) {
@@ -433,7 +446,7 @@
 
         .rod {
             width: 6px;
-            height: 280px;
+            height: 350px;
         }
     }
 
@@ -609,6 +622,13 @@
             // Divider
             const divider = document.createElement('div');
             divider.className = 'divider';
+
+            // Add class marker dots for units (0), thousands (3), millions (6)
+            const placeValue = middleIndex - i;
+            if (placeValue === 0 || placeValue === 3 || placeValue === 6) {
+                divider.classList.add('has-marker');
+            }
+
             rod.appendChild(divider);
 
             // Bottom section (4 beads = 1 each)
@@ -707,8 +727,8 @@
         // Top bead (heaven - value 5)
         const topBead = rod.querySelector('.beads-section.top .bead');
         if (topBead && topBead.classList.contains('active')) {
-            // Move down towards separator (increased distance for better visibility)
-            topBead.style.transform = 'translateY(30px)';
+            // Move down towards separator (careful not to cross it)
+            topBead.style.transform = 'translateY(45px)';
         } else if (topBead) {
             topBead.style.transform = 'translateY(0)';
         }
@@ -716,11 +736,10 @@
         // Bottom beads (earth - value 1 each)
         const bottomBeads = rod.querySelectorAll('.beads-section.bottom .bead');
 
-        // Move active beads up towards separator (increased distance for better visibility)
-        // All beads move the same amount since they're already spaced for proper stacking
+        // Move active beads up towards separator (with better spacing)
         bottomBeads.forEach((bead) => {
             if (bead.classList.contains('active')) {
-                bead.style.transform = 'translateY(-20px)';
+                bead.style.transform = 'translateY(-40px)';
             } else {
                 bead.style.transform = 'translateY(0)';
             }
