@@ -201,11 +201,28 @@
     }
 
     .number-display {
-        min-width: 50px;
+        min-width: 60px;
+        max-width: 80px;
         text-align: center;
         font-size: 1.2rem;
         font-weight: 600;
         color: var(--text-primary);
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0.3rem 0.5rem;
+        background: white;
+        transition: border-color 0.3s ease;
+    }
+
+    .number-display:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .number-display::-webkit-inner-spin-button,
+    .number-display::-webkit-outer-spin-button {
+        opacity: 1;
     }
 
     .toggle-group {
@@ -334,75 +351,67 @@
 
     .rod-line-mini {
         width: 6px;
-        height: 180px;
+        height: 220px;
         background: #654321;
         position: relative;
+        display: flex;
+        flex-direction: column;
     }
 
     .divider-mini {
         position: absolute;
-        top: 52px;
-        left: -12px;
+        top: 25%;
+        left: 50%;
+        transform: translateX(-50%);
         width: 30px;
         height: 4px;
         background: #654321;
+        z-index: 5;
+    }
+
+    .beads-section-mini {
+        position: absolute;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .beads-section-mini.top {
+        top: 0;
+        padding-top: 5px;
+    }
+
+    .beads-section-mini.bottom {
+        bottom: 0;
+        padding-bottom: 5px;
     }
 
     .bead-mini {
         width: 38px;
         height: 38px;
         border-radius: 50%;
-        position: absolute;
-        transition: all 0.3s ease;
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
         cursor: pointer;
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
-        left: 50%;
-        transform: translateX(-50%);
+        margin: 3px 0;
     }
 
     .bead-mini.top {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-        top: -8px;
     }
 
     .bead-mini.top.active {
-        top: 60px;
+        transform: translateY(45px);
     }
 
     .bead-mini.bottom {
         background: linear-gradient(135deg, #4ecdc4 0%, #44a29e 100%);
     }
 
-    .bead-mini.bottom.b1 {
-        bottom: 120px;
-    }
-
-    .bead-mini.bottom.b2 {
-        bottom: 82px;
-    }
-
-    .bead-mini.bottom.b3 {
-        bottom: 44px;
-    }
-
-    .bead-mini.bottom.b4 {
-        bottom: 6px;
-    }
-
-    .bead-mini.bottom.b1.active {
-        bottom: 60px;
-    }
-
-    .bead-mini.bottom.b2.active {
-        bottom: 60px;
-    }
-
-    .bead-mini.bottom.b3.active {
-        bottom: 60px;
-    }
-
-    .bead-mini.bottom.b4.active {
-        bottom: 60px;
+    .bead-mini.bottom.active {
+        transform: translateY(-40px);
     }
 
     .answer-input {
@@ -892,9 +901,9 @@
                 <span class="setting-label">De la:</span>
                 <div class="setting-controls">
                     <div class="number-input">
-                        <button class="number-btn" onclick="adjustNumber('training-from', -1)">−</button>
-                        <span class="number-display" id="trainingFrom">1</span>
-                        <button class="number-btn" onclick="adjustNumber('training-from', 1)">+</button>
+                        <button class="number-btn" onclick="adjustNumber('trainingFrom', -1)">−</button>
+                        <input type="number" class="number-display" id="trainingFrom" value="1" min="1" max="999" onchange="updateSettingFromInput('trainingFrom', 'training', 'from')">
+                        <button class="number-btn" onclick="adjustNumber('trainingFrom', 1)">+</button>
                     </div>
                 </div>
             </div>
@@ -903,9 +912,9 @@
                 <span class="setting-label">Până la:</span>
                 <div class="setting-controls">
                     <div class="number-input">
-                        <button class="number-btn" onclick="adjustNumber('training-to', -1)">−</button>
-                        <span class="number-display" id="trainingTo">99</span>
-                        <button class="number-btn" onclick="adjustNumber('training-to', 1)">+</button>
+                        <button class="number-btn" onclick="adjustNumber('trainingTo', -1)">−</button>
+                        <input type="number" class="number-display" id="trainingTo" value="99" min="1" max="999" onchange="updateSettingFromInput('trainingTo', 'training', 'to')">
+                        <button class="number-btn" onclick="adjustNumber('trainingTo', 1)">+</button>
                     </div>
                 </div>
             </div>
@@ -961,9 +970,9 @@
                 <span class="setting-label">De la:</span>
                 <div class="setting-controls">
                     <div class="number-input">
-                        <button class="number-btn" onclick="adjustNumber('flash-from', -1)">−</button>
-                        <span class="number-display" id="flashFrom">1</span>
-                        <button class="number-btn" onclick="adjustNumber('flash-from', 1)">+</button>
+                        <button class="number-btn" onclick="adjustNumber('flashFrom', -1)">−</button>
+                        <input type="number" class="number-display" id="flashFrom" value="1" min="1" max="999" onchange="updateSettingFromInput('flashFrom', 'flash', 'from')">
+                        <button class="number-btn" onclick="adjustNumber('flashFrom', 1)">+</button>
                     </div>
                 </div>
             </div>
@@ -972,9 +981,9 @@
                 <span class="setting-label">Până la:</span>
                 <div class="setting-controls">
                     <div class="number-input">
-                        <button class="number-btn" onclick="adjustNumber('flash-to', -1)">−</button>
-                        <span class="number-display" id="flashTo">99</span>
-                        <button class="number-btn" onclick="adjustNumber('flash-to', 1)">+</button>
+                        <button class="number-btn" onclick="adjustNumber('flashTo', -1)">−</button>
+                        <input type="number" class="number-display" id="flashTo" value="99" min="1" max="999" onchange="updateSettingFromInput('flashTo', 'flash', 'to')">
+                        <button class="number-btn" onclick="adjustNumber('flashTo', 1)">+</button>
                     </div>
                 </div>
             </div>
@@ -1104,9 +1113,9 @@
                 <span class="setting-label">Termeni:</span>
                 <div class="setting-controls">
                     <div class="number-input">
-                        <button class="number-btn" onclick="adjustNumber('exercise-addends', -1)">−</button>
-                        <span class="number-display" id="exerciseAddends">2</span>
-                        <button class="number-btn" onclick="adjustNumber('exercise-addends', 1)">+</button>
+                        <button class="number-btn" onclick="adjustNumber('exerciseAddends', -1)">−</button>
+                        <input type="number" class="number-display" id="exerciseAddends" value="2" min="2" max="5" onchange="updateSettingFromInput('exerciseAddends', 'exercises', 'addends')">
+                        <button class="number-btn" onclick="adjustNumber('exerciseAddends', 1)">+</button>
                     </div>
                 </div>
             </div>
@@ -1299,9 +1308,9 @@
                     <span class="setting-label">De la:</span>
                     <div class="setting-controls">
                         <div class="number-input">
-                            <button class="number-btn" onclick="adjustNumber('classwork-from', -1)">−</button>
-                            <span class="number-display" id="classworkFrom">1</span>
-                            <button class="number-btn" onclick="adjustNumber('classwork-from', 1)">+</button>
+                            <button class="number-btn" onclick="adjustNumber('classworkFrom', -1)">−</button>
+                            <input type="number" class="number-display" id="classworkFrom" value="1" min="1" max="999" onchange="updateSettingFromInput('classworkFrom', 'classwork', 'from')">
+                            <button class="number-btn" onclick="adjustNumber('classworkFrom', 1)">+</button>
                         </div>
                     </div>
                 </div>
@@ -1310,9 +1319,9 @@
                     <span class="setting-label">Până la:</span>
                     <div class="setting-controls">
                         <div class="number-input">
-                            <button class="number-btn" onclick="adjustNumber('classwork-to', -1)">−</button>
-                            <span class="number-display" id="classworkTo">99</span>
-                            <button class="number-btn" onclick="adjustNumber('classwork-to', 1)">+</button>
+                            <button class="number-btn" onclick="adjustNumber('classworkTo', -1)">−</button>
+                            <input type="number" class="number-display" id="classworkTo" value="99" min="1" max="999" onchange="updateSettingFromInput('classworkTo', 'classwork', 'to')">
+                            <button class="number-btn" onclick="adjustNumber('classworkTo', 1)">+</button>
                         </div>
                     </div>
                 </div>
@@ -1709,32 +1718,58 @@
     // Number adjustment
     function adjustNumber(elementId, delta) {
         const element = document.getElementById(elementId);
-        let currentValue = parseInt(element.textContent);
+        let currentValue = parseInt(element.value || element.textContent);
         let newValue = currentValue + delta;
 
         // Set boundaries based on element
-        if (elementId.includes('from')) {
-            newValue = Math.max(1, Math.min(99, newValue));
-        } else if (elementId.includes('to')) {
-            newValue = Math.max(1, Math.min(99, newValue));
-        } else if (elementId.includes('addends')) {
+        if (elementId.includes('From')) {
+            newValue = Math.max(1, Math.min(999, newValue));
+        } else if (elementId.includes('To')) {
+            newValue = Math.max(1, Math.min(999, newValue));
+        } else if (elementId.includes('Addends')) {
             newValue = Math.max(2, Math.min(5, newValue));
         }
 
-        element.textContent = newValue;
+        // Update element value (works for both input and span)
+        if (element.tagName === 'INPUT') {
+            element.value = newValue;
+        } else {
+            element.textContent = newValue;
+        }
 
         // Update settings
         if (elementId.startsWith('training')) {
-            if (elementId.includes('from')) currentSettings.training.from = newValue;
-            if (elementId.includes('to')) currentSettings.training.to = newValue;
+            if (elementId.includes('From')) currentSettings.training.from = newValue;
+            if (elementId.includes('To')) currentSettings.training.to = newValue;
         } else if (elementId.startsWith('flash')) {
-            if (elementId.includes('from')) currentSettings.flash.from = newValue;
-            if (elementId.includes('to')) currentSettings.flash.to = newValue;
+            if (elementId.includes('From')) currentSettings.flash.from = newValue;
+            if (elementId.includes('To')) currentSettings.flash.to = newValue;
         } else if (elementId.startsWith('exercise')) {
-            if (elementId.includes('addends')) currentSettings.exercises.addends = newValue;
+            if (elementId.includes('Addends')) currentSettings.exercises.addends = newValue;
         } else if (elementId.startsWith('classwork')) {
-            if (elementId.includes('from')) currentSettings.classwork.from = newValue;
-            if (elementId.includes('to')) currentSettings.classwork.to = newValue;
+            if (elementId.includes('From')) currentSettings.classwork.from = newValue;
+            if (elementId.includes('To')) currentSettings.classwork.to = newValue;
+        }
+    }
+
+    // Update setting from direct input
+    function updateSettingFromInput(elementId, mode, field) {
+        const element = document.getElementById(elementId);
+        let value = parseInt(element.value);
+
+        // Validate and constrain
+        if (field === 'from' || field === 'to') {
+            value = Math.max(1, Math.min(999, value));
+        } else if (field === 'addends') {
+            value = Math.max(2, Math.min(5, value));
+        }
+
+        // Update element with validated value
+        element.value = value;
+
+        // Update settings
+        if (currentSettings[mode]) {
+            currentSettings[mode][field] = value;
         }
     }
 
@@ -1789,20 +1824,28 @@
             const rodLine = document.createElement('div');
             rodLine.className = 'rod-line-mini';
 
-            const divider = document.createElement('div');
-            divider.className = 'divider-mini';
-            rodLine.appendChild(divider);
+            // Top section (heaven beads - value 5)
+            const topSection = document.createElement('div');
+            topSection.className = 'beads-section-mini top';
 
-            // Top bead (value 5)
             const topBead = document.createElement('div');
             topBead.className = 'bead-mini top';
             const digitValue = parseInt(digit);
             if (digitValue >= 5) {
                 topBead.classList.add('active');
             }
-            rodLine.appendChild(topBead);
+            topSection.appendChild(topBead);
+            rodLine.appendChild(topSection);
 
-            // Bottom beads (value 1 each)
+            // Divider
+            const divider = document.createElement('div');
+            divider.className = 'divider-mini';
+            rodLine.appendChild(divider);
+
+            // Bottom section (earth beads - value 1 each)
+            const bottomSection = document.createElement('div');
+            bottomSection.className = 'beads-section-mini bottom';
+
             const bottomValue = digitValue % 5;
             for (let i = 1; i <= 4; i++) {
                 const bottomBead = document.createElement('div');
@@ -1810,8 +1853,9 @@
                 if (i <= bottomValue) {
                     bottomBead.classList.add('active');
                 }
-                rodLine.appendChild(bottomBead);
+                bottomSection.appendChild(bottomBead);
             }
+            rodLine.appendChild(bottomSection);
 
             rod.appendChild(rodLine);
             container.appendChild(rod);
@@ -1916,35 +1960,31 @@
 
     function makeAbacusInteractive(frame) {
         const rods = frame.querySelectorAll('.rod-mini');
-        rods.forEach(rod => {
-            const beads = rod.querySelectorAll('.bead-mini');
-            beads.forEach(bead => {
-                bead.style.cursor = 'pointer';
-                bead.addEventListener('click', function() {
-                    if (this.classList.contains('top')) {
-                        this.classList.toggle('active');
-                    } else {
-                        // For bottom beads, toggle this and all beads below
-                        const isActive = this.classList.contains('active');
-                        const beadNum = parseInt(this.className.match(/b(\d)/)[1]);
-                        const bottomBeads = rod.querySelectorAll('.bead-mini.bottom');
+        rods.forEach((rod, rodIndex) => {
+            // Handle top bead (heaven - value 5)
+            const topBead = rod.querySelector('.bead-mini.top');
+            if (topBead) {
+                topBead.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                });
+            }
 
-                        if (isActive) {
-                            // Deactivate this and beads above
-                            bottomBeads.forEach(b => {
-                                const bNum = parseInt(b.className.match(/b(\d)/)[1]);
-                                if (bNum >= beadNum) {
-                                    b.classList.remove('active');
-                                }
-                            });
-                        } else {
-                            // Activate this and beads below
-                            bottomBeads.forEach(b => {
-                                const bNum = parseInt(b.className.match(/b(\d)/)[1]);
-                                if (bNum <= beadNum) {
-                                    b.classList.add('active');
-                                }
-                            });
+            // Handle bottom beads (earth - value 1 each)
+            const bottomBeads = Array.from(rod.querySelectorAll('.bead-mini.bottom'));
+            bottomBeads.forEach((bead, beadIndex) => {
+                bead.addEventListener('click', function() {
+                    const isActive = this.classList.contains('active');
+
+                    if (!isActive) {
+                        // LIFTING BEADS (activating) - lift clicked bead and all above it
+                        let beadsToActivate = beadIndex + 1; // Number of beads to activate from top
+                        for (let i = 0; i < beadsToActivate; i++) {
+                            bottomBeads[i].classList.add('active');
+                        }
+                    } else {
+                        // LOWERING BEADS (deactivating) - lower clicked bead and all beads below it
+                        for (let i = beadIndex; i < bottomBeads.length; i++) {
+                            bottomBeads[i].classList.remove('active');
                         }
                     }
                 });
@@ -1958,17 +1998,16 @@
 
         rods.forEach((rod, index) => {
             let digitValue = 0;
+
+            // Check top bead (heaven - value 5)
             const topBead = rod.querySelector('.bead-mini.top');
-            if (topBead.classList.contains('active')) {
+            if (topBead && topBead.classList.contains('active')) {
                 digitValue += 5;
             }
 
-            const bottomBeads = rod.querySelectorAll('.bead-mini.bottom');
-            bottomBeads.forEach(bead => {
-                if (bead.classList.contains('active')) {
-                    digitValue += 1;
-                }
-            });
+            // Check bottom beads (earth - value 1 each)
+            const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
+            digitValue += bottomBeads.length;
 
             abacusNumber += digitValue * Math.pow(10, index);
         });
