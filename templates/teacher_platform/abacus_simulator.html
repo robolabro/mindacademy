@@ -477,6 +477,16 @@
         .rod {
             width: 6px;
             height: 350px;
+            min-height: 350px;
+        }
+
+        /* Adjust bead transforms for mini version */
+        .beads-section.top .bead.active {
+            transform: translateY(35px) !important;
+        }
+
+        .beads-section.bottom .bead.active {
+            transform: translateY(-30px) !important;
         }
     }
 
