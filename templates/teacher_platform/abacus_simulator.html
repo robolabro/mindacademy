@@ -670,6 +670,7 @@ function initializeAbacusSimulator() {
             // Create rod
             const rod = document.createElement('div');
             rod.className = 'rod';
+            rod.dataset.column = i; // Add data-column attribute for reliable selection
 
             // Top section (1 bead = 5)
             const topSection = document.createElement('div');
@@ -738,8 +739,7 @@ function initializeAbacusSimulator() {
         }
         // Bottom beads (earth) - group logic
         else if (section === 'bottom') {
-            const rods = document.querySelectorAll('.rod');
-            const rod = rods[columnIndex];
+            const rod = document.querySelector(`.rod[data-column="${columnIndex}"]`);
             const bottomBeads = Array.from(rod.querySelectorAll('.beads-section.bottom .bead'));
 
             // Count how many beads are currently active
@@ -779,8 +779,7 @@ function initializeAbacusSimulator() {
 
     // Update bead positions to stick to separator
     function updateBeadPositions(columnIndex) {
-        const rods = document.querySelectorAll('.rod');
-        const rod = rods[columnIndex];
+        const rod = document.querySelector(`.rod[data-column="${columnIndex}"]`);
 
         // Top bead (heaven - value 5)
         const topBead = rod.querySelector('.beads-section.top .bead');
