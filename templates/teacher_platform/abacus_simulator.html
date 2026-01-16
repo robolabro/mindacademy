@@ -592,13 +592,13 @@ function initializeAbacusSimulator() {
         showResult = toggleResult.classList.contains('active');
     });
 
-    // Start button - open in new window
+    // Start button - navigate to display mode
     startBtn.addEventListener('click', () => {
         const url = new URL(window.location.href);
         url.searchParams.set('display', 'true');
         url.searchParams.set('size', abacusSize);
         url.searchParams.set('showResult', showResult);
-        window.open(url.toString(), '_blank', 'width=1200,height=800');
+        window.location.href = url.toString();
     });
 
     // Back button
