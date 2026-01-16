@@ -345,7 +345,7 @@
 
     .bead {
         width: 50px;
-        height: 60px;
+        height: 50px;
         background: linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #CD853F 100%);
         clip-path: ellipse(40% 50%);
         margin: 3px 0;
@@ -428,7 +428,7 @@
 
         .bead {
             width: 40px;
-            height: 50px;
+            height: 40px;
         }
 
         .rod {
@@ -677,22 +677,17 @@
                     }
                 }
             } else {
-                // LOWERING BEADS (deactivating) - can only lower the bottom-most active bead
-                // Find the highest index that is active (the bottom-most active bead)
-                let bottomMostActiveIndex = -1;
-                for (let i = bottomBeads.length - 1; i >= 0; i--) {
+                // LOWERING BEADS (deactivating) - lower clicked bead and all beads below it
+                // Deactivate the clicked bead and all beads below it (higher indices)
+                let beadsToDeactivate = 0;
+                for (let i = beadIndex; i < bottomBeads.length; i++) {
                     if (bottomBeads[i].classList.contains('active')) {
-                        bottomMostActiveIndex = i;
-                        break;
+                        bottomBeads[i].classList.remove('active');
+                        beadsToDeactivate++;
                     }
                 }
-
-                // Only allow deactivating the bottom-most active bead
-                if (beadIndex === bottomMostActiveIndex) {
-                    bead.classList.remove('active');
-                    columnValues[columnIndex] -= 1;
-                }
-                // If user clicks on a different active bead, do nothing (ignore the click)
+                // Subtract the number of deactivated beads from column value
+                columnValues[columnIndex] -= beadsToDeactivate;
             }
         }
 
