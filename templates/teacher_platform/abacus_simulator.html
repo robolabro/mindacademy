@@ -625,7 +625,8 @@ function initializeAbacusSimulator() {
         // Calculate middle column (units position)
         const middleIndex = Math.floor(abacusSize / 2);
 
-        for (let i = 0; i < abacusSize; i++) {
+        // Create columns in reverse order so left = higher powers, right = lower powers
+        for (let i = abacusSize - 1; i >= 0; i--) {
             // Create counter
             const counter = document.createElement('div');
             counter.className = 'counter';
@@ -640,7 +641,7 @@ function initializeAbacusSimulator() {
             // Add place value label
             const placeLabel = document.createElement('div');
             placeLabel.className = 'place-label';
-            const placeValue = middleIndex - i;
+            const placeValue = i - middleIndex;
             if (placeValue === 0) {
                 placeLabel.textContent = 'Unități';
             } else if (placeValue === 1) {
@@ -818,7 +819,7 @@ function initializeAbacusSimulator() {
         let total = 0;
 
         for (let i = 0; i < abacusSize; i++) {
-            const placeValue = middleIndex - i;
+            const placeValue = i - middleIndex;
             const multiplier = Math.pow(10, placeValue);
             total += columnValues[i] * multiplier;
         }
