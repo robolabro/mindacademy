@@ -1879,7 +1879,7 @@
     // Create mini abacus representation
     function createMiniAbacus(number, container) {
         container.innerHTML = '';
-        const digits = String(number).padStart(2, '0').split('').reverse();
+        const digits = String(number).padStart(2, '0').split('');
 
         digits.forEach((digit, index) => {
             const rod = document.createElement('div');
@@ -2073,7 +2073,7 @@
             const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
             digitValue += bottomBeads.length;
 
-            abacusNumber += digitValue * Math.pow(10, index);
+            abacusNumber += digitValue * Math.pow(10, rods.length - 1 - index);
         });
 
         checkTrainingAnswer(abacusNumber);
