@@ -592,12 +592,13 @@ function initializeAbacusSimulator() {
         showResult = toggleResult.classList.contains('active');
     });
 
-    // Start button
+    // Start button - open in new window
     startBtn.addEventListener('click', () => {
-        configDialog.classList.add('hidden');
-        initializeAbacus();
-        abacusDisplay.classList.add('active');
-        updateResultDisplay();
+        const url = new URL(window.location.href);
+        url.searchParams.set('display', 'true');
+        url.searchParams.set('size', abacusSize);
+        url.searchParams.set('showResult', showResult);
+        window.open(url.toString(), '_blank', 'width=1200,height=800');
     });
 
     // Back button
@@ -845,6 +846,23 @@ function initializeAbacusSimulator() {
     }
 
     console.log('Abacus simulator initialized successfully!');
+
+    // Check if we should display abacus immediately (opened in new window)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('display') === 'true') {
+        // Get configuration from URL
+        const urlSize = urlParams.get('size');
+        const urlShowResult = urlParams.get('showResult');
+
+        if (urlSize) abacusSize = parseInt(urlSize);
+        if (urlShowResult) showResult = urlShowResult === 'true';
+
+        // Hide config dialog and show abacus immediately
+        configDialog.classList.add('hidden');
+        initializeAbacus();
+        abacusDisplay.classList.add('active');
+        updateResultDisplay();
+    }
 }
 
 // Run initialization when DOM is ready
