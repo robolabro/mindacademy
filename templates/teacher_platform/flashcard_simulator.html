@@ -910,35 +910,6 @@
                 </div>
             </div>
 
-            <div class="settings-row">
-                <span class="setting-label">Mod simplu:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-simple="ordinary">Obișnuit</button>
-                        <button class="toggle-btn" data-simple="simple">Mod simplu</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-row">
-                <span class="setting-label">Sunete:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-sound="signals">Semnale</button>
-                        <button class="toggle-btn" data-sound="no-sound">Fără sunet</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-row">
-                <span class="setting-label">Efecte:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-effects="on">Activate</button>
-                        <button class="toggle-btn" data-effects="off">Dezactivate</button>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <button class="start-btn" onclick="startTraining()">Start!</button>
@@ -1631,10 +1602,7 @@
         training: {
             direction: 'abacus-to-number',
             from: 1,
-            to: 99,
-            simple: 'ordinary',
-            sound: 'signals',
-            effects: 'on'
+            to: 99
         },
         flash: {
             direction: 'abacus-to-number',
@@ -1746,9 +1714,9 @@
 
         // Set boundaries based on element
         if (elementId.includes('from')) {
-            newValue = Math.max(0, Math.min(999, newValue));
+            newValue = Math.max(1, Math.min(99, newValue));
         } else if (elementId.includes('to')) {
-            newValue = Math.max(1, Math.min(999, newValue));
+            newValue = Math.max(1, Math.min(99, newValue));
         } else if (elementId.includes('addends')) {
             newValue = Math.max(2, Math.min(5, newValue));
         }
@@ -1812,7 +1780,7 @@
     // Create mini abacus representation
     function createMiniAbacus(number, container) {
         container.innerHTML = '';
-        const digits = String(number).padStart(3, '0').split('').reverse();
+        const digits = String(number).padStart(2, '0').split('').reverse();
 
         digits.forEach((digit, index) => {
             const rod = document.createElement('div');
