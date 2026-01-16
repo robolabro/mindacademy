@@ -25,6 +25,8 @@
         max-width: 500px;
         width: 90%;
         animation: slideIn 0.3s ease;
+        position: relative;
+        z-index: 100;
     }
 
     @keyframes slideIn {
@@ -78,6 +80,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        pointer-events: auto;
+        position: relative;
+        z-index: 10;
     }
 
     .size-btn:hover {
@@ -107,6 +112,8 @@
         border-radius: 30px;
         cursor: pointer;
         transition: background 0.3s ease;
+        pointer-events: auto;
+        z-index: 10;
     }
 
     .toggle-switch.active {
@@ -144,6 +151,9 @@
         margin-top: 1rem;
         text-align: center;
         text-decoration: none;
+        pointer-events: auto;
+        position: relative;
+        z-index: 10;
     }
 
     .back-to-list-btn:hover {
@@ -165,6 +175,9 @@
         cursor: pointer;
         transition: all 0.3s ease;
         margin-top: 1rem;
+        pointer-events: auto;
+        position: relative;
+        z-index: 10;
     }
 
     .start-btn:hover {
@@ -506,7 +519,9 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+function initializeAbacusSimulator() {
+    console.log('Initializing abacus simulator...');
+
     // Configuration variables
     let abacusSize = 15;
     let showResult = true;
@@ -521,6 +536,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleResult = document.getElementById('toggleResult');
     const resultDisplay = document.getElementById('resultDisplay');
     const sizeBtns = document.querySelectorAll('.size-btn');
+
+    // Check if elements exist
+    if (!configDialog || !abacusDisplay || !startBtn || !backBtn || !clearBtn || !toggleResult || !resultDisplay) {
+        console.error('Missing required DOM elements');
+        return;
+    }
+
+    if (sizeBtns.length === 0) {
+        console.error('No size buttons found');
+        return;
+    }
+
+    console.log('All DOM elements found, attaching event listeners...');
 
     // Configuration: Size selection
     sizeBtns.forEach(btn => {
@@ -788,6 +816,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updateResultDisplay();
     }
-}); // End DOMContentLoaded
+
+    console.log('Abacus simulator initialized successfully!');
+}
+
+// Run initialization when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeAbacusSimulator);
+} else {
+    // DOM is already ready, run immediately
+    initializeAbacusSimulator();
+}
 </script>
 {% endblock %}
