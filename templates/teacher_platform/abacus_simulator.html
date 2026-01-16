@@ -344,14 +344,17 @@
     }
 
     .bead {
-        width: 45px;
-        height: 55px;
-        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-        clip-path: polygon(50% 0%, 92% 20%, 92% 80%, 50% 100%, 8% 80%, 8% 20%);
-        margin: 2px 0;
+        width: 50px;
+        height: 60px;
+        background: linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #CD853F 100%);
+        clip-path: ellipse(40% 50%);
+        margin: 3px 0;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        box-shadow:
+            0 3px 8px rgba(0, 0, 0, 0.4),
+            inset -2px -3px 5px rgba(0, 0, 0, 0.3),
+            inset 2px 3px 5px rgba(255, 255, 255, 0.2);
         position: relative;
         display: flex;
         align-items: center;
@@ -361,34 +364,42 @@
     .bead::before {
         content: '';
         position: absolute;
-        width: 60%;
-        height: 60%;
-        background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.4), transparent);
-        clip-path: polygon(50% 5%, 88% 22%, 88% 78%, 50% 95%, 12% 78%, 12% 22%);
-        top: 20%;
-        left: 20%;
+        width: 50%;
+        height: 50%;
+        background: radial-gradient(ellipse at 35% 35%, rgba(255, 255, 255, 0.5), transparent 60%);
+        clip-path: ellipse(40% 50%);
+        top: 15%;
+        left: 15%;
+        border-radius: 50%;
     }
 
     .bead:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(255, 165, 0, 0.5);
-        filter: brightness(1.1);
+        transform: scale(1.08);
+        box-shadow:
+            0 5px 15px rgba(0, 0, 0, 0.5),
+            inset -2px -3px 5px rgba(0, 0, 0, 0.3),
+            inset 2px 3px 5px rgba(255, 255, 255, 0.3);
+        filter: brightness(1.15);
     }
 
     .bead.active {
-        background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
-        box-shadow: 0 4px 12px rgba(255, 140, 0, 0.6);
+        background: linear-gradient(135deg, #A0522D 0%, #D2691E 50%, #DEB887 100%);
+        box-shadow:
+            0 5px 15px rgba(210, 105, 30, 0.6),
+            inset -2px -3px 5px rgba(0, 0, 0, 0.2),
+            inset 2px 3px 6px rgba(255, 255, 255, 0.3);
     }
 
     .bead::after {
         content: '';
         position: absolute;
-        width: 30%;
-        height: 30%;
-        background: radial-gradient(circle at center, rgba(0, 0, 0, 0.15), transparent);
-        clip-path: polygon(50% 10%, 85% 25%, 85% 75%, 50% 90%, 15% 75%, 15% 25%);
-        bottom: 15%;
-        right: 15%;
+        width: 35%;
+        height: 35%;
+        background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2), transparent 70%);
+        clip-path: ellipse(40% 50%);
+        bottom: 20%;
+        right: 20%;
+        border-radius: 50%;
     }
 
     @media (max-width: 768px) {
@@ -416,8 +427,8 @@
         }
 
         .bead {
-            width: 35px;
-            height: 45px;
+            width: 40px;
+            height: 50px;
         }
 
         .rod {
@@ -604,7 +615,7 @@
             const bottomSection = document.createElement('div');
             bottomSection.className = 'beads-section bottom';
             for (let j = 0; j < 4; j++) {
-                const bottomBead = createBead(i, 1, 'bottom');
+                const bottomBead = createBead(i, 1, 'bottom', j);
                 bottomSection.appendChild(bottomBead);
             }
             rod.appendChild(bottomSection);
@@ -615,12 +626,13 @@
     }
 
     // Create bead element
-    function createBead(columnIndex, value, section) {
+    function createBead(columnIndex, value, section, beadIndex = 0) {
         const bead = document.createElement('div');
         bead.className = 'bead';
         bead.dataset.column = columnIndex;
         bead.dataset.value = value;
         bead.dataset.section = section;
+        bead.dataset.beadIndex = beadIndex; // Track position in bottom section (0-3)
 
         bead.addEventListener('click', () => {
             toggleBead(bead);
@@ -633,14 +645,55 @@
     function toggleBead(bead) {
         const isActive = bead.classList.contains('active');
         const columnIndex = parseInt(bead.dataset.column);
-        const value = parseInt(bead.dataset.value);
+        const section = bead.dataset.section;
+        const beadIndex = parseInt(bead.dataset.beadIndex);
 
-        if (isActive) {
-            bead.classList.remove('active');
-            columnValues[columnIndex] -= value;
-        } else {
-            bead.classList.add('active');
-            columnValues[columnIndex] += value;
+        // Top bead (heaven) - behaves independently
+        if (section === 'top') {
+            if (isActive) {
+                bead.classList.remove('active');
+                columnValues[columnIndex] -= 5;
+            } else {
+                bead.classList.add('active');
+                columnValues[columnIndex] += 5;
+            }
+        }
+        // Bottom beads (earth) - group logic
+        else if (section === 'bottom') {
+            const rods = document.querySelectorAll('.rod');
+            const rod = rods[columnIndex];
+            const bottomBeads = Array.from(rod.querySelectorAll('.beads-section.bottom .bead'));
+
+            // Count how many beads are currently active
+            const activeCount = bottomBeads.filter(b => b.classList.contains('active')).length;
+
+            if (!isActive) {
+                // LIFTING BEADS (activating) - lift clicked bead and all above it
+                let beadsToActivate = beadIndex + 1; // Number of beads to activate from top
+                for (let i = 0; i < beadsToActivate; i++) {
+                    if (!bottomBeads[i].classList.contains('active')) {
+                        bottomBeads[i].classList.add('active');
+                        columnValues[columnIndex] += 1;
+                    }
+                }
+            } else {
+                // LOWERING BEADS (deactivating) - can only lower the bottom-most active bead
+                // Find the highest index that is active (the bottom-most active bead)
+                let bottomMostActiveIndex = -1;
+                for (let i = bottomBeads.length - 1; i >= 0; i--) {
+                    if (bottomBeads[i].classList.contains('active')) {
+                        bottomMostActiveIndex = i;
+                        break;
+                    }
+                }
+
+                // Only allow deactivating the bottom-most active bead
+                if (beadIndex === bottomMostActiveIndex) {
+                    bead.classList.remove('active');
+                    columnValues[columnIndex] -= 1;
+                }
+                // If user clicks on a different active bead, do nothing (ignore the click)
+            }
         }
 
         // Update bead positions for this column
@@ -659,8 +712,8 @@
         // Top bead (heaven - value 5)
         const topBead = rod.querySelector('.beads-section.top .bead');
         if (topBead && topBead.classList.contains('active')) {
-            // Move down towards separator (10px to touch separator top at 67px)
-            topBead.style.transform = 'translateY(10px)';
+            // Move down towards separator (increased distance for better visibility)
+            topBead.style.transform = 'translateY(30px)';
         } else if (topBead) {
             topBead.style.transform = 'translateY(0)';
         }
@@ -668,11 +721,11 @@
         // Bottom beads (earth - value 1 each)
         const bottomBeads = rod.querySelectorAll('.beads-section.bottom .bead');
 
-        // Move active beads up towards separator (3px to touch separator bottom at 73px)
+        // Move active beads up towards separator (increased distance for better visibility)
         // All beads move the same amount since they're already spaced for proper stacking
         bottomBeads.forEach((bead) => {
             if (bead.classList.contains('active')) {
-                bead.style.transform = 'translateY(-3px)';
+                bead.style.transform = 'translateY(-20px)';
             } else {
                 bead.style.transform = 'translateY(0)';
             }
