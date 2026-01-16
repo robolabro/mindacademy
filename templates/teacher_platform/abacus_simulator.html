@@ -335,7 +335,7 @@
 
     .beads-section.top {
         top: 0;
-        padding-top: 10px;
+        padding-top: 0px;
     }
 
     .beads-section.bottom {
@@ -347,7 +347,7 @@
         width: 45px;
         height: 55px;
         background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-        clip-path: polygon(50% 0%, 90% 25%, 90% 75%, 50% 100%, 10% 75%, 10% 25%);
+        clip-path: polygon(50% 0%, 92% 20%, 92% 80%, 50% 100%, 8% 80%, 8% 20%);
         margin: 2px 0;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
@@ -364,7 +364,7 @@
         width: 60%;
         height: 60%;
         background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.4), transparent);
-        clip-path: polygon(50% 5%, 85% 30%, 85% 70%, 50% 95%, 15% 70%, 15% 30%);
+        clip-path: polygon(50% 5%, 88% 22%, 88% 78%, 50% 95%, 12% 78%, 12% 22%);
         top: 20%;
         left: 20%;
     }
@@ -386,7 +386,7 @@
         width: 30%;
         height: 30%;
         background: radial-gradient(circle at center, rgba(0, 0, 0, 0.15), transparent);
-        clip-path: polygon(50% 10%, 80% 35%, 80% 65%, 50% 90%, 20% 65%, 20% 35%);
+        clip-path: polygon(50% 10%, 85% 25%, 85% 75%, 50% 90%, 15% 75%, 15% 25%);
         bottom: 15%;
         right: 15%;
     }
@@ -659,24 +659,20 @@
         // Top bead (heaven - value 5)
         const topBead = rod.querySelector('.beads-section.top .bead');
         if (topBead && topBead.classList.contains('active')) {
-            // Move down towards separator
-            topBead.style.transform = 'translateY(40px)';
+            // Move down towards separator (10px to touch separator top at 67px)
+            topBead.style.transform = 'translateY(10px)';
         } else if (topBead) {
             topBead.style.transform = 'translateY(0)';
         }
 
         // Bottom beads (earth - value 1 each)
         const bottomBeads = rod.querySelectorAll('.beads-section.bottom .bead');
-        let activeCount = 0;
 
-        // Move active beads up towards separator, stacking them
+        // Move active beads up towards separator (3px to touch separator bottom at 73px)
+        // All beads move the same amount since they're already spaced for proper stacking
         bottomBeads.forEach((bead) => {
             if (bead.classList.contains('active')) {
-                const beadHeight = 57; // 55px bead + 2px margin on each side
-                const baseOffset = 200; // Base distance to reach separator
-                const offset = baseOffset + (activeCount * beadHeight);
-                bead.style.transform = `translateY(-${offset}px)`;
-                activeCount++;
+                bead.style.transform = 'translateY(-3px)';
             } else {
                 bead.style.transform = 'translateY(0)';
             }
