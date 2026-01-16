@@ -506,6 +506,7 @@
 
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     // Configuration variables
     let abacusSize = 15;
     let showResult = true;
@@ -787,5 +788,6 @@
 
         updateResultDisplay();
     }
+}); // End DOMContentLoaded
 </script>
 {% endblock %}
