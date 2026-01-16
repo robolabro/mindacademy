@@ -13,7 +13,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     }
 
     /* Configuration Dialog */
@@ -266,12 +266,12 @@
 
     /* Abacus Structure */
     .abacus-frame {
-        background: linear-gradient(135deg, #3eadcf 0%, #abe9cd 100%);
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
         padding: 2rem;
         border-radius: 16px;
-        box-shadow: 0 4px 16px rgba(62, 173, 207, 0.2);
+        box-shadow: 0 8px 24px rgba(252, 182, 159, 0.3);
         margin-top: 1rem;
-        border: 4px solid #2c3e50;
+        border: 4px solid #ff6b9d;
     }
 
     .counters-row {
@@ -320,10 +320,10 @@
     .rod {
         width: 8px;
         height: 400px;
-        background: linear-gradient(to bottom, #555 0%, #333 100%);
+        background: linear-gradient(to bottom, #8e44ad 0%, #3498db 50%, #16a085 100%);
         border-radius: 4px;
         position: relative;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 2px 8px rgba(142, 68, 173, 0.4);
     }
 
     .divider {
@@ -333,9 +333,9 @@
         transform: translate(-50%, -50%);
         width: calc(100% + 40px);
         height: 8px;
-        background: #2c3e50;
+        background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
         border-radius: 4px;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
         z-index: 10;
     }
 
@@ -344,12 +344,12 @@
         position: absolute;
         width: 14px;
         height: 14px;
-        background: #e74c3c;
+        background: linear-gradient(135deg, #feca57 0%, #ff6b9d 100%);
         border-radius: 50%;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 3px 8px rgba(254, 202, 87, 0.5);
         z-index: 11;
     }
 
@@ -388,30 +388,30 @@
         justify-content: center;
     }
 
-    /* Bile cerești (top) - culoare albastru/cyan pentru cer */
+    /* Bile cerești (top) - culoare turcoaz/cyan vibrant */
     .beads-section.top .bead {
-        background: linear-gradient(135deg, #3498db 0%, #5dade2 50%, #aed6f1 100%);
+        background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 50%, #00d2ff 100%);
     }
 
     .beads-section.top .bead.active {
-        background: linear-gradient(135deg, #2874a6 0%, #3498db 50%, #5dade2 100%);
+        background: linear-gradient(135deg, #0099cc 0%, #2e5f9e 50%, #0099cc 100%);
         box-shadow:
-            0 6px 16px rgba(40, 116, 166, 0.5),
+            0 8px 20px rgba(0, 153, 204, 0.6),
             inset -3px -4px 6px rgba(0, 0, 0, 0.15),
-            inset 3px 4px 7px rgba(255, 255, 255, 0.4);
+            inset 3px 4px 7px rgba(255, 255, 255, 0.5);
     }
 
-    /* Bile pământene (bottom) - culoare maro/teracotă pentru pământ */
+    /* Bile pământene (bottom) - culoare coral/roz vibrant */
     .beads-section.bottom .bead {
-        background: linear-gradient(135deg, #a04000 0%, #d35400 50%, #e59866 100%);
+        background: linear-gradient(135deg, #ff6b9d 0%, #feca57 50%, #ff9ff3 100%);
     }
 
     .beads-section.bottom .bead.active {
-        background: linear-gradient(135deg, #7d3c00 0%, #a04000 50%, #d35400 100%);
+        background: linear-gradient(135deg, #ee5a6f 0%, #f39c12 50%, #e84393 100%);
         box-shadow:
-            0 6px 16px rgba(125, 60, 0, 0.5),
+            0 8px 20px rgba(238, 90, 111, 0.6),
             inset -3px -4px 6px rgba(0, 0, 0, 0.15),
-            inset 3px 4px 7px rgba(255, 255, 255, 0.4);
+            inset 3px 4px 7px rgba(255, 255, 255, 0.5);
     }
 
     .bead::before {
