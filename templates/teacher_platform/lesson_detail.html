@@ -193,6 +193,7 @@
         </div>
         <div class="modal-body">
             <form id="attendanceForm">
+                {% csrf_token %}
                 <input type="hidden" id="student_id" name="student_id">
 
                 <div class="form-group">
