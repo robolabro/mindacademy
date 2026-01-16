@@ -553,6 +553,7 @@
         margin-bottom: 1rem;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #dee2e6;
+        gap: 0.5rem;
     }
 
     .student-name-input {
@@ -561,7 +562,52 @@
         border: 1px solid #ced4da;
         border-radius: 5px;
         flex: 1;
-        max-width: 200px;
+        max-width: 150px;
+    }
+
+    .student-header-buttons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .student-status {
+        display: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 5px;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .student-status.show {
+        display: flex;
+    }
+
+    .student-status.correct {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .student-status.incorrect {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .student-settings-btn {
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 0.4rem 0.8rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .student-settings-btn:hover {
+        background: #5a6268;
     }
 
     .delete-student-btn {
@@ -640,6 +686,120 @@
 
     .close-modal:hover {
         color: var(--text-primary);
+    }
+
+    /* Feedback Modal */
+    .feedback-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .feedback-modal.active {
+        display: flex;
+    }
+
+    .feedback-modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+        animation: slideIn 0.3s ease;
+    }
+
+    .feedback-modal-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .feedback-modal-title.correct {
+        color: #155724;
+    }
+
+    .feedback-modal-title.incorrect {
+        color: #721c24;
+    }
+
+    .feedback-modal-btn {
+        padding: 0.8rem 2rem;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .feedback-modal-btn:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .not-solved-text {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .answer-btn {
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .answer-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .your-answer-label {
+        font-size: 1rem;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .answer-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .answer-area .answer-input {
+        width: 100%;
+        max-width: 250px;
+        padding: 0.8rem;
+        font-size: 1.2rem;
+        text-align: center;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+    }
+
+    .answer-area .answer-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
     }
 
     /* Responsive */
@@ -1046,58 +1206,94 @@
         </div>
 
         <div class="students-grid" id="studentsGrid">
-            <div class="student-panel">
+            <div class="student-panel" data-student-id="1">
                 <div class="student-header">
                     <input type="text" class="student-name-input" value="Ученик 1" placeholder="Nume elev">
-                    <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(1)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
                 </div>
                 <div class="student-exercise">
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="1"></div>
                     </div>
-                    <input type="text" class="answer-input" placeholder="Răspuns" style="display: none;">
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(1)">Answer</button>
+                    </div>
                     <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
-            <div class="student-panel">
+            <div class="student-panel" data-student-id="2">
                 <div class="student-header">
                     <input type="text" class="student-name-input" value="Ученик 2" placeholder="Nume elev">
-                    <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(2)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
                 </div>
                 <div class="student-exercise">
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="2"></div>
                     </div>
-                    <input type="text" class="answer-input" placeholder="Răspuns" style="display: none;">
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(2)">Answer</button>
+                    </div>
                     <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
-            <div class="student-panel">
+            <div class="student-panel" data-student-id="3">
                 <div class="student-header">
                     <input type="text" class="student-name-input" value="Ученик 3" placeholder="Nume elev">
-                    <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(3)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
                 </div>
                 <div class="student-exercise">
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="3"></div>
                     </div>
-                    <input type="text" class="answer-input" placeholder="Răspuns" style="display: none;">
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(3)">Answer</button>
+                    </div>
                     <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
-            <div class="student-panel">
+            <div class="student-panel" data-student-id="4">
                 <div class="student-header">
                     <input type="text" class="student-name-input" value="Ученик 4" placeholder="Nume elev">
-                    <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(4)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
                 </div>
                 <div class="student-exercise">
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="4"></div>
                     </div>
-                    <input type="text" class="answer-input" placeholder="Răspuns" style="display: none;">
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(4)">Answer</button>
+                    </div>
                     <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
@@ -1170,6 +1366,255 @@
             <button class="start-btn" onclick="closeClassworkSettings()">Salvează</button>
         </div>
     </div>
+
+    <!-- Individual Student Settings Modals -->
+    <div id="studentSettingsModal1" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Ученик 1</h3>
+                <button class="close-modal" onclick="closeStudentSettings(1)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="1" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="1" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(1, 'from', -1)">−</button>
+                            <span class="number-display" id="student1From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(1, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(1, 'to', -1)">−</button>
+                            <span class="number-display" id="student1To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(1, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(1, -0.1)">−</button>
+                            <span class="number-display" id="student1Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(1, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="1" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="1" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(1)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal2" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Ученик 2</h3>
+                <button class="close-modal" onclick="closeStudentSettings(2)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="2" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="2" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(2, 'from', -1)">−</button>
+                            <span class="number-display" id="student2From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(2, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(2, 'to', -1)">−</button>
+                            <span class="number-display" id="student2To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(2, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(2, -0.1)">−</button>
+                            <span class="number-display" id="student2Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(2, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="2" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="2" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(2)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal3" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Ученик 3</h3>
+                <button class="close-modal" onclick="closeStudentSettings(3)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="3" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="3" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(3, 'from', -1)">−</button>
+                            <span class="number-display" id="student3From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(3, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(3, 'to', -1)">−</button>
+                            <span class="number-display" id="student3To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(3, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(3, -0.1)">−</button>
+                            <span class="number-display" id="student3Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(3, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="3" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="3" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(3)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal4" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Ученик 4</h3>
+                <button class="close-modal" onclick="closeStudentSettings(4)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="4" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="4" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(4, 'from', -1)">−</button>
+                            <span class="number-display" id="student4From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(4, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(4, 'to', -1)">−</button>
+                            <span class="number-display" id="student4To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(4, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(4, -0.1)">−</button>
+                            <span class="number-display" id="student4Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(4, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="4" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="4" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(4)">Save</button>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="feedback-modal">
+        <div class="feedback-modal-content">
+            <h2 class="feedback-modal-title" id="feedbackTitle">Correct answer</h2>
+            <button class="feedback-modal-btn" onclick="closeFeedbackModal()">Continue →</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -1212,6 +1657,12 @@
             to: 99,
             displayTime: 1.0,
             simple: 'ordinary'
+        },
+        students: {
+            1: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            2: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            3: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            4: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' }
         }
     };
 
@@ -1223,6 +1674,21 @@
     let currentNumber = 0;
     let exerciseTimer = null;
     let flashTimer = null;
+
+    // Student-specific data
+    let studentNumbers = {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0
+    };
+
+    let studentResults = {
+        1: null,
+        2: null,
+        3: null,
+        4: null
+    };
 
     // Mode selection
     function selectMode(mode) {
@@ -1751,8 +2217,64 @@
         document.getElementById('classworkSettingsModal').classList.remove('active');
     }
 
+    function openStudentSettings(studentId) {
+        document.getElementById(`studentSettingsModal${studentId}`).classList.add('active');
+
+        // Set up toggle button handlers for this modal
+        const modal = document.getElementById(`studentSettingsModal${studentId}`);
+        modal.querySelectorAll('.toggle-btn[data-student]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const group = this.parentElement;
+                group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                const setting = this.dataset.setting;
+                const value = this.dataset.value;
+                currentSettings.students[studentId][setting] = value;
+            });
+        });
+    }
+
+    function closeStudentSettings(studentId) {
+        document.getElementById(`studentSettingsModal${studentId}`).classList.remove('active');
+    }
+
+    function adjustStudentNumber(studentId, field, delta) {
+        const element = document.getElementById(`student${studentId}${field.charAt(0).toUpperCase() + field.slice(1)}`);
+        let currentValue = parseInt(element.textContent);
+        let newValue = currentValue + delta;
+
+        if (field === 'from') {
+            newValue = Math.max(0, Math.min(999, newValue));
+        } else if (field === 'to') {
+            newValue = Math.max(1, Math.min(999, newValue));
+        }
+
+        element.textContent = newValue;
+        currentSettings.students[studentId][field] = newValue;
+    }
+
+    function adjustStudentSpeed(studentId, delta) {
+        const element = document.getElementById(`student${studentId}Speed`);
+        let currentValue = parseFloat(element.textContent);
+        let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
+        element.textContent = newValue.toFixed(0);
+        currentSettings.students[studentId].speed = newValue;
+    }
+
     function startAllStudents() {
         const panels = document.querySelectorAll('.student-panel');
+
+        // Reset all student states
+        panels.forEach(panel => {
+            const studentId = parseInt(panel.dataset.studentId);
+            studentResults[studentId] = null;
+            const statusDiv = panel.querySelector('.student-status');
+            statusDiv.classList.remove('show', 'correct', 'incorrect');
+            panel.querySelector('.not-solved-text').style.display = 'none';
+            panel.querySelector('.answer-area').style.display = 'none';
+            panel.querySelector('.mini-abacus').style.display = 'none';
+        });
 
         // Show countdown 3, 2, 1
         panels.forEach(panel => {
@@ -1777,31 +2299,75 @@
     }
 
     function showStudentExercise() {
-        const { from, to, direction, displayTime } = currentSettings.classwork;
         const panels = document.querySelectorAll('.student-panel');
 
         panels.forEach(panel => {
+            const studentId = parseInt(panel.dataset.studentId);
+            const settings = currentSettings.students[studentId];
+
             const countdown = panel.querySelector('.countdown');
             countdown.style.display = 'none';
 
-            const number = getRandomNumber(from, to);
+            const number = getRandomNumber(settings.from, settings.to);
+            studentNumbers[studentId] = number;
+
             const abacusContainer = panel.querySelector('.abacus-frame-mini');
             const abacusDiv = panel.querySelector('.mini-abacus');
-            const input = panel.querySelector('.answer-input');
+            const answerArea = panel.querySelector('.answer-area');
+            const notSolvedText = panel.querySelector('.not-solved-text');
 
-            if (direction === 'abacus-to-number') {
+            if (settings.direction === 'abacus-to-number') {
                 createMiniAbacus(number, abacusContainer);
                 abacusDiv.style.display = 'block';
-                abacusDiv.dataset.correctAnswer = number;
 
                 setTimeout(() => {
                     abacusDiv.style.display = 'none';
-                    input.style.display = 'block';
-                    input.dataset.correctAnswer = number;
-                    input.focus();
-                }, displayTime * 1000);
+                    notSolvedText.style.display = 'block';
+                    answerArea.style.display = 'flex';
+                }, settings.speed * 1000);
+            } else {
+                // Number to abacus - show number then ask to set abacus
+                notSolvedText.textContent = `Set this number on abacus: ${number}`;
+                notSolvedText.style.display = 'block';
+                answerArea.style.display = 'flex';
             }
         });
+    }
+
+    function checkStudentAnswer(studentId) {
+        const panel = document.querySelector(`.student-panel[data-student-id="${studentId}"]`);
+        const input = panel.querySelector('.answer-input');
+        const userAnswer = parseInt(input.value);
+        const correctAnswer = studentNumbers[studentId];
+        const isCorrect = userAnswer === correctAnswer;
+
+        studentResults[studentId] = isCorrect;
+
+        // Update status indicator
+        const statusDiv = panel.querySelector('.student-status');
+        statusDiv.classList.add('show');
+        statusDiv.classList.remove('correct', 'incorrect');
+        statusDiv.classList.add(isCorrect ? 'correct' : 'incorrect');
+        statusDiv.textContent = isCorrect ? '✓' : '✗';
+
+        // Show feedback modal
+        const feedbackModal = document.getElementById('feedbackModal');
+        const feedbackTitle = document.getElementById('feedbackTitle');
+        feedbackTitle.className = 'feedback-modal-title';
+        feedbackTitle.classList.add(isCorrect ? 'correct' : 'incorrect');
+        feedbackTitle.textContent = isCorrect ? 'Correct answer' : 'Incorrect answer';
+        feedbackModal.classList.add('active');
+
+        // Hide exercise area
+        panel.querySelector('.answer-area').style.display = 'none';
+        panel.querySelector('.not-solved-text').style.display = 'none';
+
+        // Clear input for next round
+        input.value = '';
+    }
+
+    function closeFeedbackModal() {
+        document.getElementById('feedbackModal').classList.remove('active');
     }
 
     function showResults() {
@@ -1809,13 +2375,15 @@
         let results = 'Rezultate:\n\n';
 
         panels.forEach((panel, index) => {
+            const studentId = parseInt(panel.dataset.studentId);
             const name = panel.querySelector('.student-name-input').value;
-            const input = panel.querySelector('.answer-input');
-            const userAnswer = parseInt(input.value) || 0;
-            const correctAnswer = parseInt(input.dataset.correctAnswer) || 0;
-            const isCorrect = userAnswer === correctAnswer;
+            const result = studentResults[studentId];
 
-            results += `${name}: ${userAnswer} ${isCorrect ? '✓' : `✗ (Corect: ${correctAnswer})`}\n`;
+            let status = 'Not answered';
+            if (result === true) status = '✓ Correct';
+            else if (result === false) status = `✗ Incorrect (Correct: ${studentNumbers[studentId]})`;
+
+            results += `${name}: ${status}\n`;
         });
 
         alert(results);
