@@ -374,7 +374,6 @@
     .bead {
         width: 50px;
         height: 45px;
-        background: linear-gradient(135deg, #f39c12 0%, #f1c40f 50%, #f9e79f 100%);
         border-radius: 50% / 45%;
         margin: 5px 0;
         cursor: pointer;
@@ -387,6 +386,32 @@
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+
+    /* Bile cerești (top) - culoare albastru/cyan pentru cer */
+    .beads-section.top .bead {
+        background: linear-gradient(135deg, #3498db 0%, #5dade2 50%, #aed6f1 100%);
+    }
+
+    .beads-section.top .bead.active {
+        background: linear-gradient(135deg, #2874a6 0%, #3498db 50%, #5dade2 100%);
+        box-shadow:
+            0 6px 16px rgba(40, 116, 166, 0.5),
+            inset -3px -4px 6px rgba(0, 0, 0, 0.15),
+            inset 3px 4px 7px rgba(255, 255, 255, 0.4);
+    }
+
+    /* Bile pământene (bottom) - culoare maro/teracotă pentru pământ */
+    .beads-section.bottom .bead {
+        background: linear-gradient(135deg, #a04000 0%, #d35400 50%, #e59866 100%);
+    }
+
+    .beads-section.bottom .bead.active {
+        background: linear-gradient(135deg, #7d3c00 0%, #a04000 50%, #d35400 100%);
+        box-shadow:
+            0 6px 16px rgba(125, 60, 0, 0.5),
+            inset -3px -4px 6px rgba(0, 0, 0, 0.15),
+            inset 3px 4px 7px rgba(255, 255, 255, 0.4);
     }
 
     .bead::before {
@@ -407,14 +432,6 @@
             inset -3px -4px 6px rgba(0, 0, 0, 0.2),
             inset 3px 4px 6px rgba(255, 255, 255, 0.5);
         filter: brightness(1.1);
-    }
-
-    .bead.active {
-        background: linear-gradient(135deg, #e67e22 0%, #f39c12 50%, #f1c40f 100%);
-        box-shadow:
-            0 6px 16px rgba(230, 126, 34, 0.5),
-            inset -3px -4px 6px rgba(0, 0, 0, 0.15),
-            inset 3px 4px 7px rgba(255, 255, 255, 0.4);
     }
 
     .bead::after {
