@@ -334,7 +334,7 @@
 
     .abacus-frame-mini {
         display: inline-flex;
-        gap: 2.5rem;
+        gap: 5rem;
         padding: 2.5rem 3.5rem;
         background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
         border-radius: 20px;
@@ -505,6 +505,8 @@
         font-size: 1.3rem;
         font-weight: 600;
         transition: all 0.3s ease;
+        display: block;
+        margin: 0 auto;
     }
 
     .submit-btn:hover {
@@ -909,6 +911,7 @@
     <!-- Mode Selection Screen -->
     <div id="modeSelection" class="mode-selection">
         <h1 class="mode-title">Alege Modul de Lucru</h1>
+        <button class="back-btn" onclick="window.history.back()" style="margin-bottom: 2rem;">← Înapoi</button>
         <div class="mode-grid">
             <div class="mode-card" onclick="selectMode('training')">
                 <div class="mode-card-icon">📚</div>
