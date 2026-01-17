@@ -1144,6 +1144,7 @@
                     <div class="toggle-group">
                         <button class="toggle-btn active" data-formula="addition">Adunare</button>
                         <button class="toggle-btn" data-formula="subtraction">Scădere</button>
+                        <button class="toggle-btn" data-formula="mixed">Mixt</button>
                     </div>
                 </div>
             </div>
@@ -1919,24 +1920,46 @@
 
             // Special handling for formula buttons - allow multiple selection
             if (this.dataset.formula) {
-                this.classList.toggle('active');
-
-                // Update formulas array
                 const mode = this.closest('.mode-screen').id.replace('Mode', '');
-                if (currentSettings[mode]) {
-                    const formula = this.dataset.formula;
-                    if (this.classList.contains('active')) {
-                        if (!currentSettings[mode].formulas.includes(formula)) {
-                            currentSettings[mode].formulas.push(formula);
+                const formula = this.dataset.formula;
+
+                // If clicking "mixed", make it exclusive
+                if (formula === 'mixed') {
+                    // Deselect all other formula buttons
+                    group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    if (currentSettings[mode]) {
+                        currentSettings[mode].formulas = ['mixed'];
+                    }
+                } else {
+                    // If clicking addition or subtraction
+                    // First, deselect "mixed" if it's active
+                    const mixedBtn = group.querySelector('[data-formula="mixed"]');
+                    if (mixedBtn && mixedBtn.classList.contains('active')) {
+                        mixedBtn.classList.remove('active');
+                        if (currentSettings[mode]) {
+                            currentSettings[mode].formulas = [];
                         }
-                    } else {
-                        currentSettings[mode].formulas = currentSettings[mode].formulas.filter(f => f !== formula);
                     }
 
-                    // Ensure at least one formula is selected
-                    if (currentSettings[mode].formulas.length === 0) {
-                        this.classList.add('active');
-                        currentSettings[mode].formulas.push(formula);
+                    // Toggle this button
+                    this.classList.toggle('active');
+
+                    // Update formulas array
+                    if (currentSettings[mode]) {
+                        if (this.classList.contains('active')) {
+                            if (!currentSettings[mode].formulas.includes(formula)) {
+                                currentSettings[mode].formulas.push(formula);
+                            }
+                        } else {
+                            currentSettings[mode].formulas = currentSettings[mode].formulas.filter(f => f !== formula);
+                        }
+
+                        // Ensure at least one formula is selected
+                        if (currentSettings[mode].formulas.length === 0) {
+                            this.classList.add('active');
+                            currentSettings[mode].formulas.push(formula);
+                        }
                     }
                 }
             } else {
@@ -1966,27 +1989,38 @@
         const maxDigits = section;
         const maxNum = Math.pow(10, maxDigits) - 1;
         let numbers = [];
+        let operators = [];
 
         switch (level) {
             case 'direct-to-4':
                 // Direct counting to 4 (only 1-4 on units column)
-                numbers = generateDirectTo(4, addends, formula);
+                const result4 = generateDirectTo(4, addends, formula);
+                numbers = result4.numbers;
+                operators = result4.operators || [];
                 break;
 
             case 'direct-to-5':
                 // Direct counting to 5 (1-5 on units column)
-                numbers = generateDirectTo(5, addends, formula);
+                const result5 = generateDirectTo(5, addends, formula);
+                numbers = result5.numbers;
+                operators = result5.operators || [];
                 break;
 
             case 'direct-to-9':
                 // Direct counting to 9 (1-9 on units column)
-                numbers = generateDirectTo(9, addends, formula);
+                const result9 = generateDirectTo(9, addends, formula);
+                numbers = result9.numbers;
+                operators = result9.operators || [];
                 break;
 
             case 'direct-counting':
                 // Direct counting for multi-digit numbers
                 for (let i = 0; i < addends; i++) {
                     numbers.push(getRandomNumber(1, maxNum));
+                }
+                // Generate operators based on formula
+                for (let i = 1; i < addends; i++) {
+                    operators.push(formula === 'addition' ? '+' : '-');
                 }
                 break;
 
@@ -2097,14 +2131,26 @@
                 for (let i = 0; i < addends; i++) {
                     numbers.push(getRandomNumber(1, maxNum));
                 }
+                // Generate operators based on formula
+                for (let i = 1; i < addends; i++) {
+                    operators.push(formula === 'addition' ? '+' : '-');
+                }
         }
 
-        return { numbers };
+        // If no operators were set, default to the formula operator
+        if (operators.length === 0 && numbers.length > 1) {
+            for (let i = 1; i < numbers.length; i++) {
+                operators.push(formula === 'addition' ? '+' : '-');
+            }
+        }
+
+        return { numbers, operators };
     }
 
     // Helper: Generate direct counting to N
     function generateDirectTo(maxUnits, addends, formula) {
         const numbers = [];
+        const operators = [];
 
         if (formula === 'addition') {
             // For addition, ensure sum doesn't exceed maxUnits
@@ -2123,8 +2169,9 @@
                     numbers.push(num);
                     remaining -= num;
                 }
+                if (i > 0) operators.push('+');
             }
-        } else {
+        } else if (formula === 'subtraction') {
             // For subtraction, ensure result is not negative
             // First number should be large enough to subtract all others
             const minFirst = addends - 1; // At least 1 for each number to subtract
@@ -2144,10 +2191,46 @@
                     numbers.push(num);
                     remaining -= num;
                 }
+                operators.push('-');
+            }
+        } else if (formula === 'mixed') {
+            // For mixed operations, generate numbers with random operators
+            // allowing use of earth beads (1-4) and heaven bead (5)
+            // Examples: 3+1+5, 4-2+5, 5+2+1-5
+            let currentValue = getRandomNumber(1, maxUnits);
+            numbers.push(currentValue);
+
+            for (let i = 1; i < addends; i++) {
+                // Randomly choose operator
+                const useAddition = Math.random() < 0.5;
+
+                if (useAddition) {
+                    // Addition: can add 1-maxUnits (e.g., 1-5 for direct-to-5)
+                    // Allow intermediate results to go beyond maxUnits (up to 10 for single digit)
+                    const num = getRandomNumber(1, maxUnits);
+                    numbers.push(num);
+                    operators.push('+');
+                    currentValue += num;
+                } else {
+                    // Subtraction: can subtract 1-maxUnits, but ensure we don't go negative
+                    const maxSubtract = Math.min(maxUnits, currentValue);
+                    if (maxSubtract >= 1) {
+                        const num = getRandomNumber(1, maxSubtract);
+                        numbers.push(num);
+                        operators.push('-');
+                        currentValue -= num;
+                    } else {
+                        // If we can't subtract, do addition instead
+                        const num = getRandomNumber(1, maxUnits);
+                        numbers.push(num);
+                        operators.push('+');
+                        currentValue += num;
+                    }
+                }
             }
         }
 
-        return numbers;
+        return { numbers, operators };
     }
 
     // Helper: Generate Small Friends exercise for specific formula
@@ -2768,15 +2851,20 @@
 
         // Generate exercise based on level
         let numbers = [];
+        let operators = [];
         const exerciseData = generateExerciseForLevel(level, formula, section, addends);
         numbers = exerciseData.numbers;
+        operators = exerciseData.operators || [];
 
-        // Calculate correct answer
-        let correctAnswer;
-        if (formula === 'addition') {
-            correctAnswer = numbers.reduce((a, b) => a + b, 0);
-        } else {
-            correctAnswer = numbers[0] - numbers.slice(1).reduce((a, b) => a + b, 0);
+        // Calculate correct answer using individual operators
+        let correctAnswer = numbers[0];
+        for (let i = 1; i < numbers.length; i++) {
+            const operator = operators[i - 1] || (formula === 'addition' ? '+' : '-');
+            if (operator === '+') {
+                correctAnswer += numbers[i];
+            } else {
+                correctAnswer -= numbers[i];
+            }
         }
 
         // Display problem
@@ -2797,7 +2885,7 @@
 
             if (index < numbers.length - 1) {
                 const operator = document.createElement('span');
-                operator.textContent = formula === 'addition' ? ' + ' : ' - ';
+                operator.textContent = ' ' + (operators[index] || (formula === 'addition' ? '+' : '-')) + ' ';
                 operator.style.fontSize = '2rem';
                 operator.style.margin = '0 1rem';
                 problemDiv.appendChild(operator);
