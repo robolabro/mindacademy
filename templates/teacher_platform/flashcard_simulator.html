@@ -1229,36 +1229,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="settings-row">
-                <span class="setting-label">Mod simplu:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-simple="ordinary">Obișnuit</button>
-                        <button class="toggle-btn" data-simple="simple">Mod simplu</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-row">
-                <span class="setting-label">Sunete:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-sound="signals">Semnale</button>
-                        <button class="toggle-btn" data-sound="no-sound">Fără sunet</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-row">
-                <span class="setting-label">Efecte:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-effects="on">Activate</button>
-                        <button class="toggle-btn" data-effects="off">Dezactivate</button>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <button class="start-btn" onclick="startExercises()">Start!</button>
@@ -1746,14 +1716,11 @@
             duration: 'unlimited'
         },
         exercises: {
-            formula: 'addition',
+            formulas: ['addition'],  // Changed to array to support multiple selections
             level: 'direct-counting',
             section: 1,
             addends: 2,
-            answer: 'number',
-            simple: 'ordinary',
-            sound: 'signals',
-            effects: 'on'
+            answer: 'number'
         },
         classwork: {
             direction: 'abacus-to-number',
@@ -1949,17 +1916,43 @@
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const group = this.parentElement;
-            group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
 
-            // Update settings based on data attributes
-            const dataKeys = Object.keys(this.dataset);
-            dataKeys.forEach(key => {
+            // Special handling for formula buttons - allow multiple selection
+            if (this.dataset.formula) {
+                this.classList.toggle('active');
+
+                // Update formulas array
                 const mode = this.closest('.mode-screen').id.replace('Mode', '');
                 if (currentSettings[mode]) {
-                    currentSettings[mode][key] = this.dataset[key];
+                    const formula = this.dataset.formula;
+                    if (this.classList.contains('active')) {
+                        if (!currentSettings[mode].formulas.includes(formula)) {
+                            currentSettings[mode].formulas.push(formula);
+                        }
+                    } else {
+                        currentSettings[mode].formulas = currentSettings[mode].formulas.filter(f => f !== formula);
+                    }
+
+                    // Ensure at least one formula is selected
+                    if (currentSettings[mode].formulas.length === 0) {
+                        this.classList.add('active');
+                        currentSettings[mode].formulas.push(formula);
+                    }
                 }
-            });
+            } else {
+                // Regular toggle behavior for other buttons
+                group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                // Update settings based on data attributes
+                const dataKeys = Object.keys(this.dataset);
+                dataKeys.forEach(key => {
+                    const mode = this.closest('.mode-screen').id.replace('Mode', '');
+                    if (currentSettings[mode]) {
+                        currentSettings[mode][key] = this.dataset[key];
+                    }
+                });
+            }
         });
     });
 
@@ -2112,9 +2105,48 @@
     // Helper: Generate direct counting to N
     function generateDirectTo(maxUnits, addends, formula) {
         const numbers = [];
-        for (let i = 0; i < addends; i++) {
-            numbers.push(getRandomNumber(1, maxUnits));
+
+        if (formula === 'addition') {
+            // For addition, ensure sum doesn't exceed maxUnits
+            // This ensures we can use direct counting without formulas
+            let remaining = maxUnits;
+
+            for (let i = 0; i < addends; i++) {
+                if (i === addends - 1) {
+                    // Last number: use whatever is left (at least 0, at most maxUnits)
+                    numbers.push(Math.max(0, Math.min(remaining, maxUnits)));
+                } else {
+                    // Generate a number that leaves room for remaining addends
+                    const minForRemaining = addends - i - 1; // At least 1 for each remaining
+                    const maxAllowed = Math.max(1, remaining - minForRemaining);
+                    const num = getRandomNumber(1, Math.min(maxAllowed, maxUnits));
+                    numbers.push(num);
+                    remaining -= num;
+                }
+            }
+        } else {
+            // For subtraction, ensure result is not negative
+            // First number should be large enough to subtract all others
+            const minFirst = addends - 1; // At least 1 for each number to subtract
+            const firstNum = getRandomNumber(minFirst, maxUnits);
+            numbers.push(firstNum);
+
+            let remaining = firstNum;
+            for (let i = 1; i < addends; i++) {
+                if (i === addends - 1) {
+                    // Last number: use whatever is left (at least 0, at most maxUnits)
+                    numbers.push(Math.max(0, Math.min(remaining, maxUnits)));
+                } else {
+                    // Generate a number that leaves room for remaining subtractions
+                    const minForRemaining = addends - i - 1;
+                    const maxAllowed = Math.max(1, remaining - minForRemaining);
+                    const num = getRandomNumber(1, Math.min(maxAllowed, maxUnits));
+                    numbers.push(num);
+                    remaining -= num;
+                }
+            }
         }
+
         return numbers;
     }
 
@@ -2727,9 +2759,12 @@
     }
 
     function nextExercise() {
-        const { formula, level, section, addends } = currentSettings.exercises;
+        const { formulas, level, section, addends } = currentSettings.exercises;
         const content = document.getElementById('exercisesContent');
         content.innerHTML = '';
+
+        // Randomly select a formula from the available formulas
+        const formula = formulas[getRandomNumber(0, formulas.length - 1)];
 
         // Generate exercise based on level
         let numbers = [];
