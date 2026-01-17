@@ -1067,51 +1067,13 @@
             </div>
 
             <div class="settings-row">
-                <span class="setting-label">Formă de răspuns:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-response="enter">Introdu răspunsul</button>
-                        <button class="toggle-btn" data-response="say">Spune răspunsul</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-row">
                 <span class="setting-label">Durata seriei:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
                         <button class="toggle-btn" data-duration="one-minute">Un minut</button>
+                        <button class="toggle-btn" data-duration="two-minutes">Două minute</button>
+                        <button class="toggle-btn" data-duration="three-minutes">Trei minute</button>
                         <button class="toggle-btn active" data-duration="unlimited">Nelimitat</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-row">
-                <span class="setting-label">Mod simplu:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-simple="ordinary">Obișnuit</button>
-                        <button class="toggle-btn" data-simple="simple">Mod simplu</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-row">
-                <span class="setting-label">Sunete:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-sound="signals">Semnale</button>
-                        <button class="toggle-btn" data-sound="no-sound">Fără sunet</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-row">
-                <span class="setting-label">Efecte:</span>
-                <div class="setting-controls">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-effects="on">Activate</button>
-                        <button class="toggle-btn" data-effects="off">Dezactivate</button>
                     </div>
                 </div>
             </div>
@@ -1667,6 +1629,31 @@
             <button class="feedback-modal-btn" onclick="closeFeedbackModal()">Continue →</button>
         </div>
     </div>
+
+    <!-- Flash Summary Modal -->
+    <div id="flashSummaryModal" class="feedback-modal" style="display: none;">
+        <div class="feedback-modal-content" style="max-width: 600px;">
+            <h2 class="feedback-modal-title">Rezumat Sesiune Flash</h2>
+            <div style="text-align: left; margin: 2rem 0; font-size: 1.2rem;">
+                <div style="margin: 1rem 0; padding: 1rem; background: #e8f5e9; border-radius: 8px;">
+                    <strong>Răspunsuri corecte:</strong> <span id="summaryCorrect">0</span>
+                </div>
+                <div style="margin: 1rem 0; padding: 1rem; background: #ffebee; border-radius: 8px;">
+                    <strong>Răspunsuri greșite:</strong> <span id="summaryIncorrect">0</span>
+                </div>
+                <div style="margin: 1rem 0; padding: 1rem; background: #e3f2fd; border-radius: 8px;">
+                    <strong>Număr total exerciții:</strong> <span id="summaryTotal">0</span>
+                </div>
+                <div style="margin: 1rem 0; padding: 1rem; background: #fff3e0; border-radius: 8px;">
+                    <strong>Rată răspunsuri corecte:</strong> <span id="summaryRate">0%</span>
+                </div>
+                <div style="margin: 1rem 0; padding: 1rem; background: #f3e5f5; border-radius: 8px;">
+                    <strong>Timp mediu de răspuns:</strong> <span id="summaryAvgTime">0.0s</span>
+                </div>
+            </div>
+            <button class="feedback-modal-btn" onclick="closeFlashSummary()">Închide</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -1685,11 +1672,7 @@
             from: 1,
             to: 99,
             speed: 1.0,
-            response: 'enter',
-            duration: 'unlimited',
-            simple: 'ordinary',
-            sound: 'signals',
-            effects: 'on'
+            duration: 'unlimited'
         },
         exercises: {
             formula: 'addition',
@@ -1717,7 +1700,10 @@
 
     let stats = {
         correct: 0,
-        incorrect: 0
+        incorrect: 0,
+        responseTimes: [],
+        startTime: null,
+        questionStartTime: null
     };
 
     let currentNumber = 0;
@@ -2086,31 +2072,63 @@
     function startFlash() {
         stats.correct = 0;
         stats.incorrect = 0;
+        stats.responseTimes = [];
+        stats.startTime = Date.now();
         document.getElementById('flashCorrect').textContent = '0';
         document.getElementById('flashIncorrect').textContent = '0';
         document.getElementById('flashExercise').style.display = 'flex';
 
-        if (currentSettings.flash.duration === 'one-minute') {
-            let timeLeft = 60;
-            document.getElementById('flashTimer').textContent = timeLeft;
-            flashTimer = setInterval(() => {
-                timeLeft--;
-                document.getElementById('flashTimer').textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(flashTimer);
-                    alert(`Sesiune terminată! Corecte: ${stats.correct}, Greșite: ${stats.incorrect}`);
-                    backToModes();
-                }
-            }, 1000);
-        } else {
-            document.getElementById('flashTimer').textContent = '∞';
-        }
+        const content = document.getElementById('flashContent');
+        content.innerHTML = '';
 
-        nextFlashExercise();
+        // Show countdown 3, 2, 1
+        const countdown = document.createElement('div');
+        countdown.className = 'countdown';
+        countdown.style.fontSize = '5rem';
+        countdown.style.fontWeight = 'bold';
+        countdown.style.color = '#2196F3';
+        content.appendChild(countdown);
+
+        let count = 3;
+        countdown.textContent = count;
+
+        const countdownInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countdown.textContent = count;
+            } else {
+                clearInterval(countdownInterval);
+                countdown.remove();
+
+                // Start timer for timed modes
+                const duration = currentSettings.flash.duration;
+                if (duration === 'one-minute' || duration === 'two-minutes' || duration === 'three-minutes') {
+                    let timeLeft;
+                    if (duration === 'one-minute') timeLeft = 60;
+                    else if (duration === 'two-minutes') timeLeft = 120;
+                    else if (duration === 'three-minutes') timeLeft = 180;
+
+                    document.getElementById('flashTimer').textContent = timeLeft;
+                    flashTimer = setInterval(() => {
+                        timeLeft--;
+                        document.getElementById('flashTimer').textContent = timeLeft;
+                        if (timeLeft <= 0) {
+                            clearInterval(flashTimer);
+                            showFlashSummary();
+                        }
+                    }, 1000);
+                } else {
+                    document.getElementById('flashTimer').textContent = '∞';
+                }
+
+                // Start first exercise
+                nextFlashExercise();
+            }
+        }, 1000);
     }
 
     function nextFlashExercise() {
-        const { from, to, direction, speed, response } = currentSettings.flash;
+        const { from, to, direction, speed } = currentSettings.flash;
         currentNumber = getRandomNumber(from, to);
         const content = document.getElementById('flashContent');
         content.innerHTML = '';
@@ -2128,38 +2146,38 @@
             setTimeout(() => {
                 abacusDiv.style.display = 'none';
 
-                if (response === 'enter') {
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.className = 'answer-input';
-                    input.placeholder = 'Introdu numărul';
-                    input.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            checkFlashAnswer(parseInt(this.value));
-                        }
-                    });
+                // Record question start time for response time tracking
+                stats.questionStartTime = Date.now();
 
-                    const submitBtn = document.createElement('button');
-                    submitBtn.className = 'submit-btn';
-                    submitBtn.textContent = 'Verifică';
-                    submitBtn.onclick = () => checkFlashAnswer(parseInt(input.value));
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'answer-input';
+                input.placeholder = 'Introdu numărul';
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        checkFlashAnswer(parseInt(this.value));
+                    }
+                });
 
-                    content.appendChild(input);
-                    content.appendChild(submitBtn);
-                    input.focus();
-                } else {
-                    // Say answer mode - just show next button
-                    const nextBtn = document.createElement('button');
-                    nextBtn.className = 'submit-btn';
-                    nextBtn.textContent = 'Următorul';
-                    nextBtn.onclick = () => nextFlashExercise();
-                    content.appendChild(nextBtn);
-                }
+                const submitBtn = document.createElement('button');
+                submitBtn.className = 'submit-btn';
+                submitBtn.textContent = 'Verifică';
+                submitBtn.onclick = () => checkFlashAnswer(parseInt(input.value));
+
+                content.appendChild(input);
+                content.appendChild(submitBtn);
+                input.focus();
             }, speed * 1000);
         }
     }
 
     function checkFlashAnswer(answer) {
+        // Record response time
+        if (stats.questionStartTime) {
+            const responseTime = Date.now() - stats.questionStartTime;
+            stats.responseTimes.push(responseTime);
+        }
+
         const content = document.getElementById('flashContent');
         const feedback = document.createElement('div');
         feedback.className = 'feedback';
@@ -2181,6 +2199,30 @@
         setTimeout(() => {
             nextFlashExercise();
         }, 1500);
+    }
+
+    function showFlashSummary() {
+        // Calculate statistics
+        const totalExercises = stats.correct + stats.incorrect;
+        const correctRate = totalExercises > 0 ? ((stats.correct / totalExercises) * 100).toFixed(1) : 0;
+        const avgResponseTime = stats.responseTimes.length > 0
+            ? (stats.responseTimes.reduce((a, b) => a + b, 0) / stats.responseTimes.length / 1000).toFixed(2)
+            : 0;
+
+        // Update modal content
+        document.getElementById('summaryCorrect').textContent = stats.correct;
+        document.getElementById('summaryIncorrect').textContent = stats.incorrect;
+        document.getElementById('summaryTotal').textContent = totalExercises;
+        document.getElementById('summaryRate').textContent = correctRate + '%';
+        document.getElementById('summaryAvgTime').textContent = avgResponseTime + 's';
+
+        // Show modal
+        document.getElementById('flashSummaryModal').style.display = 'flex';
+    }
+
+    function closeFlashSummary() {
+        document.getElementById('flashSummaryModal').style.display = 'none';
+        backToModes();
     }
 
     // Exercises Mode
