@@ -251,6 +251,29 @@
         border-color: var(--primary-color);
     }
 
+    .level-select {
+        padding: 0.5rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 250px;
+        max-width: 100%;
+    }
+
+    .level-select:hover {
+        border-color: var(--primary-color);
+    }
+
+    .level-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
     .start-btn {
         padding: 0.8rem 2.5rem;
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -969,7 +992,7 @@
                 <div class="setting-controls">
                     <div class="number-input">
                         <button class="number-btn" onclick="adjustNumber('trainingFrom', -1)">−</button>
-                        <input type="number" class="number-display" id="trainingFrom" value="1" min="1" max="999" onchange="updateSettingFromInput('trainingFrom', 'training', 'from')">
+                        <span class="number-display" id="trainingFrom">1</span>
                         <button class="number-btn" onclick="adjustNumber('trainingFrom', 1)">+</button>
                     </div>
                 </div>
@@ -980,7 +1003,7 @@
                 <div class="setting-controls">
                     <div class="number-input">
                         <button class="number-btn" onclick="adjustNumber('trainingTo', -1)">−</button>
-                        <input type="number" class="number-display" id="trainingTo" value="99" min="1" max="999" onchange="updateSettingFromInput('trainingTo', 'training', 'to')">
+                        <span class="number-display" id="trainingTo">99</span>
                         <button class="number-btn" onclick="adjustNumber('trainingTo', 1)">+</button>
                     </div>
                 </div>
@@ -1038,7 +1061,7 @@
                 <div class="setting-controls">
                     <div class="number-input">
                         <button class="number-btn" onclick="adjustNumber('flashFrom', -1)">−</button>
-                        <input type="number" class="number-display" id="flashFrom" value="1" min="1" max="999" onchange="updateSettingFromInput('flashFrom', 'flash', 'from')">
+                        <span class="number-display" id="flashFrom">1</span>
                         <button class="number-btn" onclick="adjustNumber('flashFrom', 1)">+</button>
                     </div>
                 </div>
@@ -1049,7 +1072,7 @@
                 <div class="setting-controls">
                     <div class="number-input">
                         <button class="number-btn" onclick="adjustNumber('flashTo', -1)">−</button>
-                        <input type="number" class="number-display" id="flashTo" value="99" min="1" max="999" onchange="updateSettingFromInput('flashTo', 'flash', 'to')">
+                        <span class="number-display" id="flashTo">99</span>
                         <button class="number-btn" onclick="adjustNumber('flashTo', 1)">+</button>
                     </div>
                 </div>
@@ -1126,14 +1149,62 @@
             </div>
 
             <div class="settings-row">
-                <span class="setting-label">Secțiune:</span>
+                <span class="setting-label">Nivel:</span>
+                <div class="setting-controls">
+                    <select id="levelSelect" class="level-select" onchange="updateLevel()">
+                        <optgroup label="Numărare directă">
+                            <option value="direct-to-4">Numărare directă până la 4</option>
+                            <option value="direct-to-5">Numărare directă până la 5</option>
+                            <option value="direct-to-9">Numărare directă până la 9</option>
+                            <option value="direct-counting" selected>Numărare directă</option>
+                        </optgroup>
+                        <optgroup label="Prieteni mici (Small Friends)">
+                            <option value="small-plus-1">+1 = +5 - 4</option>
+                            <option value="small-plus-2">+2 = +5 - 3</option>
+                            <option value="small-plus-3">+3 = +5 - 2</option>
+                            <option value="small-plus-4">+4 = +5 - 1</option>
+                            <option value="small-minus-1">-1 = +4 - 5</option>
+                            <option value="small-minus-2">-2 = +3 - 5</option>
+                            <option value="small-minus-3">-3 = +2 - 5</option>
+                            <option value="small-minus-4">-4 = +1 - 5</option>
+                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                        </optgroup>
+                        <optgroup label="Prieteni mari (Big Friends)">
+                            <option value="big-plus-1">+1 = +10 - 9</option>
+                            <option value="big-plus-2">+2 = +10 - 8</option>
+                            <option value="big-plus-3">+3 = +10 - 7</option>
+                            <option value="big-plus-4">+4 = +10 - 6</option>
+                            <option value="big-plus-5">+5 = +10 - 5</option>
+                            <option value="big-plus-6">+6 = +10 - 4</option>
+                            <option value="big-plus-7">+7 = +10 - 3</option>
+                            <option value="big-plus-8">+8 = +10 - 2</option>
+                            <option value="big-plus-9">+9 = +10 - 1</option>
+                            <option value="big-minus-1">-1 = -10 + 9</option>
+                            <option value="big-minus-2">-2 = -10 + 8</option>
+                            <option value="big-minus-3">-3 = -10 + 7</option>
+                            <option value="big-minus-4">-4 = -10 + 6</option>
+                            <option value="big-minus-5">-5 = -10 + 5</option>
+                            <option value="big-minus-6">-6 = -10 + 4</option>
+                            <option value="big-minus-7">-7 = -10 + 3</option>
+                            <option value="big-minus-8">-8 = -10 + 2</option>
+                            <option value="big-minus-9">-9 = -10 + 1</option>
+                            <option value="big-friends-all">Prieteni mari (toate)</option>
+                        </optgroup>
+                        <optgroup label="Combinații">
+                            <option value="family">Familia (Small + Big Friends)</option>
+                            <option value="mix">Mix (toate variantele)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Câte cifre are numărul:</span>
                 <div class="setting-controls">
                     <div class="toggle-group" id="sectionButtons">
                         <button class="toggle-btn active" data-section="1">1</button>
                         <button class="toggle-btn" data-section="2">2</button>
                         <button class="toggle-btn" data-section="3">3</button>
-                        <button class="toggle-btn" data-section="4">4</button>
-                        <button class="toggle-btn" data-section="5">5</button>
                     </div>
                 </div>
             </div>
@@ -1338,7 +1409,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustNumber('classworkFrom', -1)">−</button>
-                            <input type="number" class="number-display" id="classworkFrom" value="1" min="1" max="999" onchange="updateSettingFromInput('classworkFrom', 'classwork', 'from')">
+                            <span class="number-display" id="classworkFrom">1</span>
                             <button class="number-btn" onclick="adjustNumber('classworkFrom', 1)">+</button>
                         </div>
                     </div>
@@ -1349,7 +1420,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustNumber('classworkTo', -1)">−</button>
-                            <input type="number" class="number-display" id="classworkTo" value="99" min="1" max="999" onchange="updateSettingFromInput('classworkTo', 'classwork', 'to')">
+                            <span class="number-display" id="classworkTo">99</span>
                             <button class="number-btn" onclick="adjustNumber('classworkTo', 1)">+</button>
                         </div>
                     </div>
@@ -1676,6 +1747,7 @@
         },
         exercises: {
             formula: 'addition',
+            level: 'direct-counting',
             section: 1,
             addends: 2,
             answer: 'number',
@@ -1855,6 +1927,24 @@
         currentSettings.classwork.displayTime = newValue;
     }
 
+    function updateLevel() {
+        const select = document.getElementById('levelSelect');
+        currentSettings.exercises.level = select.value;
+
+        // Update section visibility based on level
+        const sectionRow = document.querySelector('#sectionButtons').closest('.settings-row');
+        const level = select.value;
+
+        // Hide section for direct counting to 4, 5, 9 (only works with 1 digit)
+        if (level === 'direct-to-4' || level === 'direct-to-5' || level === 'direct-to-9') {
+            sectionRow.style.display = 'none';
+            currentSettings.exercises.section = 1;
+            document.querySelector('[data-section="1"]').click();
+        } else {
+            sectionRow.style.display = 'flex';
+        }
+    }
+
     // Toggle button handlers
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -1876,6 +1966,295 @@
     // Generate random number in range
     function getRandomNumber(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Generate exercise based on level
+    function generateExerciseForLevel(level, formula, section, addends) {
+        const maxDigits = section;
+        const maxNum = Math.pow(10, maxDigits) - 1;
+        let numbers = [];
+
+        switch (level) {
+            case 'direct-to-4':
+                // Direct counting to 4 (only 1-4 on units column)
+                numbers = generateDirectTo(4, addends, formula);
+                break;
+
+            case 'direct-to-5':
+                // Direct counting to 5 (1-5 on units column)
+                numbers = generateDirectTo(5, addends, formula);
+                break;
+
+            case 'direct-to-9':
+                // Direct counting to 9 (1-9 on units column)
+                numbers = generateDirectTo(9, addends, formula);
+                break;
+
+            case 'direct-counting':
+                // Direct counting for multi-digit numbers
+                for (let i = 0; i < addends; i++) {
+                    numbers.push(getRandomNumber(1, maxNum));
+                }
+                break;
+
+            // Small Friends - Addition
+            case 'small-plus-1':
+                numbers = generateSmallFriendsExercise(1, addends, formula);
+                break;
+            case 'small-plus-2':
+                numbers = generateSmallFriendsExercise(2, addends, formula);
+                break;
+            case 'small-plus-3':
+                numbers = generateSmallFriendsExercise(3, addends, formula);
+                break;
+            case 'small-plus-4':
+                numbers = generateSmallFriendsExercise(4, addends, formula);
+                break;
+
+            // Small Friends - Subtraction
+            case 'small-minus-1':
+                numbers = generateSmallFriendsExercise(-1, addends, formula);
+                break;
+            case 'small-minus-2':
+                numbers = generateSmallFriendsExercise(-2, addends, formula);
+                break;
+            case 'small-minus-3':
+                numbers = generateSmallFriendsExercise(-3, addends, formula);
+                break;
+            case 'small-minus-4':
+                numbers = generateSmallFriendsExercise(-4, addends, formula);
+                break;
+
+            case 'small-friends-all':
+                numbers = generateSmallFriendsAll(addends, formula);
+                break;
+
+            // Big Friends - Addition
+            case 'big-plus-1':
+                numbers = generateBigFriendsExercise(1, addends, formula, section);
+                break;
+            case 'big-plus-2':
+                numbers = generateBigFriendsExercise(2, addends, formula, section);
+                break;
+            case 'big-plus-3':
+                numbers = generateBigFriendsExercise(3, addends, formula, section);
+                break;
+            case 'big-plus-4':
+                numbers = generateBigFriendsExercise(4, addends, formula, section);
+                break;
+            case 'big-plus-5':
+                numbers = generateBigFriendsExercise(5, addends, formula, section);
+                break;
+            case 'big-plus-6':
+                numbers = generateBigFriendsExercise(6, addends, formula, section);
+                break;
+            case 'big-plus-7':
+                numbers = generateBigFriendsExercise(7, addends, formula, section);
+                break;
+            case 'big-plus-8':
+                numbers = generateBigFriendsExercise(8, addends, formula, section);
+                break;
+            case 'big-plus-9':
+                numbers = generateBigFriendsExercise(9, addends, formula, section);
+                break;
+
+            // Big Friends - Subtraction
+            case 'big-minus-1':
+                numbers = generateBigFriendsExercise(-1, addends, formula, section);
+                break;
+            case 'big-minus-2':
+                numbers = generateBigFriendsExercise(-2, addends, formula, section);
+                break;
+            case 'big-minus-3':
+                numbers = generateBigFriendsExercise(-3, addends, formula, section);
+                break;
+            case 'big-minus-4':
+                numbers = generateBigFriendsExercise(-4, addends, formula, section);
+                break;
+            case 'big-minus-5':
+                numbers = generateBigFriendsExercise(-5, addends, formula, section);
+                break;
+            case 'big-minus-6':
+                numbers = generateBigFriendsExercise(-6, addends, formula, section);
+                break;
+            case 'big-minus-7':
+                numbers = generateBigFriendsExercise(-7, addends, formula, section);
+                break;
+            case 'big-minus-8':
+                numbers = generateBigFriendsExercise(-8, addends, formula, section);
+                break;
+            case 'big-minus-9':
+                numbers = generateBigFriendsExercise(-9, addends, formula, section);
+                break;
+
+            case 'big-friends-all':
+                numbers = generateBigFriendsAll(addends, formula, section);
+                break;
+
+            case 'family':
+                numbers = generateFamily(addends, formula, section);
+                break;
+
+            case 'mix':
+                numbers = generateMix(addends, formula, section);
+                break;
+
+            default:
+                // Default to direct counting
+                for (let i = 0; i < addends; i++) {
+                    numbers.push(getRandomNumber(1, maxNum));
+                }
+        }
+
+        return { numbers };
+    }
+
+    // Helper: Generate direct counting to N
+    function generateDirectTo(maxUnits, addends, formula) {
+        const numbers = [];
+        for (let i = 0; i < addends; i++) {
+            numbers.push(getRandomNumber(1, maxUnits));
+        }
+        return numbers;
+    }
+
+    // Helper: Generate Small Friends exercise for specific formula
+    function generateSmallFriendsExercise(target, addends, formula) {
+        const numbers = [];
+        const absTarget = Math.abs(target);
+
+        if (formula === 'addition' && target > 0) {
+            // For addition: need first number where adding target requires 5-complement
+            // Example for +1: first number should be 4 (4+1 needs +5-4)
+            const validFirstNumbers = [];
+            for (let i = (5 - absTarget); i <= 4; i++) {
+                validFirstNumbers.push(i);
+            }
+            numbers.push(validFirstNumbers[getRandomNumber(0, validFirstNumbers.length - 1)]);
+
+            // Add the target number
+            numbers.push(absTarget);
+
+            // Fill remaining addends with random 1-9
+            for (let i = 2; i < addends; i++) {
+                numbers.push(getRandomNumber(1, 9));
+            }
+        } else if (formula === 'subtraction' && target < 0) {
+            // For subtraction: need first number that when subtracting requires 5-complement
+            // Example for -1: first number should be 5 (5-1 needs +4-5)
+            numbers.push(5 + absTarget - 1);
+
+            // Subtract the target amount
+            numbers.push(absTarget);
+
+            // Fill remaining with random
+            for (let i = 2; i < addends; i++) {
+                numbers.push(getRandomNumber(1, 4));
+            }
+        } else {
+            // Fallback
+            for (let i = 0; i < addends; i++) {
+                numbers.push(getRandomNumber(1, 9));
+            }
+        }
+
+        return numbers;
+    }
+
+    // Helper: Generate all Small Friends formulas
+    function generateSmallFriendsAll(addends, formula) {
+        const smallFormulas = formula === 'addition'
+            ? [1, 2, 3, 4]
+            : [-1, -2, -3, -4];
+        const randomFormula = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+        return generateSmallFriendsExercise(randomFormula, addends, formula);
+    }
+
+    // Helper: Generate Big Friends exercise for specific formula
+    function generateBigFriendsExercise(target, addends, formula, section) {
+        const numbers = [];
+        const absTarget = Math.abs(target);
+        const maxDigits = section;
+        const maxNum = Math.pow(10, maxDigits) - 1;
+
+        if (formula === 'addition' && target > 0) {
+            // For addition: need first number where adding target requires 10-complement
+            // Example for +1: first number should be 9 (9+1 needs +10-9)
+            const minFirst = Math.max(1, 10 - absTarget);
+            const maxFirst = Math.min(9, maxNum);
+            numbers.push(getRandomNumber(minFirst, maxFirst));
+
+            // Add the target number
+            numbers.push(absTarget);
+
+            // Fill remaining addends
+            for (let i = 2; i < addends; i++) {
+                numbers.push(getRandomNumber(1, Math.min(9, maxNum)));
+            }
+        } else if (formula === 'subtraction' && target < 0) {
+            // For subtraction: need first number that when subtracting requires 10-complement
+            // Example for -1: first number should be 10 (10-1 needs -10+9)
+            const minFirst = Math.max(10, absTarget);
+            const maxFirst = Math.min(10 + 9, maxNum);
+            numbers.push(getRandomNumber(minFirst, maxFirst));
+
+            // Subtract the target amount
+            numbers.push(absTarget);
+
+            // Fill remaining
+            for (let i = 2; i < addends; i++) {
+                numbers.push(getRandomNumber(1, Math.min(5, maxNum)));
+            }
+        } else {
+            // Fallback
+            for (let i = 0; i < addends; i++) {
+                numbers.push(getRandomNumber(1, maxNum));
+            }
+        }
+
+        return numbers;
+    }
+
+    // Helper: Generate all Big Friends formulas
+    function generateBigFriendsAll(addends, formula, section) {
+        const bigFormulas = formula === 'addition'
+            ? [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            : [-1, -2, -3, -4, -5, -6, -7, -8, -9];
+        const randomFormula = bigFormulas[getRandomNumber(0, bigFormulas.length - 1)];
+        return generateBigFriendsExercise(randomFormula, addends, formula, section);
+    }
+
+    // Helper: Generate Family (Small + Big Friends)
+    function generateFamily(addends, formula, section) {
+        const useSmall = getRandomNumber(0, 1) === 0;
+        if (useSmall) {
+            return generateSmallFriendsAll(addends, formula);
+        } else {
+            return generateBigFriendsAll(addends, formula, section);
+        }
+    }
+
+    // Helper: Generate Mix (all variants)
+    function generateMix(addends, formula, section) {
+        const maxDigits = section;
+        const maxNum = Math.pow(10, maxDigits) - 1;
+        const variant = getRandomNumber(0, 3);
+
+        switch (variant) {
+            case 0:
+                return generateDirectTo(9, addends, formula);
+            case 1:
+                return generateSmallFriendsAll(addends, formula);
+            case 2:
+                return generateBigFriendsAll(addends, formula, section);
+            case 3:
+            default:
+                const numbers = [];
+                for (let i = 0; i < addends; i++) {
+                    numbers.push(getRandomNumber(1, maxNum));
+                }
+                return numbers;
+        }
     }
 
     // Create mini abacus representation
@@ -2348,18 +2727,14 @@
     }
 
     function nextExercise() {
-        const { formula, section, addends } = currentSettings.exercises;
+        const { formula, level, section, addends } = currentSettings.exercises;
         const content = document.getElementById('exercisesContent');
         content.innerHTML = '';
 
-        // Generate random numbers based on section
-        const maxDigits = section;
-        const maxNum = Math.pow(10, maxDigits) - 1;
-        const numbers = [];
-
-        for (let i = 0; i < addends; i++) {
-            numbers.push(getRandomNumber(1, maxNum));
-        }
+        // Generate exercise based on level
+        let numbers = [];
+        const exerciseData = generateExerciseForLevel(level, formula, section, addends);
+        numbers = exerciseData.numbers;
 
         // Calculate correct answer
         let correctAnswer;
