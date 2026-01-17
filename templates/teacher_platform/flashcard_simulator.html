@@ -306,7 +306,7 @@
         padding: 2rem;
         background: #f8f9fa;
         border-radius: 15px;
-        min-height: 400px;
+        min-height: 600px;
     }
 
     .countdown {
@@ -2199,6 +2199,38 @@
                 content.appendChild(submitBtn);
                 input.focus();
             }, speed * 1000);
+        } else {
+            // Show number, then ask to set on abacus
+            const numberDiv = document.createElement('div');
+            numberDiv.style.fontSize = '3rem';
+            numberDiv.style.fontWeight = '700';
+            numberDiv.style.marginBottom = '2rem';
+            numberDiv.textContent = currentNumber;
+
+            content.appendChild(numberDiv);
+
+            setTimeout(() => {
+                numberDiv.style.display = 'none';
+
+                // Record question start time for response time tracking
+                stats.questionStartTime = Date.now();
+
+                const abacusDiv = document.createElement('div');
+                abacusDiv.className = 'mini-abacus';
+                const frame = document.createElement('div');
+                frame.className = 'abacus-frame-mini';
+                abacusDiv.appendChild(frame);
+                createMiniAbacus(0, frame);
+                makeAbacusInteractive(frame);
+
+                const submitBtn = document.createElement('button');
+                submitBtn.className = 'submit-btn';
+                submitBtn.textContent = 'Verifică';
+                submitBtn.onclick = () => checkFlashAbacus(frame);
+
+                content.appendChild(abacusDiv);
+                content.appendChild(submitBtn);
+            }, speed * 1000);
         }
     }
 
@@ -2214,6 +2246,55 @@
         feedback.className = 'feedback';
 
         if (answer === currentNumber) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('flashCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${currentNumber}`;
+            stats.incorrect++;
+            document.getElementById('flashIncorrect').textContent = stats.incorrect;
+        }
+
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextFlashExercise();
+        }, 1500);
+    }
+
+    function checkFlashAbacus(frame) {
+        // Record response time
+        if (stats.questionStartTime) {
+            const responseTime = Date.now() - stats.questionStartTime;
+            stats.responseTimes.push(responseTime);
+        }
+
+        const rods = frame.querySelectorAll('.rod-mini');
+        let abacusNumber = 0;
+
+        rods.forEach((rod, index) => {
+            let digitValue = 0;
+
+            // Check top bead (heaven - value 5)
+            const topBead = rod.querySelector('.bead-mini.top');
+            if (topBead && topBead.classList.contains('active')) {
+                digitValue += 5;
+            }
+
+            // Check bottom beads (earth - value 1 each)
+            const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
+            digitValue += bottomBeads.length;
+
+            abacusNumber += digitValue * Math.pow(10, rods.length - 1 - index);
+        });
+
+        const content = document.getElementById('flashContent');
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (abacusNumber === currentNumber) {
             feedback.classList.add('correct');
             feedback.textContent = '✓ Corect!';
             stats.correct++;
