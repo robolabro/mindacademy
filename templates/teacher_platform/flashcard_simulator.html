@@ -1755,9 +1755,22 @@
         document.getElementById('flashExercise').style.display = 'none';
         document.getElementById('exercisesArea').style.display = 'none';
 
+        // Restore settings and instructions for flash mode
+        const flashMode = document.getElementById('flashMode');
+        const flashSettingsPanel = flashMode.querySelector('.settings-panel');
+        const flashInstructionsPanel = flashMode.querySelector('.instructions-panel');
+        const flashStartBtn = flashMode.querySelector('.start-btn');
+
+        if (flashSettingsPanel) flashSettingsPanel.style.display = 'block';
+        if (flashInstructionsPanel) flashInstructionsPanel.style.display = 'block';
+        if (flashStartBtn) flashStartBtn.style.display = 'block';
+
         // Reset stats
         stats.correct = 0;
         stats.incorrect = 0;
+        stats.responseTimes = [];
+        stats.startTime = null;
+        stats.questionStartTime = null;
 
         // Clear timers
         if (exerciseTimer) clearInterval(exerciseTimer);
@@ -2076,7 +2089,23 @@
         stats.startTime = Date.now();
         document.getElementById('flashCorrect').textContent = '0';
         document.getElementById('flashIncorrect').textContent = '0';
-        document.getElementById('flashExercise').style.display = 'flex';
+
+        // Hide settings and instructions when exercise starts
+        const flashMode = document.getElementById('flashMode');
+        const settingsPanel = flashMode.querySelector('.settings-panel');
+        const instructionsPanel = flashMode.querySelector('.instructions-panel');
+        const startBtn = flashMode.querySelector('.start-btn');
+
+        settingsPanel.style.display = 'none';
+        instructionsPanel.style.display = 'none';
+        startBtn.style.display = 'none';
+
+        // Show exercise area
+        const exerciseArea = document.getElementById('flashExercise');
+        exerciseArea.style.display = 'flex';
+
+        // Scroll to top of exercise area to make it visible
+        exerciseArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         const content = document.getElementById('flashContent');
         content.innerHTML = '';
@@ -2087,6 +2116,8 @@
         countdown.style.fontSize = '5rem';
         countdown.style.fontWeight = 'bold';
         countdown.style.color = '#2196F3';
+        countdown.style.textAlign = 'center';
+        countdown.style.padding = '2rem';
         content.appendChild(countdown);
 
         let count = 3;
