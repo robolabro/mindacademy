@@ -1981,6 +1981,8 @@
 
     // Generate random number in range
     function getRandomNumber(min, max) {
+        // Ensure minimum is at least 1 to avoid results of 0
+        min = Math.max(1, min);
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
