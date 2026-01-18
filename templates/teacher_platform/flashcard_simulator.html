@@ -96,12 +96,12 @@
     .mode-screen {
         display: none;
         background: white;
-        border-radius: 20px;
-        padding: 2rem;
+        border-radius: 15px;
+        padding: 0.75rem;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-        max-width: 1200px;
-        width: 95%;
-        min-height: 600px;
+        max-width: 1400px;
+        width: 98%;
+        min-height: auto;
     }
 
     .mode-screen.active {
@@ -113,8 +113,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
         border-bottom: 2px solid #f0f0f0;
     }
 
@@ -142,9 +142,9 @@
 
     .settings-panel {
         background: #f8f9fa;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
+        border-radius: 10px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
     }
 
     .settings-row {
@@ -275,16 +275,16 @@
     }
 
     .start-btn {
-        padding: 0.8rem 2.5rem;
+        padding: 0.6rem 2rem;
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         color: white;
         border: none;
-        border-radius: 10px;
+        border-radius: 8px;
         cursor: pointer;
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
         transition: all 0.3s ease;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
         align-self: center;
     }
 
@@ -296,21 +296,21 @@
     .instructions-panel {
         background: #fff3cd;
         border-left: 4px solid #ffc107;
-        padding: 1.5rem;
+        padding: 0.75rem;
         border-radius: 8px;
-        margin-bottom: 2rem;
+        margin-bottom: 0.75rem;
     }
 
     .instructions-panel h3 {
         color: #856404;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
     }
 
     .instructions-panel p {
         color: #856404;
-        line-height: 1.6;
-        margin-bottom: 0.5rem;
+        line-height: 1.5;
+        margin-bottom: 0.3rem;
     }
 
     .instructions-panel ul {
@@ -326,11 +326,11 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem;
         background: #f8f9fa;
-        border-radius: 15px;
+        border-radius: 10px;
         min-height: auto;
-        max-height: 85vh;
+        max-height: 88vh;
         overflow-y: auto;
     }
 
@@ -640,7 +640,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 0.5rem;
-        max-height: 75vh;
+        max-height: 82vh;
         overflow-y: auto;
         padding: 0.25rem;
     }
@@ -655,12 +655,12 @@
     .student-panel {
         background: #f8f9fa;
         border: 2px solid #dee2e6;
-        border-radius: 10px;
-        padding: 0.5rem;
+        border-radius: 8px;
+        padding: 0.4rem;
         display: flex;
         flex-direction: column;
         min-height: 320px;
-        max-height: 420px;
+        max-height: 450px;
         overflow-y: auto;
     }
 
@@ -743,7 +743,7 @@
     :fullscreen .students-grid,
     :-webkit-full-screen .students-grid,
     :-moz-full-screen .students-grid {
-        max-height: 92vh;
+        max-height: 94vh;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 0.4rem;
         padding: 0.2rem;
@@ -752,9 +752,9 @@
     :fullscreen .student-panel,
     :-webkit-full-screen .student-panel,
     :-moz-full-screen .student-panel {
-        padding: 0.5rem;
-        min-height: 280px;
-        max-height: 380px;
+        padding: 0.4rem;
+        min-height: 300px;
+        max-height: 420px;
     }
 
     :fullscreen .student-panel .abacus-frame-mini,
