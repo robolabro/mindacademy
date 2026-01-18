@@ -158,6 +158,69 @@ body.teacher-platform {
     margin: 1rem 0;
 }
 
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    margin-right: 1rem;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.toggle-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+/* Collapsed Sidebar States */
+.sidebar.collapsed {
+    width: 70px;
+    transition: width 0.3s ease;
+}
+
+.sidebar.collapsed .nav-text {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 1rem;
+}
+
+.sidebar.collapsed .nav-icon {
+    margin: 0;
+}
+
+.sidebar.collapsed .sidebar-divider {
+    margin: 0.5rem 1rem;
+}
+
+/* Adjust main content when sidebar is collapsed */
+.teacher-layout.sidebar-collapsed .main-content {
+    margin-left: 0;
+}
+
+/* Smooth transitions */
+.sidebar,
+.nav-text,
+.main-content {
+    transition: all 0.3s ease;
+}
+
 /* Main Content */
 .main-content {
     flex: 1;

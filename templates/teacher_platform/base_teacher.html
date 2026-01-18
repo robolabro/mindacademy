@@ -18,6 +18,9 @@
     <!-- Top Bar -->
     <div class="teacher-topbar">
         <div class="topbar-left">
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Menu">
+                <span class="toggle-icon">☰</span>
+            </button>
             <a href="{% url 'home' %}" class="logo-mini">
                 <span class="logo-seal">心</span>
                 <span class="logo-text">Mind.Academy</span>
@@ -119,6 +122,26 @@
             btn.addEventListener('click', () => {
                 btn.parentElement.remove();
             });
+        });
+
+        // Sidebar toggle functionality
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.sidebar');
+        const teacherLayout = document.querySelector('.teacher-layout');
+
+        // Check if there's a saved state in localStorage
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+            teacherLayout.classList.add('sidebar-collapsed');
+        }
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            teacherLayout.classList.toggle('sidebar-collapsed');
+
+            // Save state to localStorage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
         });
     </script>
 </body>
