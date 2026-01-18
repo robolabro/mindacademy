@@ -497,6 +497,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        left: 50%;
+        transform: translateX(-50%);
     }
 
     .beads-section-mini.top {
@@ -516,8 +518,9 @@
         position: relative;
         transition: all 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
         cursor: pointer;
-        margin: 3px 0;
+        margin: 2px 0;
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+        flex-shrink: 0;
     }
 
     /* Top beads (heaven - value 5) */
@@ -663,6 +666,27 @@
     /* Training Mode padding */
     #trainingMode {
         padding: 2rem;
+    }
+
+    /* Student individual Start button */
+    .student-start-btn {
+        padding: 0.8rem 1.5rem;
+        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 1rem auto;
+        display: block;
+        box-shadow: 0 4px 12px rgba(0, 176, 155, 0.3);
+    }
+
+    .student-start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 176, 155, 0.4);
     }
 
     /* Classwork Mode */
@@ -1569,6 +1593,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(1)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="1"></div>
                     </div>
@@ -1578,7 +1604,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(1)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1592,6 +1617,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(2)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="2"></div>
                     </div>
@@ -1601,7 +1628,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(2)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1615,6 +1641,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(3)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="3"></div>
                     </div>
@@ -1624,7 +1652,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(3)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1638,6 +1665,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(4)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="4"></div>
                     </div>
@@ -1647,7 +1676,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(4)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1661,6 +1689,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(5)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="5"></div>
                     </div>
@@ -1670,7 +1700,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(5)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1684,6 +1713,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(6)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="6"></div>
                     </div>
@@ -1693,7 +1724,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(6)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1707,6 +1737,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(7)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="7"></div>
                     </div>
@@ -1716,7 +1748,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(7)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1730,6 +1761,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(8)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="8"></div>
                     </div>
@@ -1739,7 +1772,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(8)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1753,6 +1785,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(9)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="9"></div>
                     </div>
@@ -1762,7 +1796,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(9)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1776,6 +1809,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(10)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="10"></div>
                     </div>
@@ -1785,7 +1820,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(10)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
         </div>
@@ -3912,8 +3946,43 @@
         const element = document.getElementById(`student${studentId}Speed`);
         let currentValue = parseFloat(element.textContent);
         let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
-        element.textContent = newValue.toFixed(0);
+        element.textContent = newValue.toFixed(1);
         currentSettings.students[studentId].speed = newValue;
+    }
+
+    function startSingleStudent(studentId) {
+        const panel = document.querySelector(`.student-panel[data-student-id="${studentId}"]`);
+        if (!panel) return;
+
+        // Reset student state
+        studentResults[studentId] = null;
+        const statusDiv = panel.querySelector('.student-status');
+        statusDiv.classList.remove('show', 'correct', 'incorrect');
+
+        // Hide start button
+        const startBtn = panel.querySelector('.student-start-btn');
+        if (startBtn) startBtn.style.display = 'none';
+
+        // Hide other elements
+        panel.querySelector('.not-solved-text').style.display = 'none';
+        panel.querySelector('.answer-area').style.display = 'none';
+        panel.querySelector('.mini-abacus').style.display = 'none';
+
+        // Show countdown 3, 2, 1
+        const countdown = panel.querySelector('.countdown');
+        countdown.style.display = 'block';
+
+        let count = 3;
+        const countdownInterval = setInterval(() => {
+            countdown.textContent = count;
+            count--;
+
+            if (count < 0) {
+                clearInterval(countdownInterval);
+                countdown.style.display = 'none';
+                showSingleStudentExercise(studentId);
+            }
+        }, 1000);
     }
 
     function startAllStudents() {
@@ -3921,37 +3990,60 @@
             panel => panel.style.display !== 'none'
         );
 
-        // Reset all student states
+        // Start each student individually
         panels.forEach(panel => {
             const studentId = parseInt(panel.dataset.studentId);
-            studentResults[studentId] = null;
-            const statusDiv = panel.querySelector('.student-status');
-            statusDiv.classList.remove('show', 'correct', 'incorrect');
-            panel.querySelector('.not-solved-text').style.display = 'none';
-            panel.querySelector('.answer-area').style.display = 'none';
-            panel.querySelector('.mini-abacus').style.display = 'none';
+            startSingleStudent(studentId);
         });
+    }
 
-        // Show countdown 3, 2, 1
-        panels.forEach(panel => {
-            const countdown = panel.querySelector('.countdown');
-            countdown.style.display = 'block';
-        });
+    function showSingleStudentExercise(studentId) {
+        const panel = document.querySelector(`.student-panel[data-student-id="${studentId}"]`);
+        if (!panel) return;
 
-        let count = 3;
-        const countdownInterval = setInterval(() => {
-            panels.forEach(panel => {
-                const countdown = panel.querySelector('.countdown');
-                countdown.textContent = count;
-            });
+        const settings = currentSettings.students[studentId];
+        const number = getRandomNumber(settings.from, settings.to);
+        studentNumbers[studentId] = number;
 
-            count--;
+        const abacusContainer = panel.querySelector('.abacus-frame-mini');
+        const abacusDiv = panel.querySelector('.mini-abacus');
+        const answerArea = panel.querySelector('.answer-area');
+        const notSolvedText = panel.querySelector('.not-solved-text');
 
-            if (count < 0) {
-                clearInterval(countdownInterval);
-                showStudentExercise();
-            }
-        }, 1000);
+        if (settings.direction === 'abacus-to-number') {
+            // Show abacus with number first
+            createMiniAbacus(number, abacusContainer);
+            abacusDiv.style.display = 'block';
+
+            // After display time expires, hide abacus and show input
+            setTimeout(() => {
+                abacusDiv.style.display = 'none';
+
+                notSolvedText.textContent = 'Introdu numărul';
+                notSolvedText.style.display = 'block';
+
+                const input = answerArea.querySelector('.answer-input');
+                input.style.display = 'block';
+                answerArea.style.display = 'flex';
+
+                // Focus on input for quick entry
+                input.focus();
+            }, settings.speed * 1000);
+        } else {
+            // Number to abacus - show number and interactive abacus
+            notSolvedText.textContent = `Set this number on abacus: ${number}`;
+            notSolvedText.style.display = 'block';
+
+            // Create interactive abacus starting at 0
+            createMiniAbacus(0, abacusContainer);
+            makeAbacusInteractive(abacusContainer);
+            abacusDiv.style.display = 'block';
+
+            // Show answer area (button only, hide input)
+            const input = answerArea.querySelector('.answer-input');
+            input.style.display = 'none';
+            answerArea.style.display = 'flex';
+        }
     }
 
     function showStudentExercise() {
@@ -3961,53 +4053,7 @@
 
         panels.forEach(panel => {
             const studentId = parseInt(panel.dataset.studentId);
-            const settings = currentSettings.students[studentId];
-
-            const countdown = panel.querySelector('.countdown');
-            countdown.style.display = 'none';
-
-            const number = getRandomNumber(settings.from, settings.to);
-            studentNumbers[studentId] = number;
-
-            const abacusContainer = panel.querySelector('.abacus-frame-mini');
-            const abacusDiv = panel.querySelector('.mini-abacus');
-            const answerArea = panel.querySelector('.answer-area');
-            const notSolvedText = panel.querySelector('.not-solved-text');
-
-            if (settings.direction === 'abacus-to-number') {
-                // Show abacus with number first
-                createMiniAbacus(number, abacusContainer);
-                abacusDiv.style.display = 'block';
-
-                // After display time expires, hide abacus and show input
-                setTimeout(() => {
-                    abacusDiv.style.display = 'none';
-
-                    notSolvedText.textContent = 'Introdu numărul';
-                    notSolvedText.style.display = 'block';
-
-                    const input = answerArea.querySelector('.answer-input');
-                    input.style.display = 'block';
-                    answerArea.style.display = 'flex';
-
-                    // Focus on input for quick entry
-                    input.focus();
-                }, settings.speed * 1000);
-            } else {
-                // Number to abacus - show number and interactive abacus
-                notSolvedText.textContent = `Set this number on abacus: ${number}`;
-                notSolvedText.style.display = 'block';
-
-                // Create interactive abacus starting at 0
-                createMiniAbacus(0, abacusContainer);
-                makeAbacusInteractive(abacusContainer);
-                abacusDiv.style.display = 'block';
-
-                // Show answer area (button only, hide input)
-                const input = answerArea.querySelector('.answer-input');
-                input.style.display = 'none';
-                answerArea.style.display = 'flex';
-            }
+            showSingleStudentExercise(studentId);
         });
     }
 
@@ -4074,6 +4120,12 @@
         const input = panel.querySelector('.answer-input');
         if (input) {
             input.value = '';
+        }
+
+        // Show Start button again for next round
+        const startBtn = panel.querySelector('.student-start-btn');
+        if (startBtn) {
+            startBtn.style.display = 'block';
         }
     }
 
