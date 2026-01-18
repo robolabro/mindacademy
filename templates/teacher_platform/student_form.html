@@ -1,0 +1,291 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="form-container">
+        <div class="form-card">
+            <form method="post" id="studentForm">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="form-section">
+                    <h3>👤 Informații Personale</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }} *</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                            <div class="error-message">{{ form.first_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }} *</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                            <div class="error-message">{{ form.last_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="id_sex">Sex</label>
+                            {{ form.sex }}
+                            {% if form.sex.errors %}
+                            <div class="error-message">{{ form.sex.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="id_date_of_birth">Data Nașterii</label>
+                            {{ form.date_of_birth }}
+                            {% if form.date_of_birth.errors %}
+                            <div class="error-message">{{ form.date_of_birth.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_avatar">Avatar *</label>
+                        {{ form.avatar }}
+                        {% if form.avatar.errors %}
+                        <div class="error-message">{{ form.avatar.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text">Alege un avatar pentru elev</small>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>🔑 Cont și Acces</h3>
+
+                    <div class="form-group">
+                        <label for="{{ form.username.id_for_label }}">{{ form.username.label }} *</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                        <div class="error-message">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text">Username-ul va fi folosit și ca parolă inițială</small>
+                    </div>
+
+                    {% if not student %}
+                    <div class="alert alert-info">
+                        ℹ️ Parola inițială a elevului va fi identică cu username-ul. Elevul va fi solicitat să schimbe parola la prima autentificare.
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label for="id_account_created_date">Data Creare Cont *</label>
+                        {{ form.account_created_date }}
+                        {% if form.account_created_date.errors %}
+                        <div class="error-message">{{ form.account_created_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>👪 Date Părinte</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="id_parent_email">Email Părinte</label>
+                            {{ form.parent_email }}
+                            {% if form.parent_email.errors %}
+                            <div class="error-message">{{ form.parent_email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="id_parent_phone">Telefon Părinte</label>
+                            {{ form.parent_phone }}
+                            {% if form.parent_phone.errors %}
+                            <div class="error-message">{{ form.parent_phone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>🏫 Informații Școlare</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="id_school_name">Școala</label>
+                            {{ form.school_name }}
+                            {% if form.school_name.errors %}
+                            <div class="error-message">{{ form.school_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="id_grade">Clasa</label>
+                            {{ form.grade }}
+                            {% if form.grade.errors %}
+                            <div class="error-message">{{ form.grade.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if not student %}
+                <div class="form-section">
+                    <h3>👥 Alocare Grupă</h3>
+
+                    <div class="form-group">
+                        <label for="id_group">Grupă</label>
+                        {{ form.group }}
+                        {% if form.group.errors %}
+                        <div class="error-message">{{ form.group.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text">{{ form.group.help_text }}</small>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">💾 Salvează</button>
+                    <a href="{% url 'teacher_platform:students_list' %}" class="btn-secondary">❌ Anulează</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 18px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.form-control, .form-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-control:focus, .form-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+.form-text {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.alert {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+</style>
+{% endblock %}

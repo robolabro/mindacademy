@@ -1,0 +1,15 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <!-- No background - transparent -->
+
+  <!-- Japanese character 心 with vermillion red color -->
+  <text
+    x="540"
+    y="750"
+    font-family="'Noto Serif JP', 'Yu Mincho', 'MS Mincho', serif"
+    font-size="600"
+    font-weight="900"
+    fill="#D32F2F"
+    text-anchor="middle"
+    dominant-baseline="auto"
+    style="letter-spacing: 0;">心</text>
+</svg>

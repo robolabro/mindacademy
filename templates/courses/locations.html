@@ -29,15 +29,15 @@
                              onmouseover="this.style.boxShadow='var(--shadow-hover)'"
                              onmouseout="this.style.boxShadow='var(--shadow)'">
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0;">
+                            <div class="location-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0;">
                                 <!-- Location Info -->
-                                <div style="padding: 3rem; background: linear-gradient(135deg, var(--vermillion), var(--murasaki)); color: white; display: flex; flex-direction: column; justify-content: center;">
+                                <div class="location-info" style="padding: 3rem; background: linear-gradient(135deg, var(--vermillion), var(--murasaki)); color: white; display: flex; flex-direction: column; justify-content: center;">
                                     <div style="font-size: 4rem; margin-bottom: 1.5rem;">📍</div>
                                     <h3 style="color: white; margin-bottom: 1rem; font-size: 2rem; font-weight: 900;">{{ location.name }}</h3>
                                     <div style="margin-bottom: 2rem;">
                                         <p style="color: rgba(255,255,255,0.95); line-height: 1.8; font-size: 1.1rem;">{{ location.address|linebreaks }}</p>
                                     </div>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div class="location-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                                         <a href="{% url 'demo_lesson' %}" class="btn btn-secondary" style="text-align: center;">Lecție Demo</a>
                                         <a href="{% url 'contact' %}" class="btn" style="background: white; color: var(--vermillion); text-align: center;">Contact</a>
                                     </div>
@@ -45,11 +45,11 @@
 
                                 <!-- Google Maps -->
                                 {% if location.google_maps_embed %}
-                                <div style="position: relative; min-height: 350px;">
+                                <div class="location-map" style="position: relative; min-height: 350px;">
                                     {{ location.google_maps_embed|safe }}
                                 </div>
                                 {% else %}
-                                <div style="background: var(--aged-paper); display: flex; align-items: center; justify-content: center; min-height: 350px;">
+                                <div class="location-map" style="background: var(--aged-paper); display: flex; align-items: center; justify-content: center; min-height: 350px;">
                                     <div style="text-align: center; padding: 2rem;">
                                         <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;">🗺️</div>
                                         <p style="color: var(--ink-blue);">Harta va fi disponibilă în curând</p>
@@ -95,7 +95,7 @@
                                     </div>
                                 </div>
 
-                                <div style="display: inline-flex; gap: 1.5rem; margin-top: 2rem;">
+                                <div class="online-location-buttons" style="display: inline-flex; gap: 1.5rem; margin-top: 2rem;">
                                     <a href="{% url 'demo_lesson' %}" class="btn btn-secondary" style="padding: 1.2rem 3rem; font-size: 1.1rem;">Începe Online</a>
                                     <a href="{% url 'contact' %}" class="btn" style="background: white; color: var(--bamboo-green); padding: 1.2rem 3rem; font-size: 1.1rem;">Mai Multe Detalii</a>
                                 </div>
@@ -126,26 +126,34 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <span class="feature-icon">🏫</span>
-                    <h3>Spații Moderne</h3>
-                    <p>Săli de clasă luminoase, dotate cu tehnologie modernă și mobilier ergonomic adaptat copiilor.</p>
+                    <div class="feature-content">
+                        <h3>SPAȚII MODERNE</h3>
+                        <p>Săli de clasă luminoase, dotate cu tehnologie modernă și mobilier ergonomic adaptat copiilor.</p>
+                    </div>
                 </div>
 
                 <div class="feature-card">
                     <span class="feature-icon">🚌</span>
-                    <h3>Acces Facil</h3>
-                    <p>Locații strategice cu acces ușor cu transportul în comun și parcare disponibilă.</p>
+                    <div class="feature-content">
+                        <h3>ACCES FACIL</h3>
+                        <p>Locații strategice cu acces ușor cu transportul în comun și parcare disponibilă.</p>
+                    </div>
                 </div>
 
                 <div class="feature-card">
                     <span class="feature-icon">🔒</span>
-                    <h3>Siguranță</h3>
-                    <p>Sisteme de securitate, monitorizare video și personal dedicat pentru siguranța copiilor.</p>
+                    <div class="feature-content">
+                        <h3>SIGURANȚĂ</h3>
+                        <p>Sisteme de securitate, monitorizare video și personal dedicat pentru siguranța copiilor.</p>
+                    </div>
                 </div>
 
                 <div class="feature-card">
                     <span class="feature-icon">☕</span>
-                    <h3>Zone de Așteptare</h3>
-                    <p>Spații confortabile unde părinții pot aștepta în timpul lecțiilor, cu Wi-Fi gratuit.</p>
+                    <div class="feature-content">
+                        <h3>ZONE DE AȘTEPTARE</h3>
+                        <p>Spații confortabile unde părinții pot aștepta în timpul lecțiilor, cu Wi-Fi gratuit.</p>
+                    </div>
                 </div>
             </div>
         </div>

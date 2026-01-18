@@ -1,0 +1,876 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Simulator Abac{% endblock %}
+{% block page_title %}Abac Online{% endblock %}
+
+{% block extra_css %}
+<style>
+    .abacus-container {
+        padding: 2rem;
+        max-width: 100%;
+        height: calc(100vh - 180px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    }
+
+    /* Configuration Dialog */
+    .config-dialog {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        max-width: 500px;
+        width: 90%;
+        animation: slideIn 0.3s ease;
+        position: relative;
+        z-index: 100;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .config-title {
+        text-align: center;
+        font-size: 1.8rem;
+        color: var(--text-primary);
+        margin-bottom: 2rem;
+        font-weight: 600;
+    }
+
+    .config-option {
+        margin-bottom: 2rem;
+    }
+
+    .config-label {
+        display: block;
+        font-size: 1rem;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        font-weight: 500;
+    }
+
+    .size-options {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .size-btn {
+        width: 80px;
+        height: 80px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        background: white;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+        position: relative;
+        z-index: 10;
+    }
+
+    .size-btn:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .size-btn.active {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .toggle-option {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .toggle-switch {
+        position: relative;
+        width: 60px;
+        height: 30px;
+        background: #e0e0e0;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        pointer-events: auto;
+        z-index: 10;
+    }
+
+    .toggle-switch.active {
+        background: var(--primary-color);
+    }
+
+    .toggle-knob {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 24px;
+        height: 24px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-switch.active .toggle-knob {
+        transform: translateX(30px);
+    }
+
+    .back-to-list-btn {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        background: #f0f0f0;
+        color: var(--text-primary);
+        border: 2px solid #e0e0e0;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+        text-align: center;
+        text-decoration: none;
+        pointer-events: auto;
+        position: relative;
+        z-index: 10;
+    }
+
+    .back-to-list-btn:hover {
+        background: #e0e0e0;
+        border-color: #d0d0d0;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .start-btn {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #ff0844 0%, #ff6b9d 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+        pointer-events: auto;
+        position: relative;
+        z-index: 10;
+    }
+
+    .start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 8, 68, 0.4);
+    }
+
+    /* Abacus Display */
+    .abacus-display {
+        display: none;
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        animation: fadeIn 0.5s ease;
+        max-width: 95%;
+        overflow-x: auto;
+    }
+
+    .abacus-display.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    .abacus-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .result-display {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .control-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .clear-btn, .back-btn {
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .clear-btn {
+        background: linear-gradient(135deg, #ff0844 0%, #ff6b9d 100%);
+        color: white;
+    }
+
+    .clear-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 8, 68, 0.3);
+    }
+
+    .back-btn {
+        background: #f0f0f0;
+        color: var(--text-primary);
+    }
+
+    .back-btn:hover {
+        background: #e0e0e0;
+        transform: translateY(-2px);
+    }
+
+    /* Abacus Structure */
+    .abacus-frame {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(252, 182, 159, 0.3);
+        margin-top: 1rem;
+        border: 4px solid #ff6b9d;
+    }
+
+    .counters-row {
+        display: flex;
+        justify-content: center;
+        gap: 2.2rem;
+        margin-bottom: 1rem;
+        padding: 0;
+    }
+
+    .counter {
+        width: 50px;
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        background: white;
+        border-radius: 8px;
+        padding: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .abacus-rods {
+        display: flex;
+        gap: 4.8rem;
+        justify-content: center;
+        position: relative;
+    }
+
+    .rod-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+    .place-label {
+        position: absolute;
+        top: -30px;
+        font-size: 0.75rem;
+        color: #666;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .rod {
+        width: 8px;
+        height: 400px;
+        background: linear-gradient(to bottom, #8e44ad 0%, #3498db 50%, #16a085 100%);
+        border-radius: 4px;
+        position: relative;
+        box-shadow: 0 2px 8px rgba(142, 68, 173, 0.4);
+    }
+
+    .divider {
+        position: absolute;
+        left: 50%;
+        top: 25%;
+        transform: translate(-50%, -50%);
+        width: calc(100% + 40px);
+        height: 8px;
+        background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
+        z-index: 10;
+    }
+
+    .divider.has-marker::before {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: linear-gradient(135deg, #feca57 0%, #ff6b9d 100%);
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 3px 8px rgba(254, 202, 87, 0.5);
+        z-index: 11;
+    }
+
+    .beads-section {
+        position: absolute;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .beads-section.top {
+        top: 0;
+        padding-top: 10px;
+    }
+
+    .beads-section.bottom {
+        bottom: 0;
+        padding-bottom: 15px;
+    }
+
+    .bead {
+        width: 50px;
+        height: 45px;
+        border-radius: 50% / 45%;
+        margin: 5px 0;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        box-shadow:
+            0 4px 10px rgba(0, 0, 0, 0.3),
+            inset -3px -4px 6px rgba(0, 0, 0, 0.2),
+            inset 3px 4px 6px rgba(255, 255, 255, 0.4);
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Bile cerești (top) - culoare turcoaz/cyan vibrant */
+    .beads-section.top .bead {
+        background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 50%, #00d2ff 100%);
+    }
+
+    .beads-section.top .bead.active {
+        background: linear-gradient(135deg, #0099cc 0%, #2e5f9e 50%, #0099cc 100%);
+        box-shadow:
+            0 8px 20px rgba(0, 153, 204, 0.6),
+            inset -3px -4px 6px rgba(0, 0, 0, 0.15),
+            inset 3px 4px 7px rgba(255, 255, 255, 0.5);
+    }
+
+    /* Bile pământene (bottom) - culoare coral/roz vibrant */
+    .beads-section.bottom .bead {
+        background: linear-gradient(135deg, #ff6b9d 0%, #feca57 50%, #ff9ff3 100%);
+    }
+
+    .beads-section.bottom .bead.active {
+        background: linear-gradient(135deg, #ee5a6f 0%, #f39c12 50%, #e84393 100%);
+        box-shadow:
+            0 8px 20px rgba(238, 90, 111, 0.6),
+            inset -3px -4px 6px rgba(0, 0, 0, 0.15),
+            inset 3px 4px 7px rgba(255, 255, 255, 0.5);
+    }
+
+    .bead::before {
+        content: '';
+        position: absolute;
+        width: 60%;
+        height: 60%;
+        background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.6), transparent 65%);
+        border-radius: 50%;
+        top: 10%;
+        left: 10%;
+    }
+
+    .bead:hover {
+        transform: scale(1.08);
+        box-shadow:
+            0 6px 16px rgba(0, 0, 0, 0.4),
+            inset -3px -4px 6px rgba(0, 0, 0, 0.2),
+            inset 3px 4px 6px rgba(255, 255, 255, 0.5);
+        filter: brightness(1.1);
+    }
+
+    .bead::after {
+        content: '';
+        position: absolute;
+        width: 40%;
+        height: 40%;
+        background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15), transparent 70%);
+        border-radius: 50%;
+        bottom: 15%;
+        right: 15%;
+    }
+
+    @media (max-width: 768px) {
+        .abacus-container {
+            padding: 1rem;
+        }
+
+        .config-dialog {
+            padding: 1.5rem;
+        }
+
+        .size-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 1.2rem;
+        }
+
+        .result-display {
+            font-size: 1.5rem;
+        }
+
+        .counter {
+            width: 40px;
+            font-size: 1.2rem;
+        }
+
+        .bead {
+            width: 40px;
+            height: 40px;
+        }
+
+        .rod {
+            width: 6px;
+            height: 350px;
+            min-height: 350px;
+        }
+
+        /* Adjust bead transforms for mini version */
+        .beads-section.top .bead.active {
+            transform: translateY(35px) !important;
+        }
+
+        .beads-section.bottom .bead.active {
+            transform: translateY(-30px) !important;
+        }
+    }
+
+    .hidden {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="abacus-container">
+    <!-- Configuration Dialog -->
+    <div class="config-dialog" id="configDialog">
+        <h2 class="config-title">Configurare Abac</h2>
+
+        <div class="config-option">
+            <label class="config-label">Abacus size</label>
+            <div class="size-options">
+                <button class="size-btn" data-size="7">7</button>
+                <button class="size-btn active" data-size="15">15</button>
+                <button class="size-btn" data-size="17">17</button>
+            </div>
+        </div>
+
+        <div class="config-option">
+            <div class="toggle-option">
+                <label class="config-label" style="margin-bottom: 0;">Show the result:</label>
+                <div class="toggle-switch active" id="toggleResult">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+        </div>
+
+        <a href="{% url 'teacher_platform:simulators_list' %}" class="back-to-list-btn">
+            ← Înapoi la Simulatoare
+        </a>
+        <button class="start-btn" id="startBtn">Start</button>
+    </div>
+
+    <!-- Abacus Display -->
+    <div class="abacus-display" id="abacusDisplay">
+        <div class="abacus-header">
+            <div class="result-display" id="resultDisplay">Total: 0</div>
+            <div class="control-buttons">
+                <button class="back-btn" id="backBtn">← Back</button>
+                <button class="clear-btn" id="clearBtn">Clear</button>
+            </div>
+        </div>
+
+        <div class="abacus-frame">
+            <div class="counters-row" id="countersRow"></div>
+            <div class="abacus-rods" id="abacusRods"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function initializeAbacusSimulator() {
+    console.log('Initializing abacus simulator...');
+
+    // Configuration variables
+    let abacusSize = 15;
+    let showResult = true;
+    let columnValues = [];
+
+    // DOM Elements
+    const configDialog = document.getElementById('configDialog');
+    const abacusDisplay = document.getElementById('abacusDisplay');
+    const startBtn = document.getElementById('startBtn');
+    const backBtn = document.getElementById('backBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toggleResult = document.getElementById('toggleResult');
+    const resultDisplay = document.getElementById('resultDisplay');
+    const sizeBtns = document.querySelectorAll('.size-btn');
+
+    // Check if elements exist
+    if (!configDialog || !abacusDisplay || !startBtn || !backBtn || !clearBtn || !toggleResult || !resultDisplay) {
+        console.error('Missing required DOM elements');
+        return;
+    }
+
+    if (sizeBtns.length === 0) {
+        console.error('No size buttons found');
+        return;
+    }
+
+    console.log('All DOM elements found, attaching event listeners...');
+
+    // Configuration: Size selection
+    sizeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sizeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            abacusSize = parseInt(btn.dataset.size);
+        });
+    });
+
+    // Configuration: Toggle result
+    toggleResult.addEventListener('click', () => {
+        toggleResult.classList.toggle('active');
+        showResult = toggleResult.classList.contains('active');
+    });
+
+    // Start button - navigate to display mode
+    startBtn.addEventListener('click', () => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('display', 'true');
+        url.searchParams.set('size', abacusSize);
+        url.searchParams.set('showResult', showResult);
+        window.location.href = url.toString();
+    });
+
+    // Back button
+    backBtn.addEventListener('click', () => {
+        abacusDisplay.classList.remove('active');
+        setTimeout(() => {
+            configDialog.classList.remove('hidden');
+        }, 300);
+    });
+
+    // Clear button
+    clearBtn.addEventListener('click', () => {
+        resetAbacus();
+    });
+
+    // Initialize abacus
+    function initializeAbacus() {
+        const abacusRods = document.getElementById('abacusRods');
+        const countersRow = document.getElementById('countersRow');
+
+        abacusRods.innerHTML = '';
+        countersRow.innerHTML = '';
+        columnValues = new Array(abacusSize).fill(0);
+
+        // Calculate middle column (units position)
+        const middleIndex = Math.floor(abacusSize / 2);
+
+        // Create columns from left to right (0 to abacusSize-1)
+        // Left = higher place values, Right = lower place values
+        for (let i = 0; i < abacusSize; i++) {
+            // Create counter
+            const counter = document.createElement('div');
+            counter.className = 'counter';
+            counter.textContent = '0';
+            counter.id = `counter-${i}`;
+            countersRow.appendChild(counter);
+
+            // Create rod container
+            const rodContainer = document.createElement('div');
+            rodContainer.className = 'rod-container';
+
+            // Add place value label
+            const placeLabel = document.createElement('div');
+            placeLabel.className = 'place-label';
+            const placeValue = middleIndex - i;
+            if (placeValue === 0) {
+                placeLabel.textContent = 'Unități';
+            } else if (placeValue === 1) {
+                placeLabel.textContent = 'Zeci';
+            } else if (placeValue === 2) {
+                placeLabel.textContent = 'Sute';
+            } else if (placeValue === 3) {
+                placeLabel.textContent = 'Mii';
+            } else if (placeValue === 4) {
+                placeLabel.textContent = 'Zeci mii';
+            } else if (placeValue === 5) {
+                placeLabel.textContent = 'Sute mii';
+            } else if (placeValue === 6) {
+                placeLabel.textContent = 'Milioane';
+            } else if (placeValue === 7) {
+                placeLabel.textContent = 'Zeci mil.';
+            } else if (placeValue === 8) {
+                placeLabel.textContent = 'Sute mil.';
+            } else if (placeValue < 0) {
+                placeLabel.textContent = `1/${Math.pow(10, Math.abs(placeValue))}`;
+            }
+            rodContainer.appendChild(placeLabel);
+
+            // Create rod
+            const rod = document.createElement('div');
+            rod.className = 'rod';
+            rod.dataset.column = i; // Add data-column attribute for reliable selection
+
+            // Top section (1 bead = 5)
+            const topSection = document.createElement('div');
+            topSection.className = 'beads-section top';
+            const topBead = createBead(i, 5, 'top');
+            topSection.appendChild(topBead);
+            rod.appendChild(topSection);
+
+            // Divider
+            const divider = document.createElement('div');
+            divider.className = 'divider';
+
+            // Add class marker dots for units (0), thousands (3), millions (6)
+            if (placeValue === 0 || placeValue === 3 || placeValue === 6) {
+                divider.classList.add('has-marker');
+            }
+
+            rod.appendChild(divider);
+
+            // Bottom section (4 beads = 1 each)
+            const bottomSection = document.createElement('div');
+            bottomSection.className = 'beads-section bottom';
+            for (let j = 0; j < 4; j++) {
+                const bottomBead = createBead(i, 1, 'bottom', j);
+                bottomSection.appendChild(bottomBead);
+            }
+            rod.appendChild(bottomSection);
+
+            rodContainer.appendChild(rod);
+            abacusRods.appendChild(rodContainer);
+        }
+    }
+
+    // Create bead element
+    function createBead(columnIndex, value, section, beadIndex = 0) {
+        const bead = document.createElement('div');
+        bead.className = 'bead';
+        bead.dataset.column = columnIndex;
+        bead.dataset.value = value;
+        bead.dataset.section = section;
+        bead.dataset.beadIndex = beadIndex; // Track position in bottom section (0-3)
+
+        bead.addEventListener('click', () => {
+            toggleBead(bead);
+        });
+
+        return bead;
+    }
+
+    // Toggle bead state
+    function toggleBead(bead) {
+        const isActive = bead.classList.contains('active');
+        const columnIndex = parseInt(bead.dataset.column);
+        const section = bead.dataset.section;
+        const beadIndex = parseInt(bead.dataset.beadIndex);
+
+        // Top bead (heaven) - behaves independently
+        if (section === 'top') {
+            if (isActive) {
+                bead.classList.remove('active');
+                columnValues[columnIndex] -= 5;
+            } else {
+                bead.classList.add('active');
+                columnValues[columnIndex] += 5;
+            }
+        }
+        // Bottom beads (earth) - group logic
+        else if (section === 'bottom') {
+            const rod = document.querySelector(`.rod[data-column="${columnIndex}"]`);
+            const bottomBeads = Array.from(rod.querySelectorAll('.beads-section.bottom .bead'));
+
+            // Count how many beads are currently active
+            const activeCount = bottomBeads.filter(b => b.classList.contains('active')).length;
+
+            if (!isActive) {
+                // LIFTING BEADS (activating) - lift clicked bead and all above it
+                let beadsToActivate = beadIndex + 1; // Number of beads to activate from top
+                for (let i = 0; i < beadsToActivate; i++) {
+                    if (!bottomBeads[i].classList.contains('active')) {
+                        bottomBeads[i].classList.add('active');
+                        columnValues[columnIndex] += 1;
+                    }
+                }
+            } else {
+                // LOWERING BEADS (deactivating) - lower clicked bead and all beads below it
+                // Deactivate the clicked bead and all beads below it (higher indices)
+                let beadsToDeactivate = 0;
+                for (let i = beadIndex; i < bottomBeads.length; i++) {
+                    if (bottomBeads[i].classList.contains('active')) {
+                        bottomBeads[i].classList.remove('active');
+                        beadsToDeactivate++;
+                    }
+                }
+                // Subtract the number of deactivated beads from column value
+                columnValues[columnIndex] -= beadsToDeactivate;
+            }
+        }
+
+        // Update bead positions for this column
+        updateBeadPositions(columnIndex);
+
+        // Update counter for this column
+        updateCounter(columnIndex);
+        updateResultDisplay();
+    }
+
+    // Update bead positions to stick to separator
+    function updateBeadPositions(columnIndex) {
+        const rod = document.querySelector(`.rod[data-column="${columnIndex}"]`);
+
+        // Top bead (heaven - value 5)
+        const topBead = rod.querySelector('.beads-section.top .bead');
+        if (topBead && topBead.classList.contains('active')) {
+            // Move down towards separator (careful not to cross it)
+            topBead.style.transform = 'translateY(45px)';
+        } else if (topBead) {
+            topBead.style.transform = 'translateY(0)';
+        }
+
+        // Bottom beads (earth - value 1 each)
+        const bottomBeads = rod.querySelectorAll('.beads-section.bottom .bead');
+
+        // Move active beads up towards separator (with better spacing)
+        bottomBeads.forEach((bead) => {
+            if (bead.classList.contains('active')) {
+                bead.style.transform = 'translateY(-40px)';
+            } else {
+                bead.style.transform = 'translateY(0)';
+            }
+        });
+    }
+
+    // Update counter display
+    function updateCounter(columnIndex) {
+        const counter = document.getElementById(`counter-${columnIndex}`);
+        counter.textContent = columnValues[columnIndex];
+    }
+
+    // Update result display
+    function updateResultDisplay() {
+        if (!showResult) {
+            resultDisplay.textContent = 'Total: ***';
+            return;
+        }
+
+        const middleIndex = Math.floor(abacusSize / 2);
+        let total = 0;
+
+        for (let i = 0; i < abacusSize; i++) {
+            const placeValue = middleIndex - i;
+            const multiplier = Math.pow(10, placeValue);
+            total += columnValues[i] * multiplier;
+        }
+
+        resultDisplay.textContent = `Total: ${total.toLocaleString('ro-RO')}`;
+    }
+
+    // Reset abacus
+    function resetAbacus() {
+        const beads = document.querySelectorAll('.bead');
+        beads.forEach(bead => {
+            bead.classList.remove('active');
+            bead.style.transform = 'translateY(0)';
+        });
+
+        columnValues.fill(0);
+
+        for (let i = 0; i < abacusSize; i++) {
+            updateCounter(i);
+        }
+
+        updateResultDisplay();
+    }
+
+    console.log('Abacus simulator initialized successfully!');
+
+    // Check if we should display abacus immediately (opened in new window)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('display') === 'true') {
+        // Get configuration from URL
+        const urlSize = urlParams.get('size');
+        const urlShowResult = urlParams.get('showResult');
+
+        if (urlSize) abacusSize = parseInt(urlSize);
+        if (urlShowResult) showResult = urlShowResult === 'true';
+
+        // Hide config dialog and show abacus immediately
+        configDialog.classList.add('hidden');
+        initializeAbacus();
+        abacusDisplay.classList.add('active');
+        updateResultDisplay();
+    }
+}
+
+// Run initialization when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeAbacusSimulator);
+} else {
+    // DOM is already ready, run immediately
+    initializeAbacusSimulator();
+}
+</script>
+{% endblock %}

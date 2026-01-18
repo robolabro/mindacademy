@@ -26,10 +26,10 @@ urlpatterns = [
     path('', include('courses.urls')),
 
     # Autentificare (login, logout, etc.)
-    # path('accounts/', include('accounts.urls')),  # ← Vom crea mai târziu
+    path('accounts/', include('django.contrib.auth.urls')),  # Login/logout Django built-in
 
     # Platforma profesori
-    # path('teacher/', include('teacher_platform.urls')),  # ← Vom crea mai târziu
+    path('teacher/', include('teacher_platform.urls')),  # Dashboard pentru profesori
 
     # Platforma elevi
     # path('student/', include('student_platform.urls')),  # ← Vom crea mai târziu

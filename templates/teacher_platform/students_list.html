@@ -1,0 +1,75 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Studenții Mei{% endblock %}
+{% block page_title %}🎓 Studenții Mei{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Filters -->
+    <div class="filters-bar">
+        <div class="filter-group">
+            <label>Filtrează după grupă:</label>
+            <a href="?" class="filter-btn {% if not group_filter %}active{% endif %}">
+                Toți Studenții ({{ students.count }})
+            </a>
+            {% for group in groups %}
+            <a href="?group={{ group.id }}" class="filter-btn {% if group_filter == group.id|stringformat:'s' %}active{% endif %}">
+                {{ group.name }}
+            </a>
+            {% endfor %}
+        </div>
+        <a href="{% url 'teacher_platform:student_add' %}" class="btn-primary">➕ Adaugă Elev Nou</a>
+    </div>
+
+    <!-- Students Grid -->
+    {% if students %}
+    <div class="students-grid-full">
+        {% for gs in students %}
+        <a href="{% url 'teacher_platform:student_detail' gs.student.id %}" class="student-card-full">
+            <div class="student-avatar-large">
+                {% if gs.student.student_profile %}
+                    <span class="avatar-icon-large">{% if gs.student.student_profile.avatar == 'boy' %}👦{% else %}👧{% endif %}</span>
+                {% else %}
+                    <span class="avatar-icon-large">🎓</span>
+                {% endif %}
+            </div>
+            <div class="student-details">
+                <h3>{{ gs.student.get_full_name }}</h3>
+                <div class="student-meta">
+                    {% if gs.group %}
+                        <span>👥 {{ gs.group.name }}</span>
+                    {% else %}
+                        <span>⚠️ Fără grupă</span>
+                    {% endif %}
+                    {% if gs.student.student_profile and gs.student.student_profile.grade %}
+                        <span>📚 Clasa {{ gs.student.student_profile.grade }}</span>
+                    {% endif %}
+                </div>
+                <div class="student-stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Prezență</span>
+                        <span class="stat-value">{{ gs.get_attendance_rate }}%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Lecții</span>
+                        <span class="stat-value">{{ gs.lessons_attended }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Absențe</span>
+                        <span class="stat-value">{{ gs.lessons_missed }}</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state-large">
+        <div class="empty-icon">🎓</div>
+        <h2>Nu ai studenți</h2>
+        <p>Adaugă studenți în grupele tale pentru a-i gestiona aici.</p>
+        <a href="{% url 'teacher_platform:student_add' %}" class="btn-primary">➕ Adaugă Elev Nou</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

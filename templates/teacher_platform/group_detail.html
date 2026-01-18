@@ -1,0 +1,270 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}{{ group.name }}{% endblock %}
+{% block page_title %}👥 {{ group.name }} ({{ group.code }}){% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{% url 'teacher_platform:groups_list' %}">Grupe</a>
+        <span>/</span>
+        <span>{{ group.name }}</span>
+    </div>
+
+    <!-- Group Overview -->
+    <div class="detail-card">
+        <div class="detail-header">
+            <div>
+                <h2>{{ group.name }}</h2>
+                <span class="group-code-badge">{{ group.code }}</span>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'teacher_platform:group_edit' group.id %}" class="btn-secondary">Editează Grupă</a>
+                <a href="{% url 'teacher_platform:lesson_create_for_group' group.id %}" class="btn-primary">➕ Adaugă Lecție</a>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">📚 Curs:</span>
+                <span class="info-value">{{ group.course.title }}</span>
+            </div>
+            {% if group.module %}
+            <div class="info-item">
+                <span class="info-label">📖 Modul:</span>
+                <span class="info-value">
+                    <span class="module-badge" style="background-color: {{ group.module.color }}20; color: {{ group.module.color }};">
+                        {{ group.module.name }}
+                    </span>
+                </span>
+            </div>
+            {% endif %}
+            {% if group.location %}
+            <div class="info-item">
+                <span class="info-label">📍 Locație:</span>
+                <span class="info-value">{{ group.location.name }}</span>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <span class="info-label">📅 Program:</span>
+                <span class="info-value">{{ group.get_weekday_display }}, {{ group.start_time|date:"H:i" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">⏱️ Durată:</span>
+                <span class="info-value">{{ group.duration_minutes }} minute</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">👥 Studenți:</span>
+                <span class="info-value">{{ students.count }} / {{ group.max_students }}</span>
+            </div>
+        </div>
+
+        {% if group.description %}
+        <div class="group-description">
+            <strong>Descriere:</strong>
+            <p>{{ group.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="students">👥 Studenți ({{ students.count }})</button>
+        <button class="tab-btn" data-tab="upcoming-lessons">📅 Lecții Viitoare ({{ upcoming_lessons.count }})</button>
+        <button class="tab-btn" data-tab="past-lessons">📚 Lecții Trecute ({{ past_lessons.count }})</button>
+        <button class="tab-btn" data-tab="assignments">📝 Teme ({{ assignments.count }})</button>
+        {% if lesson_templates %}
+        <button class="tab-btn" data-tab="templates">📖 Șabloane Lecții ({{ lesson_templates.count }})</button>
+        {% endif %}
+    </div>
+
+    <!-- Tab Content: Students -->
+    <div class="tab-content active" id="students">
+        {% if students %}
+        <div class="students-grid">
+            {% for gs in students %}
+            <a href="{% url 'teacher_platform:student_detail' gs.student.id %}" class="student-card">
+                <div class="student-avatar">
+                    {% if gs.student.student_profile %}
+                        <span class="avatar-icon">{% if gs.student.student_profile.avatar == 'boy' %}👦{% else %}👧{% endif %}</span>
+                    {% else %}
+                        <span class="avatar-icon">🎓</span>
+                    {% endif %}
+                </div>
+                <div class="student-info">
+                    <h4>{{ gs.student.get_full_name }}</h4>
+                    <div class="student-stats">
+                        <span>📊 {{ gs.get_attendance_rate }}% prezență</span>
+                        <span>📚 {{ gs.lessons_attended }} lecții</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'teacher_platform:student_add' %}?group={{ group.id }}" class="btn-primary">➕ Adaugă Student în Grupă</a>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Nu sunt studenți înscriși în această grupă.</p>
+            <a href="{% url 'teacher_platform:student_add' %}?group={{ group.id }}" class="btn-primary">➕ Adaugă Primul Student</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab Content: Upcoming Lessons -->
+    <div class="tab-content" id="upcoming-lessons">
+        {% if upcoming_lessons %}
+        <div class="lessons-list-detailed">
+            {% for lesson in upcoming_lessons %}
+            <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}" class="lesson-card-detailed">
+                <div class="lesson-date-box">
+                    <div class="date-day">{{ lesson.date|date:"d" }}</div>
+                    <div class="date-month">{{ lesson.date|date:"M" }}</div>
+                    <div class="date-year">{{ lesson.date|date:"Y" }}</div>
+                </div>
+                <div class="lesson-details">
+                    <h4>
+                        {% if lesson.lesson_template %}
+                            {{ lesson.lesson_template.name }}
+                        {% elif lesson.topic %}
+                            {{ lesson.topic }}
+                        {% else %}
+                            Lecție {{ lesson.date|date:"d M Y" }}
+                        {% endif %}
+                    </h4>
+                    <div class="lesson-meta">
+                        <span>🕐 {{ lesson.start_time|date:"H:i" }}</span>
+                        {% if lesson.end_time %}
+                            <span>- {{ lesson.end_time|date:"H:i" }}</span>
+                        {% endif %}
+                    </div>
+                    {% if lesson.description %}
+                    <p class="lesson-desc">{{ lesson.description|truncatewords:20 }}</p>
+                    {% endif %}
+                </div>
+                <div class="lesson-status-badge status-{{ lesson.status }}">
+                    {{ lesson.get_status_display }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Nu sunt lecții programate pentru viitor.</p>
+            <a href="/admin/teacher_platform/lesson/add/?group={{ group.id }}" class="btn-primary">➕ Programează o Lecție</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab Content: Past Lessons -->
+    <div class="tab-content" id="past-lessons">
+        {% if past_lessons %}
+        <div class="lessons-list-detailed">
+            {% for lesson in past_lessons %}
+            <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}" class="lesson-card-detailed">
+                <div class="lesson-date-box past">
+                    <div class="date-day">{{ lesson.date|date:"d" }}</div>
+                    <div class="date-month">{{ lesson.date|date:"M" }}</div>
+                </div>
+                <div class="lesson-details">
+                    <h4>
+                        {% if lesson.lesson_template %}
+                            {{ lesson.lesson_template.name }}
+                        {% elif lesson.topic %}
+                            {{ lesson.topic }}
+                        {% else %}
+                            Lecție {{ lesson.date|date:"d M Y" }}
+                        {% endif %}
+                    </h4>
+                    <div class="lesson-meta">
+                        <span>🕐 {{ lesson.start_time|date:"H:i" }}</span>
+                    </div>
+                </div>
+                <div class="lesson-status-badge status-{{ lesson.status }}">
+                    {{ lesson.get_status_display }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Nu sunt lecții trecute înregistrate.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab Content: Assignments -->
+    <div class="tab-content" id="assignments">
+        {% if assignments %}
+        <div class="assignments-list-detailed">
+            {% for assignment in assignments %}
+            <a href="{% url 'teacher_platform:assignment_detail' assignment.id %}" class="assignment-card-detailed">
+                <div class="assignment-header">
+                    <h4>{{ assignment.title }}</h4>
+                    <span class="due-date-badge {% if assignment.due_date < today %}overdue{% endif %}">
+                        📅 {{ assignment.due_date|date:"d M Y" }}
+                    </span>
+                </div>
+                <p class="assignment-desc">{{ assignment.description|truncatewords:30 }}</p>
+                <div class="assignment-footer">
+                    <span>📝 {{ assignment.submissions.count }} predări</span>
+                    <span>💯 Max: {{ assignment.max_points }} puncte</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="card-footer">
+            <a href="/admin/teacher_platform/assignment/add/?group={{ group.id }}" class="btn-primary">➕ Creează Temă Nouă</a>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Nu sunt teme create pentru această grupă.</p>
+            <a href="/admin/teacher_platform/assignment/add/?group={{ group.id }}" class="btn-primary">➕ Creează Prima Temă</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab Content: Lesson Templates -->
+    {% if lesson_templates %}
+    <div class="tab-content" id="templates">
+        <div class="templates-list">
+            {% for template in lesson_templates %}
+            <div class="template-card">
+                <div class="template-order">{{ template.order }}</div>
+                <div class="template-info">
+                    <h4>{{ template.name }}</h4>
+                    {% if template.description %}
+                    <p>{{ template.description|truncatewords:20 }}</p>
+                    {% endif %}
+                </div>
+                <div class="template-actions">
+                    {% if template.lesson_plan_file %}
+                    <a href="{{ template.lesson_plan_file.url }}" target="_blank" class="btn-secondary">📄 Vezi Plan</a>
+                    {% endif %}
+                    <a href="/admin/teacher_platform/lesson/add/?group={{ group.id }}&lesson_template={{ template.id }}" class="btn-primary">➕ Programează</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Remove active class from all tabs and contents
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active class to clicked tab
+        btn.classList.add('active');
+        const tabId = btn.dataset.tab;
+        document.getElementById(tabId).classList.add('active');
+    });
+});
+</script>
+{% endblock %}

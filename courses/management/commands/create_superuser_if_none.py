@@ -22,7 +22,7 @@ class Command(BaseCommand):
 
         # Get credentials from environment variables
         username = os.environ.get('SUPERUSER_USERNAME', 'admin')
-        email = os.environ.get('SUPERUSER_EMAIL', 'admin@mindacademy.ro')
+        email = os.environ.get('SUPERUSER_EMAIL', 'train@mindacademy.ro')
         password = os.environ.get('SUPERUSER_PASSWORD')
 
         if not password:

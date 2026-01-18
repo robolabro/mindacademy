@@ -1,0 +1,192 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Simulatoare{% endblock %}
+{% block page_title %}Simulatoare Educaționale{% endblock %}
+
+{% block extra_css %}
+<style>
+    .simulators-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .simulators-header {
+        margin-bottom: 2rem;
+    }
+
+    .simulators-header h2 {
+        font-size: 1.5rem;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .simulators-header p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .simulators-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .simulator-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        border: 2px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .simulator-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .simulator-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+        border-color: var(--primary-color);
+    }
+
+    .simulator-card:hover::before {
+        opacity: 1;
+    }
+
+    .simulator-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .simulator-card:hover .simulator-icon {
+        animation-play-state: paused;
+        transform: scale(1.1);
+        transition: transform 0.3s ease;
+    }
+
+    .simulator-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .simulator-description {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .coming-soon {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .coming-soon-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: var(--gradient-primary);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .simulators-container {
+            padding: 1rem;
+        }
+
+        .simulators-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="simulators-container">
+    <div class="simulators-header">
+        <h2>Simulatoare Educaționale Interactive</h2>
+        <p>Selectează un simulator pentru a începe o sesiune interactivă de învățare</p>
+    </div>
+
+    <div class="simulators-grid">
+        {% for simulator in simulators %}
+        <a href="{% url simulator.url %}" class="simulator-card">
+            <div class="simulator-icon">{{ simulator.icon }}</div>
+            <h3 class="simulator-name">{{ simulator.name }}</h3>
+            <p class="simulator-description">{{ simulator.description }}</p>
+        </a>
+        {% endfor %}
+
+        <!-- Placeholders pentru simulatoare viitoare -->
+        <div class="simulator-card coming-soon">
+            <span class="coming-soon-badge">În curând</span>
+            <div class="simulator-icon">📐</div>
+            <h3 class="simulator-name">Raportor Online</h3>
+            <p class="simulator-description">Învață să măsori unghiuri cu un raportor interactiv</p>
+        </div>
+
+        <div class="simulator-card coming-soon">
+            <span class="coming-soon-badge">În curând</span>
+            <div class="simulator-icon">📊</div>
+            <h3 class="simulator-name">Creator Grafice</h3>
+            <p class="simulator-description">Creează și vizualizează grafice matematice interactive</p>
+        </div>
+
+        <div class="simulator-card coming-soon">
+            <span class="coming-soon-badge">În curând</span>
+            <div class="simulator-icon">🎲</div>
+            <h3 class="simulator-name">Simulator Probabilități</h3>
+            <p class="simulator-description">Experimentează cu concepte de probabilitate și statistică</p>
+        </div>
+
+        <div class="simulator-card coming-soon">
+            <span class="coming-soon-badge">În curând</span>
+            <div class="simulator-icon">📏</div>
+            <h3 class="simulator-name">Riglă Virtuală</h3>
+            <p class="simulator-description">Învață să măsori lungimi cu o riglă interactivă</p>
+        </div>
+
+        <div class="simulator-card coming-soon">
+            <span class="coming-soon-badge">În curând</span>
+            <div class="simulator-icon">⏱️</div>
+            <h3 class="simulator-name">Ceas Interactiv</h3>
+            <p class="simulator-description">Învață să citești ceasul și să înțelegi timpul</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

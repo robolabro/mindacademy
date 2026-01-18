@@ -1,0 +1,314 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Profilul Meu{% endblock %}
+{% block page_title %}👤 Profilul Meu{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="form-container">
+        <div class="form-card">
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="form-section">
+                    <h3>👤 Informații Personale</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }} *</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                            <div class="error-message">{{ form.first_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }} *</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                            <div class="error-message">{{ form.last_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}">{{ form.email.label }} *</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="error-message">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                            <div class="error-message">{{ form.phone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>🎓 Informații Profesionale</h3>
+
+                    <div class="form-group">
+                        <label for="{{ form.specialization.id_for_label }}">{{ form.specialization.label }}</label>
+                        {{ form.specialization }}
+                        {% if form.specialization.errors %}
+                        <div class="error-message">{{ form.specialization.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.experience_years.id_for_label }}">{{ form.experience_years.label }}</label>
+                        {{ form.experience_years }}
+                        {% if form.experience_years.errors %}
+                        <div class="error-message">{{ form.experience_years.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.bio.id_for_label }}">{{ form.bio.label }}</label>
+                        {{ form.bio }}
+                        {% if form.bio.errors %}
+                        <div class="error-message">{{ form.bio.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>📍 Locații</h3>
+
+                    <div class="form-group">
+                        <label>{{ form.locations.label }}</label>
+                        {{ form.locations }}
+                        {% if form.locations.errors %}
+                        <div class="error-message">{{ form.locations.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text">Selectează centrele la care predai</small>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">💾 Salvează Modificările</button>
+                    <a href="{% url 'teacher_platform:dashboard' %}" class="btn-secondary">❌ Anulează</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Card -->
+        <div class="info-card">
+            <h3>ℹ️ Despre Profilul Tău</h3>
+            <p>Aici poți actualiza informațiile tale personale și profesionale.</p>
+            <ul>
+                <li><strong>Numele și emailul</strong> sunt folosite pentru comunicare</li>
+                <li><strong>Specializarea</strong> ajută părinții să te cunoască mai bine</li>
+                <li><strong>Biografia</strong> poate fi afișată în profilul tău public</li>
+                <li><strong>Locațiile</strong> determină centrele unde poți crea grupe</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-bottom: 20px;
+}
+
+.info-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.info-card h3 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 16px;
+}
+
+.info-card p {
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.info-card ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.info-card li {
+    margin-bottom: 8px;
+    color: #666;
+    padding-left: 20px;
+    position: relative;
+}
+
+.info-card li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #667eea;
+    font-weight: bold;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 18px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.form-control, .form-select, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.form-control:focus, .form-select:focus, textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-text {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.alert {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+/* Styling pentru checkboxes */
+input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
+
+#id_locations {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#id_locations label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+#id_locations label:hover {
+    background-color: #f0f0f0;
+}
+</style>
+{% endblock %}

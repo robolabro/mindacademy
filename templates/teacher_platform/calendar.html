@@ -1,0 +1,150 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Calendar{% endblock %}
+{% block page_title %}📅 Calendar Lecții{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Calendar Navigation -->
+    <div class="calendar-nav">
+        <div class="calendar-nav-left">
+            <a href="?year={{ prev_year }}&month={{ prev_month }}&view={{ view_mode }}" class="btn-secondary">← Luna Anterioară</a>
+            <h2 class="current-month">{{ month_name }} {{ current_year }}</h2>
+            <a href="?year={{ next_year }}&month={{ next_month }}&view={{ view_mode }}" class="btn-secondary">Luna Următoare →</a>
+        </div>
+        <div class="calendar-nav-right">
+            <!-- View Toggle -->
+            <div class="view-toggle">
+                <a href="?year={{ current_year }}&month={{ current_month }}&view=list" class="view-btn {% if view_mode == 'list' %}active{% endif %}" title="Vizualizare listă">
+                    📋 Listă
+                </a>
+                <a href="?year={{ current_year }}&month={{ current_month }}&view=calendar" class="view-btn {% if view_mode == 'calendar' %}active{% endif %}" title="Vizualizare calendar">
+                    📅 Calendar
+                </a>
+            </div>
+            <a href="{% url 'teacher_platform:lesson_create' %}" class="btn-primary">➕ Adaugă Lecție</a>
+        </div>
+    </div>
+
+    {% if view_mode == 'calendar' %}
+    <!-- Calendar Grid View -->
+    <div class="calendar-grid-view">
+        <div class="calendar-grid">
+            <!-- Weekday Headers -->
+            <div class="calendar-weekdays">
+                <div class="weekday">Luni</div>
+                <div class="weekday">Marți</div>
+                <div class="weekday">Miercuri</div>
+                <div class="weekday">Joi</div>
+                <div class="weekday">Vineri</div>
+                <div class="weekday">Sâmbătă</div>
+                <div class="weekday">Duminică</div>
+            </div>
+            <!-- Calendar Days -->
+            <div class="calendar-days">
+                {% for week in calendar_weeks %}
+                    {% for day_info in week %}
+                        {% if day_info.day %}
+                        <div class="calendar-day {% if day_info.is_today %}today{% endif %} {% if day_info.lessons %}has-lessons{% endif %}">
+                            <div class="day-number">{{ day_info.day }}</div>
+                            <div class="day-lessons">
+                                {% for lesson in day_info.lessons %}
+                                <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}"
+                                   class="day-lesson"
+                                   style="background-color: {% if lesson.group.module %}{{ lesson.group.module.color }}{% else %}#667eea{% endif %}20; border-left: 3px solid {% if lesson.group.module %}{{ lesson.group.module.color }}{% else %}#667eea{% endif %};"
+                                   title="{{ lesson.group.name }} - {{ lesson.start_time|date:'H:i' }}">
+                                    <div class="lesson-time-small">{{ lesson.start_time|date:"H:i" }}</div>
+                                    <div class="lesson-title-small">{{ lesson.group.name }}</div>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="calendar-day empty"></div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Lessons List View (Timeline) -->
+    <div class="calendar-lessons">
+        {% if lessons %}
+        <div class="lessons-timeline">
+            {% regroup lessons by date as lessons_by_date %}
+            {% for date_group in lessons_by_date %}
+            <div class="timeline-day">
+                <div class="timeline-date">
+                    <div class="date-day">{{ date_group.grouper|date:"d" }}</div>
+                    <div class="date-info">
+                        <div class="date-weekday">{{ date_group.grouper|date:"l" }}</div>
+                        <div class="date-month">{{ date_group.grouper|date:"F Y" }}</div>
+                    </div>
+                </div>
+                <div class="timeline-lessons">
+                    {% for lesson in date_group.list %}
+                    <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}" class="timeline-lesson" style="border-left: 4px solid {% if lesson.group.module %}{{ lesson.group.module.color }}{% else %}#667eea{% endif %};">
+                        <div class="lesson-time">{{ lesson.start_time|date:"H:i" }}</div>
+                        <div class="lesson-content">
+                            <h4>{{ lesson.group.name }}</h4>
+                            {% if lesson.lesson_template %}
+                            <p>{{ lesson.lesson_template.name }}</p>
+                            {% elif lesson.topic %}
+                            <p>{{ lesson.topic }}</p>
+                            {% endif %}
+                            {% if lesson.group.module %}
+                            <span class="module-badge-small" style="background-color: {{ lesson.group.module.color }}20; color: {{ lesson.group.module.color }};">
+                                {{ lesson.group.module.name }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="lesson-status-small status-{{ lesson.status }}">
+                            {{ lesson.get_status_display }}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state-large">
+            <div class="empty-icon">📅</div>
+            <h2>Nu ai lecții programate în {{ month_name }} {{ current_year }}</h2>
+            <p>Programează lecții pentru a le vedea aici.</p>
+            <a href="{% url 'teacher_platform:lesson_create' %}" class="btn-primary">➕ Programează o Lecție</a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Legend -->
+    <div class="calendar-legend">
+        <h3>Legendă Status:</h3>
+        <div class="legend-items">
+            <span class="legend-item"><span class="status-dot status-scheduled"></span> Programată</span>
+            <span class="legend-item"><span class="status-dot status-ongoing"></span> În Desfășurare</span>
+            <span class="legend-item"><span class="status-dot status-completed"></span> Finalizată</span>
+            <span class="legend-item"><span class="status-dot status-cancelled"></span> Anulată</span>
+        </div>
+    </div>
+
+    <!-- Groups Legend (colors) -->
+    {% if groups %}
+    <div class="calendar-legend">
+        <h3>Grupele Tale:</h3>
+        <div class="legend-items">
+            {% for group in groups %}
+            {% if group.module %}
+            <span class="legend-item">
+                <span class="color-dot" style="background-color: {{ group.module.color }};"></span>
+                {{ group.name }}
+            </span>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

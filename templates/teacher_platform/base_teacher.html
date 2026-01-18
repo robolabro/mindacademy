@@ -1,0 +1,125 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard Profesor{% endblock %} - MindAcademy</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/teacher_dashboard.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+</head>
+<body class="teacher-platform">
+    <!-- Top Bar -->
+    <div class="teacher-topbar">
+        <div class="topbar-left">
+            <a href="{% url 'home' %}" class="logo-mini">
+                <span class="logo-seal">心</span>
+                <span class="logo-text">Mind.Academy</span>
+            </a>
+        </div>
+        <div class="topbar-center">
+            <h1 class="page-title">{% block page_title %}Dashboard Profesor{% endblock %}</h1>
+        </div>
+        <div class="topbar-right">
+            <div class="user-info">
+                <span class="user-name">{{ user.get_full_name }}</span>
+                <span class="user-role">Profesor</span>
+            </div>
+            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+        </div>
+    </div>
+
+    <!-- Messages Django -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+            <button class="close-alert">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Layout with Sidebar -->
+    <div class="teacher-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="{% url 'teacher_platform:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="{% url 'teacher_platform:groups_list' %}" class="nav-item {% if 'group' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Grupe</span>
+                </a>
+                <a href="{% url 'teacher_platform:calendar' %}" class="nav-item {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">Calendar</span>
+                </a>
+                <a href="{% url 'teacher_platform:students_list' %}" class="nav-item {% if 'student' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="nav-icon">🎓</span>
+                    <span class="nav-text">Studenți</span>
+                </a>
+                <a href="{% url 'teacher_platform:assignments_list' %}" class="nav-item {% if 'assignment' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">Teme</span>
+                </a>
+                <a href="{% url 'teacher_platform:simulators_list' %}" class="nav-item {% if 'simulator' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="nav-icon">🧮</span>
+                    <span class="nav-text">Simulatoare</span>
+                </a>
+                <div class="sidebar-divider"></div>
+                <a href="{% url 'teacher_platform:teacher_profile' %}" class="nav-item {% if request.resolver_match.url_name == 'teacher_profile' %}active{% endif %}">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">Profilul Meu</span>
+                </a>
+                <div class="sidebar-divider"></div>
+                <a href="{% url 'home' %}" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Site Public</span>
+                </a>
+                <a href="/admin/" class="nav-item" target="_blank">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Admin</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{% static 'js/teacher_dashboard.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+
+    <script>
+        // Auto-hide messages after 5 seconds
+        setTimeout(() => {
+            const messages = document.querySelectorAll('.alert');
+            messages.forEach(msg => {
+                msg.style.opacity = '0';
+                msg.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 5000);
+
+        // Close alert buttons
+        document.querySelectorAll('.close-alert').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.parentElement.remove();
+            });
+        });
+    </script>
+</body>
+</html>

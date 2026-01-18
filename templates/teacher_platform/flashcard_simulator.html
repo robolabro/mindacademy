@@ -1,0 +1,3655 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Simulator Cartonașe Flash{% endblock %}
+{% block page_title %}Cartonașe Flash{% endblock %}
+
+{% block extra_css %}
+<style>
+    .flashcard-container {
+        padding: 2rem;
+        max-width: 100%;
+        min-height: calc(100vh - 180px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    }
+
+    /* Mode Selection Screen */
+    .mode-selection {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        max-width: 900px;
+        width: 95%;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .mode-title {
+        text-align: center;
+        font-size: 2rem;
+        color: var(--text-primary);
+        margin-bottom: 2.5rem;
+        font-weight: 600;
+    }
+
+    .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .mode-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 2rem 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .mode-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+    }
+
+    .mode-card-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .mode-card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .mode-card-desc {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+    }
+
+    /* Common Styles for All Modes */
+    .mode-screen {
+        display: none;
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        max-width: 1200px;
+        width: 95%;
+        min-height: 600px;
+    }
+
+    .mode-screen.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mode-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .mode-header h2 {
+        font-size: 1.8rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .back-btn {
+        padding: 0.6rem 1.5rem;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .settings-panel {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .settings-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .settings-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .setting-label {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        min-width: 150px;
+    }
+
+    .setting-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .number-input {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .number-btn {
+        width: 35px;
+        height: 35px;
+        border: none;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .number-btn:hover {
+        background: var(--secondary-color);
+        transform: scale(1.1);
+    }
+
+    .number-display {
+        min-width: 60px;
+        max-width: 80px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0.3rem 0.5rem;
+        background: white;
+        transition: border-color 0.3s ease;
+    }
+
+    .number-display:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .number-display::-webkit-inner-spin-button,
+    .number-display::-webkit-outer-spin-button {
+        opacity: 1;
+    }
+
+    .toggle-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .toggle-btn {
+        padding: 0.5rem 1.2rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .toggle-btn:hover {
+        border-color: var(--primary-color);
+    }
+
+    .toggle-btn.active {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .level-select {
+        padding: 0.5rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 250px;
+        max-width: 100%;
+    }
+
+    .level-select:hover {
+        border-color: var(--primary-color);
+    }
+
+    .level-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .start-btn {
+        padding: 0.8rem 2.5rem;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+        align-self: center;
+    }
+
+    .start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .instructions-panel {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .instructions-panel h3 {
+        color: #856404;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .instructions-panel p {
+        color: #856404;
+        line-height: 1.6;
+        margin-bottom: 0.5rem;
+    }
+
+    .instructions-panel ul {
+        color: #856404;
+        margin-left: 1.5rem;
+        line-height: 1.8;
+    }
+
+    /* Exercise Area */
+    .exercise-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: #f8f9fa;
+        border-radius: 15px;
+        min-height: 600px;
+    }
+
+    .countdown {
+        font-size: 6rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    .mini-abacus {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .abacus-frame-mini {
+        display: inline-flex;
+        gap: 5rem;
+        padding: 2.5rem 3.5rem;
+        background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+        border-radius: 20px;
+        border: 8px solid #654321;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .rod-mini {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        position: relative;
+    }
+
+    .rod-line-mini {
+        width: 8px;
+        height: 350px;
+        background: linear-gradient(to bottom, #4a2511 0%, #654321 50%, #4a2511 100%);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .divider-mini {
+        position: absolute;
+        top: 25%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 6px;
+        background: linear-gradient(to right, #2c2c2c 0%, #1a1a1a 50%, #2c2c2c 100%);
+        border-radius: 3px;
+        z-index: 5;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Marker dot on units column (rightmost rod, index 0) */
+    .rod-mini:last-child .divider-mini::after {
+        content: '';
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: radial-gradient(circle, #ff4444 0%, #cc0000 100%);
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 2px 4px rgba(255, 68, 68, 0.6), 0 0 8px rgba(255, 68, 68, 0.4);
+        z-index: 6;
+    }
+
+    .beads-section-mini {
+        position: absolute;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .beads-section-mini.top {
+        top: 0;
+        padding-top: 8px;
+    }
+
+    .beads-section-mini.bottom {
+        bottom: 0;
+        padding-bottom: 8px;
+    }
+
+    .bead-mini {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        position: relative;
+        transition: all 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
+        cursor: pointer;
+        margin: 4px 0;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Top beads (heaven - value 5) */
+    .bead-mini.top {
+        /* Inactive state - at top edge, muted color */
+        background: linear-gradient(135deg, #b8c5d6 0%, #8fa3bc 100%);
+        box-shadow:
+            0 4px 10px rgba(0, 0, 0, 0.3),
+            inset -2px -2px 4px rgba(0, 0, 0, 0.2),
+            inset 2px 2px 4px rgba(255, 255, 255, 0.4);
+    }
+
+    .bead-mini.top.active {
+        /* Active state - touching separator, vibrant color */
+        background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
+        transform: translateY(35px);
+        box-shadow:
+            0 6px 14px rgba(46, 204, 196, 0.5),
+            inset -2px -2px 4px rgba(0, 0, 0, 0.2),
+            inset 2px 2px 4px rgba(255, 255, 255, 0.5);
+    }
+
+    .bead-mini.top:hover {
+        filter: brightness(1.1);
+        transform: scale(1.05);
+    }
+
+    .bead-mini.top.active:hover {
+        filter: brightness(1.1);
+        transform: translateY(35px) scale(1.05);
+    }
+
+    /* Bottom beads (earth - value 1 each) */
+    .bead-mini.bottom {
+        /* Inactive state - at bottom edge, muted color */
+        background: linear-gradient(135deg, #b8c5d6 0%, #8fa3bc 100%);
+        box-shadow:
+            0 4px 10px rgba(0, 0, 0, 0.3),
+            inset -2px -2px 4px rgba(0, 0, 0, 0.2),
+            inset 2px 2px 4px rgba(255, 255, 255, 0.4);
+    }
+
+    .bead-mini.bottom.active {
+        /* Active state - touching separator, vibrant color */
+        background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
+        transform: translateY(-50px);
+        box-shadow:
+            0 6px 14px rgba(246, 194, 62, 0.5),
+            inset -2px -2px 4px rgba(0, 0, 0, 0.2),
+            inset 2px 2px 4px rgba(255, 255, 255, 0.5);
+    }
+
+    .bead-mini.bottom:hover {
+        filter: brightness(1.1);
+        transform: scale(1.05);
+    }
+
+    .bead-mini.bottom.active:hover {
+        filter: brightness(1.1);
+        transform: translateY(-50px) scale(1.05);
+    }
+
+    .answer-input {
+        width: 400px;
+        padding: 1.2rem;
+        font-size: 2.5rem;
+        text-align: center;
+        border: 3px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .answer-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .submit-btn {
+        padding: 1rem 3rem;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.3rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .submit-btn:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .feedback {
+        font-size: 1.5rem;
+        font-weight: 600;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        margin-top: 1rem;
+    }
+
+    .feedback.correct {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .feedback.incorrect {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .stat-item {
+        padding: 0.5rem 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .stat-value {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1.3rem;
+    }
+
+    /* Classwork Mode */
+    .classwork-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .classwork-controls {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .control-btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .settings-btn {
+        background: #6c757d;
+        color: white;
+    }
+
+    .settings-btn:hover {
+        background: #5a6268;
+    }
+
+    .start-all-btn {
+        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        color: white;
+    }
+
+    .start-all-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
+    }
+
+    .results-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .results-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .students-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        height: 600px;
+    }
+
+    .student-panel {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 15px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dee2e6;
+        gap: 0.5rem;
+    }
+
+    .student-name-input {
+        padding: 0.5rem;
+        font-size: 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        flex: 1;
+        max-width: 150px;
+    }
+
+    .student-header-buttons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .student-status {
+        display: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 5px;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .student-status.show {
+        display: flex;
+    }
+
+    .student-status.correct {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .student-status.incorrect {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .student-settings-btn {
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 0.4rem 0.8rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .student-settings-btn:hover {
+        background: #5a6268;
+    }
+
+    .delete-student-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 0.4rem 0.8rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+    .delete-student-btn:hover {
+        background: #c82333;
+    }
+
+    .student-exercise {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Modal for Settings */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        max-width: 800px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .close-modal:hover {
+        color: var(--text-primary);
+    }
+
+    /* Feedback Modal */
+    .feedback-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .feedback-modal.active {
+        display: flex;
+    }
+
+    .feedback-modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+        animation: slideIn 0.3s ease;
+    }
+
+    .feedback-modal-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .feedback-modal-title.correct {
+        color: #155724;
+    }
+
+    .feedback-modal-title.incorrect {
+        color: #721c24;
+    }
+
+    .feedback-modal-btn {
+        padding: 0.8rem 2rem;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .feedback-modal-btn:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .not-solved-text {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .answer-btn {
+        padding: 0.8rem 2rem;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .answer-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .your-answer-label {
+        font-size: 1rem;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .answer-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .answer-area .answer-input {
+        width: 100%;
+        max-width: 350px;
+        padding: 1rem;
+        font-size: 1.5rem;
+        text-align: center;
+        border: 3px solid #e0e0e0;
+        border-radius: 10px;
+    }
+
+    .answer-area .answer-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .mode-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .students-grid {
+            grid-template-columns: 1fr;
+            height: auto;
+        }
+
+        .settings-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .answer-input {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flashcard-container">
+    <!-- Mode Selection Screen -->
+    <div id="modeSelection" class="mode-selection">
+        <h1 class="mode-title">Alege Modul de Lucru</h1>
+        <button class="back-btn" onclick="window.history.back()" style="margin-bottom: 2rem;">← Înapoi</button>
+        <div class="mode-grid">
+            <div class="mode-card" onclick="selectMode('training')">
+                <div class="mode-card-icon">📚</div>
+                <div class="mode-card-title">Mod Antrenament</div>
+                <div class="mode-card-desc">Învață să recunoști numerele pe soroban</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('flash')">
+                <div class="mode-card-icon">⚡</div>
+                <div class="mode-card-title">Mod Flash</div>
+                <div class="mode-card-desc">Exercițiu de viteză pentru recunoaștere rapidă</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('exercises')">
+                <div class="mode-card-icon">🧮</div>
+                <div class="mode-card-title">Exerciții</div>
+                <div class="mode-card-desc">Rezolvă probleme de matematică cu soroban</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('classwork')">
+                <div class="mode-card-icon">👥</div>
+                <div class="mode-card-title">Lucru în Clasă</div>
+                <div class="mode-card-desc">Practică împreună cu 4 elevi simultan</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Mode -->
+    <div id="trainingMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Mod Antrenament</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>Instrucțiuni</h3>
+            <p>Modul de antrenament te ajută să înveți să percepi numerele exprimate pe un soroban.</p>
+            <p>În etapa inițială, este necesar să te obișnuiești cu numerele reprezentate pe soroban.</p>
+            <ul>
+                <li><strong>Soroban → Număr:</strong> Va apărea un număr pe ecran pe care trebuie să îl introduci</li>
+                <li><strong>Număr → Soroban:</strong> Va apărea un număr pe care trebuie să îl setezi pe soroban</li>
+            </ul>
+        </div>
+
+        <div class="settings-panel">
+            <div class="settings-row">
+                <span class="setting-label">Direcție:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-direction="abacus-to-number">Soroban → Număr</button>
+                        <button class="toggle-btn" data-direction="number-to-abacus">Număr → Soroban</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">De la:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('trainingFrom', -1)">−</button>
+                        <span class="number-display" id="trainingFrom">1</span>
+                        <button class="number-btn" onclick="adjustNumber('trainingFrom', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Până la:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('trainingTo', -1)">−</button>
+                        <span class="number-display" id="trainingTo">99</span>
+                        <button class="number-btn" onclick="adjustNumber('trainingTo', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <button class="start-btn" onclick="startTraining()">Start!</button>
+
+        <div id="trainingExercise" class="exercise-area" style="display: none;">
+            <div id="trainingContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Corecte</div>
+                    <div class="stat-value" id="trainingCorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Greșite</div>
+                    <div class="stat-value" id="trainingIncorrect">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Mode -->
+    <div id="flashMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Mod Flash</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>Instrucțiuni</h3>
+            <p>Modul "Flash" este un exercițiu de viteză!</p>
+            <ul>
+                <li><strong>Soroban → Număr:</strong> Va apărea o imagine a unui soroban pe care trebuie să scrii numerele</li>
+                <li><strong>Număr → Soroban:</strong> Va apărea un număr pe care trebuie să îl scrii</li>
+            </ul>
+            <p>Opțiunea "spune răspunsul" este pentru lucrul în clasă. În acest caz, trebuie să scrii răspunsurile pentru a le verifica la sfârșitul sesiunii.</p>
+        </div>
+
+        <div class="settings-panel">
+            <div class="settings-row">
+                <span class="setting-label">Direcție:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-direction="abacus-to-number">Soroban → Număr</button>
+                        <button class="toggle-btn" data-direction="number-to-abacus">Număr → Soroban</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">De la:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('flashFrom', -1)">−</button>
+                        <span class="number-display" id="flashFrom">1</span>
+                        <button class="number-btn" onclick="adjustNumber('flashFrom', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Până la:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('flashTo', -1)">−</button>
+                        <span class="number-display" id="flashTo">99</span>
+                        <button class="number-btn" onclick="adjustNumber('flashTo', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Viteză (sec.):</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustSpeed(-0.1)">−</button>
+                        <span class="number-display" id="flashSpeed">1.0</span>
+                        <button class="number-btn" onclick="adjustSpeed(0.1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Durata seriei:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn" data-duration="one-minute">Un minut</button>
+                        <button class="toggle-btn" data-duration="two-minutes">Două minute</button>
+                        <button class="toggle-btn" data-duration="three-minutes">Trei minute</button>
+                        <button class="toggle-btn active" data-duration="unlimited">Nelimitat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startFlash()">Start!</button>
+
+        <div id="flashExercise" class="exercise-area" style="display: none;">
+            <div id="flashContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Corecte</div>
+                    <div class="stat-value" id="flashCorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Greșite</div>
+                    <div class="stat-value" id="flashIncorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Timp rămas</div>
+                    <div class="stat-value" id="flashTimer">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercises Mode -->
+    <div id="exercisesMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Exerciții</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>Instrucțiuni</h3>
+            <p>Hai să încercăm să rezolvăm probleme matematice cu cartonașe flash?</p>
+            <p>Exemplele vor apărea pe ecran compuse din doi termeni, afișați pe soroban.</p>
+            <p>Alege formula și mărimea termenilor care ar trebui incluși în exemple. Poți introduce răspunsul tastând un număr sau folosind sorobanul.</p>
+        </div>
+
+        <div class="settings-panel">
+            <div class="settings-row">
+                <span class="setting-label">Formula:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-formula="addition">Adunare</button>
+                        <button class="toggle-btn" data-formula="subtraction">Scădere</button>
+                        <button class="toggle-btn" data-formula="mixed">Mixt</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Nivel:</span>
+                <div class="setting-controls">
+                    <select id="levelSelect" class="level-select" onchange="updateLevel()">
+                        <optgroup label="Numărare directă">
+                            <option value="direct-to-4">Numărare directă până la 4</option>
+                            <option value="direct-to-5">Numărare directă până la 5</option>
+                            <option value="direct-to-9">Numărare directă până la 9</option>
+                            <option value="direct-counting" selected>Numărare directă</option>
+                        </optgroup>
+                        <optgroup label="Prieteni mici (Small Friends)">
+                            <option value="small-plus-1">+1 = +5 - 4</option>
+                            <option value="small-plus-2">+2 = +5 - 3</option>
+                            <option value="small-plus-3">+3 = +5 - 2</option>
+                            <option value="small-plus-4">+4 = +5 - 1</option>
+                            <option value="small-minus-1">-1 = +4 - 5</option>
+                            <option value="small-minus-2">-2 = +3 - 5</option>
+                            <option value="small-minus-3">-3 = +2 - 5</option>
+                            <option value="small-minus-4">-4 = +1 - 5</option>
+                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                        </optgroup>
+                        <optgroup label="Prieteni mari (Big Friends)">
+                            <option value="big-plus-1">+1 = +10 - 9</option>
+                            <option value="big-plus-2">+2 = +10 - 8</option>
+                            <option value="big-plus-3">+3 = +10 - 7</option>
+                            <option value="big-plus-4">+4 = +10 - 6</option>
+                            <option value="big-plus-5">+5 = +10 - 5</option>
+                            <option value="big-plus-6">+6 = +10 - 4</option>
+                            <option value="big-plus-7">+7 = +10 - 3</option>
+                            <option value="big-plus-8">+8 = +10 - 2</option>
+                            <option value="big-plus-9">+9 = +10 - 1</option>
+                            <option value="big-minus-1">-1 = -10 + 9</option>
+                            <option value="big-minus-2">-2 = -10 + 8</option>
+                            <option value="big-minus-3">-3 = -10 + 7</option>
+                            <option value="big-minus-4">-4 = -10 + 6</option>
+                            <option value="big-minus-5">-5 = -10 + 5</option>
+                            <option value="big-minus-6">-6 = -10 + 4</option>
+                            <option value="big-minus-7">-7 = -10 + 3</option>
+                            <option value="big-minus-8">-8 = -10 + 2</option>
+                            <option value="big-minus-9">-9 = -10 + 1</option>
+                            <option value="big-friends-all">Prieteni mari (toate)</option>
+                        </optgroup>
+                        <optgroup label="Combinații">
+                            <option value="family">Familia (Small + Big Friends)</option>
+                            <option value="mix">Mix (toate variantele)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Câte cifre are numărul:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group" id="sectionButtons">
+                        <button class="toggle-btn active" data-section="1">1</button>
+                        <button class="toggle-btn" data-section="2">2</button>
+                        <button class="toggle-btn" data-section="3">3</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Termeni:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('exerciseAddends', -1)">−</button>
+                        <input type="number" class="number-display" id="exerciseAddends" value="2" min="2" max="5" onchange="updateSettingFromInput('exerciseAddends', 'exercises', 'addends')">
+                        <button class="number-btn" onclick="adjustNumber('exerciseAddends', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Răspuns prin:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-answer="number">Număr</button>
+                        <button class="toggle-btn" data-answer="abacus">Pe soroban</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startExercises()">Start!</button>
+
+        <div id="exercisesArea" class="exercise-area" style="display: none;">
+            <div id="exercisesContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Corecte</div>
+                    <div class="stat-value" id="exercisesCorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Greșite</div>
+                    <div class="stat-value" id="exercisesIncorrect">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classwork Mode -->
+    <div id="classworkMode" class="mode-screen">
+        <div class="classwork-header">
+            <div style="display: flex; align-items: center; gap: 2rem;">
+                <h2>Lucru în Clasă</h2>
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: #f0f0f0; padding: 0.5rem 1rem; border-radius: 8px;">
+                    <span style="font-weight: 500;">Studenți:</span>
+                    <button class="number-btn" onclick="adjustStudentCount(-1)" style="width: 32px; height: 32px;">−</button>
+                    <span id="studentCountDisplay" style="min-width: 30px; text-align: center; font-weight: 700; font-size: 1.1rem;">4</span>
+                    <button class="number-btn" onclick="adjustStudentCount(1)" style="width: 32px; height: 32px;">+</button>
+                </div>
+            </div>
+            <div class="classwork-controls">
+                <button class="control-btn settings-btn" onclick="openClassworkSettings()">⚙️ Setări</button>
+                <button class="control-btn start-all-btn" onclick="startAllStudents()">▶️ Start</button>
+                <button class="control-btn results-btn" onclick="showResults()">📊 Rezultate</button>
+                <button class="control-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+                <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+            </div>
+        </div>
+
+        <div class="students-grid" id="studentsGrid">
+            <div class="student-panel" data-student-id="1">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 1" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(1)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="1"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(1)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="2">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 2" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(2)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="2"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(2)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="3">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 3" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(3)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="3"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(3)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="4">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 4" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(4)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="4"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(4)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="5" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 5" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(5)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="5"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(5)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="6" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 6" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(6)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="6"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(6)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="7" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 7" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(7)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="7"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(7)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="8" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 8" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(8)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="8"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(8)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="9" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 9" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(9)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="9"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(9)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="10" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 10" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(10)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="10"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(10)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classwork Settings Modal -->
+    <div id="classworkSettingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Setări Lucru în Clasă</h3>
+                <button class="close-modal" onclick="closeClassworkSettings()">×</button>
+            </div>
+
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direcție:</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-direction="abacus-to-number">Soroban → Număr</button>
+                            <button class="toggle-btn" data-direction="number-to-abacus">Număr → Soroban</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">De la:</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustNumber('classworkFrom', -1)">−</button>
+                            <span class="number-display" id="classworkFrom">1</span>
+                            <button class="number-btn" onclick="adjustNumber('classworkFrom', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Până la:</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustNumber('classworkTo', -1)">−</button>
+                            <span class="number-display" id="classworkTo">99</span>
+                            <button class="number-btn" onclick="adjustNumber('classworkTo', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Timp afișare (sec.):</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustDisplayTime(-0.1)">−</button>
+                            <span class="number-display" id="classworkDisplayTime">1.0</span>
+                            <button class="number-btn" onclick="adjustDisplayTime(0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Număr studenți:</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentCount(-1)">−</button>
+                            <span class="number-display" id="studentCount">4</span>
+                            <button class="number-btn" onclick="adjustStudentCount(1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="start-btn" onclick="closeClassworkSettings()">Salvează</button>
+        </div>
+    </div>
+
+    <!-- Individual Student Settings Modals -->
+    <div id="studentSettingsModal1" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 1</h3>
+                <button class="close-modal" onclick="closeStudentSettings(1)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="1" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="1" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(1, 'from', -1)">−</button>
+                            <span class="number-display" id="student1From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(1, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(1, 'to', -1)">−</button>
+                            <span class="number-display" id="student1To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(1, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(1, -0.1)">−</button>
+                            <span class="number-display" id="student1Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(1, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(1)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal2" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 2</h3>
+                <button class="close-modal" onclick="closeStudentSettings(2)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="2" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="2" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(2, 'from', -1)">−</button>
+                            <span class="number-display" id="student2From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(2, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(2, 'to', -1)">−</button>
+                            <span class="number-display" id="student2To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(2, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(2, -0.1)">−</button>
+                            <span class="number-display" id="student2Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(2, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(2)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal3" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 3</h3>
+                <button class="close-modal" onclick="closeStudentSettings(3)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="3" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="3" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(3, 'from', -1)">−</button>
+                            <span class="number-display" id="student3From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(3, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(3, 'to', -1)">−</button>
+                            <span class="number-display" id="student3To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(3, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(3, -0.1)">−</button>
+                            <span class="number-display" id="student3Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(3, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(3)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal4" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 4</h3>
+                <button class="close-modal" onclick="closeStudentSettings(4)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="4" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="4" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(4, 'from', -1)">−</button>
+                            <span class="number-display" id="student4From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(4, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(4, 'to', -1)">−</button>
+                            <span class="number-display" id="student4To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(4, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(4, -0.1)">−</button>
+                            <span class="number-display" id="student4Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(4, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(4)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal5" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 5</h3>
+                <button class="close-modal" onclick="closeStudentSettings(5)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="5" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="5" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(5, 'from', -1)">−</button>
+                            <span class="number-display" id="student5From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(5, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(5, 'to', -1)">−</button>
+                            <span class="number-display" id="student5To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(5, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(5, -0.1)">−</button>
+                            <span class="number-display" id="student5Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(5, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(5)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal6" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 6</h3>
+                <button class="close-modal" onclick="closeStudentSettings(6)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="6" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="6" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(6, 'from', -1)">−</button>
+                            <span class="number-display" id="student6From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(6, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(6, 'to', -1)">−</button>
+                            <span class="number-display" id="student6To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(6, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(6, -0.1)">−</button>
+                            <span class="number-display" id="student6Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(6, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(6)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal7" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 7</h3>
+                <button class="close-modal" onclick="closeStudentSettings(7)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="7" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="7" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(7, 'from', -1)">−</button>
+                            <span class="number-display" id="student7From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(7, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(7, 'to', -1)">−</button>
+                            <span class="number-display" id="student7To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(7, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(7, -0.1)">−</button>
+                            <span class="number-display" id="student7Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(7, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(7)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal8" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 8</h3>
+                <button class="close-modal" onclick="closeStudentSettings(8)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="8" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="8" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(8, 'from', -1)">−</button>
+                            <span class="number-display" id="student8From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(8, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(8, 'to', -1)">−</button>
+                            <span class="number-display" id="student8To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(8, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(8, -0.1)">−</button>
+                            <span class="number-display" id="student8Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(8, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(8)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal9" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 9</h3>
+                <button class="close-modal" onclick="closeStudentSettings(9)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="9" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="9" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(9, 'from', -1)">−</button>
+                            <span class="number-display" id="student9From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(9, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(9, 'to', -1)">−</button>
+                            <span class="number-display" id="student9To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(9, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(9, -0.1)">−</button>
+                            <span class="number-display" id="student9Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(9, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(9)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal10" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 10</h3>
+                <button class="close-modal" onclick="closeStudentSettings(10)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="10" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="10" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(10, 'from', -1)">−</button>
+                            <span class="number-display" id="student10From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(10, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(10, 'to', -1)">−</button>
+                            <span class="number-display" id="student10To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(10, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(10, -0.1)">−</button>
+                            <span class="number-display" id="student10Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(10, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(10)">Save</button>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="feedback-modal">
+        <div class="feedback-modal-content">
+            <h2 class="feedback-modal-title" id="feedbackTitle">Correct answer</h2>
+            <button class="feedback-modal-btn" onclick="closeFeedbackModal()">Continue →</button>
+        </div>
+    </div>
+
+    <!-- Flash Summary Modal -->
+    <div id="flashSummaryModal" class="feedback-modal" style="display: none;">
+        <div class="feedback-modal-content" style="max-width: 600px;">
+            <h2 class="feedback-modal-title">Rezumat Sesiune Flash</h2>
+            <div style="text-align: left; margin: 2rem 0; font-size: 1.2rem;">
+                <div style="margin: 1rem 0; padding: 1rem; background: #e8f5e9; border-radius: 8px;">
+                    <strong>Răspunsuri corecte:</strong> <span id="summaryCorrect">0</span>
+                </div>
+                <div style="margin: 1rem 0; padding: 1rem; background: #ffebee; border-radius: 8px;">
+                    <strong>Răspunsuri greșite:</strong> <span id="summaryIncorrect">0</span>
+                </div>
+                <div style="margin: 1rem 0; padding: 1rem; background: #e3f2fd; border-radius: 8px;">
+                    <strong>Număr total exerciții:</strong> <span id="summaryTotal">0</span>
+                </div>
+                <div style="margin: 1rem 0; padding: 1rem; background: #fff3e0; border-radius: 8px;">
+                    <strong>Rată răspunsuri corecte:</strong> <span id="summaryRate">0%</span>
+                </div>
+                <div style="margin: 1rem 0; padding: 1rem; background: #f3e5f5; border-radius: 8px;">
+                    <strong>Timp mediu de răspuns:</strong> <span id="summaryAvgTime">0.0s</span>
+                </div>
+            </div>
+            <button class="feedback-modal-btn" onclick="closeFlashSummary()">Închide</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global state
+    let currentMode = null;
+    let currentSettings = {
+        training: {
+            direction: 'abacus-to-number',
+            from: 1,
+            to: 99
+        },
+        flash: {
+            direction: 'abacus-to-number',
+            from: 1,
+            to: 99,
+            speed: 1.0,
+            duration: 'unlimited'
+        },
+        exercises: {
+            formulas: ['addition'],  // Changed to array to support multiple selections
+            level: 'direct-counting',
+            section: 1,
+            addends: 2,
+            answer: 'number'
+        },
+        classwork: {
+            direction: 'abacus-to-number',
+            from: 1,
+            to: 99,
+            displayTime: 1.0,
+            simple: 'ordinary'
+        },
+        students: {
+            1: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            2: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            3: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            4: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            5: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            6: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            7: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            8: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            9: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            10: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' }
+        }
+    };
+
+    let stats = {
+        correct: 0,
+        incorrect: 0,
+        responseTimes: [],
+        startTime: null,
+        questionStartTime: null
+    };
+
+    let currentNumber = 0;
+    let exerciseTimer = null;
+    let flashTimer = null;
+
+    // Student-specific data
+    let studentNumbers = {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0,
+        6: 0,
+        7: 0,
+        8: 0,
+        9: 0,
+        10: 0
+    };
+
+    let studentResults = {
+        1: null,
+        2: null,
+        3: null,
+        4: null,
+        5: null,
+        6: null,
+        7: null,
+        8: null,
+        9: null,
+        10: null
+    };
+
+    // Mode selection
+    function selectMode(mode) {
+        document.getElementById('modeSelection').style.display = 'none';
+
+        if (mode === 'training') {
+            document.getElementById('trainingMode').classList.add('active');
+            currentMode = 'training';
+        } else if (mode === 'flash') {
+            document.getElementById('flashMode').classList.add('active');
+            currentMode = 'flash';
+        } else if (mode === 'exercises') {
+            document.getElementById('exercisesMode').classList.add('active');
+            currentMode = 'exercises';
+        } else if (mode === 'classwork') {
+            document.getElementById('classworkMode').classList.add('active');
+            currentMode = 'classwork';
+        }
+    }
+
+    function backToModes() {
+        // Hide all mode screens
+        document.querySelectorAll('.mode-screen').forEach(screen => {
+            screen.classList.remove('active');
+        });
+
+        // Reset exercise areas
+        document.getElementById('trainingExercise').style.display = 'none';
+        document.getElementById('flashExercise').style.display = 'none';
+        document.getElementById('exercisesArea').style.display = 'none';
+
+        // Restore settings and instructions for flash mode
+        const flashMode = document.getElementById('flashMode');
+        const flashSettingsPanel = flashMode.querySelector('.settings-panel');
+        const flashInstructionsPanel = flashMode.querySelector('.instructions-panel');
+        const flashStartBtn = flashMode.querySelector('.start-btn');
+
+        if (flashSettingsPanel) flashSettingsPanel.style.display = 'block';
+        if (flashInstructionsPanel) flashInstructionsPanel.style.display = 'block';
+        if (flashStartBtn) flashStartBtn.style.display = 'block';
+
+        // Reset stats
+        stats.correct = 0;
+        stats.incorrect = 0;
+        stats.responseTimes = [];
+        stats.startTime = null;
+        stats.questionStartTime = null;
+
+        // Clear timers
+        if (exerciseTimer) clearInterval(exerciseTimer);
+        if (flashTimer) clearInterval(flashTimer);
+
+        // Show mode selection
+        document.getElementById('modeSelection').style.display = 'block';
+        currentMode = null;
+    }
+
+    // Number adjustment
+    function adjustNumber(elementId, delta) {
+        const element = document.getElementById(elementId);
+        let currentValue = parseInt(element.value || element.textContent);
+        let newValue = currentValue + delta;
+
+        // Set boundaries based on element
+        if (elementId.includes('From')) {
+            newValue = Math.max(1, Math.min(999, newValue));
+        } else if (elementId.includes('To')) {
+            newValue = Math.max(1, Math.min(999, newValue));
+        } else if (elementId.includes('Addends')) {
+            newValue = Math.max(2, Math.min(5, newValue));
+        }
+
+        // Update element value (works for both input and span)
+        if (element.tagName === 'INPUT') {
+            element.value = newValue;
+        } else {
+            element.textContent = newValue;
+        }
+
+        // Update settings
+        if (elementId.startsWith('training')) {
+            if (elementId.includes('From')) currentSettings.training.from = newValue;
+            if (elementId.includes('To')) currentSettings.training.to = newValue;
+        } else if (elementId.startsWith('flash')) {
+            if (elementId.includes('From')) currentSettings.flash.from = newValue;
+            if (elementId.includes('To')) currentSettings.flash.to = newValue;
+        } else if (elementId.startsWith('exercise')) {
+            if (elementId.includes('Addends')) currentSettings.exercises.addends = newValue;
+        } else if (elementId.startsWith('classwork')) {
+            if (elementId.includes('From')) currentSettings.classwork.from = newValue;
+            if (elementId.includes('To')) currentSettings.classwork.to = newValue;
+        }
+    }
+
+    // Update setting from direct input
+    function updateSettingFromInput(elementId, mode, field) {
+        const element = document.getElementById(elementId);
+        let value = parseInt(element.value);
+
+        // Validate and constrain
+        if (field === 'from' || field === 'to') {
+            value = Math.max(1, Math.min(999, value));
+        } else if (field === 'addends') {
+            value = Math.max(2, Math.min(5, value));
+        }
+
+        // Update element with validated value
+        element.value = value;
+
+        // Update settings
+        if (currentSettings[mode]) {
+            currentSettings[mode][field] = value;
+        }
+    }
+
+    function adjustSpeed(delta) {
+        const element = document.getElementById('flashSpeed');
+        let currentValue = parseFloat(element.textContent);
+        let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
+        element.textContent = newValue.toFixed(1);
+        currentSettings.flash.speed = newValue;
+    }
+
+    function adjustDisplayTime(delta) {
+        const element = document.getElementById('classworkDisplayTime');
+        let currentValue = parseFloat(element.textContent);
+        let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
+        element.textContent = newValue.toFixed(1);
+        currentSettings.classwork.displayTime = newValue;
+    }
+
+    function adjustStudentCount(delta) {
+        const modalElement = document.getElementById('studentCount');
+        const headerElement = document.getElementById('studentCountDisplay');
+        let currentValue = parseInt(headerElement.textContent);
+        let newValue = Math.max(2, Math.min(10, currentValue + delta));
+
+        // Update both displays
+        headerElement.textContent = newValue;
+        if (modalElement) modalElement.textContent = newValue;
+
+        // Show/hide student panels based on count
+        const panels = document.querySelectorAll('.student-panel');
+        panels.forEach((panel, index) => {
+            if (index < newValue) {
+                panel.style.display = 'flex';
+            } else {
+                panel.style.display = 'none';
+            }
+        });
+    }
+
+    function updateLevel() {
+        const select = document.getElementById('levelSelect');
+        currentSettings.exercises.level = select.value;
+
+        // Update section visibility based on level
+        const sectionRow = document.querySelector('#sectionButtons').closest('.settings-row');
+        const level = select.value;
+
+        // Hide section for direct counting to 4, 5, 9 (only works with 1 digit)
+        if (level === 'direct-to-4' || level === 'direct-to-5' || level === 'direct-to-9') {
+            sectionRow.style.display = 'none';
+            currentSettings.exercises.section = 1;
+            document.querySelector('[data-section="1"]').click();
+        } else {
+            sectionRow.style.display = 'flex';
+        }
+    }
+
+    // Toggle button handlers
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const group = this.parentElement;
+
+            // Special handling for formula buttons - allow multiple selection
+            if (this.dataset.formula) {
+                const mode = this.closest('.mode-screen').id.replace('Mode', '');
+                const formula = this.dataset.formula;
+
+                // If clicking "mixed", make it exclusive
+                if (formula === 'mixed') {
+                    // Deselect all other formula buttons
+                    group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    if (currentSettings[mode]) {
+                        currentSettings[mode].formulas = ['mixed'];
+                    }
+                } else {
+                    // If clicking addition or subtraction
+                    // First, deselect "mixed" if it's active
+                    const mixedBtn = group.querySelector('[data-formula="mixed"]');
+                    if (mixedBtn && mixedBtn.classList.contains('active')) {
+                        mixedBtn.classList.remove('active');
+                        if (currentSettings[mode]) {
+                            currentSettings[mode].formulas = [];
+                        }
+                    }
+
+                    // Toggle this button
+                    this.classList.toggle('active');
+
+                    // Update formulas array
+                    if (currentSettings[mode]) {
+                        if (this.classList.contains('active')) {
+                            if (!currentSettings[mode].formulas.includes(formula)) {
+                                currentSettings[mode].formulas.push(formula);
+                            }
+                        } else {
+                            currentSettings[mode].formulas = currentSettings[mode].formulas.filter(f => f !== formula);
+                        }
+
+                        // Ensure at least one formula is selected
+                        if (currentSettings[mode].formulas.length === 0) {
+                            this.classList.add('active');
+                            currentSettings[mode].formulas.push(formula);
+                        }
+                    }
+                }
+            } else {
+                // Regular toggle behavior for other buttons
+                group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                // Update settings based on data attributes
+                const dataKeys = Object.keys(this.dataset);
+                dataKeys.forEach(key => {
+                    const mode = this.closest('.mode-screen').id.replace('Mode', '');
+                    if (currentSettings[mode]) {
+                        currentSettings[mode][key] = this.dataset[key];
+                    }
+                });
+            }
+        });
+    });
+
+    // Generate random number in range
+    function getRandomNumber(min, max) {
+        // Ensure minimum is at least 1 to avoid results of 0
+        min = Math.max(1, min);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Generate exercise based on level
+    function generateExerciseForLevel(level, formula, section, addends) {
+        const maxDigits = section;
+        const maxNum = Math.pow(10, maxDigits) - 1;
+        let numbers = [];
+        let operators = [];
+
+        switch (level) {
+            case 'direct-to-4':
+                // Direct counting to 4 (only 1-4 on units column)
+                const result4 = generateDirectTo(4, addends, formula);
+                numbers = result4.numbers;
+                operators = result4.operators || [];
+                break;
+
+            case 'direct-to-5':
+                // Direct counting to 5 (1-5 on units column)
+                const result5 = generateDirectTo(5, addends, formula);
+                numbers = result5.numbers;
+                operators = result5.operators || [];
+                break;
+
+            case 'direct-to-9':
+                // Direct counting to 9 (1-9 on units column)
+                const result9 = generateDirectTo(9, addends, formula);
+                numbers = result9.numbers;
+                operators = result9.operators || [];
+                break;
+
+            case 'direct-counting':
+                // Direct counting for multi-digit numbers
+                for (let i = 0; i < addends; i++) {
+                    numbers.push(getRandomNumber(1, maxNum));
+                }
+                // Generate operators based on formula
+                for (let i = 1; i < addends; i++) {
+                    operators.push(formula === 'addition' ? '+' : '-');
+                }
+                break;
+
+            // Small Friends - Addition
+            case 'small-plus-1':
+                numbers = generateSmallFriendsExercise(1, addends, formula);
+                break;
+            case 'small-plus-2':
+                numbers = generateSmallFriendsExercise(2, addends, formula);
+                break;
+            case 'small-plus-3':
+                numbers = generateSmallFriendsExercise(3, addends, formula);
+                break;
+            case 'small-plus-4':
+                numbers = generateSmallFriendsExercise(4, addends, formula);
+                break;
+
+            // Small Friends - Subtraction
+            case 'small-minus-1':
+                numbers = generateSmallFriendsExercise(-1, addends, formula);
+                break;
+            case 'small-minus-2':
+                numbers = generateSmallFriendsExercise(-2, addends, formula);
+                break;
+            case 'small-minus-3':
+                numbers = generateSmallFriendsExercise(-3, addends, formula);
+                break;
+            case 'small-minus-4':
+                numbers = generateSmallFriendsExercise(-4, addends, formula);
+                break;
+
+            case 'small-friends-all':
+                numbers = generateSmallFriendsAll(addends, formula);
+                break;
+
+            // Big Friends - Addition
+            case 'big-plus-1':
+                numbers = generateBigFriendsExercise(1, addends, formula, section);
+                break;
+            case 'big-plus-2':
+                numbers = generateBigFriendsExercise(2, addends, formula, section);
+                break;
+            case 'big-plus-3':
+                numbers = generateBigFriendsExercise(3, addends, formula, section);
+                break;
+            case 'big-plus-4':
+                numbers = generateBigFriendsExercise(4, addends, formula, section);
+                break;
+            case 'big-plus-5':
+                numbers = generateBigFriendsExercise(5, addends, formula, section);
+                break;
+            case 'big-plus-6':
+                numbers = generateBigFriendsExercise(6, addends, formula, section);
+                break;
+            case 'big-plus-7':
+                numbers = generateBigFriendsExercise(7, addends, formula, section);
+                break;
+            case 'big-plus-8':
+                numbers = generateBigFriendsExercise(8, addends, formula, section);
+                break;
+            case 'big-plus-9':
+                numbers = generateBigFriendsExercise(9, addends, formula, section);
+                break;
+
+            // Big Friends - Subtraction
+            case 'big-minus-1':
+                numbers = generateBigFriendsExercise(-1, addends, formula, section);
+                break;
+            case 'big-minus-2':
+                numbers = generateBigFriendsExercise(-2, addends, formula, section);
+                break;
+            case 'big-minus-3':
+                numbers = generateBigFriendsExercise(-3, addends, formula, section);
+                break;
+            case 'big-minus-4':
+                numbers = generateBigFriendsExercise(-4, addends, formula, section);
+                break;
+            case 'big-minus-5':
+                numbers = generateBigFriendsExercise(-5, addends, formula, section);
+                break;
+            case 'big-minus-6':
+                numbers = generateBigFriendsExercise(-6, addends, formula, section);
+                break;
+            case 'big-minus-7':
+                numbers = generateBigFriendsExercise(-7, addends, formula, section);
+                break;
+            case 'big-minus-8':
+                numbers = generateBigFriendsExercise(-8, addends, formula, section);
+                break;
+            case 'big-minus-9':
+                numbers = generateBigFriendsExercise(-9, addends, formula, section);
+                break;
+
+            case 'big-friends-all':
+                numbers = generateBigFriendsAll(addends, formula, section);
+                break;
+
+            case 'family':
+                numbers = generateFamily(addends, formula, section);
+                break;
+
+            case 'mix':
+                numbers = generateMix(addends, formula, section);
+                break;
+
+            default:
+                // Default to direct counting
+                for (let i = 0; i < addends; i++) {
+                    numbers.push(getRandomNumber(1, maxNum));
+                }
+                // Generate operators based on formula
+                for (let i = 1; i < addends; i++) {
+                    operators.push(formula === 'addition' ? '+' : '-');
+                }
+        }
+
+        // If no operators were set, default to the formula operator
+        if (operators.length === 0 && numbers.length > 1) {
+            for (let i = 1; i < numbers.length; i++) {
+                operators.push(formula === 'addition' ? '+' : '-');
+            }
+        }
+
+        return { numbers, operators };
+    }
+
+    // Helper: Generate direct counting to N
+    function generateDirectTo(maxUnits, addends, formula) {
+        const numbers = [];
+        const operators = [];
+
+        if (formula === 'addition') {
+            // For addition, ensure sum doesn't exceed maxUnits
+            // This ensures we can use direct counting without formulas
+            let remaining = maxUnits;
+
+            for (let i = 0; i < addends; i++) {
+                if (i === addends - 1) {
+                    // Last number: use whatever is left (at least 0, at most maxUnits)
+                    numbers.push(Math.max(0, Math.min(remaining, maxUnits)));
+                } else {
+                    // Generate a number that leaves room for remaining addends
+                    const minForRemaining = addends - i - 1; // At least 1 for each remaining
+                    const maxAllowed = Math.max(1, remaining - minForRemaining);
+                    const num = getRandomNumber(1, Math.min(maxAllowed, maxUnits));
+                    numbers.push(num);
+                    remaining -= num;
+                }
+                if (i > 0) operators.push('+');
+            }
+        } else if (formula === 'subtraction') {
+            // For subtraction, ensure result is not negative
+            // First number should be large enough to subtract all others
+            const minFirst = addends - 1; // At least 1 for each number to subtract
+            const firstNum = getRandomNumber(minFirst, maxUnits);
+            numbers.push(firstNum);
+
+            let remaining = firstNum;
+            for (let i = 1; i < addends; i++) {
+                if (i === addends - 1) {
+                    // Last number: use whatever is left (at least 0, at most maxUnits)
+                    numbers.push(Math.max(0, Math.min(remaining, maxUnits)));
+                } else {
+                    // Generate a number that leaves room for remaining subtractions
+                    const minForRemaining = addends - i - 1;
+                    const maxAllowed = Math.max(1, remaining - minForRemaining);
+                    const num = getRandomNumber(1, Math.min(maxAllowed, maxUnits));
+                    numbers.push(num);
+                    remaining -= num;
+                }
+                operators.push('-');
+            }
+        } else if (formula === 'mixed') {
+            // For mixed operations, generate numbers with random operators
+            // allowing use of earth beads (1-4) and heaven bead (5)
+            // Examples: 3+1+5, 4-2+5, 5+2+1-5
+            let currentValue = getRandomNumber(1, maxUnits);
+            numbers.push(currentValue);
+
+            for (let i = 1; i < addends; i++) {
+                // Randomly choose operator
+                const useAddition = Math.random() < 0.5;
+
+                if (useAddition) {
+                    // Addition: can add 1-maxUnits (e.g., 1-5 for direct-to-5)
+                    // Allow intermediate results to go beyond maxUnits (up to 10 for single digit)
+                    const num = getRandomNumber(1, maxUnits);
+                    numbers.push(num);
+                    operators.push('+');
+                    currentValue += num;
+                } else {
+                    // Subtraction: can subtract 1-maxUnits, but ensure we don't go negative
+                    const maxSubtract = Math.min(maxUnits, currentValue);
+                    if (maxSubtract >= 1) {
+                        const num = getRandomNumber(1, maxSubtract);
+                        numbers.push(num);
+                        operators.push('-');
+                        currentValue -= num;
+                    } else {
+                        // If we can't subtract, do addition instead
+                        const num = getRandomNumber(1, maxUnits);
+                        numbers.push(num);
+                        operators.push('+');
+                        currentValue += num;
+                    }
+                }
+            }
+        }
+
+        return { numbers, operators };
+    }
+
+    // Helper: Generate Small Friends exercise for specific formula
+    function generateSmallFriendsExercise(target, addends, formula) {
+        const numbers = [];
+        const absTarget = Math.abs(target);
+
+        if (formula === 'addition' && target > 0) {
+            // For addition: need first number where adding target requires 5-complement
+            // Example for +1: first number should be 4 (4+1 needs +5-4)
+            const validFirstNumbers = [];
+            for (let i = (5 - absTarget); i <= 4; i++) {
+                validFirstNumbers.push(i);
+            }
+            numbers.push(validFirstNumbers[getRandomNumber(0, validFirstNumbers.length - 1)]);
+
+            // Add the target number
+            numbers.push(absTarget);
+
+            // Fill remaining addends with random 1-9
+            for (let i = 2; i < addends; i++) {
+                numbers.push(getRandomNumber(1, 9));
+            }
+        } else if (formula === 'subtraction' && target < 0) {
+            // For subtraction: need first number that when subtracting requires 5-complement
+            // Example for -1: first number should be 5 (5-1 needs +4-5)
+            numbers.push(5 + absTarget - 1);
+
+            // Subtract the target amount
+            numbers.push(absTarget);
+
+            // Fill remaining with random
+            for (let i = 2; i < addends; i++) {
+                numbers.push(getRandomNumber(1, 4));
+            }
+        } else {
+            // Fallback
+            for (let i = 0; i < addends; i++) {
+                numbers.push(getRandomNumber(1, 9));
+            }
+        }
+
+        return numbers;
+    }
+
+    // Helper: Generate all Small Friends formulas
+    function generateSmallFriendsAll(addends, formula) {
+        const smallFormulas = formula === 'addition'
+            ? [1, 2, 3, 4]
+            : [-1, -2, -3, -4];
+        const randomFormula = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+        return generateSmallFriendsExercise(randomFormula, addends, formula);
+    }
+
+    // Helper: Generate Big Friends exercise for specific formula
+    function generateBigFriendsExercise(target, addends, formula, section) {
+        const numbers = [];
+        const absTarget = Math.abs(target);
+        const maxDigits = section;
+        const maxNum = Math.pow(10, maxDigits) - 1;
+
+        if (formula === 'addition' && target > 0) {
+            // For addition: need first number where adding target requires 10-complement
+            // Example for +1: first number should be 9 (9+1 needs +10-9)
+            const minFirst = Math.max(1, 10 - absTarget);
+            const maxFirst = Math.min(9, maxNum);
+            numbers.push(getRandomNumber(minFirst, maxFirst));
+
+            // Add the target number
+            numbers.push(absTarget);
+
+            // Fill remaining addends
+            for (let i = 2; i < addends; i++) {
+                numbers.push(getRandomNumber(1, Math.min(9, maxNum)));
+            }
+        } else if (formula === 'subtraction' && target < 0) {
+            // For subtraction: need first number that when subtracting requires 10-complement
+            // Example for -1: first number should be 10 (10-1 needs -10+9)
+            const minFirst = Math.max(10, absTarget);
+            const maxFirst = Math.min(10 + 9, maxNum);
+            numbers.push(getRandomNumber(minFirst, maxFirst));
+
+            // Subtract the target amount
+            numbers.push(absTarget);
+
+            // Fill remaining
+            for (let i = 2; i < addends; i++) {
+                numbers.push(getRandomNumber(1, Math.min(5, maxNum)));
+            }
+        } else {
+            // Fallback
+            for (let i = 0; i < addends; i++) {
+                numbers.push(getRandomNumber(1, maxNum));
+            }
+        }
+
+        return numbers;
+    }
+
+    // Helper: Generate all Big Friends formulas
+    function generateBigFriendsAll(addends, formula, section) {
+        const bigFormulas = formula === 'addition'
+            ? [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            : [-1, -2, -3, -4, -5, -6, -7, -8, -9];
+        const randomFormula = bigFormulas[getRandomNumber(0, bigFormulas.length - 1)];
+        return generateBigFriendsExercise(randomFormula, addends, formula, section);
+    }
+
+    // Helper: Generate Family (Small + Big Friends)
+    function generateFamily(addends, formula, section) {
+        const useSmall = getRandomNumber(0, 1) === 0;
+        if (useSmall) {
+            return generateSmallFriendsAll(addends, formula);
+        } else {
+            return generateBigFriendsAll(addends, formula, section);
+        }
+    }
+
+    // Helper: Generate Mix (all variants)
+    function generateMix(addends, formula, section) {
+        const maxDigits = section;
+        const maxNum = Math.pow(10, maxDigits) - 1;
+        const variant = getRandomNumber(0, 3);
+
+        switch (variant) {
+            case 0:
+                return generateDirectTo(9, addends, formula);
+            case 1:
+                return generateSmallFriendsAll(addends, formula);
+            case 2:
+                return generateBigFriendsAll(addends, formula, section);
+            case 3:
+            default:
+                const numbers = [];
+                for (let i = 0; i < addends; i++) {
+                    numbers.push(getRandomNumber(1, maxNum));
+                }
+                return numbers;
+        }
+    }
+
+    // Create mini abacus representation
+    function createMiniAbacus(number, container) {
+        container.innerHTML = '';
+        const digits = String(number).padStart(2, '0').split('');
+
+        digits.forEach((digit, index) => {
+            const rod = document.createElement('div');
+            rod.className = 'rod-mini';
+
+            const rodLine = document.createElement('div');
+            rodLine.className = 'rod-line-mini';
+
+            // Top section (heaven beads - value 5)
+            const topSection = document.createElement('div');
+            topSection.className = 'beads-section-mini top';
+
+            const topBead = document.createElement('div');
+            topBead.className = 'bead-mini top';
+            const digitValue = parseInt(digit);
+            if (digitValue >= 5) {
+                topBead.classList.add('active');
+            }
+            topSection.appendChild(topBead);
+            rodLine.appendChild(topSection);
+
+            // Divider
+            const divider = document.createElement('div');
+            divider.className = 'divider-mini';
+            rodLine.appendChild(divider);
+
+            // Bottom section (earth beads - value 1 each)
+            const bottomSection = document.createElement('div');
+            bottomSection.className = 'beads-section-mini bottom';
+
+            const bottomValue = digitValue % 5;
+            for (let i = 1; i <= 4; i++) {
+                const bottomBead = document.createElement('div');
+                bottomBead.className = `bead-mini bottom b${i}`;
+                if (i <= bottomValue) {
+                    bottomBead.classList.add('active');
+                }
+                bottomSection.appendChild(bottomBead);
+            }
+            rodLine.appendChild(bottomSection);
+
+            rod.appendChild(rodLine);
+            container.appendChild(rod);
+        });
+    }
+
+    // Training Mode
+    function startTraining() {
+        stats.correct = 0;
+        stats.incorrect = 0;
+        document.getElementById('trainingCorrect').textContent = '0';
+        document.getElementById('trainingIncorrect').textContent = '0';
+        document.getElementById('trainingExercise').style.display = 'flex';
+        nextTrainingExercise();
+    }
+
+    function nextTrainingExercise() {
+        const { from, to, direction } = currentSettings.training;
+        currentNumber = getRandomNumber(from, to);
+        const content = document.getElementById('trainingContent');
+        content.innerHTML = '';
+
+        if (direction === 'abacus-to-number') {
+            // Show abacus, ask for number
+            const abacusDiv = document.createElement('div');
+            abacusDiv.className = 'mini-abacus';
+            const frame = document.createElement('div');
+            frame.className = 'abacus-frame-mini';
+            abacusDiv.appendChild(frame);
+            createMiniAbacus(currentNumber, frame);
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'answer-input';
+            input.placeholder = 'Introdu numărul';
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkTrainingAnswer(parseInt(this.value));
+                }
+            });
+
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkTrainingAnswer(parseInt(input.value));
+
+            content.appendChild(abacusDiv);
+            content.appendChild(input);
+            content.appendChild(submitBtn);
+
+            setTimeout(() => input.focus(), 100);
+        } else {
+            // Show number, ask to set on abacus
+            const numberDiv = document.createElement('div');
+            numberDiv.style.fontSize = '3rem';
+            numberDiv.style.fontWeight = '700';
+            numberDiv.style.marginBottom = '2rem';
+            numberDiv.textContent = currentNumber;
+
+            const abacusDiv = document.createElement('div');
+            abacusDiv.className = 'mini-abacus';
+            const frame = document.createElement('div');
+            frame.className = 'abacus-frame-mini';
+            abacusDiv.appendChild(frame);
+            createMiniAbacus(0, frame);
+            makeAbacusInteractive(frame);
+
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkTrainingAbacus(frame);
+
+            content.appendChild(numberDiv);
+            content.appendChild(abacusDiv);
+            content.appendChild(submitBtn);
+        }
+    }
+
+    function checkTrainingAnswer(answer) {
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (answer === currentNumber) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('trainingCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${currentNumber}`;
+            stats.incorrect++;
+            document.getElementById('trainingIncorrect').textContent = stats.incorrect;
+        }
+
+        const content = document.getElementById('trainingContent');
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextTrainingExercise();
+        }, 2000);
+    }
+
+    function makeAbacusInteractive(frame) {
+        const rods = frame.querySelectorAll('.rod-mini');
+        rods.forEach((rod, rodIndex) => {
+            // Handle top bead (heaven - value 5)
+            const topBead = rod.querySelector('.bead-mini.top');
+            if (topBead) {
+                topBead.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                });
+            }
+
+            // Handle bottom beads (earth - value 1 each)
+            const bottomBeads = Array.from(rod.querySelectorAll('.bead-mini.bottom'));
+            bottomBeads.forEach((bead, beadIndex) => {
+                bead.addEventListener('click', function() {
+                    const isActive = this.classList.contains('active');
+
+                    if (!isActive) {
+                        // LIFTING BEADS (activating) - lift clicked bead and all above it
+                        let beadsToActivate = beadIndex + 1; // Number of beads to activate from top
+                        for (let i = 0; i < beadsToActivate; i++) {
+                            bottomBeads[i].classList.add('active');
+                        }
+                    } else {
+                        // LOWERING BEADS (deactivating) - lower clicked bead and all beads below it
+                        for (let i = beadIndex; i < bottomBeads.length; i++) {
+                            bottomBeads[i].classList.remove('active');
+                        }
+                    }
+                });
+            });
+        });
+    }
+
+    function checkTrainingAbacus(frame) {
+        const rods = frame.querySelectorAll('.rod-mini');
+        let abacusNumber = 0;
+
+        rods.forEach((rod, index) => {
+            let digitValue = 0;
+
+            // Check top bead (heaven - value 5)
+            const topBead = rod.querySelector('.bead-mini.top');
+            if (topBead && topBead.classList.contains('active')) {
+                digitValue += 5;
+            }
+
+            // Check bottom beads (earth - value 1 each)
+            const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
+            digitValue += bottomBeads.length;
+
+            abacusNumber += digitValue * Math.pow(10, rods.length - 1 - index);
+        });
+
+        checkTrainingAnswer(abacusNumber);
+    }
+
+    // Flash Mode
+    function startFlash() {
+        stats.correct = 0;
+        stats.incorrect = 0;
+        stats.responseTimes = [];
+        stats.startTime = Date.now();
+        document.getElementById('flashCorrect').textContent = '0';
+        document.getElementById('flashIncorrect').textContent = '0';
+
+        // Hide settings and instructions when exercise starts
+        const flashMode = document.getElementById('flashMode');
+        const settingsPanel = flashMode.querySelector('.settings-panel');
+        const instructionsPanel = flashMode.querySelector('.instructions-panel');
+        const startBtn = flashMode.querySelector('.start-btn');
+
+        settingsPanel.style.display = 'none';
+        instructionsPanel.style.display = 'none';
+        startBtn.style.display = 'none';
+
+        // Show exercise area
+        const exerciseArea = document.getElementById('flashExercise');
+        exerciseArea.style.display = 'flex';
+
+        // Scroll to top of exercise area to make it visible
+        exerciseArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        const content = document.getElementById('flashContent');
+        content.innerHTML = '';
+
+        // Show countdown 3, 2, 1
+        const countdown = document.createElement('div');
+        countdown.className = 'countdown';
+        countdown.style.fontSize = '5rem';
+        countdown.style.fontWeight = 'bold';
+        countdown.style.color = '#2196F3';
+        countdown.style.textAlign = 'center';
+        countdown.style.padding = '2rem';
+        content.appendChild(countdown);
+
+        let count = 3;
+        countdown.textContent = count;
+
+        const countdownInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countdown.textContent = count;
+            } else {
+                clearInterval(countdownInterval);
+                countdown.remove();
+
+                // Start timer for timed modes
+                const duration = currentSettings.flash.duration;
+                if (duration === 'one-minute' || duration === 'two-minutes' || duration === 'three-minutes') {
+                    let timeLeft;
+                    if (duration === 'one-minute') timeLeft = 60;
+                    else if (duration === 'two-minutes') timeLeft = 120;
+                    else if (duration === 'three-minutes') timeLeft = 180;
+
+                    document.getElementById('flashTimer').textContent = timeLeft;
+                    flashTimer = setInterval(() => {
+                        timeLeft--;
+                        document.getElementById('flashTimer').textContent = timeLeft;
+                        if (timeLeft <= 0) {
+                            clearInterval(flashTimer);
+                            showFlashSummary();
+                        }
+                    }, 1000);
+                } else {
+                    document.getElementById('flashTimer').textContent = '∞';
+                }
+
+                // Start first exercise
+                nextFlashExercise();
+            }
+        }, 1000);
+    }
+
+    function nextFlashExercise() {
+        const { from, to, direction, speed } = currentSettings.flash;
+        currentNumber = getRandomNumber(from, to);
+        const content = document.getElementById('flashContent');
+        content.innerHTML = '';
+
+        if (direction === 'abacus-to-number') {
+            const abacusDiv = document.createElement('div');
+            abacusDiv.className = 'mini-abacus';
+            const frame = document.createElement('div');
+            frame.className = 'abacus-frame-mini';
+            abacusDiv.appendChild(frame);
+            createMiniAbacus(currentNumber, frame);
+
+            content.appendChild(abacusDiv);
+
+            setTimeout(() => {
+                abacusDiv.style.display = 'none';
+
+                // Record question start time for response time tracking
+                stats.questionStartTime = Date.now();
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'answer-input';
+                input.placeholder = 'Introdu numărul';
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        checkFlashAnswer(parseInt(this.value));
+                    }
+                });
+
+                const submitBtn = document.createElement('button');
+                submitBtn.className = 'submit-btn';
+                submitBtn.textContent = 'Verifică';
+                submitBtn.onclick = () => checkFlashAnswer(parseInt(input.value));
+
+                content.appendChild(input);
+                content.appendChild(submitBtn);
+                input.focus();
+            }, speed * 1000);
+        } else {
+            // Show number, then ask to set on abacus
+            const numberDiv = document.createElement('div');
+            numberDiv.style.fontSize = '3rem';
+            numberDiv.style.fontWeight = '700';
+            numberDiv.style.marginBottom = '2rem';
+            numberDiv.textContent = currentNumber;
+
+            content.appendChild(numberDiv);
+
+            setTimeout(() => {
+                numberDiv.style.display = 'none';
+
+                // Record question start time for response time tracking
+                stats.questionStartTime = Date.now();
+
+                const abacusDiv = document.createElement('div');
+                abacusDiv.className = 'mini-abacus';
+                const frame = document.createElement('div');
+                frame.className = 'abacus-frame-mini';
+                abacusDiv.appendChild(frame);
+                createMiniAbacus(0, frame);
+                makeAbacusInteractive(frame);
+
+                const submitBtn = document.createElement('button');
+                submitBtn.className = 'submit-btn';
+                submitBtn.textContent = 'Verifică';
+                submitBtn.onclick = () => checkFlashAbacus(frame);
+
+                content.appendChild(abacusDiv);
+                content.appendChild(submitBtn);
+            }, speed * 1000);
+        }
+    }
+
+    function checkFlashAnswer(answer) {
+        // Record response time
+        if (stats.questionStartTime) {
+            const responseTime = Date.now() - stats.questionStartTime;
+            stats.responseTimes.push(responseTime);
+        }
+
+        const content = document.getElementById('flashContent');
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (answer === currentNumber) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('flashCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${currentNumber}`;
+            stats.incorrect++;
+            document.getElementById('flashIncorrect').textContent = stats.incorrect;
+        }
+
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextFlashExercise();
+        }, 1500);
+    }
+
+    function checkFlashAbacus(frame) {
+        // Record response time
+        if (stats.questionStartTime) {
+            const responseTime = Date.now() - stats.questionStartTime;
+            stats.responseTimes.push(responseTime);
+        }
+
+        const rods = frame.querySelectorAll('.rod-mini');
+        let abacusNumber = 0;
+
+        rods.forEach((rod, index) => {
+            let digitValue = 0;
+
+            // Check top bead (heaven - value 5)
+            const topBead = rod.querySelector('.bead-mini.top');
+            if (topBead && topBead.classList.contains('active')) {
+                digitValue += 5;
+            }
+
+            // Check bottom beads (earth - value 1 each)
+            const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
+            digitValue += bottomBeads.length;
+
+            abacusNumber += digitValue * Math.pow(10, rods.length - 1 - index);
+        });
+
+        const content = document.getElementById('flashContent');
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (abacusNumber === currentNumber) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('flashCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${currentNumber}`;
+            stats.incorrect++;
+            document.getElementById('flashIncorrect').textContent = stats.incorrect;
+        }
+
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextFlashExercise();
+        }, 1500);
+    }
+
+    function showFlashSummary() {
+        // Calculate statistics
+        const totalExercises = stats.correct + stats.incorrect;
+        const correctRate = totalExercises > 0 ? ((stats.correct / totalExercises) * 100).toFixed(1) : 0;
+        const avgResponseTime = stats.responseTimes.length > 0
+            ? (stats.responseTimes.reduce((a, b) => a + b, 0) / stats.responseTimes.length / 1000).toFixed(2)
+            : 0;
+
+        // Update modal content
+        document.getElementById('summaryCorrect').textContent = stats.correct;
+        document.getElementById('summaryIncorrect').textContent = stats.incorrect;
+        document.getElementById('summaryTotal').textContent = totalExercises;
+        document.getElementById('summaryRate').textContent = correctRate + '%';
+        document.getElementById('summaryAvgTime').textContent = avgResponseTime + 's';
+
+        // Show modal
+        document.getElementById('flashSummaryModal').style.display = 'flex';
+    }
+
+    function closeFlashSummary() {
+        document.getElementById('flashSummaryModal').style.display = 'none';
+        backToModes();
+    }
+
+    // Exercises Mode
+    function startExercises() {
+        stats.correct = 0;
+        stats.incorrect = 0;
+        document.getElementById('exercisesCorrect').textContent = '0';
+        document.getElementById('exercisesIncorrect').textContent = '0';
+        document.getElementById('exercisesArea').style.display = 'flex';
+        nextExercise();
+    }
+
+    function nextExercise() {
+        const { formulas, level, section, addends } = currentSettings.exercises;
+        const content = document.getElementById('exercisesContent');
+        content.innerHTML = '';
+
+        // Randomly select a formula from the available formulas
+        const formula = formulas[getRandomNumber(0, formulas.length - 1)];
+
+        // Generate exercise based on level
+        let numbers = [];
+        let operators = [];
+        const exerciseData = generateExerciseForLevel(level, formula, section, addends);
+        numbers = exerciseData.numbers;
+        operators = exerciseData.operators || [];
+
+        // Calculate correct answer using individual operators
+        let correctAnswer = numbers[0];
+        for (let i = 1; i < numbers.length; i++) {
+            const operator = operators[i - 1] || (formula === 'addition' ? '+' : '-');
+            if (operator === '+') {
+                correctAnswer += numbers[i];
+            } else {
+                correctAnswer -= numbers[i];
+            }
+        }
+
+        // Display problem
+        const problemDiv = document.createElement('div');
+        problemDiv.style.fontSize = '2rem';
+        problemDiv.style.marginBottom = '2rem';
+        problemDiv.style.textAlign = 'center';
+
+        numbers.forEach((num, index) => {
+            const abacusDiv = document.createElement('div');
+            abacusDiv.style.display = 'inline-block';
+            abacusDiv.style.margin = '0 1rem';
+            const frame = document.createElement('div');
+            frame.className = 'abacus-frame-mini';
+            abacusDiv.appendChild(frame);
+            createMiniAbacus(num, frame);
+            problemDiv.appendChild(abacusDiv);
+
+            if (index < numbers.length - 1) {
+                const operator = document.createElement('span');
+                operator.textContent = ' ' + (operators[index] || (formula === 'addition' ? '+' : '-')) + ' ';
+                operator.style.fontSize = '2rem';
+                operator.style.margin = '0 1rem';
+                problemDiv.appendChild(operator);
+            }
+        });
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'answer-input';
+        input.placeholder = 'Introdu răspunsul';
+        input.dataset.correctAnswer = correctAnswer;
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
+            }
+        });
+
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'submit-btn';
+        submitBtn.textContent = 'Verifică';
+        submitBtn.onclick = () => checkExerciseAnswer(parseInt(input.value), correctAnswer);
+
+        content.appendChild(problemDiv);
+        content.appendChild(input);
+        content.appendChild(submitBtn);
+
+        setTimeout(() => input.focus(), 100);
+    }
+
+    function checkExerciseAnswer(answer, correctAnswer) {
+        const content = document.getElementById('exercisesContent');
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (answer === correctAnswer) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('exercisesCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${correctAnswer}`;
+            stats.incorrect++;
+            document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
+        }
+
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextExercise();
+        }, 2000);
+    }
+
+    // Classwork Mode
+    function openClassworkSettings() {
+        document.getElementById('classworkSettingsModal').classList.add('active');
+    }
+
+    function closeClassworkSettings() {
+        document.getElementById('classworkSettingsModal').classList.remove('active');
+    }
+
+    function openStudentSettings(studentId) {
+        document.getElementById(`studentSettingsModal${studentId}`).classList.add('active');
+
+        // Set up toggle button handlers for this modal
+        const modal = document.getElementById(`studentSettingsModal${studentId}`);
+        modal.querySelectorAll('.toggle-btn[data-student]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const group = this.parentElement;
+                group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                const setting = this.dataset.setting;
+                const value = this.dataset.value;
+                currentSettings.students[studentId][setting] = value;
+            });
+        });
+    }
+
+    function closeStudentSettings(studentId) {
+        document.getElementById(`studentSettingsModal${studentId}`).classList.remove('active');
+    }
+
+    function adjustStudentNumber(studentId, field, delta) {
+        const element = document.getElementById(`student${studentId}${field.charAt(0).toUpperCase() + field.slice(1)}`);
+        let currentValue = parseInt(element.textContent);
+        let newValue = currentValue + delta;
+
+        if (field === 'from') {
+            newValue = Math.max(0, Math.min(999, newValue));
+        } else if (field === 'to') {
+            newValue = Math.max(1, Math.min(999, newValue));
+        }
+
+        element.textContent = newValue;
+        currentSettings.students[studentId][field] = newValue;
+    }
+
+    function adjustStudentSpeed(studentId, delta) {
+        const element = document.getElementById(`student${studentId}Speed`);
+        let currentValue = parseFloat(element.textContent);
+        let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
+        element.textContent = newValue.toFixed(0);
+        currentSettings.students[studentId].speed = newValue;
+    }
+
+    function startAllStudents() {
+        const panels = Array.from(document.querySelectorAll('.student-panel')).filter(
+            panel => panel.style.display !== 'none'
+        );
+
+        // Reset all student states
+        panels.forEach(panel => {
+            const studentId = parseInt(panel.dataset.studentId);
+            studentResults[studentId] = null;
+            const statusDiv = panel.querySelector('.student-status');
+            statusDiv.classList.remove('show', 'correct', 'incorrect');
+            panel.querySelector('.not-solved-text').style.display = 'none';
+            panel.querySelector('.answer-area').style.display = 'none';
+            panel.querySelector('.mini-abacus').style.display = 'none';
+        });
+
+        // Show countdown 3, 2, 1
+        panels.forEach(panel => {
+            const countdown = panel.querySelector('.countdown');
+            countdown.style.display = 'block';
+        });
+
+        let count = 3;
+        const countdownInterval = setInterval(() => {
+            panels.forEach(panel => {
+                const countdown = panel.querySelector('.countdown');
+                countdown.textContent = count;
+            });
+
+            count--;
+
+            if (count < 0) {
+                clearInterval(countdownInterval);
+                showStudentExercise();
+            }
+        }, 1000);
+    }
+
+    function showStudentExercise() {
+        const panels = Array.from(document.querySelectorAll('.student-panel')).filter(
+            panel => panel.style.display !== 'none'
+        );
+
+        panels.forEach(panel => {
+            const studentId = parseInt(panel.dataset.studentId);
+            const settings = currentSettings.students[studentId];
+
+            const countdown = panel.querySelector('.countdown');
+            countdown.style.display = 'none';
+
+            const number = getRandomNumber(settings.from, settings.to);
+            studentNumbers[studentId] = number;
+
+            const abacusContainer = panel.querySelector('.abacus-frame-mini');
+            const abacusDiv = panel.querySelector('.mini-abacus');
+            const answerArea = panel.querySelector('.answer-area');
+            const notSolvedText = panel.querySelector('.not-solved-text');
+
+            if (settings.direction === 'abacus-to-number') {
+                createMiniAbacus(number, abacusContainer);
+                abacusDiv.style.display = 'block';
+
+                setTimeout(() => {
+                    abacusDiv.style.display = 'none';
+                    notSolvedText.style.display = 'block';
+
+                    // Show input for abacus-to-number mode
+                    const input = answerArea.querySelector('.answer-input');
+                    input.style.display = 'block';
+                    answerArea.style.display = 'flex';
+                }, settings.speed * 1000);
+            } else {
+                // Number to abacus - show number and interactive abacus
+                notSolvedText.textContent = `Set this number on abacus: ${number}`;
+                notSolvedText.style.display = 'block';
+
+                // Create interactive abacus starting at 0
+                createMiniAbacus(0, abacusContainer);
+                makeAbacusInteractive(abacusContainer);
+                abacusDiv.style.display = 'block';
+
+                // Show answer area (button only, hide input)
+                const input = answerArea.querySelector('.answer-input');
+                input.style.display = 'none';
+                answerArea.style.display = 'flex';
+            }
+        });
+    }
+
+    function checkStudentAnswer(studentId) {
+        const panel = document.querySelector(`.student-panel[data-student-id="${studentId}"]`);
+        const settings = currentSettings.students[studentId];
+        const correctAnswer = studentNumbers[studentId];
+        let userAnswer;
+
+        // Check if we're reading from abacus or input
+        if (settings.direction === 'number-to-abacus') {
+            // Read answer from abacus
+            const abacusContainer = panel.querySelector('.abacus-frame-mini');
+            const rods = abacusContainer.querySelectorAll('.rod-mini');
+            let abacusNumber = 0;
+
+            rods.forEach((rod, index) => {
+                let digitValue = 0;
+
+                // Check top bead (heaven - value 5)
+                const topBead = rod.querySelector('.bead-mini.top');
+                if (topBead && topBead.classList.contains('active')) {
+                    digitValue += 5;
+                }
+
+                // Check bottom beads (earth - value 1 each)
+                const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
+                digitValue += bottomBeads.length;
+
+                abacusNumber += digitValue * Math.pow(10, rods.length - 1 - index);
+            });
+
+            userAnswer = abacusNumber;
+        } else {
+            // Read answer from input field
+            const input = panel.querySelector('.answer-input');
+            userAnswer = parseInt(input.value);
+        }
+
+        const isCorrect = userAnswer === correctAnswer;
+        studentResults[studentId] = isCorrect;
+
+        // Update status indicator
+        const statusDiv = panel.querySelector('.student-status');
+        statusDiv.classList.add('show');
+        statusDiv.classList.remove('correct', 'incorrect');
+        statusDiv.classList.add(isCorrect ? 'correct' : 'incorrect');
+        statusDiv.textContent = isCorrect ? '✓' : '✗';
+
+        // Show feedback modal
+        const feedbackModal = document.getElementById('feedbackModal');
+        const feedbackTitle = document.getElementById('feedbackTitle');
+        feedbackTitle.className = 'feedback-modal-title';
+        feedbackTitle.classList.add(isCorrect ? 'correct' : 'incorrect');
+        feedbackTitle.textContent = isCorrect ? 'Correct answer' : 'Incorrect answer';
+        feedbackModal.classList.add('active');
+
+        // Hide exercise area
+        panel.querySelector('.answer-area').style.display = 'none';
+        panel.querySelector('.not-solved-text').style.display = 'none';
+        panel.querySelector('.mini-abacus').style.display = 'none';
+
+        // Clear input for next round
+        const input = panel.querySelector('.answer-input');
+        if (input) {
+            input.value = '';
+        }
+    }
+
+    function closeFeedbackModal() {
+        document.getElementById('feedbackModal').classList.remove('active');
+    }
+
+    function showResults() {
+        const panels = Array.from(document.querySelectorAll('.student-panel')).filter(
+            panel => panel.style.display !== 'none'
+        );
+        let results = 'Rezultate:\n\n';
+
+        panels.forEach((panel, index) => {
+            const studentId = parseInt(panel.dataset.studentId);
+            const name = panel.querySelector('.student-name-input').value;
+            const result = studentResults[studentId];
+
+            let status = 'Not answered';
+            if (result === true) status = '✓ Correct';
+            else if (result === false) status = `✗ Incorrect (Correct: ${studentNumbers[studentId]})`;
+
+            results += `${name}: ${status}\n`;
+        });
+
+        alert(results);
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.log('Error attempting to enable fullscreen:', err);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    function removeStudent(btn) {
+        // Placeholder - in a full implementation this would remove the panel
+        alert('Funcționalitatea de eliminare a elevilor va fi implementată');
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Flashcard Simulator Initialized');
+    });
+</script>
+{% endblock %}

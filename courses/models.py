@@ -113,3 +113,86 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.created_at.strftime('%d.%m.%Y')}"
+
+
+class Module(models.Model):
+    """
+    Modul dintr-un curs (ex: Modul 1, Modul 2)
+    Modulele sunt create în admin și nu apar în site-ul public
+    """
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='modules',
+        verbose_name="Curs"
+    )
+    name = models.CharField(max_length=200, verbose_name="Nume Modul")
+    description = models.TextField(blank=True, verbose_name="Descriere")
+    order = models.PositiveIntegerField(default=0, verbose_name="Ordine")
+
+    # Culoare pentru calendar (hex color)
+    color = models.CharField(
+        max_length=7,
+        default='#4A90E2',
+        verbose_name="Culoare Calendar",
+        help_text="Culoare în format hex (ex: #4A90E2)"
+    )
+
+    is_active = models.BooleanField(default=True, verbose_name="Activ")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Modul"
+        verbose_name_plural = "Module"
+        ordering = ['course', 'order']
+        unique_together = ['course', 'order']
+
+    def __str__(self):
+        return f"{self.course.title} - {self.name}"
+
+
+class LessonTemplate(models.Model):
+    """
+    Șablon de lecție din modul (lecții preset)
+    Acestea sunt create în admin și servesc ca bază pentru lecțiile din grupe
+    """
+    module = models.ForeignKey(
+        Module,
+        on_delete=models.CASCADE,
+        related_name='lesson_templates',
+        verbose_name="Modul"
+    )
+    name = models.CharField(max_length=200, verbose_name="Nume Lecție")
+    description = models.TextField(blank=True, verbose_name="Descriere")
+
+    # Pași lecție (poate fi text structurat sau JSON)
+    lesson_steps = models.TextField(
+        blank=True,
+        verbose_name="Pași Lecție",
+        help_text="Pașii necesari pentru desfășurarea lecției"
+    )
+
+    # Plan de lecție (PDF sau alt format, ne-descărcabil)
+    lesson_plan_file = models.FileField(
+        upload_to='lesson_plans/',
+        blank=True,
+        null=True,
+        verbose_name="Plan de Lecție",
+        help_text="PDF sau document cu planul lecției (nu poate fi descărcat)"
+    )
+
+    order = models.PositiveIntegerField(default=0, verbose_name="Ordine")
+    is_active = models.BooleanField(default=True, verbose_name="Activ")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Șablon Lecție"
+        verbose_name_plural = "Șabloane Lecții"
+        ordering = ['module', 'order']
+        unique_together = ['module', 'order']
+
+    def __str__(self):
+        return f"{self.module.name} - {self.name}"

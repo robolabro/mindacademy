@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circle background -->
+  <circle cx="32" cy="32" r="32" fill="#D32F2F"/>
+
+  <!-- Japanese character 心 (kokoro/shin - heart/mind) -->
+  <text
+    x="32"
+    y="48"
+    font-family="'Noto Serif JP', serif"
+    font-size="36"
+    font-weight="900"
+    fill="#FCFBF4"
+    text-anchor="middle"
+    dominant-baseline="auto">心</text>
+</svg>
