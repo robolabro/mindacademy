@@ -660,148 +660,9 @@
         font-size: 1.3rem;
     }
 
-    /* Training Content - Larger elements */
-    #trainingContent {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        max-width: 1000px;
-    }
-
-    #trainingContent .mini-abacus {
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        transform: scale(1.15);
-    }
-
-    #trainingContent .abacus-frame-mini {
-        gap: 1.7rem;
-        padding: 1.2rem 1.7rem;
-    }
-
-    #trainingContent .rod-line-mini {
-        width: 7px;
-        height: 250px;
-    }
-
-    #trainingContent .bead-mini {
-        width: 40px;
-        height: 40px;
-        margin: 3px 0;
-    }
-
-    #trainingContent .divider-mini {
-        width: 36px;
-        height: 4px;
-    }
-
-    #trainingContent .bead-mini.top.active {
-        transform: translateY(32px);
-    }
-
-    #trainingContent .bead-mini.bottom.active {
-        transform: translateY(-45px);
-    }
-
-    #trainingContent .bead-mini.top.active:hover {
-        transform: translateY(32px) scale(1.05);
-    }
-
-    #trainingContent .bead-mini.bottom.active:hover {
-        transform: translateY(-45px) scale(1.05);
-    }
-
-    #trainingContent .answer-input {
-        width: 450px;
-        padding: 1.2rem;
-        font-size: 2.7rem;
-        margin-bottom: 1.5rem;
-    }
-
-    #trainingContent .submit-btn {
-        padding: 1.2rem 3.5rem;
-        font-size: 1.4rem;
-    }
-
-    #trainingContent .feedback {
-        font-size: 1.7rem;
-        padding: 1.2rem 2.5rem;
-        margin-top: 1.5rem;
-    }
-
-    /* Exercises Content - Larger elements (same as Training) */
-    #exercisesContent {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        max-width: 1000px;
-    }
-
-    #exercisesContent .mini-abacus {
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        transform: scale(1.15);
-    }
-
-    #exercisesContent .abacus-frame-mini {
-        gap: 1.7rem;
-        padding: 1.2rem 1.7rem;
-    }
-
-    #exercisesContent .rod-line-mini {
-        width: 7px;
-        height: 250px;
-    }
-
-    #exercisesContent .bead-mini {
-        width: 40px;
-        height: 40px;
-        margin: 3px 0;
-    }
-
-    #exercisesContent .divider-mini {
-        width: 36px;
-        height: 4px;
-    }
-
-    #exercisesContent .bead-mini.top.active {
-        transform: translateY(32px);
-    }
-
-    #exercisesContent .bead-mini.bottom.active {
-        transform: translateY(-45px);
-    }
-
-    #exercisesContent .bead-mini.top.active:hover {
-        transform: translateY(32px) scale(1.05);
-    }
-
-    #exercisesContent .bead-mini.bottom.active:hover {
-        transform: translateY(-45px) scale(1.05);
-    }
-
-    #exercisesContent .answer-input {
-        width: 450px;
-        padding: 1.2rem;
-        font-size: 2.7rem;
-        margin-bottom: 1.5rem;
-    }
-
-    #exercisesContent .submit-btn {
-        padding: 1.2rem 3.5rem;
-        font-size: 1.4rem;
-    }
-
-    #exercisesContent .feedback {
-        font-size: 1.7rem;
-        padding: 1.2rem 2.5rem;
-        margin-top: 1.5rem;
+    /* Training Mode padding */
+    #trainingMode {
+        padding: 2rem;
     }
 
     /* Classwork Mode */
@@ -4114,17 +3975,24 @@
             const notSolvedText = panel.querySelector('.not-solved-text');
 
             if (settings.direction === 'abacus-to-number') {
-                // Show abacus with number - stays visible permanently
+                // Show abacus with number first
                 createMiniAbacus(number, abacusContainer);
                 abacusDiv.style.display = 'block';
 
-                // Show input immediately (no timeout - abacus stays visible)
-                notSolvedText.textContent = 'Introdu numărul';
-                notSolvedText.style.display = 'block';
+                // After display time expires, hide abacus and show input
+                setTimeout(() => {
+                    abacusDiv.style.display = 'none';
 
-                const input = answerArea.querySelector('.answer-input');
-                input.style.display = 'block';
-                answerArea.style.display = 'flex';
+                    notSolvedText.textContent = 'Introdu numărul';
+                    notSolvedText.style.display = 'block';
+
+                    const input = answerArea.querySelector('.answer-input');
+                    input.style.display = 'block';
+                    answerArea.style.display = 'flex';
+
+                    // Focus on input for quick entry
+                    input.focus();
+                }, settings.speed * 1000);
             } else {
                 // Number to abacus - show number and interactive abacus
                 notSolvedText.textContent = `Set this number on abacus: ${number}`;
