@@ -790,18 +790,21 @@
     /* Compact abacus for student panels */
     .student-panel .mini-abacus {
         padding: 0.25rem;
-        margin-bottom: 0.25rem;
+        margin: 0 auto 0.25rem auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     .student-panel .abacus-frame-mini {
-        gap: 1rem;
+        gap: 2rem;
         padding: 0.5rem 1rem;
         border: 3px solid #654321;
     }
 
     .student-panel .rod-line-mini {
         width: 5px;
-        height: 130px;
+        height: 260px;
     }
 
     .student-panel .bead-mini {
@@ -815,19 +818,19 @@
     }
 
     .student-panel .bead-mini.top.active {
-        transform: translateY(24px);
+        transform: translateY(48px);
     }
 
     .student-panel .bead-mini.top.active:hover {
-        transform: translateY(24px) scale(1.05);
+        transform: translateY(48px) scale(1.05);
     }
 
     .student-panel .bead-mini.bottom.active {
-        transform: translateY(-35px);
+        transform: translateY(-70px);
     }
 
     .student-panel .bead-mini.bottom.active:hover {
-        transform: translateY(-35px) scale(1.05);
+        transform: translateY(-70px) scale(1.05);
     }
 
     /* Compact elements in student panel */
