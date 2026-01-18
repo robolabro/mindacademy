@@ -326,10 +326,12 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
+        padding: 0.5rem 1rem;
         background: #f8f9fa;
         border-radius: 15px;
-        min-height: 600px;
+        min-height: auto;
+        max-height: 85vh;
+        overflow-y: auto;
     }
 
     .countdown {
@@ -346,10 +348,10 @@
 
     .mini-abacus {
         background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        margin-bottom: 2rem;
+        border-radius: 10px;
+        padding: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 0.75rem;
         width: 100%;
         display: flex;
         justify-content: center;
@@ -357,12 +359,12 @@
 
     .abacus-frame-mini {
         display: inline-flex;
-        gap: 5rem;
-        padding: 2.5rem 3.5rem;
+        gap: 1.5rem;
+        padding: 1rem 1.5rem;
         background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-        border-radius: 20px;
-        border: 8px solid #654321;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        border: 5px solid #654321;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
     }
 
     .rod-mini {
@@ -374,8 +376,8 @@
     }
 
     .rod-line-mini {
-        width: 8px;
-        height: 350px;
+        width: 6px;
+        height: 220px;
         background: linear-gradient(to bottom, #4a2511 0%, #654321 50%, #4a2511 100%);
         position: relative;
         display: flex;
@@ -389,10 +391,10 @@
         top: 25%;
         left: 50%;
         transform: translateX(-50%);
-        width: 40px;
-        height: 6px;
+        width: 28px;
+        height: 4px;
         background: linear-gradient(to right, #2c2c2c 0%, #1a1a1a 50%, #2c2c2c 100%);
-        border-radius: 3px;
+        border-radius: 2px;
         z-index: 5;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     }
@@ -431,14 +433,14 @@
     }
 
     .bead-mini {
-        width: 42px;
-        height: 42px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         position: relative;
         transition: all 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
         cursor: pointer;
-        margin: 4px 0;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        margin: 3px 0;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
     }
 
     /* Top beads (heaven - value 5) */
@@ -454,7 +456,7 @@
     .bead-mini.top.active {
         /* Active state - touching separator, vibrant color */
         background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
-        transform: translateY(35px);
+        transform: translateY(25px);
         box-shadow:
             0 6px 14px rgba(46, 204, 196, 0.5),
             inset -2px -2px 4px rgba(0, 0, 0, 0.2),
@@ -468,7 +470,7 @@
 
     .bead-mini.top.active:hover {
         filter: brightness(1.1);
-        transform: translateY(35px) scale(1.05);
+        transform: translateY(25px) scale(1.05);
     }
 
     /* Bottom beads (earth - value 1 each) */
@@ -484,7 +486,7 @@
     .bead-mini.bottom.active {
         /* Active state - touching separator, vibrant color */
         background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
-        transform: translateY(-50px);
+        transform: translateY(-36px);
         box-shadow:
             0 6px 14px rgba(246, 194, 62, 0.5),
             inset -2px -2px 4px rgba(0, 0, 0, 0.2),
@@ -498,7 +500,7 @@
 
     .bead-mini.bottom.active:hover {
         filter: brightness(1.1);
-        transform: translateY(-50px) scale(1.05);
+        transform: translateY(-36px) scale(1.05);
     }
 
     .answer-input {
@@ -586,7 +588,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
     }
 
     .classwork-controls {
@@ -674,18 +677,34 @@
     }
 
     .student-panel .rod-line-mini {
-        width: 5px;
-        height: 130px;
+        width: 6px;
+        height: 160px;
     }
 
     .student-panel .bead-mini {
-        width: 28px;
-        height: 28px;
+        width: 36px;
+        height: 36px;
     }
 
     .student-panel .divider-mini {
-        width: 24px;
-        height: 3px;
+        width: 30px;
+        height: 4px;
+    }
+
+    .student-panel .bead-mini.top.active {
+        transform: translateY(30px);
+    }
+
+    .student-panel .bead-mini.top.active:hover {
+        transform: translateY(30px) scale(1.05);
+    }
+
+    .student-panel .bead-mini.bottom.active {
+        transform: translateY(-45px);
+    }
+
+    .student-panel .bead-mini.bottom.active:hover {
+        transform: translateY(-45px) scale(1.05);
     }
 
     /* Compact elements in student panel */
@@ -748,14 +767,38 @@
     :fullscreen .student-panel .rod-line-mini,
     :-webkit-full-screen .student-panel .rod-line-mini,
     :-moz-full-screen .student-panel .rod-line-mini {
-        height: 110px;
+        height: 140px;
     }
 
     :fullscreen .student-panel .bead-mini,
     :-webkit-full-screen .student-panel .bead-mini,
     :-moz-full-screen .student-panel .bead-mini {
-        width: 24px;
-        height: 24px;
+        width: 32px;
+        height: 32px;
+    }
+
+    :fullscreen .student-panel .bead-mini.top.active,
+    :-webkit-full-screen .student-panel .bead-mini.top.active,
+    :-moz-full-screen .student-panel .bead-mini.top.active {
+        transform: translateY(27px);
+    }
+
+    :fullscreen .student-panel .bead-mini.top.active:hover,
+    :-webkit-full-screen .student-panel .bead-mini.top.active:hover,
+    :-moz-full-screen .student-panel .bead-mini.top.active:hover {
+        transform: translateY(27px) scale(1.05);
+    }
+
+    :fullscreen .student-panel .bead-mini.bottom.active,
+    :-webkit-full-screen .student-panel .bead-mini.bottom.active,
+    :-moz-full-screen .student-panel .bead-mini.bottom.active {
+        transform: translateY(-40px);
+    }
+
+    :fullscreen .student-panel .bead-mini.bottom.active:hover,
+    :-webkit-full-screen .student-panel .bead-mini.bottom.active:hover,
+    :-moz-full-screen .student-panel .bead-mini.bottom.active:hover {
+        transform: translateY(-40px) scale(1.05);
     }
 
     .student-header {
@@ -3528,14 +3571,18 @@
 
         // Display problem
         const problemDiv = document.createElement('div');
-        problemDiv.style.fontSize = '2rem';
-        problemDiv.style.marginBottom = '2rem';
+        problemDiv.style.fontSize = '1.5rem';
+        problemDiv.style.marginBottom = '1rem';
         problemDiv.style.textAlign = 'center';
+        problemDiv.style.display = 'flex';
+        problemDiv.style.alignItems = 'center';
+        problemDiv.style.justifyContent = 'center';
+        problemDiv.style.flexWrap = 'wrap';
+        problemDiv.style.gap = '0.5rem';
 
         numbers.forEach((num, index) => {
             const abacusDiv = document.createElement('div');
             abacusDiv.style.display = 'inline-block';
-            abacusDiv.style.margin = '0 1rem';
             const frame = document.createElement('div');
             frame.className = 'abacus-frame-mini';
             abacusDiv.appendChild(frame);
@@ -3544,9 +3591,9 @@
 
             if (index < numbers.length - 1) {
                 const operator = document.createElement('span');
-                operator.textContent = ' ' + (operators[index] || (formula === 'addition' ? '+' : '-')) + ' ';
-                operator.style.fontSize = '2rem';
-                operator.style.margin = '0 1rem';
+                operator.textContent = operators[index] || (formula === 'addition' ? '+' : '-');
+                operator.style.fontSize = '1.5rem';
+                operator.style.fontWeight = 'bold';
                 problemDiv.appendChild(operator);
             }
         });
