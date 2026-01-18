@@ -2340,7 +2340,7 @@
         document.getElementById('flashExercise').style.display = 'none';
         document.getElementById('exercisesArea').style.display = 'none';
 
-        // Restore settings and instructions for flash mode
+        // Restore settings and instructions for all modes
         const flashMode = document.getElementById('flashMode');
         const flashSettingsPanel = flashMode.querySelector('.settings-panel');
         const flashInstructionsPanel = flashMode.querySelector('.instructions-panel');
@@ -2349,6 +2349,24 @@
         if (flashSettingsPanel) flashSettingsPanel.style.display = 'block';
         if (flashInstructionsPanel) flashInstructionsPanel.style.display = 'block';
         if (flashStartBtn) flashStartBtn.style.display = 'block';
+
+        const trainingMode = document.getElementById('trainingMode');
+        const trainingSettingsPanel = trainingMode.querySelector('.settings-panel');
+        const trainingInstructionsPanel = trainingMode.querySelector('.instructions-panel');
+        const trainingStartBtn = trainingMode.querySelector('.start-btn');
+
+        if (trainingSettingsPanel) trainingSettingsPanel.style.display = 'block';
+        if (trainingInstructionsPanel) trainingInstructionsPanel.style.display = 'block';
+        if (trainingStartBtn) trainingStartBtn.style.display = 'block';
+
+        const exercisesMode = document.getElementById('exercisesMode');
+        const exercisesSettingsPanel = exercisesMode.querySelector('.settings-panel');
+        const exercisesInstructionsPanel = exercisesMode.querySelector('.instructions-panel');
+        const exercisesStartBtn = exercisesMode.querySelector('.start-btn');
+
+        if (exercisesSettingsPanel) exercisesSettingsPanel.style.display = 'block';
+        if (exercisesInstructionsPanel) exercisesInstructionsPanel.style.display = 'block';
+        if (exercisesStartBtn) exercisesStartBtn.style.display = 'block';
 
         // Reset stats
         stats.correct = 0;
@@ -2996,7 +3014,24 @@
         stats.incorrect = 0;
         document.getElementById('trainingCorrect').textContent = '0';
         document.getElementById('trainingIncorrect').textContent = '0';
-        document.getElementById('trainingExercise').style.display = 'flex';
+
+        // Hide settings and instructions when exercise starts
+        const trainingMode = document.getElementById('trainingMode');
+        const settingsPanel = trainingMode.querySelector('.settings-panel');
+        const instructionsPanel = trainingMode.querySelector('.instructions-panel');
+        const startBtn = trainingMode.querySelector('.start-btn');
+
+        if (settingsPanel) settingsPanel.style.display = 'none';
+        if (instructionsPanel) instructionsPanel.style.display = 'none';
+        if (startBtn) startBtn.style.display = 'none';
+
+        // Show exercise area
+        const exerciseArea = document.getElementById('trainingExercise');
+        exerciseArea.style.display = 'flex';
+
+        // Scroll to top of exercise area to make it visible
+        exerciseArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
         nextTrainingExercise();
     }
 
@@ -3405,7 +3440,24 @@
         stats.incorrect = 0;
         document.getElementById('exercisesCorrect').textContent = '0';
         document.getElementById('exercisesIncorrect').textContent = '0';
-        document.getElementById('exercisesArea').style.display = 'flex';
+
+        // Hide settings and instructions when exercise starts
+        const exercisesMode = document.getElementById('exercisesMode');
+        const settingsPanel = exercisesMode.querySelector('.settings-panel');
+        const instructionsPanel = exercisesMode.querySelector('.instructions-panel');
+        const startBtn = exercisesMode.querySelector('.start-btn');
+
+        if (settingsPanel) settingsPanel.style.display = 'none';
+        if (instructionsPanel) instructionsPanel.style.display = 'none';
+        if (startBtn) startBtn.style.display = 'none';
+
+        // Show exercise area
+        const exerciseArea = document.getElementById('exercisesArea');
+        exerciseArea.style.display = 'flex';
+
+        // Scroll to top of exercise area to make it visible
+        exerciseArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
         nextExercise();
     }
 
