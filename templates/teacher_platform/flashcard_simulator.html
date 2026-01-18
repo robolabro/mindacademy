@@ -2570,6 +2570,31 @@
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+    /**
+     * SOROBAN CALCULATION METHODS
+     * ===========================
+     *
+     * 1. DIRECT CALCULATION
+     *    - Simplest method: move beads directly toward the reckoning bar
+     *    - No carries, borrows, or complementary numbers needed
+     *    - Requires enough beads available on the current rod
+     *    - Example: 2 + 2 = move two beads up, then two more up
+     *
+     * 2. SMALL FRIENDS (5-Complements)
+     *    - Used when not enough beads available, but 5-bead (heavenly bead) is available
+     *    - Pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
+     *    - Addition: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
+     *    - Subtraction: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
+     *    - Example: 4 + 1 = Add 5, then subtract 4 (friend of 1)
+     *
+     * 3. BIG FRIENDS (10-Complements)
+     *    - Used when rod is full; must carry to or borrow from next rod (tens place)
+     *    - Pairs that sum to 10: (1,9), (2,8), (3,7), (4,6), (5,5)
+     *    - Addition: +9 = +10-1, +8 = +10-2, ... +1 = +10-9
+     *    - Subtraction: -9 = -10+1, -8 = -10+2, ... -1 = -10+9
+     *    - Example: 9 + 1 = Add 10 on next rod, subtract 9 from current rod
+     */
+
     // Generate exercise based on level
     function generateExerciseForLevel(level, formula, section, addends) {
         const maxDigits = section;
@@ -2820,14 +2845,19 @@
     }
 
     // Helper: Generate Small Friends exercise for specific formula
+    // Small Friends are pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
+    // Addition formulas: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
+    // Subtraction formulas: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
     function generateSmallFriendsExercise(target, addends, formula) {
         const numbers = [];
         const absTarget = Math.abs(target);
 
         if (formula === 'addition' && target > 0) {
             // For addition: need first number where adding target requires 5-complement
-            // Example for +1: first number should be 4 (4+1 needs +5-4)
+            // Example: +1 = +5-4, so we need a number that already has 4 (like 4, 14, 24, etc.)
+            // For +4 = +5-1, we need a number that ends in 1 or higher
             const validFirstNumbers = [];
+            // Numbers that will require using the small friend formula
             for (let i = (5 - absTarget); i <= 4; i++) {
                 validFirstNumbers.push(i);
             }
@@ -2836,19 +2866,21 @@
             // Add the target number
             numbers.push(absTarget);
 
-            // Fill remaining addends with random 1-9
+            // Fill remaining addends with random 1-4 to keep it simple
             for (let i = 2; i < addends; i++) {
-                numbers.push(getRandomNumber(1, 9));
+                numbers.push(getRandomNumber(1, 4));
             }
         } else if (formula === 'subtraction' && target < 0) {
             // For subtraction: need first number that when subtracting requires 5-complement
-            // Example for -1: first number should be 5 (5-1 needs +4-5)
-            numbers.push(5 + absTarget - 1);
+            // Example: -1 = -5+4, so we need a number like 5, 6, 7, 8, or 9 (has 5-bead active)
+            // First number should be 5 to 9 to require the formula
+            const validFirstNumbers = [5, 6, 7, 8, 9];
+            numbers.push(validFirstNumbers[getRandomNumber(0, validFirstNumbers.length - 1)]);
 
             // Subtract the target amount
             numbers.push(absTarget);
 
-            // Fill remaining with random
+            // Fill remaining with random 1-4
             for (let i = 2; i < addends; i++) {
                 numbers.push(getRandomNumber(1, 4));
             }
@@ -2872,6 +2904,9 @@
     }
 
     // Helper: Generate Big Friends exercise for specific formula
+    // Big Friends are pairs that sum to 10: (1,9), (2,8), (3,7), (4,6), (5,5)
+    // Addition formulas: +9 = +10-1, +8 = +10-2, +7 = +10-3, ... +1 = +10-9
+    // Subtraction formulas: -9 = -10+1, -8 = -10+2, -7 = -10+3, ... -1 = -10+9
     function generateBigFriendsExercise(target, addends, formula, section) {
         const numbers = [];
         const absTarget = Math.abs(target);
@@ -2880,7 +2915,9 @@
 
         if (formula === 'addition' && target > 0) {
             // For addition: need first number where adding target requires 10-complement
-            // Example for +1: first number should be 9 (9+1 needs +10-9)
+            // Example: +1 = +10-9, so first number ends in 9 (like 9, 19, 29, etc.)
+            // Example: +9 = +10-1, so first number ends in 1 or higher (like 1-9, 11-19, etc.)
+            // Must carry to next rod - units digit should be (10 - target) or higher
             const minFirst = Math.max(1, 10 - absTarget);
             const maxFirst = Math.min(9, maxNum);
             numbers.push(getRandomNumber(minFirst, maxFirst));
@@ -2888,13 +2925,15 @@
             // Add the target number
             numbers.push(absTarget);
 
-            // Fill remaining addends
+            // Fill remaining addends with small numbers
             for (let i = 2; i < addends; i++) {
                 numbers.push(getRandomNumber(1, Math.min(9, maxNum)));
             }
         } else if (formula === 'subtraction' && target < 0) {
             // For subtraction: need first number that when subtracting requires 10-complement
-            // Example for -1: first number should be 10 (10-1 needs -10+9)
+            // Example: -1 = -10+9, so first number should be 10, 20, 30, etc. (ends in 0)
+            // Example: -9 = -10+1, so first number should be 10-18, 20-28, etc.
+            // Must borrow from next rod - units digit should be less than target
             const minFirst = Math.max(10, absTarget);
             const maxFirst = Math.min(10 + 9, maxNum);
             numbers.push(getRandomNumber(minFirst, maxFirst));
@@ -2902,7 +2941,7 @@
             // Subtract the target amount
             numbers.push(absTarget);
 
-            // Fill remaining
+            // Fill remaining with small numbers
             for (let i = 2; i < addends; i++) {
                 numbers.push(getRandomNumber(1, Math.min(5, maxNum)));
             }
