@@ -3510,72 +3510,28 @@
             const answerArea = panel.querySelector('.answer-area');
             const notSolvedText = panel.querySelector('.not-solved-text');
 
-            if (settings.direction === 'abacus-to-number') {
-                createMiniAbacus(number, abacusContainer);
-                abacusDiv.style.display = 'block';
+            // Always show abacus with number represented visually (like Flash mode)
+            // Abacus stays visible - students must recognize the number
+            createMiniAbacus(number, abacusContainer);
+            abacusDiv.style.display = 'block';
 
-                setTimeout(() => {
-                    abacusDiv.style.display = 'none';
-                    notSolvedText.style.display = 'block';
+            // Show input field for answer
+            notSolvedText.textContent = 'Introdu numărul';
+            notSolvedText.style.display = 'block';
 
-                    // Show input for abacus-to-number mode
-                    const input = answerArea.querySelector('.answer-input');
-                    input.style.display = 'block';
-                    answerArea.style.display = 'flex';
-                }, settings.speed * 1000);
-            } else {
-                // Number to abacus - show number and interactive abacus
-                notSolvedText.textContent = `Set this number on abacus: ${number}`;
-                notSolvedText.style.display = 'block';
-
-                // Create interactive abacus starting at 0
-                createMiniAbacus(0, abacusContainer);
-                makeAbacusInteractive(abacusContainer);
-                abacusDiv.style.display = 'block';
-
-                // Show answer area (button only, hide input)
-                const input = answerArea.querySelector('.answer-input');
-                input.style.display = 'none';
-                answerArea.style.display = 'flex';
-            }
+            const input = answerArea.querySelector('.answer-input');
+            input.style.display = 'block';
+            answerArea.style.display = 'flex';
         });
     }
 
     function checkStudentAnswer(studentId) {
         const panel = document.querySelector(`.student-panel[data-student-id="${studentId}"]`);
-        const settings = currentSettings.students[studentId];
         const correctAnswer = studentNumbers[studentId];
-        let userAnswer;
 
-        // Check if we're reading from abacus or input
-        if (settings.direction === 'number-to-abacus') {
-            // Read answer from abacus
-            const abacusContainer = panel.querySelector('.abacus-frame-mini');
-            const rods = abacusContainer.querySelectorAll('.rod-mini');
-            let abacusNumber = 0;
-
-            rods.forEach((rod, index) => {
-                let digitValue = 0;
-
-                // Check top bead (heaven - value 5)
-                const topBead = rod.querySelector('.bead-mini.top');
-                if (topBead && topBead.classList.contains('active')) {
-                    digitValue += 5;
-                }
-
-                // Check bottom beads (earth - value 1 each)
-                const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
-                digitValue += bottomBeads.length;
-
-                abacusNumber += digitValue * Math.pow(10, rods.length - 1 - index);
-            });
-
-            userAnswer = abacusNumber;
-        } else {
-            // Read answer from input field
-            const input = panel.querySelector('.answer-input');
-            userAnswer = parseInt(input.value);
-        }
+        // Always read answer from input field (students recognize number on abacus)
+        const input = panel.querySelector('.answer-input');
+        const userAnswer = parseInt(input.value);
 
         const isCorrect = userAnswer === correctAnswer;
         studentResults[studentId] = isCorrect;
