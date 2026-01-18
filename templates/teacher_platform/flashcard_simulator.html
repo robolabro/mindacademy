@@ -1252,11 +1252,20 @@
     <!-- Classwork Mode -->
     <div id="classworkMode" class="mode-screen">
         <div class="classwork-header">
-            <h2>Lucru în Clasă</h2>
+            <div style="display: flex; align-items: center; gap: 2rem;">
+                <h2>Lucru în Clasă</h2>
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: #f0f0f0; padding: 0.5rem 1rem; border-radius: 8px;">
+                    <span style="font-weight: 500;">Studenți:</span>
+                    <button class="number-btn" onclick="adjustStudentCount(-1)" style="width: 32px; height: 32px;">−</button>
+                    <span id="studentCountDisplay" style="min-width: 30px; text-align: center; font-weight: 700; font-size: 1.1rem;">4</span>
+                    <button class="number-btn" onclick="adjustStudentCount(1)" style="width: 32px; height: 32px;">+</button>
+                </div>
+            </div>
             <div class="classwork-controls">
                 <button class="control-btn settings-btn" onclick="openClassworkSettings()">⚙️ Setări</button>
                 <button class="control-btn start-all-btn" onclick="startAllStudents()">▶️ Start</button>
                 <button class="control-btn results-btn" onclick="showResults()">📊 Rezultate</button>
+                <button class="control-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
                 <button class="back-btn" onclick="backToModes()">← Înapoi</button>
             </div>
         </div>
@@ -1556,16 +1565,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="settings-row">
-                    <span class="setting-label">Mod simplu:</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-simple="ordinary">Obișnuit</button>
-                            <button class="toggle-btn" data-simple="simple">Mod simplu</button>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <button class="start-btn" onclick="closeClassworkSettings()">Salvează</button>
@@ -1616,15 +1615,6 @@
                             <button class="number-btn" onclick="adjustStudentSpeed(1, -0.1)">−</button>
                             <span class="number-display" id="student1Speed">1</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(1, 0.1)">+</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="1" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="1" data-setting="simple" data-value="simple">Simple mode</button>
                         </div>
                     </div>
                 </div>
@@ -1679,15 +1669,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="2" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="2" data-setting="simple" data-value="simple">Simple mode</button>
-                        </div>
-                    </div>
-                </div>
             </div>
             <button class="start-btn" onclick="closeStudentSettings(2)">Save</button>
         </div>
@@ -1736,15 +1717,6 @@
                             <button class="number-btn" onclick="adjustStudentSpeed(3, -0.1)">−</button>
                             <span class="number-display" id="student3Speed">1</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(3, 0.1)">+</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="3" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="3" data-setting="simple" data-value="simple">Simple mode</button>
                         </div>
                     </div>
                 </div>
@@ -1799,15 +1771,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="4" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="4" data-setting="simple" data-value="simple">Simple mode</button>
-                        </div>
-                    </div>
-                </div>
             </div>
             <button class="start-btn" onclick="closeStudentSettings(4)">Save</button>
         </div>
@@ -1856,15 +1819,6 @@
                             <button class="number-btn" onclick="adjustStudentSpeed(5, -0.1)">−</button>
                             <span class="number-display" id="student5Speed">1</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(5, 0.1)">+</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="5" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="5" data-setting="simple" data-value="simple">Simple mode</button>
                         </div>
                     </div>
                 </div>
@@ -1919,15 +1873,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="6" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="6" data-setting="simple" data-value="simple">Simple mode</button>
-                        </div>
-                    </div>
-                </div>
             </div>
             <button class="start-btn" onclick="closeStudentSettings(6)">Save</button>
         </div>
@@ -1976,15 +1921,6 @@
                             <button class="number-btn" onclick="adjustStudentSpeed(7, -0.1)">−</button>
                             <span class="number-display" id="student7Speed">1</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(7, 0.1)">+</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="7" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="7" data-setting="simple" data-value="simple">Simple mode</button>
                         </div>
                     </div>
                 </div>
@@ -2039,15 +1975,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="8" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="8" data-setting="simple" data-value="simple">Simple mode</button>
-                        </div>
-                    </div>
-                </div>
             </div>
             <button class="start-btn" onclick="closeStudentSettings(8)">Save</button>
         </div>
@@ -2099,15 +2026,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="9" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="9" data-setting="simple" data-value="simple">Simple mode</button>
-                        </div>
-                    </div>
-                </div>
             </div>
             <button class="start-btn" onclick="closeStudentSettings(9)">Save</button>
         </div>
@@ -2156,15 +2074,6 @@
                             <button class="number-btn" onclick="adjustStudentSpeed(10, -0.1)">−</button>
                             <span class="number-display" id="student10Speed">1</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(10, 0.1)">+</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="settings-row">
-                    <span class="setting-label">Simple mode</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-student="10" data-setting="simple" data-value="ordinary">Ordinary</button>
-                            <button class="toggle-btn" data-student="10" data-setting="simple" data-value="simple">Simple mode</button>
                         </div>
                     </div>
                 </div>
@@ -2423,10 +2332,14 @@
     }
 
     function adjustStudentCount(delta) {
-        const element = document.getElementById('studentCount');
-        let currentValue = parseInt(element.textContent);
+        const modalElement = document.getElementById('studentCount');
+        const headerElement = document.getElementById('studentCountDisplay');
+        let currentValue = parseInt(headerElement.textContent);
         let newValue = Math.max(2, Math.min(10, currentValue + delta));
-        element.textContent = newValue;
+
+        // Update both displays
+        headerElement.textContent = newValue;
+        if (modalElement) modalElement.textContent = newValue;
 
         // Show/hide student panels based on count
         const panels = document.querySelectorAll('.student-panel');
@@ -3540,7 +3453,9 @@
     }
 
     function startAllStudents() {
-        const panels = document.querySelectorAll('.student-panel');
+        const panels = Array.from(document.querySelectorAll('.student-panel')).filter(
+            panel => panel.style.display !== 'none'
+        );
 
         // Reset all student states
         panels.forEach(panel => {
@@ -3576,7 +3491,9 @@
     }
 
     function showStudentExercise() {
-        const panels = document.querySelectorAll('.student-panel');
+        const panels = Array.from(document.querySelectorAll('.student-panel')).filter(
+            panel => panel.style.display !== 'none'
+        );
 
         panels.forEach(panel => {
             const studentId = parseInt(panel.dataset.studentId);
@@ -3695,7 +3612,9 @@
     }
 
     function showResults() {
-        const panels = document.querySelectorAll('.student-panel');
+        const panels = Array.from(document.querySelectorAll('.student-panel')).filter(
+            panel => panel.style.display !== 'none'
+        );
         let results = 'Rezultate:\n\n';
 
         panels.forEach((panel, index) => {
@@ -3711,6 +3630,16 @@
         });
 
         alert(results);
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.log('Error attempting to enable fullscreen:', err);
+            });
+        } else {
+            document.exitFullscreen();
+        }
     }
 
     function removeStudent(btn) {
