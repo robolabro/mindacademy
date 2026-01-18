@@ -3451,27 +3451,52 @@
             }
         });
 
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.className = 'answer-input';
-        input.placeholder = 'Introdu răspunsul';
-        input.dataset.correctAnswer = correctAnswer;
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
-            }
-        });
+        // Check if answer should be entered on abacus or as number
+        const answerType = currentSettings.exercises.answer;
 
-        const submitBtn = document.createElement('button');
-        submitBtn.className = 'submit-btn';
-        submitBtn.textContent = 'Verifică';
-        submitBtn.onclick = () => checkExerciseAnswer(parseInt(input.value), correctAnswer);
+        if (answerType === 'abacus') {
+            // Create interactive abacus for answer (starting at 0)
+            const answerAbacusDiv = document.createElement('div');
+            answerAbacusDiv.className = 'mini-abacus';
+            const answerFrame = document.createElement('div');
+            answerFrame.className = 'abacus-frame-mini';
+            answerFrame.id = 'exerciseAnswerAbacus';
+            answerAbacusDiv.appendChild(answerFrame);
+            createMiniAbacus(0, answerFrame);
+            makeAbacusInteractive(answerFrame);
 
-        content.appendChild(problemDiv);
-        content.appendChild(input);
-        content.appendChild(submitBtn);
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkExerciseAbacusAnswer(answerFrame, correctAnswer);
 
-        setTimeout(() => input.focus(), 100);
+            content.appendChild(problemDiv);
+            content.appendChild(answerAbacusDiv);
+            content.appendChild(submitBtn);
+        } else {
+            // Original number input
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'answer-input';
+            input.placeholder = 'Introdu răspunsul';
+            input.dataset.correctAnswer = correctAnswer;
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
+                }
+            });
+
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkExerciseAnswer(parseInt(input.value), correctAnswer);
+
+            content.appendChild(problemDiv);
+            content.appendChild(input);
+            content.appendChild(submitBtn);
+
+            setTimeout(() => input.focus(), 100);
+        }
     }
 
     function checkExerciseAnswer(answer, correctAnswer) {
@@ -3487,6 +3512,50 @@
         } else {
             feedback.classList.add('incorrect');
             feedback.textContent = `✗ Greșit! Răspunsul corect: ${correctAnswer}`;
+            stats.incorrect++;
+            document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
+        }
+
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextExercise();
+        }, 2000);
+    }
+
+    function checkExerciseAbacusAnswer(frame, correctAnswer) {
+        // Read answer from interactive abacus
+        const rods = frame.querySelectorAll('.rod-mini');
+        let abacusNumber = 0;
+
+        rods.forEach((rod, index) => {
+            let digitValue = 0;
+
+            // Check top bead (heaven - value 5)
+            const topBead = rod.querySelector('.bead-mini.top');
+            if (topBead && topBead.classList.contains('active')) {
+                digitValue += 5;
+            }
+
+            // Check bottom beads (earth - value 1 each)
+            const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
+            digitValue += bottomBeads.length;
+
+            abacusNumber += digitValue * Math.pow(10, rods.length - 1 - index);
+        });
+
+        const content = document.getElementById('exercisesContent');
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (abacusNumber === correctAnswer) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('exercisesCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${correctAnswer} (Tu ai introdus: ${abacusNumber})`;
             stats.incorrect++;
             document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
         }
