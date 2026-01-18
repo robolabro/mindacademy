@@ -156,6 +156,14 @@
         margin: 0;
     }
 
+    /* Fullscreen classwork - no lateral padding */
+    :fullscreen #classworkMode,
+    :-webkit-full-screen #classworkMode,
+    :-moz-full-screen #classworkMode {
+        padding: 0;
+        background: white;
+    }
+
     /* Hide mode header in fullscreen for Classwork */
     :fullscreen #classworkMode .mode-header,
     :-webkit-full-screen #classworkMode .mode-header,
@@ -851,16 +859,33 @@
 
     .students-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 0.4rem;
         height: calc(96vh - 60px);
         overflow-y: auto;
         padding: 0.2rem;
     }
 
+    /* Fixed grid layout based on number of students */
+    /* 1-4 students: 2x2 grid (25% each) */
+    .students-grid.students-1-4 {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* 5-8 students: 4x2 grid (12.5% each) */
+    .students-grid.students-5-8 {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* 9-10 students: keep flexible */
+    .students-grid.students-9-10 {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
     /* Adaptive grid based on number of students visible */
     @media (min-width: 1400px) {
-        .students-grid {
+        .students-grid.students-9-10 {
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         }
     }
@@ -890,34 +915,34 @@
     }
 
     .student-panel .rod-line-mini {
-        width: 7px;
-        height: 180px;
+        width: 8px;
+        height: 200px;
     }
 
     .student-panel .bead-mini {
-        width: 40px;
-        height: 40px;
+        width: 48px;
+        height: 48px;
     }
 
     .student-panel .divider-mini {
-        width: 30px;
-        height: 4px;
+        width: 35px;
+        height: 5px;
     }
 
     .student-panel .bead-mini.top.active {
-        transform: translateY(35px);
+        transform: translateY(40px);
     }
 
     .student-panel .bead-mini.top.active:hover {
-        transform: translateY(35px) scale(1.05);
+        transform: translateY(40px) scale(1.05);
     }
 
     .student-panel .bead-mini.bottom.active {
-        transform: translateY(-50px);
+        transform: translateY(-55px);
     }
 
     .student-panel .bead-mini.bottom.active:hover {
-        transform: translateY(-50px) scale(1.05);
+        transform: translateY(-55px) scale(1.05);
     }
 
     /* Compact elements in student panel */
@@ -956,10 +981,32 @@
     :fullscreen .students-grid,
     :-webkit-full-screen .students-grid,
     :-moz-full-screen .students-grid {
-        height: calc(100vh - 40px);
+        height: 100vh;
+        gap: 0.2rem;
+        padding: 0;
+    }
+
+    /* Fullscreen: Fixed grid for 1-4 students */
+    :fullscreen .students-grid.students-1-4,
+    :-webkit-full-screen .students-grid.students-1-4,
+    :-moz-full-screen .students-grid.students-1-4 {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* Fullscreen: Fixed grid for 5-8 students */
+    :fullscreen .students-grid.students-5-8,
+    :-webkit-full-screen .students-grid.students-5-8,
+    :-moz-full-screen .students-grid.students-5-8 {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* Fullscreen: Flexible grid for 9-10 students */
+    :fullscreen .students-grid.students-9-10,
+    :-webkit-full-screen .students-grid.students-9-10,
+    :-moz-full-screen .students-grid.students-9-10 {
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 0.3rem;
-        padding: 0.15rem;
     }
 
     :fullscreen .student-panel,
@@ -987,38 +1034,46 @@
     :fullscreen .student-panel .rod-line-mini,
     :-webkit-full-screen .student-panel .rod-line-mini,
     :-moz-full-screen .student-panel .rod-line-mini {
-        height: 160px;
+        width: 9px;
+        height: 220px;
     }
 
     :fullscreen .student-panel .bead-mini,
     :-webkit-full-screen .student-panel .bead-mini,
     :-moz-full-screen .student-panel .bead-mini {
-        width: 38px;
-        height: 38px;
+        width: 52px;
+        height: 52px;
+    }
+
+    :fullscreen .student-panel .divider-mini,
+    :-webkit-full-screen .student-panel .divider-mini,
+    :-moz-full-screen .student-panel .divider-mini {
+        width: 40px;
+        height: 6px;
     }
 
     :fullscreen .student-panel .bead-mini.top.active,
     :-webkit-full-screen .student-panel .bead-mini.top.active,
     :-moz-full-screen .student-panel .bead-mini.top.active {
-        transform: translateY(32px);
+        transform: translateY(42px);
     }
 
     :fullscreen .student-panel .bead-mini.top.active:hover,
     :-webkit-full-screen .student-panel .bead-mini.top.active:hover,
     :-moz-full-screen .student-panel .bead-mini.top.active:hover {
-        transform: translateY(32px) scale(1.05);
+        transform: translateY(42px) scale(1.05);
     }
 
     :fullscreen .student-panel .bead-mini.bottom.active,
     :-webkit-full-screen .student-panel .bead-mini.bottom.active,
     :-moz-full-screen .student-panel .bead-mini.bottom.active {
-        transform: translateY(-48px);
+        transform: translateY(-58px);
     }
 
     :fullscreen .student-panel .bead-mini.bottom.active:hover,
     :-webkit-full-screen .student-panel .bead-mini.bottom.active:hover,
     :-moz-full-screen .student-panel .bead-mini.bottom.active:hover {
-        transform: translateY(-48px) scale(1.05);
+        transform: translateY(-58px) scale(1.05);
     }
 
     .student-header {
@@ -1642,7 +1697,7 @@
             </div>
         </div>
 
-        <div class="students-grid" id="studentsGrid">
+        <div class="students-grid students-1-4" id="studentsGrid">
             <div class="student-panel" data-student-id="1">
                 <div class="student-header">
                     <input type="text" class="student-name-input" value="Nume copil 1" placeholder="Nume elev">
@@ -2730,6 +2785,18 @@
         // Update both displays
         headerElement.textContent = newValue;
         if (modalElement) modalElement.textContent = newValue;
+
+        // Update grid layout class based on student count
+        const grid = document.getElementById('studentsGrid');
+        grid.classList.remove('students-1-4', 'students-5-8', 'students-9-10');
+
+        if (newValue <= 4) {
+            grid.classList.add('students-1-4');
+        } else if (newValue <= 8) {
+            grid.classList.add('students-5-8');
+        } else {
+            grid.classList.add('students-9-10');
+        }
 
         // Show/hide student panels based on count
         const panels = document.querySelectorAll('.student-panel');
