@@ -1264,7 +1264,7 @@
         <div class="students-grid" id="studentsGrid">
             <div class="student-panel" data-student-id="1">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Ученик 1" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Nume copil 1" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(1)">⚙️</button>
@@ -1287,7 +1287,7 @@
 
             <div class="student-panel" data-student-id="2">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Ученик 2" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Nume copil 2" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(2)">⚙️</button>
@@ -1310,7 +1310,7 @@
 
             <div class="student-panel" data-student-id="3">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Ученик 3" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Nume copil 3" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(3)">⚙️</button>
@@ -1333,7 +1333,7 @@
 
             <div class="student-panel" data-student-id="4">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Ученик 4" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Nume copil 4" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(4)">⚙️</button>
@@ -1349,6 +1349,144 @@
                         <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(4)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="5" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 5" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(5)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="5"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(5)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="6" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 6" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(6)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="6"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(6)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="7" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 7" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(7)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="7"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(7)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="8" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 8" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(8)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="8"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(8)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="9" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 9" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(9)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="9"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(9)">Answer</button>
+                    </div>
+                    <div class="countdown" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="student-panel" data-student-id="10" style="display: none;">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="Nume copil 10" placeholder="Nume elev">
+                    <div class="student-header-buttons">
+                        <div class="student-status"></div>
+                        <button class="student-settings-btn" onclick="openStudentSettings(10)">⚙️</button>
+                        <button class="delete-student-btn" onclick="removeStudent(this)">✕</button>
+                    </div>
+                </div>
+                <div class="student-exercise">
+                    <div class="mini-abacus" style="display: none;">
+                        <div class="abacus-frame-mini" data-student="10"></div>
+                    </div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div style="display: none;" class="answer-area">
+                        <div class="your-answer-label">Your answer:</div>
+                        <input type="text" class="answer-input" placeholder="Răspuns">
+                        <button class="answer-btn" onclick="checkStudentAnswer(10)">Answer</button>
                     </div>
                     <div class="countdown" style="display: none;"></div>
                 </div>
@@ -1409,6 +1547,17 @@
                 </div>
 
                 <div class="settings-row">
+                    <span class="setting-label">Număr studenți:</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentCount(-1)">−</button>
+                            <span class="number-display" id="studentCount">4</span>
+                            <button class="number-btn" onclick="adjustStudentCount(1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
                     <span class="setting-label">Mod simplu:</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
@@ -1427,7 +1576,7 @@
     <div id="studentSettingsModal1" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Ученик 1</h3>
+                <h3 class="modal-title">Nume copil 1</h3>
                 <button class="close-modal" onclick="closeStudentSettings(1)">×</button>
             </div>
             <div class="settings-panel">
@@ -1487,7 +1636,7 @@
     <div id="studentSettingsModal2" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Ученик 2</h3>
+                <h3 class="modal-title">Nume copil 2</h3>
                 <button class="close-modal" onclick="closeStudentSettings(2)">×</button>
             </div>
             <div class="settings-panel">
@@ -1547,7 +1696,7 @@
     <div id="studentSettingsModal3" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Ученик 3</h3>
+                <h3 class="modal-title">Nume copil 3</h3>
                 <button class="close-modal" onclick="closeStudentSettings(3)">×</button>
             </div>
             <div class="settings-panel">
@@ -1607,7 +1756,7 @@
     <div id="studentSettingsModal4" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Ученик 4</h3>
+                <h3 class="modal-title">Nume copil 4</h3>
                 <button class="close-modal" onclick="closeStudentSettings(4)">×</button>
             </div>
             <div class="settings-panel">
@@ -1661,6 +1810,366 @@
                 </div>
             </div>
             <button class="start-btn" onclick="closeStudentSettings(4)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal5" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 5</h3>
+                <button class="close-modal" onclick="closeStudentSettings(5)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="5" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="5" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(5, 'from', -1)">−</button>
+                            <span class="number-display" id="student5From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(5, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(5, 'to', -1)">−</button>
+                            <span class="number-display" id="student5To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(5, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(5, -0.1)">−</button>
+                            <span class="number-display" id="student5Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(5, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="5" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="5" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(5)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal6" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 6</h3>
+                <button class="close-modal" onclick="closeStudentSettings(6)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="6" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="6" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(6, 'from', -1)">−</button>
+                            <span class="number-display" id="student6From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(6, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(6, 'to', -1)">−</button>
+                            <span class="number-display" id="student6To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(6, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(6, -0.1)">−</button>
+                            <span class="number-display" id="student6Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(6, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="6" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="6" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(6)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal7" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 7</h3>
+                <button class="close-modal" onclick="closeStudentSettings(7)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="7" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="7" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(7, 'from', -1)">−</button>
+                            <span class="number-display" id="student7From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(7, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(7, 'to', -1)">−</button>
+                            <span class="number-display" id="student7To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(7, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(7, -0.1)">−</button>
+                            <span class="number-display" id="student7Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(7, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="7" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="7" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(7)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal8" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 8</h3>
+                <button class="close-modal" onclick="closeStudentSettings(8)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="8" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="8" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(8, 'from', -1)">−</button>
+                            <span class="number-display" id="student8From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(8, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(8, 'to', -1)">−</button>
+                            <span class="number-display" id="student8To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(8, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(8, -0.1)">−</button>
+                            <span class="number-display" id="student8Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(8, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="8" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="8" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(8)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal9" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 9</h3>
+                <button class="close-modal" onclick="closeStudentSettings(9)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="9" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="9" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(9, 'from', -1)">−</button>
+                            <span class="number-display" id="student9From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(9, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(9, 'to', -1)">−</button>
+                            <span class="number-display" id="student9To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(9, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(9, -0.1)">−</button>
+                            <span class="number-display" id="student9Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(9, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="9" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="9" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(9)">Save</button>
+        </div>
+    </div>
+
+    <div id="studentSettingsModal10" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nume copil 10</h3>
+                <button class="close-modal" onclick="closeStudentSettings(10)">×</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-row">
+                    <span class="setting-label">Direction</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-student="10" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn active" data-student="10" data-setting="direction" data-value="number-to-abacus">Number</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">From</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(10, 'from', -1)">−</button>
+                            <span class="number-display" id="student10From">1</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(10, 'from', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">To</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentNumber(10, 'to', -1)">−</button>
+                            <span class="number-display" id="student10To">99</span>
+                            <button class="number-btn" onclick="adjustStudentNumber(10, 'to', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Speed (sec.)</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="adjustStudentSpeed(10, -0.1)">−</button>
+                            <span class="number-display" id="student10Speed">1</span>
+                            <button class="number-btn" onclick="adjustStudentSpeed(10, 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="setting-label">Simple mode</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-student="10" data-setting="simple" data-value="ordinary">Ordinary</button>
+                            <button class="toggle-btn" data-student="10" data-setting="simple" data-value="simple">Simple mode</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" onclick="closeStudentSettings(10)">Save</button>
         </div>
     </div>
 
@@ -1734,7 +2243,13 @@
             1: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
             2: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
             3: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            4: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' }
+            4: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            5: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            6: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            7: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            8: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            9: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            10: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' }
         }
     };
 
@@ -1755,14 +2270,26 @@
         1: 0,
         2: 0,
         3: 0,
-        4: 0
+        4: 0,
+        5: 0,
+        6: 0,
+        7: 0,
+        8: 0,
+        9: 0,
+        10: 0
     };
 
     let studentResults = {
         1: null,
         2: null,
         3: null,
-        4: null
+        4: null,
+        5: null,
+        6: null,
+        7: null,
+        8: null,
+        9: null,
+        10: null
     };
 
     // Mode selection
@@ -1893,6 +2420,23 @@
         let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
         element.textContent = newValue.toFixed(1);
         currentSettings.classwork.displayTime = newValue;
+    }
+
+    function adjustStudentCount(delta) {
+        const element = document.getElementById('studentCount');
+        let currentValue = parseInt(element.textContent);
+        let newValue = Math.max(2, Math.min(10, currentValue + delta));
+        element.textContent = newValue;
+
+        // Show/hide student panels based on count
+        const panels = document.querySelectorAll('.student-panel');
+        panels.forEach((panel, index) => {
+            if (index < newValue) {
+                panel.style.display = 'flex';
+            } else {
+                panel.style.display = 'none';
+            }
+        });
     }
 
     function updateLevel() {
