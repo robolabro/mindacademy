@@ -436,12 +436,12 @@
 
     .abacus-frame-mini {
         display: inline-flex;
-        gap: 1.5rem;
-        padding: 1rem 1.5rem;
+        gap: 5rem;
+        padding: 2.5rem 3.5rem;
         background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-        border-radius: 12px;
-        border: 5px solid #654321;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+        border-radius: 20px;
+        border: 8px solid #654321;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
 
     .rod-mini {
@@ -453,8 +453,8 @@
     }
 
     .rod-line-mini {
-        width: 6px;
-        height: 220px;
+        width: 8px;
+        height: 350px;
         background: linear-gradient(to bottom, #4a2511 0%, #654321 50%, #4a2511 100%);
         position: relative;
         display: flex;
@@ -468,10 +468,10 @@
         top: 25%;
         left: 50%;
         transform: translateX(-50%);
-        width: 28px;
-        height: 4px;
+        width: 40px;
+        height: 6px;
         background: linear-gradient(to right, #2c2c2c 0%, #1a1a1a 50%, #2c2c2c 100%);
-        border-radius: 2px;
+        border-radius: 3px;
         z-index: 5;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     }
@@ -512,14 +512,14 @@
     }
 
     .bead-mini {
-        width: 30px;
-        height: 30px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
         position: relative;
         transition: all 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
         cursor: pointer;
-        margin: 2px 0;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+        margin: 4px 0;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
         flex-shrink: 0;
     }
 
@@ -536,7 +536,7 @@
     .bead-mini.top.active {
         /* Active state - touching separator, vibrant color */
         background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
-        transform: translateY(25px);
+        transform: translateY(35px);
         box-shadow:
             0 6px 14px rgba(46, 204, 196, 0.5),
             inset -2px -2px 4px rgba(0, 0, 0, 0.2),
@@ -550,7 +550,7 @@
 
     .bead-mini.top.active:hover {
         filter: brightness(1.1);
-        transform: translateY(25px) scale(1.05);
+        transform: translateY(35px) scale(1.05);
     }
 
     /* Bottom beads (earth - value 1 each) */
@@ -566,7 +566,7 @@
     .bead-mini.bottom.active {
         /* Active state - touching separator, vibrant color */
         background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
-        transform: translateY(-36px);
+        transform: translateY(-50px);
         box-shadow:
             0 6px 14px rgba(246, 194, 62, 0.5),
             inset -2px -2px 4px rgba(0, 0, 0, 0.2),
@@ -580,7 +580,7 @@
 
     .bead-mini.bottom.active:hover {
         filter: brightness(1.1);
-        transform: translateY(-36px) scale(1.05);
+        transform: translateY(-50px) scale(1.05);
     }
 
     .answer-input {
@@ -800,34 +800,34 @@
     }
 
     .student-panel .rod-line-mini {
-        width: 8px;
-        height: 200px;
+        width: 5px;
+        height: 130px;
     }
 
     .student-panel .bead-mini {
-        width: 48px;
-        height: 48px;
+        width: 28px;
+        height: 28px;
     }
 
     .student-panel .divider-mini {
-        width: 35px;
-        height: 5px;
+        width: 24px;
+        height: 3px;
     }
 
     .student-panel .bead-mini.top.active {
-        transform: translateY(40px);
+        transform: translateY(24px);
     }
 
     .student-panel .bead-mini.top.active:hover {
-        transform: translateY(40px) scale(1.05);
+        transform: translateY(24px) scale(1.05);
     }
 
     .student-panel .bead-mini.bottom.active {
-        transform: translateY(-55px);
+        transform: translateY(-35px);
     }
 
     .student-panel .bead-mini.bottom.active:hover {
-        transform: translateY(-55px) scale(1.05);
+        transform: translateY(-35px) scale(1.05);
     }
 
     /* Compact elements in student panel */
@@ -919,46 +919,45 @@
     :fullscreen .student-panel .rod-line-mini,
     :-webkit-full-screen .student-panel .rod-line-mini,
     :-moz-full-screen .student-panel .rod-line-mini {
-        width: 9px;
-        height: 220px;
+        height: 110px;
     }
 
     :fullscreen .student-panel .bead-mini,
     :-webkit-full-screen .student-panel .bead-mini,
     :-moz-full-screen .student-panel .bead-mini {
-        width: 52px;
-        height: 52px;
+        width: 24px;
+        height: 24px;
     }
 
     :fullscreen .student-panel .divider-mini,
     :-webkit-full-screen .student-panel .divider-mini,
     :-moz-full-screen .student-panel .divider-mini {
-        width: 40px;
-        height: 6px;
+        width: 20px;
+        height: 2px;
     }
 
     :fullscreen .student-panel .bead-mini.top.active,
     :-webkit-full-screen .student-panel .bead-mini.top.active,
     :-moz-full-screen .student-panel .bead-mini.top.active {
-        transform: translateY(42px);
+        transform: translateY(20px);
     }
 
     :fullscreen .student-panel .bead-mini.top.active:hover,
     :-webkit-full-screen .student-panel .bead-mini.top.active:hover,
     :-moz-full-screen .student-panel .bead-mini.top.active:hover {
-        transform: translateY(42px) scale(1.05);
+        transform: translateY(20px) scale(1.05);
     }
 
     :fullscreen .student-panel .bead-mini.bottom.active,
     :-webkit-full-screen .student-panel .bead-mini.bottom.active,
     :-moz-full-screen .student-panel .bead-mini.bottom.active {
-        transform: translateY(-58px);
+        transform: translateY(-28px);
     }
 
     :fullscreen .student-panel .bead-mini.bottom.active:hover,
     :-webkit-full-screen .student-panel .bead-mini.bottom.active:hover,
     :-moz-full-screen .student-panel .bead-mini.bottom.active:hover {
-        transform: translateY(-58px) scale(1.05);
+        transform: translateY(-28px) scale(1.05);
     }
 
     .student-header {
