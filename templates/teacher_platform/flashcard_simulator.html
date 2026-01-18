@@ -2850,12 +2850,48 @@
 
             case 'direct-counting':
                 // Direct counting for multi-digit numbers
-                for (let i = 0; i < addends; i++) {
-                    numbers.push(getRandomNumber(1, maxNum));
-                }
-                // Generate operators based on formula
-                for (let i = 1; i < addends; i++) {
-                    operators.push(formula === 'addition' ? '+' : '-');
+                if (formula === 'subtraction') {
+                    // For subtraction, ensure first number is large enough
+                    const minFirst = (addends - 1) * 1; // At least 1 for each number to subtract
+                    const firstNum = getRandomNumber(Math.max(minFirst, Math.floor(maxNum / 2)), maxNum);
+                    numbers.push(firstNum);
+
+                    let remaining = firstNum;
+                    for (let i = 1; i < addends; i++) {
+                        // Generate a number that won't make result negative
+                        const minForRemaining = addends - i - 1; // Reserve at least 1 for each remaining subtraction
+                        const maxAllowed = Math.max(1, remaining - minForRemaining);
+                        const num = getRandomNumber(1, Math.min(maxAllowed, maxNum));
+                        numbers.push(num);
+                        remaining -= num;
+                        operators.push('-');
+                    }
+                } else if (formula === 'mixed') {
+                    // For mixed operations, generate carefully to avoid negatives
+                    let currentValue = getRandomNumber(Math.floor(maxNum / 2), maxNum);
+                    numbers.push(currentValue);
+
+                    for (let i = 1; i < addends; i++) {
+                        const useAddition = Math.random() < 0.5;
+                        if (useAddition || currentValue <= 1) {
+                            const num = getRandomNumber(1, Math.floor(maxNum / 2));
+                            numbers.push(num);
+                            operators.push('+');
+                            currentValue += num;
+                        } else {
+                            const maxSubtract = Math.min(Math.floor(maxNum / 2), currentValue - 1);
+                            const num = getRandomNumber(1, Math.max(1, maxSubtract));
+                            numbers.push(num);
+                            operators.push('-');
+                            currentValue -= num;
+                        }
+                    }
+                } else {
+                    // For addition only
+                    for (let i = 0; i < addends; i++) {
+                        numbers.push(getRandomNumber(1, maxNum));
+                        if (i > 0) operators.push('+');
+                    }
                 }
                 break;
 
@@ -3748,6 +3784,13 @@
             } else {
                 correctAnswer -= numbers[i];
             }
+        }
+
+        // IMPORTANT: Ensure result is always positive (>= 1)
+        // If result is 0 or negative, regenerate the exercise
+        if (correctAnswer <= 0) {
+            nextExercise();
+            return;
         }
 
         // Display problem
