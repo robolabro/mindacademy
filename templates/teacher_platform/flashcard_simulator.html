@@ -3511,18 +3511,17 @@
             const notSolvedText = panel.querySelector('.not-solved-text');
 
             if (settings.direction === 'abacus-to-number') {
+                // Show abacus with number - stays visible permanently
                 createMiniAbacus(number, abacusContainer);
                 abacusDiv.style.display = 'block';
 
-                setTimeout(() => {
-                    abacusDiv.style.display = 'none';
-                    notSolvedText.style.display = 'block';
+                // Show input immediately (no timeout - abacus stays visible)
+                notSolvedText.textContent = 'Introdu numărul';
+                notSolvedText.style.display = 'block';
 
-                    // Show input for abacus-to-number mode
-                    const input = answerArea.querySelector('.answer-input');
-                    input.style.display = 'block';
-                    answerArea.style.display = 'flex';
-                }, settings.speed * 1000);
+                const input = answerArea.querySelector('.answer-input');
+                input.style.display = 'block';
+                answerArea.style.display = 'flex';
             } else {
                 // Number to abacus - show number and interactive abacus
                 notSolvedText.textContent = `Set this number on abacus: ${number}`;
