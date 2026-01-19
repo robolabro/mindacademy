@@ -735,6 +735,47 @@
         justify-content: center;
     }
 
+    /* Compact abacus styling for student panels */
+    .student-panel .mini-abacus {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .student-panel .abacus-frame-mini {
+        gap: 2rem;
+        padding: 1rem 1.5rem;
+        border: 4px solid #654321;
+    }
+
+    .student-panel .rod-line-mini {
+        width: 6px;
+        height: 200px;
+    }
+
+    .student-panel .divider-mini {
+        width: 30px;
+        height: 4px;
+    }
+
+    .student-panel .bead-mini {
+        width: 28px;
+        height: 28px;
+        margin: 2px 0;
+    }
+
+    .student-panel .bead-mini.top.active {
+        transform: translateY(20px);
+    }
+
+    .student-panel .bead-mini.bottom.active {
+        transform: translateY(-30px);
+    }
+
+    .student-panel .rod-mini:last-child .divider-mini::after {
+        width: 8px;
+        height: 8px;
+    }
+
     /* Modal for Settings */
     .modal {
         display: none;
@@ -1264,7 +1305,7 @@
         <div class="students-grid" id="studentsGrid">
             <div class="student-panel" data-student-id="1">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Ученик 1" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Elev 1" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(1)">⚙️</button>
@@ -1275,11 +1316,11 @@
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="1"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Your answer:</div>
+                        <div class="your-answer-label">Răspunsul tău:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(1)">Answer</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(1)">Răspuns</button>
                     </div>
                     <div class="countdown" style="display: none;"></div>
                 </div>
@@ -1287,7 +1328,7 @@
 
             <div class="student-panel" data-student-id="2">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Ученик 2" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Elev 2" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(2)">⚙️</button>
@@ -1298,11 +1339,11 @@
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="2"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Your answer:</div>
+                        <div class="your-answer-label">Răspunsul tău:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(2)">Answer</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(2)">Răspuns</button>
                     </div>
                     <div class="countdown" style="display: none;"></div>
                 </div>
@@ -1310,7 +1351,7 @@
 
             <div class="student-panel" data-student-id="3">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Ученик 3" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Elev 3" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(3)">⚙️</button>
@@ -1321,11 +1362,11 @@
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="3"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Your answer:</div>
+                        <div class="your-answer-label">Răspunsul tău:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(3)">Answer</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(3)">Răspuns</button>
                     </div>
                     <div class="countdown" style="display: none;"></div>
                 </div>
@@ -1333,7 +1374,7 @@
 
             <div class="student-panel" data-student-id="4">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Ученик 4" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Elev 4" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(4)">⚙️</button>
@@ -1344,11 +1385,11 @@
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="4"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
+                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Your answer:</div>
+                        <div class="your-answer-label">Răspunsul tău:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(4)">Answer</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(4)">Răspuns</button>
                     </div>
                     <div class="countdown" style="display: none;"></div>
                 </div>
@@ -1667,8 +1708,8 @@
     <!-- Feedback Modal -->
     <div id="feedbackModal" class="feedback-modal">
         <div class="feedback-modal-content">
-            <h2 class="feedback-modal-title" id="feedbackTitle">Correct answer</h2>
-            <button class="feedback-modal-btn" onclick="closeFeedbackModal()">Continue →</button>
+            <h2 class="feedback-modal-title" id="feedbackTitle">Răspuns corect</h2>
+            <button class="feedback-modal-btn" onclick="closeFeedbackModal()">Continuă →</button>
         </div>
     </div>
 
@@ -1742,10 +1783,10 @@
             simple: 'ordinary'
         },
         students: {
-            1: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            2: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            3: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            4: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' }
+            1: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            2: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            3: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
+            4: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0, simple: 'ordinary' }
         }
     };
 
@@ -3159,7 +3200,7 @@
                 }, settings.speed * 1000);
             } else {
                 // Number to abacus - show number then ask to set abacus
-                notSolvedText.textContent = `Set this number on abacus: ${number}`;
+                notSolvedText.textContent = `Setează acest număr pe soroban: ${number}`;
                 notSolvedText.style.display = 'block';
                 answerArea.style.display = 'flex';
                 // Start response time tracking when input appears
@@ -3204,7 +3245,7 @@
         const feedbackTitle = document.getElementById('feedbackTitle');
         feedbackTitle.className = 'feedback-modal-title';
         feedbackTitle.classList.add(isCorrect ? 'correct' : 'incorrect');
-        feedbackTitle.textContent = isCorrect ? 'Correct answer' : 'Incorrect answer';
+        feedbackTitle.textContent = isCorrect ? 'Răspuns corect' : 'Răspuns greșit';
         feedbackModal.classList.add('active');
 
         // Hide exercise area
