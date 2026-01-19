@@ -1,0 +1,1989 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Simulator Anzan (Calcul Mental){% endblock %}
+{% block page_title %}Anzan - Calcul Mental{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #667eea;
+        --secondary-color: #764ba2;
+        --success-color: #10b981;
+        --error-color: #ef4444;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --bg-light: #f9fafb;
+    }
+
+    .anzan-container {
+        padding: 2rem;
+        max-width: 100%;
+        min-height: calc(100vh - 180px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+    }
+
+    /* Mode Selection Screen */
+    .mode-selection {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        max-width: 900px;
+        width: 95%;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .mode-title {
+        text-align: center;
+        font-size: 2rem;
+        color: var(--text-primary);
+        margin-bottom: 2.5rem;
+        font-weight: 600;
+    }
+
+    .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .mode-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 2rem 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .mode-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+    }
+
+    .mode-card.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .mode-card-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .mode-card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .mode-card-desc {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+    }
+
+    /* Common Styles for All Modes */
+    .mode-screen {
+        display: none;
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        max-width: 1400px;
+        width: 95%;
+        min-height: 600px;
+    }
+
+    .mode-screen.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mode-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .mode-header h2 {
+        font-size: 1.8rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .back-btn {
+        padding: 0.6rem 1.5rem;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .settings-panel {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .settings-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .settings-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .setting-label {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        min-width: 150px;
+    }
+
+    .setting-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .number-input {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .number-btn {
+        width: 35px;
+        height: 35px;
+        border: none;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .number-btn:hover {
+        background: var(--secondary-color);
+        transform: scale(1.1);
+    }
+
+    .number-display {
+        min-width: 60px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .toggle-group {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .toggle-btn {
+        padding: 0.5rem 1rem;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .toggle-btn:hover {
+        border-color: var(--primary-color);
+    }
+
+    .toggle-btn.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .level-select {
+        padding: 0.6rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        min-width: 250px;
+    }
+
+    .level-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .start-btn {
+        padding: 1rem 3rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.3rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Exercise Area */
+    .exercise-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .number-display-area {
+        font-size: 5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+        animation: fadeInScale 0.3s ease;
+    }
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .operation-sign {
+        font-size: 4rem;
+        color: var(--text-secondary);
+        margin-right: 1rem;
+    }
+
+    .answer-input {
+        width: 400px;
+        padding: 1.2rem;
+        font-size: 2.5rem;
+        text-align: center;
+        border: 3px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .answer-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .submit-btn, .show-answer-btn {
+        padding: 1rem 3rem;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.3rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .submit-btn:hover, .show-answer-btn:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .feedback {
+        font-size: 1.5rem;
+        font-weight: 600;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        margin-top: 1rem;
+    }
+
+    .feedback.correct {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .feedback.incorrect {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        padding: 0.5rem 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .stat-value {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1.3rem;
+    }
+
+    /* Classroom Mode */
+    .classwork-controls {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .control-btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .settings-btn {
+        background: #6c757d;
+        color: white;
+    }
+
+    .settings-btn:hover {
+        background: #5a6268;
+    }
+
+    .start-all-btn {
+        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        color: white;
+    }
+
+    .start-all-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
+    }
+
+    .results-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .results-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .students-setup {
+        margin-bottom: 2rem;
+    }
+
+    .students-count {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .students-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .student-panel {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 15px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dee2e6;
+        gap: 0.5rem;
+    }
+
+    .student-name-input {
+        padding: 0.5rem;
+        font-size: 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        flex: 1;
+    }
+
+    .student-exercise-area {
+        flex: 1;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .student-number-display {
+        font-size: 3rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    /* Reports */
+    .report-container {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+
+    .report-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .report-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .summary-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-value {
+        color: var(--text-primary);
+        font-size: 2rem;
+        font-weight: 600;
+    }
+
+    .exercises-list {
+        margin-top: 2rem;
+    }
+
+    .exercise-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .exercise-calculation {
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .exercise-result {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .user-answer {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+    }
+
+    .correct-indicator {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .correct-indicator.correct {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .correct-indicator.incorrect {
+        background: var(--error-color);
+        color: white;
+    }
+
+    /* Fullscreen */
+    .fullscreen-btn {
+        padding: 0.7rem 1.5rem;
+        background: #34d399;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .fullscreen-btn:hover {
+        background: #10b981;
+        transform: translateY(-2px);
+    }
+
+    /* Instructions Panel */
+    .instructions-panel {
+        background: #e0f2fe;
+        border-left: 4px solid #0284c7;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .instructions-panel h3 {
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .instructions-panel p {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .anzan-container {
+            padding: 1rem;
+        }
+
+        .mode-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .number-display-area {
+            font-size: 3rem;
+        }
+
+        .answer-input {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="anzan-container">
+    <!-- Mode Selection -->
+    <div id="modeSelection" class="mode-selection">
+        <h1 class="mode-title">🧠 Anzan - Calcul Mental</h1>
+
+        <div class="mode-grid">
+            <div class="mode-card" onclick="selectMode('training')">
+                <div class="mode-card-icon">🎯</div>
+                <div class="mode-card-title">Mod Antrenament</div>
+                <div class="mode-card-desc">Exersează calcul mental cu setări personalizate</div>
+            </div>
+
+            <div class="mode-card" onclick="selectMode('series')">
+                <div class="mode-card-icon">📊</div>
+                <div class="mode-card-title">Serii de Exerciții</div>
+                <div class="mode-card-desc">Rezolvă exerciții pe timp cu rapoarte detaliate</div>
+            </div>
+
+            <div class="mode-card" onclick="selectMode('classroom')">
+                <div class="mode-card-icon">👥</div>
+                <div class="mode-card-title">Lucru în Clasă</div>
+                <div class="mode-card-desc">Exerciții simultane pentru mai mulți elevi</div>
+            </div>
+
+            <div class="mode-card disabled">
+                <div class="mode-card-icon">⚔️</div>
+                <div class="mode-card-title">Luptă</div>
+                <div class="mode-card-desc">În curând...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Mode -->
+    <div id="trainingMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Mod Antrenament</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>📝 Instrucțiuni</h3>
+            <p>În acest mod vei vedea numere care apar și dispar cu viteza setată. Folosește sorobanul imaginar pentru a calcula rezultatul rapid!</p>
+        </div>
+
+        <div class="settings-panel" id="trainingSettings">
+            <div class="settings-row">
+                <span class="setting-label">Complexitate:</span>
+                <div class="setting-controls">
+                    <select id="trainingComplexity" class="level-select" onchange="updateTrainingComplexity()">
+                        <optgroup label="Calcul Direct">
+                            <option value="direct-to-4">Calcul direct cu 4</option>
+                            <option value="direct-to-5">Calcul direct cu 5</option>
+                            <option value="direct-to-9">Calcul direct cu 9</option>
+                            <option value="direct-counting" selected>Calcul direct</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mici">
+                            <option value="small-plus-1">+1 = +5 - 4</option>
+                            <option value="small-plus-2">+2 = +5 - 3</option>
+                            <option value="small-plus-3">+3 = +5 - 2</option>
+                            <option value="small-plus-4">+4 = +5 - 1</option>
+                            <option value="small-minus-1">-1 = +4 - 5</option>
+                            <option value="small-minus-2">-2 = +3 - 5</option>
+                            <option value="small-minus-3">-3 = +2 - 5</option>
+                            <option value="small-minus-4">-4 = +1 - 5</option>
+                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mari">
+                            <option value="big-plus-1">+1 = +10 - 9</option>
+                            <option value="big-plus-2">+2 = +10 - 8</option>
+                            <option value="big-plus-3">+3 = +10 - 7</option>
+                            <option value="big-plus-4">+4 = +10 - 6</option>
+                            <option value="big-plus-5">+5 = +10 - 5</option>
+                            <option value="big-plus-6">+6 = +10 - 4</option>
+                            <option value="big-plus-7">+7 = +10 - 3</option>
+                            <option value="big-plus-8">+8 = +10 - 2</option>
+                            <option value="big-plus-9">+9 = +10 - 1</option>
+                            <option value="big-minus-1">-1 = -10 + 9</option>
+                            <option value="big-minus-2">-2 = -10 + 8</option>
+                            <option value="big-minus-3">-3 = -10 + 7</option>
+                            <option value="big-minus-4">-4 = -10 + 6</option>
+                            <option value="big-minus-5">-5 = -10 + 5</option>
+                            <option value="big-minus-6">-6 = -10 + 4</option>
+                            <option value="big-minus-7">-7 = -10 + 3</option>
+                            <option value="big-minus-8">-8 = -10 + 2</option>
+                            <option value="big-minus-9">-9 = -10 + 1</option>
+                            <option value="big-friends-all">Prieteni mari (toate)</option>
+                        </optgroup>
+                        <optgroup label="Combinații">
+                            <option value="family">Familia (Small + Big)</option>
+                            <option value="mix">Mix (toate variantele)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Viteza (secunde):</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustSpeed('training', -0.1)">−</button>
+                        <span class="number-display" id="trainingSpeed">1.5</span>
+                        <button class="number-btn" onclick="adjustSpeed('training', 0.1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Cifre:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('trainingDigits', -1)">−</button>
+                        <span class="number-display" id="trainingDigits">1</span>
+                        <button class="number-btn" onclick="adjustNumber('trainingDigits', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Fracții:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-fractions="none">Nu</button>
+                        <button class="toggle-btn" data-fractions="one">1 zecimală</button>
+                        <button class="toggle-btn" data-fractions="two">2 zecimale</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Operație:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-operation="addition">Adunare</button>
+                        <button class="toggle-btn" data-operation="subtraction">Scădere</button>
+                        <button class="toggle-btn" data-operation="mixed">Amestecat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Numere negative:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-negative="no">Nu</button>
+                        <button class="toggle-btn" data-negative="yes">Da</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Termeni:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('trainingTerms', -1)">−</button>
+                        <span class="number-display" id="trainingTerms">3</span>
+                        <button class="number-btn" onclick="adjustNumber('trainingTerms', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Dictare:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-dictation="no">Nu</button>
+                        <button class="toggle-btn" data-dictation="yes">Da</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Afișează rezultatul:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-answer-mode="input">Introdu răspunsul</button>
+                        <button class="toggle-btn" data-answer-mode="show">Afișează răspunsul</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startTraining()">Start Antrenament!</button>
+
+        <div id="trainingExercise" class="exercise-area" style="display: none;">
+            <div id="trainingContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Exercițiu</div>
+                    <div class="stat-value" id="trainingCurrent">1</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise Series Mode -->
+    <div id="seriesMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Serii de Exerciții</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>📊 Instrucțiuni</h3>
+            <p>Rezolvă cât mai multe exerciții în timpul setat. La final vei primi un raport detaliat cu performanța ta!</p>
+        </div>
+
+        <div class="settings-panel" id="seriesSettings">
+            <!-- Same settings as training mode -->
+            <div class="settings-row">
+                <span class="setting-label">Complexitate:</span>
+                <div class="setting-controls">
+                    <select id="seriesComplexity" class="level-select">
+                        <optgroup label="Calcul Direct">
+                            <option value="direct-to-4">Calcul direct cu 4</option>
+                            <option value="direct-to-5">Calcul direct cu 5</option>
+                            <option value="direct-to-9">Calcul direct cu 9</option>
+                            <option value="direct-counting" selected>Calcul direct</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mici">
+                            <option value="small-plus-1">+1 = +5 - 4</option>
+                            <option value="small-plus-2">+2 = +5 - 3</option>
+                            <option value="small-plus-3">+3 = +5 - 2</option>
+                            <option value="small-plus-4">+4 = +5 - 1</option>
+                            <option value="small-minus-1">-1 = +4 - 5</option>
+                            <option value="small-minus-2">-2 = +3 - 5</option>
+                            <option value="small-minus-3">-3 = +2 - 5</option>
+                            <option value="small-minus-4">-4 = +1 - 5</option>
+                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mari">
+                            <option value="big-plus-1">+1 = +10 - 9</option>
+                            <option value="big-plus-2">+2 = +10 - 8</option>
+                            <option value="big-plus-3">+3 = +10 - 7</option>
+                            <option value="big-plus-4">+4 = +10 - 6</option>
+                            <option value="big-plus-5">+5 = +10 - 5</option>
+                            <option value="big-plus-6">+6 = +10 - 4</option>
+                            <option value="big-plus-7">+7 = +10 - 3</option>
+                            <option value="big-plus-8">+8 = +10 - 2</option>
+                            <option value="big-plus-9">+9 = +10 - 1</option>
+                            <option value="big-minus-1">-1 = -10 + 9</option>
+                            <option value="big-minus-2">-2 = -10 + 8</option>
+                            <option value="big-minus-3">-3 = -10 + 7</option>
+                            <option value="big-minus-4">-4 = -10 + 6</option>
+                            <option value="big-minus-5">-5 = -10 + 5</option>
+                            <option value="big-minus-6">-6 = -10 + 4</option>
+                            <option value="big-minus-7">-7 = -10 + 3</option>
+                            <option value="big-minus-8">-8 = -10 + 2</option>
+                            <option value="big-minus-9">-9 = -10 + 1</option>
+                            <option value="big-friends-all">Prieteni mari (toate)</option>
+                        </optgroup>
+                        <optgroup label="Combinații">
+                            <option value="family">Familia (Small + Big)</option>
+                            <option value="mix">Mix (toate variantele)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Durata:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-duration="1">1 minut</button>
+                        <button class="toggle-btn" data-duration="2">2 minute</button>
+                        <button class="toggle-btn" data-duration="3">3 minute</button>
+                        <button class="toggle-btn" data-duration="4">4 minute</button>
+                        <button class="toggle-btn" data-duration="5">5 minute</button>
+                        <button class="toggle-btn" data-duration="unlimited">Nelimitat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Viteza (secunde):</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustSpeed('series', -0.1)">−</button>
+                        <span class="number-display" id="seriesSpeed">1.5</span>
+                        <button class="number-btn" onclick="adjustSpeed('series', 0.1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Cifre:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('seriesDigits', -1)">−</button>
+                        <span class="number-display" id="seriesDigits">1</span>
+                        <button class="number-btn" onclick="adjustNumber('seriesDigits', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Fracții:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-fractions="none">Nu</button>
+                        <button class="toggle-btn" data-fractions="one">1 zecimală</button>
+                        <button class="toggle-btn" data-fractions="two">2 zecimale</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Operație:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-operation="addition">Adunare</button>
+                        <button class="toggle-btn" data-operation="subtraction">Scădere</button>
+                        <button class="toggle-btn" data-operation="mixed">Amestecat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Numere negative:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-negative="no">Nu</button>
+                        <button class="toggle-btn" data-negative="yes">Da</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Termeni:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('seriesTerms', -1)">−</button>
+                        <span class="number-display" id="seriesTerms">3</span>
+                        <button class="number-btn" onclick="adjustNumber('seriesTerms', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Dictare:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-dictation="no">Nu</button>
+                        <button class="toggle-btn" data-dictation="yes">Da</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Afișează rezultatul:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-answer-mode="input">Introdu răspunsul</button>
+                        <button class="toggle-btn" data-answer-mode="show">Afișează răspunsul</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startSeries()">Start Serie!</button>
+
+        <div id="seriesExercise" class="exercise-area" style="display: none;">
+            <div id="seriesContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Corecte</div>
+                    <div class="stat-value" id="seriesCorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Greșite</div>
+                    <div class="stat-value" id="seriesIncorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Timp rămas</div>
+                    <div class="stat-value" id="seriesTimer">--</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="seriesReport" style="display: none;">
+            <div class="report-container">
+                <h2 class="report-header">📈 Raport Final</h2>
+                <div class="report-summary">
+                    <div class="summary-card">
+                        <div class="summary-label">Exerciții Totale</div>
+                        <div class="summary-value" id="reportTotal">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Răspunsuri Corecte</div>
+                        <div class="summary-value" id="reportCorrect">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Medie Corecte</div>
+                        <div class="summary-value" id="reportAvg">0%</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Timp Mediu</div>
+                        <div class="summary-value" id="reportAvgTime">0s</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--text-primary);">Istoric Exerciții</h3>
+                <div id="exercisesList" class="exercises-list"></div>
+
+                <button class="start-btn" style="margin-top: 2rem;" onclick="backToModes()">← Înapoi la Meniu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classroom Mode -->
+    <div id="classroomMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Lucru în Clasă</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>👥 Instrucțiuni</h3>
+            <p>Mod special pentru lucrul în clasă cu mai mulți elevi simultan. Fiecare elev are propriile setări și progres independent.</p>
+        </div>
+
+        <div class="classwork-controls">
+            <button class="control-btn settings-btn" onclick="toggleClassroomSettings()">⚙️ Setări Globale</button>
+            <button class="control-btn start-all-btn" onclick="startClassroom()">▶️ Start Toți</button>
+            <button class="control-btn results-btn" onclick="showClassroomResults()">📊 Rezultate</button>
+            <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()">🖥️ Fullscreen</button>
+        </div>
+
+        <div class="students-setup">
+            <div class="students-count">
+                <span class="setting-label">Număr elevi:</span>
+                <div class="number-input">
+                    <button class="number-btn" onclick="adjustStudents(-1)">−</button>
+                    <span class="number-display" id="studentsCount">4</span>
+                    <button class="number-btn" onclick="adjustStudents(1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-panel" id="classroomGlobalSettings" style="display: none;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Setări Globale (pentru toți elevii)</h3>
+            <div class="settings-row">
+                <span class="setting-label">Complexitate:</span>
+                <div class="setting-controls">
+                    <select id="classroomComplexity" class="level-select">
+                        <optgroup label="Calcul Direct">
+                            <option value="direct-to-4">Calcul direct cu 4</option>
+                            <option value="direct-to-5">Calcul direct cu 5</option>
+                            <option value="direct-to-9">Calcul direct cu 9</option>
+                            <option value="direct-counting" selected>Calcul direct</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mici">
+                            <option value="small-plus-1">+1 = +5 - 4</option>
+                            <option value="small-plus-2">+2 = +5 - 3</option>
+                            <option value="small-plus-3">+3 = +5 - 2</option>
+                            <option value="small-plus-4">+4 = +5 - 1</option>
+                            <option value="small-minus-1">-1 = +4 - 5</option>
+                            <option value="small-minus-2">-2 = +3 - 5</option>
+                            <option value="small-minus-3">-3 = +2 - 5</option>
+                            <option value="small-minus-4">-4 = +1 - 5</option>
+                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mari">
+                            <option value="big-plus-1">+1 = +10 - 9</option>
+                            <option value="big-plus-2">+2 = +10 - 8</option>
+                            <option value="big-plus-3">+3 = +10 - 7</option>
+                            <option value="big-plus-4">+4 = +10 - 6</option>
+                            <option value="big-plus-5">+5 = +10 - 5</option>
+                            <option value="big-plus-6">+6 = +10 - 4</option>
+                            <option value="big-plus-7">+7 = +10 - 3</option>
+                            <option value="big-plus-8">+8 = +10 - 2</option>
+                            <option value="big-plus-9">+9 = +10 - 1</option>
+                            <option value="big-minus-1">-1 = -10 + 9</option>
+                            <option value="big-minus-2">-2 = -10 + 8</option>
+                            <option value="big-minus-3">-3 = -10 + 7</option>
+                            <option value="big-minus-4">-4 = -10 + 6</option>
+                            <option value="big-minus-5">-5 = -10 + 5</option>
+                            <option value="big-minus-6">-6 = -10 + 4</option>
+                            <option value="big-minus-7">-7 = -10 + 3</option>
+                            <option value="big-minus-8">-8 = -10 + 2</option>
+                            <option value="big-minus-9">-9 = -10 + 1</option>
+                            <option value="big-friends-all">Prieteni mari (toate)</option>
+                        </optgroup>
+                        <optgroup label="Combinații">
+                            <option value="family">Familia (Small + Big)</option>
+                            <option value="mix">Mix (toate variantele)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <button class="control-btn settings-btn" style="margin-top: 1rem;" onclick="toggleClassroomSettings()">Închide Setări</button>
+        </div>
+
+        <div id="studentsContainer" class="students-grid">
+            <!-- Student panels will be dynamically generated -->
+        </div>
+
+        <div id="classroomReport" style="display: none;">
+            <div class="report-container">
+                <h2 class="report-header">📊 Rezultate Clasă</h2>
+                <div id="classroomReportContent"></div>
+                <button class="start-btn" style="margin-top: 2rem;" onclick="backToClassroom()">← Înapoi la Clasă</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global state
+let currentMode = null;
+let exerciseData = {
+    training: {
+        complexity: 'direct-counting',
+        speed: 1.5,
+        digits: 1,
+        fractions: 'none',
+        operation: 'addition',
+        negative: 'no',
+        terms: 3,
+        dictation: 'no',
+        answerMode: 'input',
+        current: 1,
+        terms: [],
+        correctAnswer: 0
+    },
+    series: {
+        complexity: 'direct-counting',
+        speed: 1.5,
+        digits: 1,
+        fractions: 'none',
+        operation: 'addition',
+        negative: 'no',
+        terms: 3,
+        dictation: 'no',
+        answerMode: 'input',
+        duration: 1,
+        startTime: null,
+        exercises: [],
+        correct: 0,
+        incorrect: 0,
+        timer: null
+    },
+    classroom: {
+        studentsCount: 4,
+        students: [],
+        globalSettings: {
+            complexity: 'direct-counting'
+        }
+    }
+};
+
+// Speech synthesis
+let synth = window.speechSynthesis;
+
+// Mode Selection
+function selectMode(mode) {
+    currentMode = mode;
+    document.getElementById('modeSelection').style.display = 'none';
+    document.getElementById(mode + 'Mode').classList.add('active');
+
+    if (mode === 'classroom') {
+        initializeClassroom();
+    }
+}
+
+function backToModes() {
+    // Hide all mode screens
+    document.querySelectorAll('.mode-screen').forEach(screen => {
+        screen.classList.remove('active');
+    });
+
+    // Reset exercise areas
+    document.querySelectorAll('.exercise-area').forEach(area => {
+        area.style.display = 'none';
+    });
+
+    // Hide reports
+    document.getElementById('seriesReport').style.display = 'none';
+    document.getElementById('classroomReport').style.display = 'none';
+
+    // Show mode selection
+    document.getElementById('modeSelection').style.display = 'block';
+    currentMode = null;
+}
+
+// Settings Controls
+function adjustNumber(id, delta) {
+    const element = document.getElementById(id);
+    let value = parseInt(element.textContent);
+
+    // Set min and max based on the setting
+    let min = 1, max = 9;
+    if (id.includes('Terms')) {
+        min = 2;
+        max = 20;
+    } else if (id.includes('Digits')) {
+        min = 1;
+        max = 9;
+    }
+
+    value = Math.max(min, Math.min(max, value + delta));
+    element.textContent = value;
+
+    // Update state
+    const mode = id.includes('training') ? 'training' :
+                 id.includes('series') ? 'series' : 'classroom';
+    const setting = id.replace(mode.charAt(0).toUpperCase() + mode.slice(1), '').toLowerCase();
+    if (exerciseData[mode]) {
+        exerciseData[mode][setting] = value;
+    }
+}
+
+function adjustSpeed(mode, delta) {
+    const element = document.getElementById(mode + 'Speed');
+    let value = parseFloat(element.textContent);
+    value = Math.max(0.1, Math.min(5.0, value + delta));
+    element.textContent = value.toFixed(1);
+    exerciseData[mode].speed = value;
+}
+
+function adjustStudents(delta) {
+    const element = document.getElementById('studentsCount');
+    let value = parseInt(element.textContent);
+    value = Math.max(1, Math.min(8, value + delta));
+    element.textContent = value;
+    exerciseData.classroom.studentsCount = value;
+    initializeClassroom();
+}
+
+// Toggle button handlers
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('toggle-btn')) {
+        const parent = e.target.parentElement;
+        parent.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        e.target.classList.add('active');
+
+        // Update state based on data attribute
+        const mode = parent.closest('.mode-screen').id.replace('Mode', '');
+        if (e.target.dataset.fractions) {
+            exerciseData[mode].fractions = e.target.dataset.fractions;
+        } else if (e.target.dataset.operation) {
+            exerciseData[mode].operation = e.target.dataset.operation;
+        } else if (e.target.dataset.negative) {
+            exerciseData[mode].negative = e.target.dataset.negative;
+        } else if (e.target.dataset.dictation) {
+            exerciseData[mode].dictation = e.target.dataset.dictation;
+        } else if (e.target.dataset.answerMode) {
+            exerciseData[mode].answerMode = e.target.dataset.answerMode;
+        } else if (e.target.dataset.duration) {
+            exerciseData[mode].duration = e.target.dataset.duration;
+        }
+    }
+});
+
+// Number Generation Logic
+function generateNumber(settings) {
+    const { digits, fractions, complexity } = settings;
+
+    let num;
+
+    // Generate base number based on complexity
+    switch(complexity) {
+        case 'direct-to-4':
+            num = Math.floor(Math.random() * 5); // 0-4
+            break;
+        case 'direct-to-5':
+            num = Math.floor(Math.random() * 6); // 0-5
+            break;
+        case 'direct-to-9':
+            num = Math.floor(Math.random() * 10); // 0-9
+            break;
+        case 'direct-counting':
+            const max = parseInt('9'.repeat(digits));
+            const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 0;
+            num = Math.floor(Math.random() * (max - min + 1)) + min;
+            break;
+        default:
+            // For formula-based complexity, generate appropriate numbers
+            num = generateFormulaNumber(complexity, digits);
+    }
+
+    // Add decimals if needed
+    if (fractions === 'one') {
+        num += Math.floor(Math.random() * 10) / 10;
+    } else if (fractions === 'two') {
+        num += Math.floor(Math.random() * 100) / 100;
+    }
+
+    return num;
+}
+
+function generateFormulaNumber(complexity, digits) {
+    // Generate numbers that respect small friends, big friends, or family formulas
+    const max = parseInt('9'.repeat(digits));
+    const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateExerciseTerms(settings) {
+    const { terms, operation, negative, complexity } = settings;
+    const termsArray = [];
+    const operations = [];
+
+    // Generate first term (always positive)
+    termsArray.push(generateNumber(settings));
+
+    // Generate remaining terms
+    for (let i = 1; i < terms; i++) {
+        let op;
+        if (operation === 'mixed') {
+            op = Math.random() > 0.5 ? '+' : '-';
+        } else {
+            op = operation === 'addition' ? '+' : '-';
+        }
+        operations.push(op);
+
+        let term = generateNumber(settings);
+
+        // Handle negative numbers
+        if (negative === 'yes' && Math.random() > 0.7) {
+            term = -term;
+        }
+
+        termsArray.push(term);
+    }
+
+    return { terms: termsArray, operations: operations };
+}
+
+function calculateResult(terms, operations) {
+    let result = terms[0];
+    for (let i = 0; i < operations.length; i++) {
+        if (operations[i] === '+') {
+            result += terms[i + 1];
+        } else {
+            result -= terms[i + 1];
+        }
+    }
+    return Math.round(result * 100) / 100; // Round to 2 decimals
+}
+
+// Text to Speech
+function speak(text) {
+    if (synth.speaking) {
+        synth.cancel();
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ro-RO';
+    utterance.rate = 1.0;
+    synth.speak(utterance);
+}
+
+// Training Mode
+function startTraining() {
+    const settings = exerciseData.training;
+    settings.complexity = document.getElementById('trainingComplexity').value;
+
+    document.getElementById('trainingSettings').style.display = 'none';
+    document.querySelector('#trainingMode .start-btn').style.display = 'none';
+    document.getElementById('trainingExercise').style.display = 'flex';
+
+    runTrainingExercise();
+}
+
+function runTrainingExercise() {
+    const settings = exerciseData.training;
+    const { terms, operations } = generateExerciseTerms(settings);
+    const correctAnswer = calculateResult(terms, operations);
+
+    exerciseData.training.terms = terms;
+    exerciseData.training.operations = operations;
+    exerciseData.training.correctAnswer = correctAnswer;
+
+    const content = document.getElementById('trainingContent');
+    content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
+
+    // Start showing terms
+    let currentTerm = 0;
+
+    const showNextTerm = () => {
+        if (currentTerm < terms.length) {
+            const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
+            const term = terms[currentTerm];
+
+            content.innerHTML = `
+                <div class="number-display-area">
+                    ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                    ${Math.abs(term)}
+                </div>
+            `;
+
+            if (settings.dictation === 'yes' && settings.speed >= 1.0) {
+                const textToSpeak = operation ? `${operation === '+' ? 'plus' : 'minus'} ${Math.abs(term)}` : term.toString();
+                speak(textToSpeak);
+            }
+
+            currentTerm++;
+            setTimeout(showNextTerm, settings.speed * 1000);
+        } else {
+            // Show answer input or display
+            if (settings.answerMode === 'input') {
+                content.innerHTML = `
+                    <div class="number-display-area">Răspuns:</div>
+                    <input type="number" step="any" class="answer-input" id="trainingAnswer" autofocus>
+                    <button class="submit-btn" onclick="checkTrainingAnswer()">Verifică</button>
+                `;
+                document.getElementById('trainingAnswer').focus();
+            } else {
+                content.innerHTML = `
+                    <div class="number-display-area">Calculul s-a terminat</div>
+                    <button class="show-answer-btn" onclick="showTrainingAnswer()">Afișează Răspuns</button>
+                `;
+            }
+        }
+    };
+
+    setTimeout(showNextTerm, 1000);
+}
+
+function checkTrainingAnswer() {
+    const userAnswer = parseFloat(document.getElementById('trainingAnswer').value);
+    const correct = Math.abs(userAnswer - exerciseData.training.correctAnswer) < 0.01;
+
+    const content = document.getElementById('trainingContent');
+    content.innerHTML = `
+        <div class="number-display-area">${exerciseData.training.correctAnswer}</div>
+        <div class="feedback ${correct ? 'correct' : 'incorrect'}">
+            ${correct ? '✓ Corect!' : '✗ Greșit! Răspunsul corect: ' + exerciseData.training.correctAnswer}
+        </div>
+        <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
+    `;
+}
+
+function showTrainingAnswer() {
+    const content = document.getElementById('trainingContent');
+    content.innerHTML = `
+        <div class="number-display-area">${exerciseData.training.correctAnswer}</div>
+        <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
+    `;
+}
+
+function nextTrainingExercise() {
+    exerciseData.training.current++;
+    document.getElementById('trainingCurrent').textContent = exerciseData.training.current;
+    runTrainingExercise();
+}
+
+// Series Mode
+function startSeries() {
+    const settings = exerciseData.series;
+    settings.complexity = document.getElementById('seriesComplexity').value;
+
+    document.getElementById('seriesSettings').style.display = 'none';
+    document.querySelector('#seriesMode .start-btn').style.display = 'none';
+    document.getElementById('seriesExercise').style.display = 'flex';
+
+    // Reset stats
+    settings.exercises = [];
+    settings.correct = 0;
+    settings.incorrect = 0;
+    settings.startTime = Date.now();
+
+    document.getElementById('seriesCorrect').textContent = '0';
+    document.getElementById('seriesIncorrect').textContent = '0';
+
+    // Start timer if not unlimited
+    if (settings.duration !== 'unlimited') {
+        const totalSeconds = parseInt(settings.duration) * 60;
+        updateSeriesTimer(totalSeconds);
+    } else {
+        document.getElementById('seriesTimer').textContent = '∞';
+    }
+
+    runSeriesExercise();
+}
+
+function updateSeriesTimer(remainingSeconds) {
+    const settings = exerciseData.series;
+
+    if (remainingSeconds <= 0) {
+        finishSeries();
+        return;
+    }
+
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    document.getElementById('seriesTimer').textContent =
+        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    settings.timer = setTimeout(() => {
+        updateSeriesTimer(remainingSeconds - 1);
+    }, 1000);
+}
+
+function runSeriesExercise() {
+    const settings = exerciseData.series;
+    const { terms, operations } = generateExerciseTerms(settings);
+    const correctAnswer = calculateResult(terms, operations);
+    const exerciseStartTime = Date.now();
+
+    const content = document.getElementById('seriesContent');
+    content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
+
+    let currentTerm = 0;
+
+    const showNextTerm = () => {
+        if (currentTerm < terms.length) {
+            const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
+            const term = terms[currentTerm];
+
+            content.innerHTML = `
+                <div class="number-display-area">
+                    ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                    ${Math.abs(term)}
+                </div>
+            `;
+
+            if (settings.dictation === 'yes' && settings.speed >= 1.0) {
+                const textToSpeak = operation ? `${operation === '+' ? 'plus' : 'minus'} ${Math.abs(term)}` : term.toString();
+                speak(textToSpeak);
+            }
+
+            currentTerm++;
+            setTimeout(showNextTerm, settings.speed * 1000);
+        } else {
+            if (settings.answerMode === 'input') {
+                content.innerHTML = `
+                    <div class="number-display-area">Răspuns:</div>
+                    <input type="number" step="any" class="answer-input" id="seriesAnswer" autofocus>
+                    <button class="submit-btn" onclick="checkSeriesAnswer(${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">Verifică</button>
+                `;
+                document.getElementById('seriesAnswer').focus();
+
+                // Allow Enter key to submit
+                document.getElementById('seriesAnswer').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        checkSeriesAnswer(correctAnswer, exerciseStartTime, formatExercise(terms, operations));
+                    }
+                });
+            } else {
+                content.innerHTML = `
+                    <div class="number-display-area">Calculul s-a terminat</div>
+                    <button class="show-answer-btn" onclick="showSeriesAnswer(${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">Afișează Răspuns</button>
+                `;
+            }
+        }
+    };
+
+    setTimeout(showNextTerm, 1000);
+}
+
+function formatExercise(terms, operations) {
+    let str = terms[0].toString();
+    for (let i = 0; i < operations.length; i++) {
+        str += ` ${operations[i]} ${terms[i + 1]}`;
+    }
+    return str;
+}
+
+function checkSeriesAnswer(correctAnswer, startTime, exerciseStr) {
+    const settings = exerciseData.series;
+    const userAnswer = parseFloat(document.getElementById('seriesAnswer').value);
+    const correct = Math.abs(userAnswer - correctAnswer) < 0.01;
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    // Save exercise result
+    settings.exercises.push({
+        exercise: exerciseStr,
+        correctAnswer: correctAnswer,
+        userAnswer: userAnswer,
+        correct: correct,
+        time: timeTaken
+    });
+
+    if (correct) {
+        settings.correct++;
+        document.getElementById('seriesCorrect').textContent = settings.correct;
+    } else {
+        settings.incorrect++;
+        document.getElementById('seriesIncorrect').textContent = settings.incorrect;
+    }
+
+    // Show brief feedback then next exercise
+    const content = document.getElementById('seriesContent');
+    content.innerHTML = `
+        <div class="number-display-area">${correctAnswer}</div>
+        <div class="feedback ${correct ? 'correct' : 'incorrect'}">
+            ${correct ? '✓' : '✗'}
+        </div>
+    `;
+
+    setTimeout(() => {
+        runSeriesExercise();
+    }, 1000);
+}
+
+function showSeriesAnswer(correctAnswer, startTime, exerciseStr) {
+    const settings = exerciseData.series;
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    settings.exercises.push({
+        exercise: exerciseStr,
+        correctAnswer: correctAnswer,
+        userAnswer: null,
+        correct: null,
+        time: timeTaken
+    });
+
+    const content = document.getElementById('seriesContent');
+    content.innerHTML = `
+        <div class="number-display-area">${correctAnswer}</div>
+        <button class="submit-btn" style="margin-top: 2rem;" onclick="runSeriesExercise()">Următorul</button>
+    `;
+}
+
+function finishSeries() {
+    const settings = exerciseData.series;
+
+    if (settings.timer) {
+        clearTimeout(settings.timer);
+    }
+
+    document.getElementById('seriesExercise').style.display = 'none';
+    document.getElementById('seriesReport').style.display = 'block';
+
+    // Calculate statistics
+    const total = settings.exercises.length;
+    const correct = settings.correct;
+    const avgCorrect = total > 0 ? ((correct / total) * 100).toFixed(1) : 0;
+    const totalTime = settings.exercises.reduce((sum, ex) => sum + parseFloat(ex.time), 0);
+    const avgTime = total > 0 ? (totalTime / total).toFixed(2) : 0;
+
+    document.getElementById('reportTotal').textContent = total;
+    document.getElementById('reportCorrect').textContent = correct;
+    document.getElementById('reportAvg').textContent = avgCorrect + '%';
+    document.getElementById('reportAvgTime').textContent = avgTime + 's';
+
+    // Display exercises list
+    const exercisesList = document.getElementById('exercisesList');
+    exercisesList.innerHTML = settings.exercises.map((ex, index) => `
+        <div class="exercise-item">
+            <div class="exercise-calculation">${index + 1}. ${ex.exercise} = ${ex.correctAnswer}</div>
+            <div class="exercise-result">
+                <span class="user-answer">Răspuns: ${ex.userAnswer !== null ? ex.userAnswer : 'N/A'}</span>
+                ${ex.correct !== null ? `
+                    <div class="correct-indicator ${ex.correct ? 'correct' : 'incorrect'}">
+                        ${ex.correct ? '✓' : '✗'}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Classroom Mode
+function initializeClassroom() {
+    const count = exerciseData.classroom.studentsCount;
+    const container = document.getElementById('studentsContainer');
+
+    container.innerHTML = '';
+    exerciseData.classroom.students = [];
+
+    for (let i = 0; i < count; i++) {
+        const studentData = {
+            id: i,
+            name: `Elev ${i + 1}`,
+            settings: {
+                complexity: 'direct-counting',
+                speed: 1.5,
+                digits: 1,
+                fractions: 'none',
+                operation: 'addition',
+                negative: 'no',
+                terms: 3,
+                answerMode: 'input'
+            },
+            exercises: [],
+            correct: 0,
+            incorrect: 0,
+            isRunning: false
+        };
+        exerciseData.classroom.students.push(studentData);
+
+        container.innerHTML += `
+            <div class="student-panel" id="student-${i}">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="${studentData.name}"
+                           onchange="updateStudentName(${i}, this.value)">
+                    <button class="control-btn settings-btn" onclick="showStudentSettings(${i})">⚙️</button>
+                </div>
+                <div class="student-exercise-area" id="student-area-${i}">
+                    <div style="color: var(--text-secondary); text-align: center;">
+                        Așteaptă să înceapă...
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function updateStudentName(id, name) {
+    exerciseData.classroom.students[id].name = name;
+}
+
+function showStudentSettings(id) {
+    // TODO: Implement individual student settings modal
+    alert('Setări individuale pentru ' + exerciseData.classroom.students[id].name + ' (în dezvoltare)');
+}
+
+function toggleClassroomSettings() {
+    const settings = document.getElementById('classroomGlobalSettings');
+    settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+}
+
+function startClassroom() {
+    exerciseData.classroom.students.forEach((student, index) => {
+        if (!student.isRunning) {
+            student.isRunning = true;
+            runStudentExercise(index);
+        }
+    });
+}
+
+function runStudentExercise(studentId) {
+    const student = exerciseData.classroom.students[studentId];
+    if (!student.isRunning) return;
+
+    const { terms, operations } = generateExerciseTerms(student.settings);
+    const correctAnswer = calculateResult(terms, operations);
+    const exerciseStartTime = Date.now();
+
+    const area = document.getElementById(`student-area-${studentId}`);
+    area.innerHTML = '<div class="student-number-display">Pregătește-te...</div>';
+
+    let currentTerm = 0;
+
+    const showNextTerm = () => {
+        if (currentTerm < terms.length && student.isRunning) {
+            const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
+            const term = terms[currentTerm];
+
+            area.innerHTML = `
+                <div class="student-number-display">
+                    ${operation ? `<span style="font-size: 2rem;">${operation}</span> ` : ''}
+                    ${Math.abs(term)}
+                </div>
+            `;
+
+            currentTerm++;
+            setTimeout(showNextTerm, student.settings.speed * 1000);
+        } else if (student.isRunning) {
+            if (student.settings.answerMode === 'input') {
+                area.innerHTML = `
+                    <input type="number" step="any" class="answer-input"
+                           style="width: 90%; font-size: 1.5rem;"
+                           id="student-answer-${studentId}" placeholder="Răspuns">
+                    <button class="submit-btn" style="padding: 0.5rem 1rem; font-size: 1rem;"
+                            onclick="checkStudentAnswer(${studentId}, ${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">
+                        ✓
+                    </button>
+                `;
+            } else {
+                area.innerHTML = `
+                    <button class="show-answer-btn" style="padding: 0.5rem 1rem; font-size: 1rem;"
+                            onclick="showStudentAnswer(${studentId}, ${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">
+                        Afișează
+                    </button>
+                `;
+            }
+        }
+    };
+
+    setTimeout(showNextTerm, 1000);
+}
+
+function checkStudentAnswer(studentId, correctAnswer, startTime, exerciseStr) {
+    const student = exerciseData.classroom.students[studentId];
+    const input = document.getElementById(`student-answer-${studentId}`);
+    const userAnswer = parseFloat(input.value);
+    const correct = Math.abs(userAnswer - correctAnswer) < 0.01;
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    student.exercises.push({
+        exercise: exerciseStr,
+        correctAnswer: correctAnswer,
+        userAnswer: userAnswer,
+        correct: correct,
+        time: timeTaken
+    });
+
+    if (correct) {
+        student.correct++;
+    } else {
+        student.incorrect++;
+    }
+
+    const area = document.getElementById(`student-area-${studentId}`);
+    area.innerHTML = `
+        <div class="student-number-display">${correctAnswer}</div>
+        <div class="feedback ${correct ? 'correct' : 'incorrect'}" style="font-size: 1rem; padding: 0.5rem;">
+            ${correct ? '✓' : '✗'}
+        </div>
+    `;
+
+    setTimeout(() => {
+        if (student.isRunning) {
+            runStudentExercise(studentId);
+        }
+    }, 1000);
+}
+
+function showStudentAnswer(studentId, correctAnswer, startTime, exerciseStr) {
+    const student = exerciseData.classroom.students[studentId];
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    student.exercises.push({
+        exercise: exerciseStr,
+        correctAnswer: correctAnswer,
+        userAnswer: null,
+        correct: null,
+        time: timeTaken
+    });
+
+    const area = document.getElementById(`student-area-${studentId}`);
+    area.innerHTML = `
+        <div class="student-number-display">${correctAnswer}</div>
+        <button class="submit-btn" style="padding: 0.5rem 1rem; font-size: 1rem; margin-top: 1rem;"
+                onclick="runStudentExercise(${studentId})">
+            Următorul
+        </button>
+    `;
+}
+
+function showClassroomResults() {
+    // Stop all student exercises
+    exerciseData.classroom.students.forEach(student => {
+        student.isRunning = false;
+    });
+
+    document.getElementById('studentsContainer').style.display = 'none';
+    document.getElementById('classroomReport').style.display = 'block';
+
+    const reportContent = document.getElementById('classroomReportContent');
+    reportContent.innerHTML = exerciseData.classroom.students.map(student => {
+        const total = student.exercises.length;
+        const correct = student.correct;
+        const avgCorrect = total > 0 ? ((correct / total) * 100).toFixed(1) : 0;
+        const totalTime = student.exercises.reduce((sum, ex) => sum + parseFloat(ex.time), 0);
+        const avgTime = total > 0 ? (totalTime / total).toFixed(2) : 0;
+
+        return `
+            <div style="margin-bottom: 3rem;">
+                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">${student.name}</h3>
+                <div class="report-summary">
+                    <div class="summary-card">
+                        <div class="summary-label">Exerciții</div>
+                        <div class="summary-value">${total}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Corecte</div>
+                        <div class="summary-value">${correct}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Medie</div>
+                        <div class="summary-value">${avgCorrect}%</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Timp Mediu</div>
+                        <div class="summary-value">${avgTime}s</div>
+                    </div>
+                </div>
+                <div class="exercises-list">
+                    ${student.exercises.map((ex, index) => `
+                        <div class="exercise-item">
+                            <div class="exercise-calculation">${index + 1}. ${ex.exercise} = ${ex.correctAnswer}</div>
+                            <div class="exercise-result">
+                                <span class="user-answer">Răspuns: ${ex.userAnswer !== null ? ex.userAnswer : 'N/A'}</span>
+                                ${ex.correct !== null ? `
+                                    <div class="correct-indicator ${ex.correct ? 'correct' : 'incorrect'}">
+                                        ${ex.correct ? '✓' : '✗'}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function backToClassroom() {
+    document.getElementById('classroomReport').style.display = 'none';
+    document.getElementById('studentsContainer').style.display = 'grid';
+    initializeClassroom();
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Anzan Simulator loaded successfully!');
+});
+</script>
+{% endblock %}
