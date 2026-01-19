@@ -637,16 +637,18 @@
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
-        height: 600px;
+        height: auto;
+        min-height: 500px;
     }
 
     .student-panel {
         background: #f8f9fa;
         border: 2px solid #dee2e6;
         border-radius: 15px;
-        padding: 1.5rem;
+        padding: 1rem;
         display: flex;
         flex-direction: column;
+        min-height: 400px;
     }
 
     .student-header {
@@ -737,38 +739,38 @@
 
     /* Compact abacus styling for student panels */
     .student-panel .mini-abacus {
-        padding: 1rem;
-        margin-bottom: 1rem;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 
     .student-panel .abacus-frame-mini {
-        gap: 2rem;
-        padding: 1rem 1.5rem;
+        gap: 1.5rem;
+        padding: 0.8rem 1.2rem;
         border: 4px solid #654321;
     }
 
     .student-panel .rod-line-mini {
         width: 6px;
-        height: 200px;
+        height: 180px;
     }
 
     .student-panel .divider-mini {
-        width: 30px;
+        width: 28px;
         height: 4px;
     }
 
     .student-panel .bead-mini {
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
         margin: 2px 0;
     }
 
     .student-panel .bead-mini.top.active {
-        transform: translateY(20px);
+        transform: translateY(18px);
     }
 
     .student-panel .bead-mini.bottom.active {
-        transform: translateY(-30px);
+        transform: translateY(-28px);
     }
 
     .student-panel .rod-mini:last-child .divider-mini::after {
@@ -2936,6 +2938,12 @@
             } else {
                 correctAnswer -= numbers[i];
             }
+        }
+
+        // Prevent negative results and results > 99 (soroban limited to 2 digits)
+        if (correctAnswer < 0 || correctAnswer > 99) {
+            nextExercise(); // Regenerate exercise
+            return;
         }
 
         // Display problem
