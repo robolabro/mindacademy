@@ -5,15 +5,49 @@
 
 {% block extra_css %}
 <style>
+    /* Hide platform sidebar and header in fullscreen */
+    :fullscreen ~ * .sidebar,
+    :-webkit-full-screen ~ * .sidebar,
+    :-moz-full-screen ~ * .sidebar,
+    :fullscreen ~ * header,
+    :-webkit-full-screen ~ * header,
+    :-moz-full-screen ~ * header,
+    :fullscreen ~ * nav,
+    :-webkit-full-screen ~ * nav,
+    :-moz-full-screen ~ * nav {
+        display: none !important;
+    }
+
+    /* Global fullscreen optimization */
+    :fullscreen,
+    :-webkit-full-screen,
+    :-moz-full-screen {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    }
+
     .flashcard-container {
-        padding: 2rem;
+        padding: 0;
+        margin: 0;
         max-width: 100%;
-        min-height: calc(100vh - 180px);
+        height: calc(100vh - 73px);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    }
+
+    /* Override main-content padding for flashcard page */
+    .main-content {
+        padding: 0 !important;
+    }
+
+    /* Hide sidebar and header in fullscreen */
+    :fullscreen .flashcard-container,
+    :-webkit-full-screen .flashcard-container,
+    :-moz-full-screen .flashcard-container {
+        padding: 0;
+        height: 100vh;
     }
 
     /* Mode Selection Screen */
@@ -96,12 +130,13 @@
     .mode-screen {
         display: none;
         background: white;
-        border-radius: 20px;
-        padding: 2rem;
+        border-radius: 12px;
+        padding: 0.5rem;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-        max-width: 1200px;
-        width: 95%;
-        min-height: 600px;
+        max-width: 1500px;
+        width: 99%;
+        height: 96vh;
+        max-height: 96vh;
     }
 
     .mode-screen.active {
@@ -109,12 +144,55 @@
         flex-direction: column;
     }
 
+    /* Fullscreen mode - maximize space */
+    :fullscreen .mode-screen,
+    :-webkit-full-screen .mode-screen,
+    :-moz-full-screen .mode-screen {
+        width: 100%;
+        max-width: none;
+        height: 100vh;
+        border-radius: 0;
+        padding: 0.5rem;
+        margin: 0;
+    }
+
+    /* Fullscreen classwork - no lateral padding */
+    :fullscreen #classworkMode,
+    :-webkit-full-screen #classworkMode,
+    :-moz-full-screen #classworkMode {
+        padding: 0;
+        background: white;
+    }
+
+    /* Hide mode header in fullscreen for Classwork */
+    :fullscreen #classworkMode .mode-header,
+    :-webkit-full-screen #classworkMode .mode-header,
+    :-moz-full-screen #classworkMode .mode-header {
+        display: none;
+    }
+
+    /* Hide mode header in fullscreen for Exercises */
+    :fullscreen #exercisesMode .mode-header,
+    :-webkit-full-screen #exercisesMode .mode-header,
+    :-moz-full-screen #exercisesMode .mode-header {
+        margin-bottom: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    /* Maximize exercise area in fullscreen */
+    :fullscreen .exercise-area,
+    :-webkit-full-screen .exercise-area,
+    :-moz-full-screen .exercise-area {
+        height: calc(100vh - 60px);
+        padding: 0.3rem;
+    }
+
     .mode-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
         border-bottom: 2px solid #f0f0f0;
     }
 
@@ -142,9 +220,9 @@
 
     .settings-panel {
         background: #f8f9fa;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
+        border-radius: 10px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
     }
 
     .settings-row {
@@ -275,16 +353,16 @@
     }
 
     .start-btn {
-        padding: 0.8rem 2.5rem;
+        padding: 0.6rem 2rem;
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         color: white;
         border: none;
-        border-radius: 10px;
+        border-radius: 8px;
         cursor: pointer;
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
         transition: all 0.3s ease;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
         align-self: center;
     }
 
@@ -296,21 +374,21 @@
     .instructions-panel {
         background: #fff3cd;
         border-left: 4px solid #ffc107;
-        padding: 1.5rem;
+        padding: 0.75rem;
         border-radius: 8px;
-        margin-bottom: 2rem;
+        margin-bottom: 0.75rem;
     }
 
     .instructions-panel h3 {
         color: #856404;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
     }
 
     .instructions-panel p {
         color: #856404;
-        line-height: 1.6;
-        margin-bottom: 0.5rem;
+        line-height: 1.5;
+        margin-bottom: 0.3rem;
     }
 
     .instructions-panel ul {
@@ -325,11 +403,12 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        padding: 2rem;
+        justify-content: flex-start;
+        padding: 0.5rem;
         background: #f8f9fa;
-        border-radius: 15px;
-        min-height: 600px;
+        border-radius: 10px;
+        height: calc(96vh - 100px);
+        overflow-y: auto;
     }
 
     .countdown {
@@ -346,10 +425,10 @@
 
     .mini-abacus {
         background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        margin-bottom: 2rem;
+        border-radius: 10px;
+        padding: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 0.75rem;
         width: 100%;
         display: flex;
         justify-content: center;
@@ -357,12 +436,12 @@
 
     .abacus-frame-mini {
         display: inline-flex;
-        gap: 5rem;
-        padding: 2.5rem 3.5rem;
+        gap: 1.5rem;
+        padding: 1rem 1.5rem;
         background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-        border-radius: 20px;
-        border: 8px solid #654321;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        border: 5px solid #654321;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
     }
 
     .rod-mini {
@@ -374,8 +453,8 @@
     }
 
     .rod-line-mini {
-        width: 8px;
-        height: 350px;
+        width: 6px;
+        height: 220px;
         background: linear-gradient(to bottom, #4a2511 0%, #654321 50%, #4a2511 100%);
         position: relative;
         display: flex;
@@ -389,10 +468,10 @@
         top: 25%;
         left: 50%;
         transform: translateX(-50%);
-        width: 40px;
-        height: 6px;
+        width: 28px;
+        height: 4px;
         background: linear-gradient(to right, #2c2c2c 0%, #1a1a1a 50%, #2c2c2c 100%);
-        border-radius: 3px;
+        border-radius: 2px;
         z-index: 5;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     }
@@ -418,6 +497,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        left: 50%;
+        transform: translateX(-50%);
     }
 
     .beads-section-mini.top {
@@ -431,14 +512,15 @@
     }
 
     .bead-mini {
-        width: 42px;
-        height: 42px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         position: relative;
         transition: all 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
         cursor: pointer;
-        margin: 4px 0;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        margin: 2px 0;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+        flex-shrink: 0;
     }
 
     /* Top beads (heaven - value 5) */
@@ -454,7 +536,7 @@
     .bead-mini.top.active {
         /* Active state - touching separator, vibrant color */
         background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
-        transform: translateY(35px);
+        transform: translateY(25px);
         box-shadow:
             0 6px 14px rgba(46, 204, 196, 0.5),
             inset -2px -2px 4px rgba(0, 0, 0, 0.2),
@@ -468,7 +550,7 @@
 
     .bead-mini.top.active:hover {
         filter: brightness(1.1);
-        transform: translateY(35px) scale(1.05);
+        transform: translateY(25px) scale(1.05);
     }
 
     /* Bottom beads (earth - value 1 each) */
@@ -484,7 +566,7 @@
     .bead-mini.bottom.active {
         /* Active state - touching separator, vibrant color */
         background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
-        transform: translateY(-50px);
+        transform: translateY(-36px);
         box-shadow:
             0 6px 14px rgba(246, 194, 62, 0.5),
             inset -2px -2px 4px rgba(0, 0, 0, 0.2),
@@ -498,48 +580,7 @@
 
     .bead-mini.bottom.active:hover {
         filter: brightness(1.1);
-        transform: translateY(-50px) scale(1.05);
-    }
-
-    /* Compact abacus styling for student panels */
-    .student-panel .mini-abacus {
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .student-panel .abacus-frame-mini {
-        gap: 2rem;
-        padding: 1rem 1.5rem;
-        border: 4px solid #654321;
-    }
-
-    .student-panel .rod-line-mini {
-        width: 6px;
-        height: 200px;
-    }
-
-    .student-panel .divider-mini {
-        width: 30px;
-        height: 4px;
-    }
-
-    .student-panel .bead-mini {
-        width: 28px;
-        height: 28px;
-        margin: 2px 0;
-    }
-
-    .student-panel .bead-mini.top.active {
-        transform: translateY(20px);
-    }
-
-    .student-panel .bead-mini.bottom.active {
-        transform: translateY(-30px);
-    }
-
-    .student-panel .rod-mini:last-child .divider-mini::after {
-        width: 8px;
-        height: 8px;
+        transform: translateY(-36px) scale(1.05);
     }
 
     .answer-input {
@@ -622,12 +663,39 @@
         font-size: 1.3rem;
     }
 
+    /* Training Mode padding */
+    #trainingMode {
+        padding: 2rem;
+    }
+
+    /* Student individual Start button */
+    .student-start-btn {
+        padding: 0.8rem 1.5rem;
+        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 1rem auto;
+        display: block;
+        box-shadow: 0 4px 12px rgba(0, 176, 155, 0.3);
+    }
+
+    .student-start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 176, 155, 0.4);
+    }
+
     /* Classwork Mode */
     .classwork-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 0.35rem;
+        padding: 0.35rem 0.5rem;
     }
 
     .classwork-controls {
@@ -676,53 +744,256 @@
 
     .students-grid {
         display: grid;
+        gap: 0.4rem;
+        height: calc(96vh - 60px);
+        overflow-y: auto;
+        padding: 0.2rem;
+    }
+
+    /* Fixed grid layout based on number of students */
+    /* 1-4 students: 2x2 grid (25% each) */
+    .students-grid.students-1-4 {
         grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
-        height: 600px;
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* 5-8 students: 4x2 grid (12.5% each) */
+    .students-grid.students-5-8 {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* 9-10 students: keep flexible */
+    .students-grid.students-9-10 {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    /* Adaptive grid based on number of students visible */
+    @media (min-width: 1400px) {
+        .students-grid.students-9-10 {
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
     }
 
     .student-panel {
         background: #f8f9fa;
         border: 2px solid #dee2e6;
-        border-radius: 15px;
-        padding: 1.5rem;
+        border-radius: 8px;
+        padding: 0.35rem;
         display: flex;
         flex-direction: column;
+        min-height: 340px;
+        max-height: 480px;
+        overflow-y: auto;
+    }
+
+    /* Compact abacus for student panels */
+    .student-panel .mini-abacus {
+        padding: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .student-panel .abacus-frame-mini {
+        gap: 1rem;
+        padding: 0.5rem 1rem;
+        border: 3px solid #654321;
+    }
+
+    .student-panel .rod-line-mini {
+        width: 8px;
+        height: 200px;
+    }
+
+    .student-panel .bead-mini {
+        width: 48px;
+        height: 48px;
+    }
+
+    .student-panel .divider-mini {
+        width: 35px;
+        height: 5px;
+    }
+
+    .student-panel .bead-mini.top.active {
+        transform: translateY(40px);
+    }
+
+    .student-panel .bead-mini.top.active:hover {
+        transform: translateY(40px) scale(1.05);
+    }
+
+    .student-panel .bead-mini.bottom.active {
+        transform: translateY(-55px);
+    }
+
+    .student-panel .bead-mini.bottom.active:hover {
+        transform: translateY(-55px) scale(1.05);
+    }
+
+    /* Compact elements in student panel */
+    .student-panel .not-solved-text {
+        font-size: 0.9rem;
+        padding: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .student-panel .answer-area {
+        gap: 0.25rem;
+        padding: 0.25rem;
+    }
+
+    .student-panel .answer-area .answer-input {
+        max-width: 100%;
+        padding: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .student-panel .answer-btn {
+        padding: 0.5rem 1.2rem;
+        font-size: 0.95rem;
+    }
+
+    .student-panel .countdown {
+        font-size: 2.5rem;
+    }
+
+    .student-panel .your-answer-label {
+        font-size: 0.85rem;
+        margin-bottom: 0.2rem;
+    }
+
+    /* Fullscreen optimizations */
+    :fullscreen .students-grid,
+    :-webkit-full-screen .students-grid,
+    :-moz-full-screen .students-grid {
+        height: 100vh;
+        gap: 0.2rem;
+        padding: 0;
+    }
+
+    /* Fullscreen: Fixed grid for 1-4 students */
+    :fullscreen .students-grid.students-1-4,
+    :-webkit-full-screen .students-grid.students-1-4,
+    :-moz-full-screen .students-grid.students-1-4 {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* Fullscreen: Fixed grid for 5-8 students */
+    :fullscreen .students-grid.students-5-8,
+    :-webkit-full-screen .students-grid.students-5-8,
+    :-moz-full-screen .students-grid.students-5-8 {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* Fullscreen: Flexible grid for 9-10 students */
+    :fullscreen .students-grid.students-9-10,
+    :-webkit-full-screen .students-grid.students-9-10,
+    :-moz-full-screen .students-grid.students-9-10 {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    :fullscreen .student-panel,
+    :-webkit-full-screen .student-panel,
+    :-moz-full-screen .student-panel {
+        padding: 0.3rem;
+        min-height: 320px;
+        max-height: 480px;
+    }
+
+    :fullscreen .classwork-header,
+    :-webkit-full-screen .classwork-header,
+    :-moz-full-screen .classwork-header {
+        margin-bottom: 0.25rem;
+        padding: 0.25rem;
+    }
+
+    :fullscreen .student-panel .abacus-frame-mini,
+    :-webkit-full-screen .student-panel .abacus-frame-mini,
+    :-moz-full-screen .student-panel .abacus-frame-mini {
+        gap: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    :fullscreen .student-panel .rod-line-mini,
+    :-webkit-full-screen .student-panel .rod-line-mini,
+    :-moz-full-screen .student-panel .rod-line-mini {
+        width: 9px;
+        height: 220px;
+    }
+
+    :fullscreen .student-panel .bead-mini,
+    :-webkit-full-screen .student-panel .bead-mini,
+    :-moz-full-screen .student-panel .bead-mini {
+        width: 52px;
+        height: 52px;
+    }
+
+    :fullscreen .student-panel .divider-mini,
+    :-webkit-full-screen .student-panel .divider-mini,
+    :-moz-full-screen .student-panel .divider-mini {
+        width: 40px;
+        height: 6px;
+    }
+
+    :fullscreen .student-panel .bead-mini.top.active,
+    :-webkit-full-screen .student-panel .bead-mini.top.active,
+    :-moz-full-screen .student-panel .bead-mini.top.active {
+        transform: translateY(42px);
+    }
+
+    :fullscreen .student-panel .bead-mini.top.active:hover,
+    :-webkit-full-screen .student-panel .bead-mini.top.active:hover,
+    :-moz-full-screen .student-panel .bead-mini.top.active:hover {
+        transform: translateY(42px) scale(1.05);
+    }
+
+    :fullscreen .student-panel .bead-mini.bottom.active,
+    :-webkit-full-screen .student-panel .bead-mini.bottom.active,
+    :-moz-full-screen .student-panel .bead-mini.bottom.active {
+        transform: translateY(-58px);
+    }
+
+    :fullscreen .student-panel .bead-mini.bottom.active:hover,
+    :-webkit-full-screen .student-panel .bead-mini.bottom.active:hover,
+    :-moz-full-screen .student-panel .bead-mini.bottom.active:hover {
+        transform: translateY(-58px) scale(1.05);
     }
 
     .student-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #dee2e6;
-        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid #dee2e6;
+        gap: 0.3rem;
     }
 
     .student-name-input {
-        padding: 0.5rem;
-        font-size: 1rem;
+        padding: 0.3rem 0.4rem;
+        font-size: 0.9rem;
         border: 1px solid #ced4da;
-        border-radius: 5px;
+        border-radius: 4px;
         flex: 1;
-        max-width: 150px;
+        max-width: 120px;
     }
 
     .student-header-buttons {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.3rem;
         align-items: center;
     }
 
     .student-status {
         display: none;
-        width: 30px;
-        height: 30px;
-        border-radius: 5px;
+        width: 26px;
+        height: 26px;
+        border-radius: 4px;
         align-items: center;
         justify-content: center;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
 
     .student-status.show {
@@ -743,10 +1014,10 @@
         background: #6c757d;
         color: white;
         border: none;
-        border-radius: 5px;
-        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        padding: 0.3rem 0.5rem;
         cursor: pointer;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         transition: all 0.2s ease;
     }
 
@@ -758,10 +1029,10 @@
         background: #dc3545;
         color: white;
         border: none;
-        border-radius: 5px;
-        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        padding: 0.3rem 0.5rem;
         cursor: pointer;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
 
     .delete-student-btn:hover {
@@ -1311,10 +1582,10 @@
             </div>
         </div>
 
-        <div class="students-grid" id="studentsGrid">
+        <div class="students-grid students-1-4" id="studentsGrid">
             <div class="student-panel" data-student-id="1">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Elev 1" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Nume copil 1" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(1)">⚙️</button>
@@ -1322,22 +1593,23 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(1)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="1"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(1)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(1)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
             <div class="student-panel" data-student-id="2">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Elev 2" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Nume copil 2" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(2)">⚙️</button>
@@ -1345,22 +1617,23 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(2)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="2"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(2)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(2)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
             <div class="student-panel" data-student-id="3">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Elev 3" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Nume copil 3" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(3)">⚙️</button>
@@ -1368,22 +1641,23 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(3)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="3"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(3)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(3)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
             <div class="student-panel" data-student-id="4">
                 <div class="student-header">
-                    <input type="text" class="student-name-input" value="Elev 4" placeholder="Nume elev">
+                    <input type="text" class="student-name-input" value="Nume copil 4" placeholder="Nume elev">
                     <div class="student-header-buttons">
                         <div class="student-status"></div>
                         <button class="student-settings-btn" onclick="openStudentSettings(4)">⚙️</button>
@@ -1391,16 +1665,17 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(4)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="4"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(4)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(4)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1414,16 +1689,17 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(5)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="5"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(5)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(5)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1437,16 +1713,17 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(6)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="6"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(6)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(6)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1460,16 +1737,17 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(7)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="7"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(7)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(7)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1483,16 +1761,17 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(8)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="8"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(8)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(8)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1506,16 +1785,17 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(9)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="9"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(9)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(9)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1529,16 +1809,17 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(10)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="10"></div>
                     </div>
-                    <div class="not-solved-text" style="display: none;">Exemplul nu este rezolvat</div>
+                    <div class="not-solved-text" style="display: none;">The example is not solved</div>
                     <div style="display: none;" class="answer-area">
-                        <div class="your-answer-label">Răspunsul tău:</div>
+                        <div class="your-answer-label">Your answer:</div>
                         <input type="text" class="answer-input" placeholder="Răspuns">
-                        <button class="answer-btn" onclick="checkStudentAnswer(10)">Răspuns</button>
+                        <button class="answer-btn" onclick="checkStudentAnswer(10)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
         </div>
@@ -1624,8 +1905,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="1" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="1" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="1" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="1" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -1654,7 +1935,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(1, -0.1)">−</button>
-                            <span class="number-display" id="student1Speed">1</span>
+                            <span class="number-display" id="student1Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(1, 0.1)">+</button>
                         </div>
                     </div>
@@ -1675,8 +1956,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="2" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="2" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="2" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="2" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -1705,7 +1986,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(2, -0.1)">−</button>
-                            <span class="number-display" id="student2Speed">1</span>
+                            <span class="number-display" id="student2Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(2, 0.1)">+</button>
                         </div>
                     </div>
@@ -1726,8 +2007,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="3" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="3" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="3" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="3" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -1756,7 +2037,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(3, -0.1)">−</button>
-                            <span class="number-display" id="student3Speed">1</span>
+                            <span class="number-display" id="student3Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(3, 0.1)">+</button>
                         </div>
                     </div>
@@ -1777,8 +2058,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="4" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="4" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="4" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="4" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -1807,7 +2088,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(4, -0.1)">−</button>
-                            <span class="number-display" id="student4Speed">1</span>
+                            <span class="number-display" id="student4Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(4, 0.1)">+</button>
                         </div>
                     </div>
@@ -1828,8 +2109,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="5" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="5" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="5" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="5" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -1858,7 +2139,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(5, -0.1)">−</button>
-                            <span class="number-display" id="student5Speed">1</span>
+                            <span class="number-display" id="student5Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(5, 0.1)">+</button>
                         </div>
                     </div>
@@ -1879,8 +2160,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="6" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="6" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="6" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="6" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -1909,7 +2190,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(6, -0.1)">−</button>
-                            <span class="number-display" id="student6Speed">1</span>
+                            <span class="number-display" id="student6Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(6, 0.1)">+</button>
                         </div>
                     </div>
@@ -1930,8 +2211,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="7" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="7" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="7" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="7" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -1960,7 +2241,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(7, -0.1)">−</button>
-                            <span class="number-display" id="student7Speed">1</span>
+                            <span class="number-display" id="student7Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(7, 0.1)">+</button>
                         </div>
                     </div>
@@ -1981,8 +2262,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="8" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="8" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="8" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="8" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -2011,7 +2292,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(8, -0.1)">−</button>
-                            <span class="number-display" id="student8Speed">1</span>
+                            <span class="number-display" id="student8Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(8, 0.1)">+</button>
                         </div>
                     </div>
@@ -2032,8 +2313,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="9" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="9" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="9" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="9" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -2062,7 +2343,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(9, -0.1)">−</button>
-                            <span class="number-display" id="student9Speed">1</span>
+                            <span class="number-display" id="student9Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(9, 0.1)">+</button>
                         </div>
                     </div>
@@ -2083,8 +2364,8 @@
                     <span class="setting-label">Direction</span>
                     <div class="setting-controls">
                         <div class="toggle-group">
-                            <button class="toggle-btn" data-student="10" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="10" data-setting="direction" data-value="number-to-abacus">Number</button>
+                            <button class="toggle-btn active" data-student="10" data-setting="direction" data-value="abacus-to-number">Abacus</button>
+                            <button class="toggle-btn" data-student="10" data-setting="direction" data-value="number-to-abacus">Number</button>
                         </div>
                     </div>
                 </div>
@@ -2113,7 +2394,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(10, -0.1)">−</button>
-                            <span class="number-display" id="student10Speed">1</span>
+                            <span class="number-display" id="student10Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(10, 0.1)">+</button>
                         </div>
                     </div>
@@ -2126,8 +2407,8 @@
     <!-- Feedback Modal -->
     <div id="feedbackModal" class="feedback-modal">
         <div class="feedback-modal-content">
-            <h2 class="feedback-modal-title" id="feedbackTitle">Răspuns corect</h2>
-            <button class="feedback-modal-btn" onclick="closeFeedbackModal()">Continuă →</button>
+            <h2 class="feedback-modal-title" id="feedbackTitle">Correct answer</h2>
+            <button class="feedback-modal-btn" onclick="closeFeedbackModal()">Continue →</button>
         </div>
     </div>
 
@@ -2186,19 +2467,20 @@
             direction: 'abacus-to-number',
             from: 1,
             to: 99,
-            displayTime: 1.0
+            displayTime: 1.0,
+            simple: 'ordinary'
         },
         students: {
-            1: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 },
-            2: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 },
-            3: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 },
-            4: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 },
-            5: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 },
-            6: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 },
-            7: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 },
-            8: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 },
-            9: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 },
-            10: { direction: 'abacus-to-number', from: 1, to: 99, speed: 1.0 }
+            1: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            2: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            3: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            4: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            5: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            6: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            7: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            8: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            9: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            10: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' }
         }
     };
 
@@ -2271,7 +2553,7 @@
         document.getElementById('flashExercise').style.display = 'none';
         document.getElementById('exercisesArea').style.display = 'none';
 
-        // Restore settings and instructions for flash mode
+        // Restore settings and instructions for all modes
         const flashMode = document.getElementById('flashMode');
         const flashSettingsPanel = flashMode.querySelector('.settings-panel');
         const flashInstructionsPanel = flashMode.querySelector('.instructions-panel');
@@ -2280,6 +2562,24 @@
         if (flashSettingsPanel) flashSettingsPanel.style.display = 'block';
         if (flashInstructionsPanel) flashInstructionsPanel.style.display = 'block';
         if (flashStartBtn) flashStartBtn.style.display = 'block';
+
+        const trainingMode = document.getElementById('trainingMode');
+        const trainingSettingsPanel = trainingMode.querySelector('.settings-panel');
+        const trainingInstructionsPanel = trainingMode.querySelector('.instructions-panel');
+        const trainingStartBtn = trainingMode.querySelector('.start-btn');
+
+        if (trainingSettingsPanel) trainingSettingsPanel.style.display = 'block';
+        if (trainingInstructionsPanel) trainingInstructionsPanel.style.display = 'block';
+        if (trainingStartBtn) trainingStartBtn.style.display = 'block';
+
+        const exercisesMode = document.getElementById('exercisesMode');
+        const exercisesSettingsPanel = exercisesMode.querySelector('.settings-panel');
+        const exercisesInstructionsPanel = exercisesMode.querySelector('.instructions-panel');
+        const exercisesStartBtn = exercisesMode.querySelector('.start-btn');
+
+        if (exercisesSettingsPanel) exercisesSettingsPanel.style.display = 'block';
+        if (exercisesInstructionsPanel) exercisesInstructionsPanel.style.display = 'block';
+        if (exercisesStartBtn) exercisesStartBtn.style.display = 'block';
 
         // Reset stats
         stats.correct = 0;
@@ -2380,6 +2680,18 @@
         // Update both displays
         headerElement.textContent = newValue;
         if (modalElement) modalElement.textContent = newValue;
+
+        // Update grid layout class based on student count
+        const grid = document.getElementById('studentsGrid');
+        grid.classList.remove('students-1-4', 'students-5-8', 'students-9-10');
+
+        if (newValue <= 4) {
+            grid.classList.add('students-1-4');
+        } else if (newValue <= 8) {
+            grid.classList.add('students-5-8');
+        } else {
+            grid.classList.add('students-9-10');
+        }
 
         // Show/hide student panels based on count
         const panels = document.querySelectorAll('.student-panel');
@@ -2482,6 +2794,31 @@
         min = Math.max(1, min);
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
+
+    /**
+     * SOROBAN CALCULATION METHODS
+     * ===========================
+     *
+     * 1. DIRECT CALCULATION
+     *    - Simplest method: move beads directly toward the reckoning bar
+     *    - No carries, borrows, or complementary numbers needed
+     *    - Requires enough beads available on the current rod
+     *    - Example: 2 + 2 = move two beads up, then two more up
+     *
+     * 2. SMALL FRIENDS (5-Complements)
+     *    - Used when not enough beads available, but 5-bead (heavenly bead) is available
+     *    - Pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
+     *    - Addition: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
+     *    - Subtraction: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
+     *    - Example: 4 + 1 = Add 5, then subtract 4 (friend of 1)
+     *
+     * 3. BIG FRIENDS (10-Complements)
+     *    - Used when rod is full; must carry to or borrow from next rod (tens place)
+     *    - Pairs that sum to 10: (1,9), (2,8), (3,7), (4,6), (5,5)
+     *    - Addition: +9 = +10-1, +8 = +10-2, ... +1 = +10-9
+     *    - Subtraction: -9 = -10+1, -8 = -10+2, ... -1 = -10+9
+     *    - Example: 9 + 1 = Add 10 on next rod, subtract 9 from current rod
+     */
 
     // Generate exercise based on level
     function generateExerciseForLevel(level, formula, section, addends) {
@@ -2733,14 +3070,19 @@
     }
 
     // Helper: Generate Small Friends exercise for specific formula
+    // Small Friends are pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
+    // Addition formulas: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
+    // Subtraction formulas: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
     function generateSmallFriendsExercise(target, addends, formula) {
         const numbers = [];
         const absTarget = Math.abs(target);
 
         if (formula === 'addition' && target > 0) {
             // For addition: need first number where adding target requires 5-complement
-            // Example for +1: first number should be 4 (4+1 needs +5-4)
+            // Example: +1 = +5-4, so we need a number that already has 4 (like 4, 14, 24, etc.)
+            // For +4 = +5-1, we need a number that ends in 1 or higher
             const validFirstNumbers = [];
+            // Numbers that will require using the small friend formula
             for (let i = (5 - absTarget); i <= 4; i++) {
                 validFirstNumbers.push(i);
             }
@@ -2749,19 +3091,21 @@
             // Add the target number
             numbers.push(absTarget);
 
-            // Fill remaining addends with random 1-9
+            // Fill remaining addends with random 1-4 to keep it simple
             for (let i = 2; i < addends; i++) {
-                numbers.push(getRandomNumber(1, 9));
+                numbers.push(getRandomNumber(1, 4));
             }
         } else if (formula === 'subtraction' && target < 0) {
             // For subtraction: need first number that when subtracting requires 5-complement
-            // Example for -1: first number should be 5 (5-1 needs +4-5)
-            numbers.push(5 + absTarget - 1);
+            // Example: -1 = -5+4, so we need a number like 5, 6, 7, 8, or 9 (has 5-bead active)
+            // First number should be 5 to 9 to require the formula
+            const validFirstNumbers = [5, 6, 7, 8, 9];
+            numbers.push(validFirstNumbers[getRandomNumber(0, validFirstNumbers.length - 1)]);
 
             // Subtract the target amount
             numbers.push(absTarget);
 
-            // Fill remaining with random
+            // Fill remaining with random 1-4
             for (let i = 2; i < addends; i++) {
                 numbers.push(getRandomNumber(1, 4));
             }
@@ -2785,6 +3129,9 @@
     }
 
     // Helper: Generate Big Friends exercise for specific formula
+    // Big Friends are pairs that sum to 10: (1,9), (2,8), (3,7), (4,6), (5,5)
+    // Addition formulas: +9 = +10-1, +8 = +10-2, +7 = +10-3, ... +1 = +10-9
+    // Subtraction formulas: -9 = -10+1, -8 = -10+2, -7 = -10+3, ... -1 = -10+9
     function generateBigFriendsExercise(target, addends, formula, section) {
         const numbers = [];
         const absTarget = Math.abs(target);
@@ -2793,7 +3140,9 @@
 
         if (formula === 'addition' && target > 0) {
             // For addition: need first number where adding target requires 10-complement
-            // Example for +1: first number should be 9 (9+1 needs +10-9)
+            // Example: +1 = +10-9, so first number ends in 9 (like 9, 19, 29, etc.)
+            // Example: +9 = +10-1, so first number ends in 1 or higher (like 1-9, 11-19, etc.)
+            // Must carry to next rod - units digit should be (10 - target) or higher
             const minFirst = Math.max(1, 10 - absTarget);
             const maxFirst = Math.min(9, maxNum);
             numbers.push(getRandomNumber(minFirst, maxFirst));
@@ -2801,13 +3150,15 @@
             // Add the target number
             numbers.push(absTarget);
 
-            // Fill remaining addends
+            // Fill remaining addends with small numbers
             for (let i = 2; i < addends; i++) {
                 numbers.push(getRandomNumber(1, Math.min(9, maxNum)));
             }
         } else if (formula === 'subtraction' && target < 0) {
             // For subtraction: need first number that when subtracting requires 10-complement
-            // Example for -1: first number should be 10 (10-1 needs -10+9)
+            // Example: -1 = -10+9, so first number should be 10, 20, 30, etc. (ends in 0)
+            // Example: -9 = -10+1, so first number should be 10-18, 20-28, etc.
+            // Must borrow from next rod - units digit should be less than target
             const minFirst = Math.max(10, absTarget);
             const maxFirst = Math.min(10 + 9, maxNum);
             numbers.push(getRandomNumber(minFirst, maxFirst));
@@ -2815,7 +3166,7 @@
             // Subtract the target amount
             numbers.push(absTarget);
 
-            // Fill remaining
+            // Fill remaining with small numbers
             for (let i = 2; i < addends; i++) {
                 numbers.push(getRandomNumber(1, Math.min(5, maxNum)));
             }
@@ -2927,7 +3278,24 @@
         stats.incorrect = 0;
         document.getElementById('trainingCorrect').textContent = '0';
         document.getElementById('trainingIncorrect').textContent = '0';
-        document.getElementById('trainingExercise').style.display = 'flex';
+
+        // Hide settings and instructions when exercise starts
+        const trainingMode = document.getElementById('trainingMode');
+        const settingsPanel = trainingMode.querySelector('.settings-panel');
+        const instructionsPanel = trainingMode.querySelector('.instructions-panel');
+        const startBtn = trainingMode.querySelector('.start-btn');
+
+        if (settingsPanel) settingsPanel.style.display = 'none';
+        if (instructionsPanel) instructionsPanel.style.display = 'none';
+        if (startBtn) startBtn.style.display = 'none';
+
+        // Show exercise area
+        const exerciseArea = document.getElementById('trainingExercise');
+        exerciseArea.style.display = 'flex';
+
+        // Scroll to top of exercise area to make it visible
+        exerciseArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
         nextTrainingExercise();
     }
 
@@ -3336,7 +3704,24 @@
         stats.incorrect = 0;
         document.getElementById('exercisesCorrect').textContent = '0';
         document.getElementById('exercisesIncorrect').textContent = '0';
-        document.getElementById('exercisesArea').style.display = 'flex';
+
+        // Hide settings and instructions when exercise starts
+        const exercisesMode = document.getElementById('exercisesMode');
+        const settingsPanel = exercisesMode.querySelector('.settings-panel');
+        const instructionsPanel = exercisesMode.querySelector('.instructions-panel');
+        const startBtn = exercisesMode.querySelector('.start-btn');
+
+        if (settingsPanel) settingsPanel.style.display = 'none';
+        if (instructionsPanel) instructionsPanel.style.display = 'none';
+        if (startBtn) startBtn.style.display = 'none';
+
+        // Show exercise area
+        const exerciseArea = document.getElementById('exercisesArea');
+        exerciseArea.style.display = 'flex';
+
+        // Scroll to top of exercise area to make it visible
+        exerciseArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
         nextExercise();
     }
 
@@ -3368,14 +3753,18 @@
 
         // Display problem
         const problemDiv = document.createElement('div');
-        problemDiv.style.fontSize = '2rem';
-        problemDiv.style.marginBottom = '2rem';
+        problemDiv.style.fontSize = '1.5rem';
+        problemDiv.style.marginBottom = '1rem';
         problemDiv.style.textAlign = 'center';
+        problemDiv.style.display = 'flex';
+        problemDiv.style.alignItems = 'center';
+        problemDiv.style.justifyContent = 'center';
+        problemDiv.style.flexWrap = 'wrap';
+        problemDiv.style.gap = '0.5rem';
 
         numbers.forEach((num, index) => {
             const abacusDiv = document.createElement('div');
             abacusDiv.style.display = 'inline-block';
-            abacusDiv.style.margin = '0 1rem';
             const frame = document.createElement('div');
             frame.className = 'abacus-frame-mini';
             abacusDiv.appendChild(frame);
@@ -3384,34 +3773,59 @@
 
             if (index < numbers.length - 1) {
                 const operator = document.createElement('span');
-                operator.textContent = ' ' + (operators[index] || (formula === 'addition' ? '+' : '-')) + ' ';
-                operator.style.fontSize = '2rem';
-                operator.style.margin = '0 1rem';
+                operator.textContent = operators[index] || (formula === 'addition' ? '+' : '-');
+                operator.style.fontSize = '1.5rem';
+                operator.style.fontWeight = 'bold';
                 problemDiv.appendChild(operator);
             }
         });
 
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.className = 'answer-input';
-        input.placeholder = 'Introdu răspunsul';
-        input.dataset.correctAnswer = correctAnswer;
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
-            }
-        });
+        // Check if answer should be entered on abacus or as number
+        const answerType = currentSettings.exercises.answer;
 
-        const submitBtn = document.createElement('button');
-        submitBtn.className = 'submit-btn';
-        submitBtn.textContent = 'Verifică';
-        submitBtn.onclick = () => checkExerciseAnswer(parseInt(input.value), correctAnswer);
+        if (answerType === 'abacus') {
+            // Create interactive abacus for answer (starting at 0)
+            const answerAbacusDiv = document.createElement('div');
+            answerAbacusDiv.className = 'mini-abacus';
+            const answerFrame = document.createElement('div');
+            answerFrame.className = 'abacus-frame-mini';
+            answerFrame.id = 'exerciseAnswerAbacus';
+            answerAbacusDiv.appendChild(answerFrame);
+            createMiniAbacus(0, answerFrame);
+            makeAbacusInteractive(answerFrame);
 
-        content.appendChild(problemDiv);
-        content.appendChild(input);
-        content.appendChild(submitBtn);
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkExerciseAbacusAnswer(answerFrame, correctAnswer);
 
-        setTimeout(() => input.focus(), 100);
+            content.appendChild(problemDiv);
+            content.appendChild(answerAbacusDiv);
+            content.appendChild(submitBtn);
+        } else {
+            // Original number input
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'answer-input';
+            input.placeholder = 'Introdu răspunsul';
+            input.dataset.correctAnswer = correctAnswer;
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
+                }
+            });
+
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkExerciseAnswer(parseInt(input.value), correctAnswer);
+
+            content.appendChild(problemDiv);
+            content.appendChild(input);
+            content.appendChild(submitBtn);
+
+            setTimeout(() => input.focus(), 100);
+        }
     }
 
     function checkExerciseAnswer(answer, correctAnswer) {
@@ -3427,6 +3841,50 @@
         } else {
             feedback.classList.add('incorrect');
             feedback.textContent = `✗ Greșit! Răspunsul corect: ${correctAnswer}`;
+            stats.incorrect++;
+            document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
+        }
+
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextExercise();
+        }, 2000);
+    }
+
+    function checkExerciseAbacusAnswer(frame, correctAnswer) {
+        // Read answer from interactive abacus
+        const rods = frame.querySelectorAll('.rod-mini');
+        let abacusNumber = 0;
+
+        rods.forEach((rod, index) => {
+            let digitValue = 0;
+
+            // Check top bead (heaven - value 5)
+            const topBead = rod.querySelector('.bead-mini.top');
+            if (topBead && topBead.classList.contains('active')) {
+                digitValue += 5;
+            }
+
+            // Check bottom beads (earth - value 1 each)
+            const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
+            digitValue += bottomBeads.length;
+
+            abacusNumber += digitValue * Math.pow(10, rods.length - 1 - index);
+        });
+
+        const content = document.getElementById('exercisesContent');
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (abacusNumber === correctAnswer) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('exercisesCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${correctAnswer} (Tu ai introdus: ${abacusNumber})`;
             stats.incorrect++;
             document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
         }
@@ -3488,8 +3946,43 @@
         const element = document.getElementById(`student${studentId}Speed`);
         let currentValue = parseFloat(element.textContent);
         let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
-        element.textContent = newValue.toFixed(0);
+        element.textContent = newValue.toFixed(1);
         currentSettings.students[studentId].speed = newValue;
+    }
+
+    function startSingleStudent(studentId) {
+        const panel = document.querySelector(`.student-panel[data-student-id="${studentId}"]`);
+        if (!panel) return;
+
+        // Reset student state
+        studentResults[studentId] = null;
+        const statusDiv = panel.querySelector('.student-status');
+        statusDiv.classList.remove('show', 'correct', 'incorrect');
+
+        // Hide start button
+        const startBtn = panel.querySelector('.student-start-btn');
+        if (startBtn) startBtn.style.display = 'none';
+
+        // Hide other elements
+        panel.querySelector('.not-solved-text').style.display = 'none';
+        panel.querySelector('.answer-area').style.display = 'none';
+        panel.querySelector('.mini-abacus').style.display = 'none';
+
+        // Show countdown 3, 2, 1
+        const countdown = panel.querySelector('.countdown');
+        countdown.style.display = 'block';
+
+        let count = 3;
+        const countdownInterval = setInterval(() => {
+            countdown.textContent = count;
+            count--;
+
+            if (count < 0) {
+                clearInterval(countdownInterval);
+                countdown.style.display = 'none';
+                showSingleStudentExercise(studentId);
+            }
+        }, 1000);
     }
 
     function startAllStudents() {
@@ -3497,37 +3990,60 @@
             panel => panel.style.display !== 'none'
         );
 
-        // Reset all student states
+        // Start each student individually
         panels.forEach(panel => {
             const studentId = parseInt(panel.dataset.studentId);
-            studentResults[studentId] = null;
-            const statusDiv = panel.querySelector('.student-status');
-            statusDiv.classList.remove('show', 'correct', 'incorrect');
-            panel.querySelector('.not-solved-text').style.display = 'none';
-            panel.querySelector('.answer-area').style.display = 'none';
-            panel.querySelector('.mini-abacus').style.display = 'none';
+            startSingleStudent(studentId);
         });
+    }
 
-        // Show countdown 3, 2, 1
-        panels.forEach(panel => {
-            const countdown = panel.querySelector('.countdown');
-            countdown.style.display = 'block';
-        });
+    function showSingleStudentExercise(studentId) {
+        const panel = document.querySelector(`.student-panel[data-student-id="${studentId}"]`);
+        if (!panel) return;
 
-        let count = 3;
-        const countdownInterval = setInterval(() => {
-            panels.forEach(panel => {
-                const countdown = panel.querySelector('.countdown');
-                countdown.textContent = count;
-            });
+        const settings = currentSettings.students[studentId];
+        const number = getRandomNumber(settings.from, settings.to);
+        studentNumbers[studentId] = number;
 
-            count--;
+        const abacusContainer = panel.querySelector('.abacus-frame-mini');
+        const abacusDiv = panel.querySelector('.mini-abacus');
+        const answerArea = panel.querySelector('.answer-area');
+        const notSolvedText = panel.querySelector('.not-solved-text');
 
-            if (count < 0) {
-                clearInterval(countdownInterval);
-                showStudentExercise();
-            }
-        }, 1000);
+        if (settings.direction === 'abacus-to-number') {
+            // Show abacus with number first
+            createMiniAbacus(number, abacusContainer);
+            abacusDiv.style.display = 'block';
+
+            // After display time expires, hide abacus and show input
+            setTimeout(() => {
+                abacusDiv.style.display = 'none';
+
+                notSolvedText.textContent = 'Introdu numărul';
+                notSolvedText.style.display = 'block';
+
+                const input = answerArea.querySelector('.answer-input');
+                input.style.display = 'block';
+                answerArea.style.display = 'flex';
+
+                // Focus on input for quick entry
+                input.focus();
+            }, settings.speed * 1000);
+        } else {
+            // Number to abacus - show number and interactive abacus
+            notSolvedText.textContent = `Set this number on abacus: ${number}`;
+            notSolvedText.style.display = 'block';
+
+            // Create interactive abacus starting at 0
+            createMiniAbacus(0, abacusContainer);
+            makeAbacusInteractive(abacusContainer);
+            abacusDiv.style.display = 'block';
+
+            // Show answer area (button only, hide input)
+            const input = answerArea.querySelector('.answer-input');
+            input.style.display = 'none';
+            answerArea.style.display = 'flex';
+        }
     }
 
     function showStudentExercise() {
@@ -3537,47 +4053,7 @@
 
         panels.forEach(panel => {
             const studentId = parseInt(panel.dataset.studentId);
-            const settings = currentSettings.students[studentId];
-
-            const countdown = panel.querySelector('.countdown');
-            countdown.style.display = 'none';
-
-            const number = getRandomNumber(settings.from, settings.to);
-            studentNumbers[studentId] = number;
-
-            const abacusContainer = panel.querySelector('.abacus-frame-mini');
-            const abacusDiv = panel.querySelector('.mini-abacus');
-            const answerArea = panel.querySelector('.answer-area');
-            const notSolvedText = panel.querySelector('.not-solved-text');
-
-            if (settings.direction === 'abacus-to-number') {
-                createMiniAbacus(number, abacusContainer);
-                abacusDiv.style.display = 'block';
-
-                setTimeout(() => {
-                    abacusDiv.style.display = 'none';
-                    notSolvedText.style.display = 'block';
-
-                    // Show input for abacus-to-number mode
-                    const input = answerArea.querySelector('.answer-input');
-                    input.style.display = 'block';
-                    answerArea.style.display = 'flex';
-                }, settings.speed * 1000);
-            } else {
-                // Number to abacus - show number and interactive abacus
-                notSolvedText.textContent = `Setează acest număr pe soroban: ${number}`;
-                notSolvedText.style.display = 'block';
-
-                // Create interactive abacus starting at 0
-                createMiniAbacus(0, abacusContainer);
-                makeAbacusInteractive(abacusContainer);
-                abacusDiv.style.display = 'block';
-
-                // Show answer area (button only, hide input)
-                const input = answerArea.querySelector('.answer-input');
-                input.style.display = 'none';
-                answerArea.style.display = 'flex';
-            }
+            showSingleStudentExercise(studentId);
         });
     }
 
@@ -3632,7 +4108,7 @@
         const feedbackTitle = document.getElementById('feedbackTitle');
         feedbackTitle.className = 'feedback-modal-title';
         feedbackTitle.classList.add(isCorrect ? 'correct' : 'incorrect');
-        feedbackTitle.textContent = isCorrect ? 'Răspuns corect' : 'Răspuns greșit';
+        feedbackTitle.textContent = isCorrect ? 'Correct answer' : 'Incorrect answer';
         feedbackModal.classList.add('active');
 
         // Hide exercise area
@@ -3644,6 +4120,12 @@
         const input = panel.querySelector('.answer-input');
         if (input) {
             input.value = '';
+        }
+
+        // Show Start button again for next round
+        const startBtn = panel.querySelector('.student-start-btn');
+        if (startBtn) {
+            startBtn.style.display = 'block';
         }
     }
 
