@@ -73,14 +73,60 @@ function initMessages() {
  * Initialize mobile menu toggle
  */
 function initMobileMenu() {
-    const menuToggle = document.querySelector('.menu-toggle');
-    const sidebar = document.querySelector('.sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
 
-    if (!menuToggle || !sidebar) return;
+    if (!sidebarToggle || !sidebar || !overlay) return;
 
-    menuToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
+    // Toggle sidebar on button click
+    sidebarToggle.addEventListener('click', () => {
+        toggleSidebar();
     });
+
+    // Close sidebar when clicking overlay
+    overlay.addEventListener('click', () => {
+        closeSidebar();
+    });
+
+    // Close sidebar when clicking on nav items (mobile only)
+    const navItems = sidebar.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            // Only close on mobile
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+        });
+    });
+
+    // Close sidebar on window resize if open and screen becomes large
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+            closeSidebar();
+        }
+    });
+
+    // Helper functions
+    function toggleSidebar() {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+        sidebarToggle.classList.toggle('active');
+
+        // Prevent body scroll when sidebar is open
+        if (sidebar.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        sidebarToggle.classList.remove('active');
+        document.body.style.overflow = '';
+    }
 }
 
 /**

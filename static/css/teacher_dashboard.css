@@ -106,6 +106,84 @@ body.teacher-platform {
     background: rgba(255, 255, 255, 0.3);
 }
 
+/* Hamburger Menu Button */
+.sidebar-toggle {
+    display: none; /* Hidden by default on desktop */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-right: 1rem;
+    width: 40px;
+    height: 40px;
+    position: relative;
+    z-index: 1001;
+}
+
+.hamburger-icon,
+.hamburger-icon::before,
+.hamburger-icon::after {
+    display: block;
+    background: white;
+    height: 3px;
+    width: 28px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.hamburger-icon {
+    position: relative;
+}
+
+.hamburger-icon::before,
+.hamburger-icon::after {
+    content: '';
+    position: absolute;
+    left: 0;
+}
+
+.hamburger-icon::before {
+    top: -8px;
+}
+
+.hamburger-icon::after {
+    top: 8px;
+}
+
+/* Hamburger animation when active */
+.sidebar-toggle.active .hamburger-icon {
+    background: transparent;
+}
+
+.sidebar-toggle.active .hamburger-icon::before {
+    top: 0;
+    transform: rotate(45deg);
+}
+
+.sidebar-toggle.active .hamburger-icon::after {
+    top: 0;
+    transform: rotate(-45deg);
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
 /* Layout */
 .teacher-layout {
     display: flex;
@@ -1369,45 +1447,76 @@ body.teacher-platform {
 
 /* Responsive */
 @media (max-width: 1024px) {
-    .teacher-layout {
-        flex-direction: column;
-    }
-
-    .sidebar {
-        width: 100%;
-        padding: 1rem 0;
-    }
-
-    .sidebar-nav {
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 0 1rem;
-    }
-
-    .nav-item {
-        padding: 0.75rem 1rem;
-        white-space: nowrap;
-    }
-
-    .nav-text {
-        display: none;
-    }
-
-    .main-content {
-        padding: 1.5rem;
-    }
-
     .dashboard-grid,
     .dashboard-grid-secondary {
         grid-template-columns: 1fr;
     }
 
-    .topbar-center .page-title {
-        font-size: 1.125rem;
+    .main-content {
+        padding: 1.5rem;
     }
 }
 
 @media (max-width: 768px) {
+    /* Show hamburger button on mobile */
+    .sidebar-toggle {
+        display: block;
+    }
+
+    /* Make sidebar fixed and hidden by default */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px; /* Hidden off-screen */
+        width: 280px;
+        height: 100vh;
+        padding: 2rem 0;
+        background: var(--sidebar-bg);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        z-index: 999;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+    }
+
+    /* Show sidebar when active */
+    .sidebar.active {
+        left: 0;
+    }
+
+    /* Sidebar navigation back to vertical on mobile */
+    .sidebar-nav {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0;
+    }
+
+    /* Show text in nav items on mobile */
+    .nav-item {
+        padding: 1rem 1.5rem;
+        white-space: normal;
+    }
+
+    .nav-text {
+        display: inline;
+    }
+
+    /* Adjust main content for mobile */
+    .main-content {
+        padding: 1rem;
+        width: 100%;
+    }
+
+    /* Hide logo text on very small screens */
+    .logo-text {
+        display: none;
+    }
+
+    /* Adjust topbar for mobile */
+    .topbar-center .page-title {
+        font-size: 1rem;
+    }
+
+    /* Other mobile adjustments */
     .stats-grid {
         grid-template-columns: 1fr;
     }
@@ -1426,6 +1535,10 @@ body.teacher-platform {
         flex-direction: column;
         gap: 0.5rem;
         align-items: flex-end;
+    }
+
+    .user-info {
+        display: none; /* Hide on very small screens */
     }
 
     .filters-bar {
