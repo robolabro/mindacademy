@@ -2410,21 +2410,49 @@
 
     // Mode selection
     function selectMode(mode) {
-        document.getElementById('modeSelection').style.display = 'none';
+        console.log('selectMode called with mode:', mode);
+
+        const modeSelection = document.getElementById('modeSelection');
+        console.log('modeSelection element:', modeSelection);
+
+        if (!modeSelection) {
+            console.error('modeSelection element not found!');
+            return;
+        }
+
+        modeSelection.style.display = 'none';
 
         if (mode === 'training') {
-            document.getElementById('trainingMode').classList.add('active');
-            currentMode = 'training';
+            const trainingMode = document.getElementById('trainingMode');
+            console.log('trainingMode element:', trainingMode);
+            if (trainingMode) {
+                trainingMode.classList.add('active');
+                currentMode = 'training';
+            }
         } else if (mode === 'flash') {
-            document.getElementById('flashMode').classList.add('active');
-            currentMode = 'flash';
+            const flashMode = document.getElementById('flashMode');
+            console.log('flashMode element:', flashMode);
+            if (flashMode) {
+                flashMode.classList.add('active');
+                currentMode = 'flash';
+            }
         } else if (mode === 'exercises') {
-            document.getElementById('exercisesMode').classList.add('active');
-            currentMode = 'exercises';
+            const exercisesMode = document.getElementById('exercisesMode');
+            console.log('exercisesMode element:', exercisesMode);
+            if (exercisesMode) {
+                exercisesMode.classList.add('active');
+                currentMode = 'exercises';
+            }
         } else if (mode === 'classwork') {
-            document.getElementById('classworkMode').classList.add('active');
-            currentMode = 'classwork';
+            const classworkMode = document.getElementById('classworkMode');
+            console.log('classworkMode element:', classworkMode);
+            if (classworkMode) {
+                classworkMode.classList.add('active');
+                currentMode = 'classwork';
+            }
         }
+
+        console.log('selectMode finished, currentMode:', currentMode);
     }
 
     function backToModes() {
@@ -4309,9 +4337,43 @@
         alert('Funcționalitatea de eliminare a elevilor va fi implementată');
     }
 
+    // Explicitly expose functions to global scope for onclick handlers
+    window.selectMode = selectMode;
+    window.backToModes = backToModes;
+    window.startTraining = startTraining;
+    window.startFlash = startFlash;
+    window.startExercises = startExercises;
+    window.adjustNumber = adjustNumber;
+    window.adjustSpeed = adjustSpeed;
+    window.adjustStudentCount = adjustStudentCount;
+    window.openClassworkSettings = openClassworkSettings;
+    window.closeClassworkSettings = closeClassworkSettings;
+    window.startAllStudents = startAllStudents;
+    window.showResults = showResults;
+    window.toggleFullscreen = toggleFullscreen;
+    window.openStudentSettings = openStudentSettings;
+    window.closeStudentSettings = closeStudentSettings;
+    window.closeFeedbackModal = closeFeedbackModal;
+    window.closeFlashSummary = closeFlashSummary;
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Flashcard Simulator Initialized');
+        console.log('selectMode function exists:', typeof selectMode);
+        console.log('selectMode is in window:', typeof window.selectMode);
+
+        // Test if onclick handlers work
+        const modeCards = document.querySelectorAll('.mode-card');
+        console.log('Found mode cards:', modeCards.length);
+
+        // Verify that mode-card elements have onclick attributes
+        modeCards.forEach((card, index) => {
+            console.log(`Card ${index}:`, {
+                mode: card.getAttribute('data-mode'),
+                hasOnclick: card.hasAttribute('onclick'),
+                onclick: card.getAttribute('onclick')
+            });
+        });
     });
 </script>
 {% endblock %}
