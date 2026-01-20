@@ -1494,10 +1494,25 @@ function generateMixNumber(digits) {
     }
 }
 
+// Helper: Get complexity limit for direct calculation levels
+function getComplexityLimit(complexity) {
+    switch(complexity) {
+        case 'direct-to-4':
+            return 4;
+        case 'direct-to-5':
+            return 5;
+        case 'direct-to-9':
+            return 9;
+        default:
+            return null; // No limit for other complexity levels
+    }
+}
+
 function generateExerciseTerms(settings) {
     const { terms, operation, negative, complexity } = settings;
     const termsArray = [];
     const operations = [];
+    const maxLimit = getComplexityLimit(complexity);
 
     // Generate first term (always positive)
     termsArray.push(generateNumber(settings, true));
@@ -1512,11 +1527,45 @@ function generateExerciseTerms(settings) {
         }
         operations.push(op);
 
-        let term = generateNumber(settings, false);
+        let term;
 
-        // Handle negative numbers
-        if (negative === 'yes' && Math.random() > 0.7) {
-            term = -term;
+        // For direct calculation levels, ensure result stays within limits
+        if (maxLimit !== null) {
+            const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+
+            if (op === '+') {
+                // For addition: number must not exceed (maxLimit - currentResult)
+                const maxAddition = maxLimit - currentResult;
+                if (maxAddition > 0) {
+                    term = Math.floor(Math.random() * (maxAddition + 1)); // 0 to maxAddition
+                } else {
+                    // If we can't add, switch to subtraction
+                    op = '-';
+                    operations[operations.length - 1] = op;
+                    const maxSubtraction = currentResult;
+                    term = maxSubtraction > 0 ? Math.floor(Math.random() * maxSubtraction) + 1 : 1;
+                }
+            } else {
+                // For subtraction: number must not make result < 0
+                const maxSubtraction = currentResult;
+                if (maxSubtraction > 0) {
+                    term = Math.floor(Math.random() * maxSubtraction) + 1; // 1 to currentResult
+                } else {
+                    // If we can't subtract, switch to addition
+                    op = '+';
+                    operations[operations.length - 1] = op;
+                    const maxAddition = maxLimit - currentResult;
+                    term = Math.floor(Math.random() * (maxAddition + 1)); // 0 to maxAddition
+                }
+            }
+        } else {
+            // For other complexity levels, use standard generation
+            term = generateNumber(settings, false);
+
+            // Handle negative numbers
+            if (negative === 'yes' && Math.random() > 0.7) {
+                term = -term;
+            }
         }
 
         termsArray.push(term);
