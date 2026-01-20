@@ -1249,6 +1249,20 @@ function backToModes() {
         area.style.display = 'none';
     });
 
+    // Reset main settings panels and start buttons for each mode
+    const mainSettingsPanels = ['trainingSettings', 'seriesSettings'];
+    mainSettingsPanels.forEach(id => {
+        const panel = document.getElementById(id);
+        if (panel) {
+            panel.style.display = 'block';
+        }
+    });
+
+    const startButtons = document.querySelectorAll('.start-btn');
+    startButtons.forEach(btn => {
+        btn.style.display = 'block';
+    });
+
     // Hide reports
     document.getElementById('seriesReport').style.display = 'none';
     document.getElementById('classroomReport').style.display = 'none';
