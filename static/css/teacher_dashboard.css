@@ -99,6 +99,10 @@ body.teacher-platform {
     padding: 0.5rem 1rem;
     border-radius: 6px;
     text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
     transition: background 0.3s;
 }
 

@@ -1260,22 +1260,22 @@
         <h1 class="mode-title">Alege Modul de Lucru</h1>
         <button class="back-btn" onclick="window.history.back()" style="margin-bottom: 2rem;">← Înapoi</button>
         <div class="mode-grid">
-            <div class="mode-card" onclick="selectMode('training')">
+            <div class="mode-card" data-mode="training" onclick="selectMode('training')">
                 <div class="mode-card-icon">📚</div>
                 <div class="mode-card-title">Mod Antrenament</div>
                 <div class="mode-card-desc">Învață să recunoști numerele pe soroban</div>
             </div>
-            <div class="mode-card" onclick="selectMode('flash')">
+            <div class="mode-card" data-mode="flash" onclick="selectMode('flash')">
                 <div class="mode-card-icon">⚡</div>
                 <div class="mode-card-title">Mod Flash</div>
                 <div class="mode-card-desc">Exercițiu de viteză pentru recunoaștere rapidă</div>
             </div>
-            <div class="mode-card" onclick="selectMode('exercises')">
+            <div class="mode-card" data-mode="exercises" onclick="selectMode('exercises')">
                 <div class="mode-card-icon">🧮</div>
                 <div class="mode-card-title">Exerciții</div>
                 <div class="mode-card-desc">Rezolvă probleme de matematică cu soroban</div>
             </div>
-            <div class="mode-card" onclick="selectMode('classwork')">
+            <div class="mode-card" data-mode="classwork" onclick="selectMode('classwork')">
                 <div class="mode-card-icon">👥</div>
                 <div class="mode-card-title">Lucru în Clasă</div>
                 <div class="mode-card-desc">Practică împreună cu 4 elevi simultan</div>
@@ -4312,6 +4312,17 @@
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Flashcard Simulator Initialized');
+
+        // Attach event listeners to mode cards
+        const modeCards = document.querySelectorAll('.mode-card');
+        modeCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const mode = this.getAttribute('data-mode');
+                if (mode) {
+                    selectMode(mode);
+                }
+            });
+        });
     });
 </script>
 {% endblock %}
