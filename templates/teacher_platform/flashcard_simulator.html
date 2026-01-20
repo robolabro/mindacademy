@@ -3737,20 +3737,33 @@
         // Generate exercise based on level
         let numbers = [];
         let operators = [];
-        const exerciseData = generateExerciseForLevel(level, formula, section, addends);
-        numbers = exerciseData.numbers;
-        operators = exerciseData.operators || [];
+        let correctAnswer = 0;
 
-        // Calculate correct answer using individual operators
-        let correctAnswer = numbers[0];
-        for (let i = 1; i < numbers.length; i++) {
-            const operator = operators[i - 1] || (formula === 'addition' ? '+' : '-');
-            if (operator === '+') {
-                correctAnswer += numbers[i];
-            } else {
-                correctAnswer -= numbers[i];
+        // Regenerate exercise until we get a valid result (>0 and <100)
+        let attempts = 0;
+        const maxAttempts = 100;
+        do {
+            const exerciseData = generateExerciseForLevel(level, formula, section, addends);
+            numbers = exerciseData.numbers;
+            operators = exerciseData.operators || [];
+
+            // Calculate correct answer using individual operators
+            correctAnswer = numbers[0];
+            for (let i = 1; i < numbers.length; i++) {
+                const operator = operators[i - 1] || (formula === 'addition' ? '+' : '-');
+                if (operator === '+') {
+                    correctAnswer += numbers[i];
+                } else {
+                    correctAnswer -= numbers[i];
+                }
             }
-        }
+
+            attempts++;
+            if (attempts >= maxAttempts) {
+                console.warn('Could not generate valid exercise after', maxAttempts, 'attempts');
+                break;
+            }
+        } while (correctAnswer <= 0 || correctAnswer >= 100);
 
         // Display problem
         const problemDiv = document.createElement('div');
