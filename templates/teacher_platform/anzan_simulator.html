@@ -1194,7 +1194,8 @@ let exerciseData = {
         dictation: 'no',
         answerMode: 'input',
         current: 1,
-        terms: [],
+        generatedTerms: [],
+        generatedOperations: [],
         correctAnswer: 0
     },
     series: {
@@ -1564,8 +1565,8 @@ function runTrainingExercise() {
     const { terms, operations } = generateExerciseTerms(settings);
     const correctAnswer = calculateResult(terms, operations);
 
-    exerciseData.training.terms = terms;
-    exerciseData.training.operations = operations;
+    exerciseData.training.generatedTerms = terms;
+    exerciseData.training.generatedOperations = operations;
     exerciseData.training.correctAnswer = correctAnswer;
 
     const content = document.getElementById('trainingContent');
@@ -1630,7 +1631,7 @@ function runTrainingExercise() {
 function checkTrainingAnswer() {
     const userAnswer = parseFloat(document.getElementById('trainingAnswer').value);
     const correct = Math.abs(userAnswer - exerciseData.training.correctAnswer) < 0.01;
-    const { terms, operations } = exerciseData.training;
+    const { generatedTerms: terms, generatedOperations: operations } = exerciseData.training;
 
     // Format the calculation for display
     let calculationStr = terms[0].toString();
@@ -1654,7 +1655,7 @@ function checkTrainingAnswer() {
 }
 
 function showTrainingAnswer() {
-    const { terms, operations, correctAnswer } = exerciseData.training;
+    const { generatedTerms: terms, generatedOperations: operations, correctAnswer } = exerciseData.training;
 
     // Format the calculation for display
     let calculationStr = terms[0].toString();
