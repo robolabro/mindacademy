@@ -1352,16 +1352,16 @@ function generateNumber(settings, isFirstTerm = false) {
     // Generate base number based on complexity
     switch(complexity) {
         case 'direct-to-4':
-            // For first term, can be 0-4; for other terms, use 1-4 to keep it simple
-            num = isFirstTerm ? Math.floor(Math.random() * 5) : Math.floor(Math.random() * 4) + 1; // 0-4 or 1-4
+            // Direct calculation with 4: use only 1-4 (no 0, beads available on soroban)
+            num = Math.floor(Math.random() * 4) + 1; // 1-4
             break;
         case 'direct-to-5':
-            // For first term, can be 0-5; for other terms, use 1-5
-            num = isFirstTerm ? Math.floor(Math.random() * 6) : Math.floor(Math.random() * 5) + 1; // 0-5 or 1-5
+            // Direct calculation with 5: use only 1-5 (can use heaven bead, no 0)
+            num = Math.floor(Math.random() * 5) + 1; // 1-5
             break;
         case 'direct-to-9':
-            // For first term, can be 0-9; for other terms, use 1-9
-            num = isFirstTerm ? Math.floor(Math.random() * 10) : Math.floor(Math.random() * 9) + 1; // 0-9 or 1-9
+            // Direct calculation with 9: use only 1-9 (all beads available, no 0)
+            num = Math.floor(Math.random() * 9) + 1; // 1-9
             break;
         case 'direct-counting':
             const max = parseInt('9'.repeat(digits));
@@ -1524,52 +1524,61 @@ function getComplexityLimit(complexity) {
 
 function generateExerciseTerms(settings) {
     const { terms, operation, negative, complexity } = settings;
-    const termsArray = [];
-    const operations = [];
     const maxLimit = getComplexityLimit(complexity);
 
-    // Generate first term (always positive)
-    termsArray.push(generateNumber(settings, true));
+    // For direct calculation levels, regenerate if result is 0 or invalid
+    let maxAttempts = 10;
+    let attempt = 0;
+    let result;
+    let termsArray = [];
+    let operations = [];
 
-    // Generate remaining terms
-    for (let i = 1; i < terms; i++) {
-        let op;
-        if (operation === 'mixed') {
-            op = Math.random() > 0.5 ? '+' : '-';
-        } else {
-            op = operation === 'addition' ? '+' : '-';
-        }
-        operations.push(op);
+    do {
+        termsArray = [];
+        operations = [];
 
-        let term;
+        // Generate first term (always positive)
+        termsArray.push(generateNumber(settings, true));
 
-        // For direct calculation levels, ensure result stays within limits
+        // Generate remaining terms
+        for (let i = 1; i < terms; i++) {
+            let op;
+            if (operation === 'mixed') {
+                op = Math.random() > 0.5 ? '+' : '-';
+            } else {
+                op = operation === 'addition' ? '+' : '-';
+            }
+            operations.push(op);
+
+            let term;
+
+        // For direct calculation levels, ensure result stays within limits and exclude 0
         if (maxLimit !== null) {
             const currentResult = calculateResult(termsArray, operations.slice(0, -1));
 
             if (op === '+') {
-                // For addition: number must not exceed (maxLimit - currentResult)
+                // For addition: number must not exceed (maxLimit - currentResult) and must not be 0
                 const maxAddition = maxLimit - currentResult;
-                if (maxAddition > 0) {
-                    term = Math.floor(Math.random() * (maxAddition + 1)); // 0 to maxAddition
+                if (maxAddition >= 1) {
+                    term = Math.floor(Math.random() * maxAddition) + 1; // 1 to maxAddition (no 0)
                 } else {
                     // If we can't add, switch to subtraction
                     op = '-';
                     operations[operations.length - 1] = op;
-                    const maxSubtraction = currentResult;
+                    const maxSubtraction = currentResult - 1; // Ensure result is not 0
                     term = maxSubtraction > 0 ? Math.floor(Math.random() * maxSubtraction) + 1 : 1;
                 }
             } else {
-                // For subtraction: number must not make result < 0
-                const maxSubtraction = currentResult;
-                if (maxSubtraction > 0) {
-                    term = Math.floor(Math.random() * maxSubtraction) + 1; // 1 to currentResult
+                // For subtraction: number must not make result <= 0 (result must be at least 1)
+                const maxSubtraction = currentResult - 1; // Ensure result stays >= 1
+                if (maxSubtraction >= 1) {
+                    term = Math.floor(Math.random() * maxSubtraction) + 1; // 1 to (currentResult - 1)
                 } else {
                     // If we can't subtract, switch to addition
                     op = '+';
                     operations[operations.length - 1] = op;
                     const maxAddition = maxLimit - currentResult;
-                    term = Math.floor(Math.random() * (maxAddition + 1)); // 0 to maxAddition
+                    term = maxAddition >= 1 ? Math.floor(Math.random() * maxAddition) + 1 : 1; // 1 to maxAddition (no 0)
                 }
             }
         } else {
@@ -1582,9 +1591,30 @@ function generateExerciseTerms(settings) {
             }
         }
 
-        termsArray.push(term);
-    }
+            termsArray.push(term);
+        }
 
+        // Calculate final result
+        result = calculateResult(termsArray, operations);
+
+        // For direct calculation levels, ensure result is valid (not 0)
+        if (maxLimit !== null) {
+            if (result <= 0 || result > maxLimit) {
+                attempt++;
+                if (attempt >= maxAttempts) {
+                    // If max attempts reached, return what we have
+                    break;
+                }
+                continue; // Regenerate
+            }
+        }
+
+        // Valid result found
+        return { terms: termsArray, operations: operations };
+
+    } while (maxLimit !== null && attempt < maxAttempts);
+
+    // Fallback: return last generated result even if not perfect
     return { terms: termsArray, operations: operations };
 }
 
