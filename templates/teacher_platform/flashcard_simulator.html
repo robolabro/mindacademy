@@ -4312,17 +4312,6 @@
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Flashcard Simulator Initialized');
-
-        // Attach event listeners to mode cards
-        const modeCards = document.querySelectorAll('.mode-card');
-        modeCards.forEach(card => {
-            card.addEventListener('click', function() {
-                const mode = this.getAttribute('data-mode');
-                if (mode) {
-                    selectMode(mode);
-                }
-            });
-        });
     });
 </script>
 {% endblock %}
