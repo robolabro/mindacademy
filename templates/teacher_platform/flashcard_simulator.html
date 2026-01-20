@@ -1467,48 +1467,11 @@
                 <span class="setting-label">Nivel:</span>
                 <div class="setting-controls">
                     <select id="levelSelect" class="level-select" onchange="updateLevel()">
-                        <optgroup label="Numărare directă">
-                            <option value="direct-to-4">Numărare directă până la 4</option>
-                            <option value="direct-to-5">Numărare directă până la 5</option>
-                            <option value="direct-to-9">Numărare directă până la 9</option>
-                            <option value="direct-counting" selected>Numărare directă</option>
-                        </optgroup>
-                        <optgroup label="Prieteni mici (Small Friends)">
-                            <option value="small-plus-1">+1 = +5 - 4</option>
-                            <option value="small-plus-2">+2 = +5 - 3</option>
-                            <option value="small-plus-3">+3 = +5 - 2</option>
-                            <option value="small-plus-4">+4 = +5 - 1</option>
-                            <option value="small-minus-1">-1 = +4 - 5</option>
-                            <option value="small-minus-2">-2 = +3 - 5</option>
-                            <option value="small-minus-3">-3 = +2 - 5</option>
-                            <option value="small-minus-4">-4 = +1 - 5</option>
-                            <option value="small-friends-all">Prieteni mici (toate)</option>
-                        </optgroup>
-                        <optgroup label="Prieteni mari (Big Friends)">
-                            <option value="big-plus-1">+1 = +10 - 9</option>
-                            <option value="big-plus-2">+2 = +10 - 8</option>
-                            <option value="big-plus-3">+3 = +10 - 7</option>
-                            <option value="big-plus-4">+4 = +10 - 6</option>
-                            <option value="big-plus-5">+5 = +10 - 5</option>
-                            <option value="big-plus-6">+6 = +10 - 4</option>
-                            <option value="big-plus-7">+7 = +10 - 3</option>
-                            <option value="big-plus-8">+8 = +10 - 2</option>
-                            <option value="big-plus-9">+9 = +10 - 1</option>
-                            <option value="big-minus-1">-1 = -10 + 9</option>
-                            <option value="big-minus-2">-2 = -10 + 8</option>
-                            <option value="big-minus-3">-3 = -10 + 7</option>
-                            <option value="big-minus-4">-4 = -10 + 6</option>
-                            <option value="big-minus-5">-5 = -10 + 5</option>
-                            <option value="big-minus-6">-6 = -10 + 4</option>
-                            <option value="big-minus-7">-7 = -10 + 3</option>
-                            <option value="big-minus-8">-8 = -10 + 2</option>
-                            <option value="big-minus-9">-9 = -10 + 1</option>
-                            <option value="big-friends-all">Prieteni mari (toate)</option>
-                        </optgroup>
-                        <optgroup label="Combinații">
-                            <option value="family">Familia (Small + Big Friends)</option>
-                            <option value="mix">Mix (toate variantele)</option>
-                        </optgroup>
+                        <option value="direct-counting" selected>Calcul direct</option>
+                        <option value="small-friends-all">Prietenii Mici</option>
+                        <option value="big-friends-all">Prietenii Mari</option>
+                        <option value="family">Familia</option>
+                        <option value="mix">Mixt</option>
                     </select>
                 </div>
             </div>
@@ -2989,7 +2952,8 @@
         const rand = Math.random();
         if (rand < 0.5) {
             // 50% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
+            const result = generateDirectTo(9, addends, formula);
+            return result.numbers;
         } else {
             // 50% - Generate specific small friend exercise
             return generateSmallFriendsExercise(target, addends, formula);
@@ -3002,7 +2966,8 @@
         const rand = Math.random();
         if (rand < 0.33) {
             // 33% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
+            const result = generateDirectTo(9, addends, formula);
+            return result.numbers;
         } else if (rand < 0.66) {
             // 33% - Generate small friends
             const smallFormulas = formula === 'addition'
@@ -3074,7 +3039,8 @@
         const rand = Math.random();
         if (rand < 0.5) {
             // 50% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
+            const result = generateDirectTo(9, addends, formula);
+            return result.numbers;
         } else {
             // 50% - Generate small friends
             const smallFormulas = formula === 'addition'
@@ -3145,7 +3111,8 @@
         const rand = Math.random();
         if (rand < 0.33) {
             // 33% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
+            const result = generateDirectTo(9, addends, formula);
+            return result.numbers;
         } else if (rand < 0.66) {
             // 33% - Generate small friends
             const smallFormulas = formula === 'addition'
@@ -3173,7 +3140,8 @@
         const rand = Math.random();
         if (rand < 0.25) {
             // 25% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
+            const result = generateDirectTo(9, addends, formula);
+            return result.numbers;
         } else if (rand < 0.5) {
             // 25% - Generate small friends
             const smallFormulas = formula === 'addition'
@@ -3213,7 +3181,8 @@
 
         if (rand < 0.2) {
             // 20% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
+            const result = generateDirectTo(9, addends, formula);
+            return result.numbers;
         } else if (rand < 0.4) {
             // 20% - Generate small friends
             const smallFormulas = formula === 'addition'
