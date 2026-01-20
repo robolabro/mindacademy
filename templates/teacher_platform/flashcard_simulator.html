@@ -5,6 +5,16 @@
 
 {% block extra_css %}
 <style>
+    /* Hide platform sidebar for flashcard page */
+    .sidebar {
+        display: none !important;
+    }
+
+    /* Make main content take full width without sidebar */
+    .teacher-layout {
+        display: block !important;
+    }
+
     /* Hide platform sidebar and header in fullscreen */
     :fullscreen ~ * .sidebar,
     :-webkit-full-screen ~ * .sidebar,
