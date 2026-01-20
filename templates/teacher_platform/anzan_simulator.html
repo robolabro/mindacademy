@@ -1522,12 +1522,93 @@ function getComplexityLimit(complexity) {
     }
 }
 
+/**
+ * Checks if an operation can be performed directly on the soroban without using formulas
+ * For "direct calculation", we need to ensure operations don't require Small Friends or Big Friends formulas
+ *
+ * Soroban mechanics for direct operations:
+ * - Values 1-4: use lower beads only
+ * - Value 5: uses heaven bead only
+ * - From 1-4: can add Y directly only if result <= 4 (stays in lower beads)
+ * - From 1-4: can subtract Y directly if Y <= current value
+ * - From 5: cannot subtract 1-4 directly (needs Small Friends formulas)
+ * - From 5: cannot add 1-4 directly (would need Big Friends formulas for 6-9)
+ */
+function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOperation) {
+    const result = operation === '+' ? currentValue + operand : currentValue - operand;
+
+    // Check bounds
+    if (result < 1 || result > maxLimit) return false;
+
+    // For direct calculation with limits (direct-to-4, direct-to-5, direct-to-9)
+    if (maxLimit !== null) {
+        if (operation === '+') {
+            // From 1-4: can only add if result stays <= 4 (direct within lower beads)
+            // If result would be 5+, it requires Small Friends formula (not direct)
+            if (currentValue <= 4) {
+                if (maxLimit === 4) {
+                    // For direct-to-4: result must stay <= 4
+                    return result <= 4;
+                } else if (maxLimit === 5) {
+                    // For direct-to-5: result can be 5 ONLY if it's the last operation
+                    // Otherwise must stay <= 4 (to avoid getting stuck at 5)
+                    if (result === 5) {
+                        return isLastOperation; // Allow 5 only as final result
+                    }
+                    return result <= 4;
+                } else if (maxLimit === 9) {
+                    // For direct-to-9: can add directly if result <= 9
+                    // But need to check if we're crossing the 5 boundary
+                    if (currentValue <= 4 && result > 4 && result < 9) {
+                        // Crossing from lower beads to heaven+lower requires formula
+                        return result === 5 && isLastOperation;
+                    }
+                    return result <= 9;
+                }
+            } else if (currentValue === 5) {
+                // From 5: cannot add 1-4 directly (would need Big Friends for 6-9)
+                return false;
+            } else if (currentValue >= 6) {
+                // From 6-9: can add if we stay <= maxLimit and have beads available
+                if (maxLimit === 9) {
+                    const lowerBeadsUsed = currentValue - 5;
+                    const lowerBeadsAvailable = 4 - lowerBeadsUsed;
+                    return operand <= lowerBeadsAvailable && result <= 9;
+                }
+            }
+        } else {
+            // Subtraction
+            if (currentValue <= 4) {
+                // From 1-4: can subtract directly if we have enough lower beads
+                return operand <= currentValue;
+            } else if (currentValue === 5) {
+                // From 5 (heaven bead only): CANNOT subtract 1-4 directly
+                // Would need Small Friends formulas: -1=-5+4, -2=-5+3, -3=-5+2, -4=-5+1
+                return false;
+            } else if (currentValue >= 6 && maxLimit === 9) {
+                // From 6-9: can subtract from lower beads if available
+                const lowerBeadsUsed = currentValue - 5;
+                if (operand <= lowerBeadsUsed) {
+                    // Can subtract from lower beads directly
+                    return true;
+                } else if (operand === currentValue - 4) {
+                    // Subtracting down to 4 or less (removing heaven bead)
+                    return result <= 4;
+                }
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 function generateExerciseTerms(settings) {
     const { terms, operation, negative, complexity } = settings;
     const maxLimit = getComplexityLimit(complexity);
 
     // For direct calculation levels, regenerate if result is 0 or invalid
-    let maxAttempts = 10;
+    let maxAttempts = 50; // Increased attempts for better results
     let attempt = 0;
     let result;
     let termsArray = [];
@@ -1551,47 +1632,105 @@ function generateExerciseTerms(settings) {
             operations.push(op);
 
             let term;
+            let validTermFound = false;
+            let termAttempts = 0;
 
-        // For direct calculation levels, ensure result stays within limits and exclude 0
-        if (maxLimit !== null) {
-            const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+            // For direct calculation levels, ensure operations can be performed directly
+            if (maxLimit !== null) {
+                const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+                const isLastOperation = (i === terms - 1);
 
-            if (op === '+') {
-                // For addition: number must not exceed (maxLimit - currentResult) and must not be 0
-                const maxAddition = maxLimit - currentResult;
-                if (maxAddition >= 1) {
-                    term = Math.floor(Math.random() * maxAddition) + 1; // 1 to maxAddition (no 0)
-                } else {
-                    // If we can't add, switch to subtraction
-                    op = '-';
-                    operations[operations.length - 1] = op;
-                    const maxSubtraction = currentResult - 1; // Ensure result is not 0
-                    term = maxSubtraction > 0 ? Math.floor(Math.random() * maxSubtraction) + 1 : 1;
+                // Try to find a valid term that can be performed directly
+                while (!validTermFound && termAttempts < 20) {
+                    if (op === '+') {
+                        // For addition: determine max we can add directly
+                        let maxDirectAddition;
+                        if (currentResult <= 4) {
+                            if (maxLimit === 4) {
+                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult);
+                            } else if (maxLimit === 5) {
+                                // Can add up to 4-currentResult to stay in lower beads
+                                // Or can reach 5 if it's the last operation
+                                maxDirectAddition = isLastOperation ?
+                                    Math.min(5 - currentResult, maxLimit - currentResult) :
+                                    Math.min(4 - currentResult, maxLimit - currentResult);
+                            } else {
+                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult);
+                            }
+                        } else {
+                            // From 5+, cannot add directly in our range
+                            maxDirectAddition = 0;
+                        }
+
+                        if (maxDirectAddition >= 1) {
+                            term = Math.floor(Math.random() * maxDirectAddition) + 1;
+                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation)) {
+                                validTermFound = true;
+                            }
+                        } else {
+                            // Switch to subtraction
+                            op = '-';
+                            operations[operations.length - 1] = op;
+                        }
+                    }
+
+                    if (op === '-' && !validTermFound) {
+                        // For subtraction: can only subtract what we have
+                        let maxDirectSubtraction;
+                        if (currentResult <= 4) {
+                            // Can subtract up to currentResult (have that many lower beads)
+                            maxDirectSubtraction = currentResult - 1; // Keep result >= 1
+                        } else if (currentResult === 5) {
+                            // From 5, cannot subtract 1-4 directly
+                            maxDirectSubtraction = 0;
+                        } else if (currentResult >= 6 && currentResult <= 9) {
+                            // Can subtract from lower beads
+                            maxDirectSubtraction = Math.min(currentResult - 5, currentResult - 1);
+                        } else {
+                            maxDirectSubtraction = 0;
+                        }
+
+                        if (maxDirectSubtraction >= 1) {
+                            term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
+                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation)) {
+                                validTermFound = true;
+                            }
+                        } else {
+                            // Switch to addition
+                            op = '+';
+                            operations[operations.length - 1] = op;
+                        }
+                    }
+
+                    termAttempts++;
+                }
+
+                // If no valid term found after attempts, regenerate entire exercise
+                if (!validTermFound) {
+                    break; // Break inner loop to regenerate
                 }
             } else {
-                // For subtraction: number must not make result <= 0 (result must be at least 1)
-                const maxSubtraction = currentResult - 1; // Ensure result stays >= 1
-                if (maxSubtraction >= 1) {
-                    term = Math.floor(Math.random() * maxSubtraction) + 1; // 1 to (currentResult - 1)
-                } else {
-                    // If we can't subtract, switch to addition
-                    op = '+';
-                    operations[operations.length - 1] = op;
-                    const maxAddition = maxLimit - currentResult;
-                    term = maxAddition >= 1 ? Math.floor(Math.random() * maxAddition) + 1 : 1; // 1 to maxAddition (no 0)
-                }
-            }
-        } else {
-            // For other complexity levels, use standard generation
-            term = generateNumber(settings, false);
+                // For other complexity levels, use standard generation
+                term = generateNumber(settings, false);
 
-            // Handle negative numbers
-            if (negative === 'yes' && Math.random() > 0.7) {
-                term = -term;
+                // Handle negative numbers
+                if (negative === 'yes' && Math.random() > 0.7) {
+                    term = -term;
+                }
+                validTermFound = true;
             }
-        }
+
+            if (!validTermFound) {
+                break; // Regenerate entire exercise
+            }
 
             termsArray.push(term);
+        }
+
+        // If we didn't generate all terms, try again
+        if (termsArray.length < terms) {
+            attempt++;
+            continue;
         }
 
         // Calculate final result
