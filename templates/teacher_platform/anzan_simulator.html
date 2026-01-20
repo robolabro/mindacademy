@@ -721,7 +721,7 @@
             <div class="settings-row">
                 <span class="setting-label">Complexitate:</span>
                 <div class="setting-controls">
-                    <select id="trainingComplexity" class="level-select" onchange="updateTrainingComplexity()">
+                    <select id="trainingComplexity" class="level-select">
                         <optgroup label="Calcul Direct">
                             <option value="direct-to-4">Calcul direct cu 4</option>
                             <option value="direct-to-5">Calcul direct cu 5</option>
@@ -1329,7 +1329,7 @@ document.addEventListener('click', function(e) {
 });
 
 // Number Generation Logic
-function generateNumber(settings) {
+function generateNumber(settings, isFirstTerm = false) {
     const { digits, fractions, complexity } = settings;
 
     let num;
@@ -1337,13 +1337,16 @@ function generateNumber(settings) {
     // Generate base number based on complexity
     switch(complexity) {
         case 'direct-to-4':
-            num = Math.floor(Math.random() * 5); // 0-4
+            // For first term, can be 0-4; for other terms, use 1-4 to keep it simple
+            num = isFirstTerm ? Math.floor(Math.random() * 5) : Math.floor(Math.random() * 4) + 1; // 0-4 or 1-4
             break;
         case 'direct-to-5':
-            num = Math.floor(Math.random() * 6); // 0-5
+            // For first term, can be 0-5; for other terms, use 1-5
+            num = isFirstTerm ? Math.floor(Math.random() * 6) : Math.floor(Math.random() * 5) + 1; // 0-5 or 1-5
             break;
         case 'direct-to-9':
-            num = Math.floor(Math.random() * 10); // 0-9
+            // For first term, can be 0-9; for other terms, use 1-9
+            num = isFirstTerm ? Math.floor(Math.random() * 10) : Math.floor(Math.random() * 9) + 1; // 0-9 or 1-9
             break;
         case 'direct-counting':
             const max = parseInt('9'.repeat(digits));
@@ -1496,7 +1499,7 @@ function generateExerciseTerms(settings) {
     const operations = [];
 
     // Generate first term (always positive)
-    termsArray.push(generateNumber(settings));
+    termsArray.push(generateNumber(settings, true));
 
     // Generate remaining terms
     for (let i = 1; i < terms; i++) {
@@ -1508,7 +1511,7 @@ function generateExerciseTerms(settings) {
         }
         operations.push(op);
 
-        let term = generateNumber(settings);
+        let term = generateNumber(settings, false);
 
         // Handle negative numbers
         if (negative === 'yes' && Math.random() > 0.7) {
@@ -1566,69 +1569,106 @@ function runTrainingExercise() {
     exerciseData.training.correctAnswer = correctAnswer;
 
     const content = document.getElementById('trainingContent');
-    content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
 
-    // Start showing terms
-    let currentTerm = 0;
+    // Show countdown 3, 2, 1
+    let countdown = 3;
+    content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
 
-    const showNextTerm = () => {
-        if (currentTerm < terms.length) {
-            const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
-            const term = terms[currentTerm];
-
-            content.innerHTML = `
-                <div class="number-display-area">
-                    ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
-                    ${Math.abs(term)}
-                </div>
-            `;
-
-            if (settings.dictation === 'yes' && settings.speed >= 1.0) {
-                const textToSpeak = operation ? `${operation === '+' ? 'plus' : 'minus'} ${Math.abs(term)}` : term.toString();
-                speak(textToSpeak);
-            }
-
-            currentTerm++;
-            setTimeout(showNextTerm, settings.speed * 1000);
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
         } else {
-            // Show answer input or display
-            if (settings.answerMode === 'input') {
-                content.innerHTML = `
-                    <div class="number-display-area">Răspuns:</div>
-                    <input type="number" step="any" class="answer-input" id="trainingAnswer" autofocus>
-                    <button class="submit-btn" onclick="checkTrainingAnswer()">Verifică</button>
-                `;
-                document.getElementById('trainingAnswer').focus();
-            } else {
-                content.innerHTML = `
-                    <div class="number-display-area">Calculul s-a terminat</div>
-                    <button class="show-answer-btn" onclick="showTrainingAnswer()">Afișează Răspuns</button>
-                `;
-            }
-        }
-    };
+            clearInterval(countdownInterval);
+            content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
+            // Start showing terms after countdown
+            setTimeout(() => {
+                let currentTerm = 0;
+                const showNextTerm = () => {
+                    if (currentTerm < terms.length) {
+                        const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
+                        const term = terms[currentTerm];
 
-    setTimeout(showNextTerm, 1000);
+                        content.innerHTML = `
+                            <div class="number-display-area">
+                                ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                                ${Math.abs(term)}
+                            </div>
+                        `;
+
+                        if (settings.dictation === 'yes' && settings.speed >= 1.0) {
+                            const textToSpeak = operation ? `${operation === '+' ? 'plus' : 'minus'} ${Math.abs(term)}` : term.toString();
+                            speak(textToSpeak);
+                        }
+
+                        currentTerm++;
+                        setTimeout(showNextTerm, settings.speed * 1000);
+                    } else {
+                        // Show answer input or display
+                        if (settings.answerMode === 'input') {
+                            content.innerHTML = `
+                                <div class="number-display-area">Răspuns:</div>
+                                <input type="number" step="any" class="answer-input" id="trainingAnswer" autofocus>
+                                <button class="submit-btn" onclick="checkTrainingAnswer()">Verifică</button>
+                            `;
+                            document.getElementById('trainingAnswer').focus();
+                        } else {
+                            content.innerHTML = `
+                                <div class="number-display-area">Calculul s-a terminat</div>
+                                <button class="show-answer-btn" onclick="showTrainingAnswer()">Afișează Răspuns</button>
+                            `;
+                        }
+                    }
+                };
+
+                setTimeout(showNextTerm, 1000);
+            }, 500); // Small delay after "Pregătește-te..."
+        }
+    }, 1000); // 1 second per countdown number
 }
 
 function checkTrainingAnswer() {
     const userAnswer = parseFloat(document.getElementById('trainingAnswer').value);
     const correct = Math.abs(userAnswer - exerciseData.training.correctAnswer) < 0.01;
+    const { terms, operations } = exerciseData.training;
+
+    // Format the calculation for display
+    let calculationStr = terms[0].toString();
+    for (let i = 0; i < operations.length; i++) {
+        calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+    }
+    calculationStr += ` = ${exerciseData.training.correctAnswer}`;
 
     const content = document.getElementById('trainingContent');
     content.innerHTML = `
         <div class="number-display-area">${exerciseData.training.correctAnswer}</div>
         <div class="feedback ${correct ? 'correct' : 'incorrect'}">
-            ${correct ? '✓ Corect!' : '✗ Greșit! Răspunsul corect: ' + exerciseData.training.correctAnswer}
+            ${correct ? '✓ Corect!' : '✗ Greșit!'}
+            <div style="margin-top: 0.5rem; font-size: 1rem; font-weight: normal;">
+                ${calculationStr}
+            </div>
+            ${!correct ? `<div style="margin-top: 0.3rem; font-size: 0.9rem;">Răspunsul tău: ${userAnswer}</div>` : ''}
         </div>
         <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
 }
 
 function showTrainingAnswer() {
+    const { terms, operations, correctAnswer } = exerciseData.training;
+
+    // Format the calculation for display
+    let calculationStr = terms[0].toString();
+    for (let i = 0; i < operations.length; i++) {
+        calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+    }
+    calculationStr += ` = ${correctAnswer}`;
+
     const content = document.getElementById('trainingContent');
     content.innerHTML = `
-        <div class="number-display-area">${exerciseData.training.correctAnswer}</div>
+        <div class="number-display-area">${correctAnswer}</div>
+        <div style="margin-top: 1rem; font-size: 1.2rem; color: var(--text-primary);">
+            ${calculationStr}
+        </div>
         <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
 }
@@ -1693,54 +1733,69 @@ function runSeriesExercise() {
     const exerciseStartTime = Date.now();
 
     const content = document.getElementById('seriesContent');
-    content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
 
-    let currentTerm = 0;
+    // Show countdown 3, 2, 1
+    let countdown = 3;
+    content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
 
-    const showNextTerm = () => {
-        if (currentTerm < terms.length) {
-            const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
-            const term = terms[currentTerm];
-
-            content.innerHTML = `
-                <div class="number-display-area">
-                    ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
-                    ${Math.abs(term)}
-                </div>
-            `;
-
-            if (settings.dictation === 'yes' && settings.speed >= 1.0) {
-                const textToSpeak = operation ? `${operation === '+' ? 'plus' : 'minus'} ${Math.abs(term)}` : term.toString();
-                speak(textToSpeak);
-            }
-
-            currentTerm++;
-            setTimeout(showNextTerm, settings.speed * 1000);
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
         } else {
-            if (settings.answerMode === 'input') {
-                content.innerHTML = `
-                    <div class="number-display-area">Răspuns:</div>
-                    <input type="number" step="any" class="answer-input" id="seriesAnswer" autofocus>
-                    <button class="submit-btn" onclick="checkSeriesAnswer(${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">Verifică</button>
-                `;
-                document.getElementById('seriesAnswer').focus();
+            clearInterval(countdownInterval);
+            content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
 
-                // Allow Enter key to submit
-                document.getElementById('seriesAnswer').addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        checkSeriesAnswer(correctAnswer, exerciseStartTime, formatExercise(terms, operations));
+            // Start showing terms after countdown
+            setTimeout(() => {
+                let currentTerm = 0;
+                const showNextTerm = () => {
+                    if (currentTerm < terms.length) {
+                        const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
+                        const term = terms[currentTerm];
+
+                        content.innerHTML = `
+                            <div class="number-display-area">
+                                ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                                ${Math.abs(term)}
+                            </div>
+                        `;
+
+                        if (settings.dictation === 'yes' && settings.speed >= 1.0) {
+                            const textToSpeak = operation ? `${operation === '+' ? 'plus' : 'minus'} ${Math.abs(term)}` : term.toString();
+                            speak(textToSpeak);
+                        }
+
+                        currentTerm++;
+                        setTimeout(showNextTerm, settings.speed * 1000);
+                    } else {
+                        if (settings.answerMode === 'input') {
+                            content.innerHTML = `
+                                <div class="number-display-area">Răspuns:</div>
+                                <input type="number" step="any" class="answer-input" id="seriesAnswer" autofocus>
+                                <button class="submit-btn" onclick="checkSeriesAnswer(${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">Verifică</button>
+                            `;
+                            document.getElementById('seriesAnswer').focus();
+
+                            // Allow Enter key to submit
+                            document.getElementById('seriesAnswer').addEventListener('keypress', function(e) {
+                                if (e.key === 'Enter') {
+                                    checkSeriesAnswer(correctAnswer, exerciseStartTime, formatExercise(terms, operations));
+                                }
+                            });
+                        } else {
+                            content.innerHTML = `
+                                <div class="number-display-area">Calculul s-a terminat</div>
+                                <button class="show-answer-btn" onclick="showSeriesAnswer(${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">Afișează Răspuns</button>
+                            `;
+                        }
                     }
-                });
-            } else {
-                content.innerHTML = `
-                    <div class="number-display-area">Calculul s-a terminat</div>
-                    <button class="show-answer-btn" onclick="showSeriesAnswer(${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">Afișează Răspuns</button>
-                `;
-            }
-        }
-    };
+                };
 
-    setTimeout(showNextTerm, 1000);
+                setTimeout(showNextTerm, 1000);
+            }, 500); // Small delay after "Pregătește-te..."
+        }
+    }, 1000); // 1 second per countdown number
 }
 
 function formatExercise(terms, operations) {
@@ -1779,13 +1834,17 @@ function checkSeriesAnswer(correctAnswer, startTime, exerciseStr) {
     content.innerHTML = `
         <div class="number-display-area">${correctAnswer}</div>
         <div class="feedback ${correct ? 'correct' : 'incorrect'}">
-            ${correct ? '✓' : '✗'}
+            ${correct ? '✓ Corect!' : '✗ Greșit!'}
+            <div style="margin-top: 0.5rem; font-size: 1rem; font-weight: normal;">
+                ${exerciseStr} = ${correctAnswer}
+            </div>
+            ${!correct ? `<div style="margin-top: 0.3rem; font-size: 0.9rem;">Răspunsul tău: ${userAnswer}</div>` : ''}
         </div>
     `;
 
     setTimeout(() => {
         runSeriesExercise();
-    }, 1000);
+    }, 1500);
 }
 
 function showSeriesAnswer(correctAnswer, startTime, exerciseStr) {
@@ -1803,6 +1862,9 @@ function showSeriesAnswer(correctAnswer, startTime, exerciseStr) {
     const content = document.getElementById('seriesContent');
     content.innerHTML = `
         <div class="number-display-area">${correctAnswer}</div>
+        <div style="margin-top: 1rem; font-size: 1.2rem; color: var(--text-primary);">
+            ${exerciseStr} = ${correctAnswer}
+        </div>
         <button class="submit-btn" style="margin-top: 2rem;" onclick="runSeriesExercise()">Următorul</button>
     `;
 }
