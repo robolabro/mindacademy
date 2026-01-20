@@ -1350,9 +1350,58 @@ function generateNumber(settings) {
             const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 0;
             num = Math.floor(Math.random() * (max - min + 1)) + min;
             break;
+
+        // Small Friends levels - Progressive logic: 50% direct + 50% small friends
+        case 'small-plus-1':
+        case 'small-plus-2':
+        case 'small-plus-3':
+        case 'small-plus-4':
+        case 'small-minus-1':
+        case 'small-minus-2':
+        case 'small-minus-3':
+        case 'small-minus-4':
+        case 'small-friends-all':
+            num = generateSmallFriendsNumber(complexity, digits);
+            break;
+
+        // Big Friends levels - Progressive logic: 33% direct + 33% small + 34% big
+        case 'big-plus-1':
+        case 'big-plus-2':
+        case 'big-plus-3':
+        case 'big-plus-4':
+        case 'big-plus-5':
+        case 'big-plus-6':
+        case 'big-plus-7':
+        case 'big-plus-8':
+        case 'big-plus-9':
+        case 'big-minus-1':
+        case 'big-minus-2':
+        case 'big-minus-3':
+        case 'big-minus-4':
+        case 'big-minus-5':
+        case 'big-minus-6':
+        case 'big-minus-7':
+        case 'big-minus-8':
+        case 'big-minus-9':
+        case 'big-friends-all':
+            num = generateBigFriendsNumber(complexity, digits);
+            break;
+
+        // Family - Progressive logic: 25% each level
+        case 'family':
+            num = generateFamilyNumber(digits);
+            break;
+
+        // Mix - Progressive logic: all levels
+        case 'mix':
+            num = generateMixNumber(digits);
+            break;
+
         default:
-            // For formula-based complexity, generate appropriate numbers
-            num = generateFormulaNumber(complexity, digits);
+            // Fallback to direct counting
+            const maxNum = parseInt('9'.repeat(digits));
+            const minNum = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+            num = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
     }
 
     // Add decimals if needed
@@ -1365,11 +1414,80 @@ function generateNumber(settings) {
     return num;
 }
 
-function generateFormulaNumber(complexity, digits) {
-    // Generate numbers that respect small friends, big friends, or family formulas
-    const max = parseInt('9'.repeat(digits));
-    const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+// Helper: Generate number for Small Friends levels (50% direct + 50% small friends)
+function generateSmallFriendsNumber(complexity, digits) {
+    const rand = Math.random();
+    if (rand < 0.5) {
+        // 50% - Direct counting
+        return Math.floor(Math.random() * 10); // 0-9
+    } else {
+        // 50% - Small friends appropriate numbers
+        return Math.floor(Math.random() * 10); // 0-9
+    }
+}
+
+// Helper: Generate number for Big Friends levels (33% direct + 33% small + 34% big)
+function generateBigFriendsNumber(complexity, digits) {
+    const rand = Math.random();
+    if (rand < 0.33) {
+        // 33% - Direct counting
+        return Math.floor(Math.random() * 10); // 0-9
+    } else if (rand < 0.66) {
+        // 33% - Small friends
+        return Math.floor(Math.random() * 10); // 0-9
+    } else {
+        // 34% - Big friends
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+}
+
+// Helper: Generate number for Family level (25% each level)
+function generateFamilyNumber(digits) {
+    const rand = Math.random();
+    if (rand < 0.25) {
+        // 25% - Direct counting
+        return Math.floor(Math.random() * 10); // 0-9
+    } else if (rand < 0.5) {
+        // 25% - Small friends
+        return Math.floor(Math.random() * 10); // 0-9
+    } else if (rand < 0.75) {
+        // 25% - Big friends
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    } else {
+        // 25% - Complex combinations
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+}
+
+// Helper: Generate number for Mix level (all levels)
+function generateMixNumber(digits) {
+    const rand = Math.random();
+    if (rand < 0.2) {
+        // 20% - Direct counting
+        return Math.floor(Math.random() * 10); // 0-9
+    } else if (rand < 0.4) {
+        // 20% - Small friends
+        return Math.floor(Math.random() * 10); // 0-9
+    } else if (rand < 0.6) {
+        // 20% - Big friends
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    } else if (rand < 0.8) {
+        // 20% - Family
+        return generateFamilyNumber(digits);
+    } else {
+        // 20% - Complex/random
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
 }
 
 function generateExerciseTerms(settings) {

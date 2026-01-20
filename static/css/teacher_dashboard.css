@@ -192,7 +192,7 @@ body.teacher-platform {
 
 /* Sidebar */
 .sidebar {
-    width: 260px;
+    width: 200px;
     background: var(--sidebar-bg);
     color: white;
     padding: 2rem 0;
