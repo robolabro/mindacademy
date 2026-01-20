@@ -108,8 +108,8 @@ body.teacher-platform {
 
 /* Hamburger Menu Button */
 .sidebar-toggle {
-    display: none; /* Hidden by default on desktop */
-    background: none;
+    display: block; /* Always visible for collapsible menu */
+    background: rgba(255, 255, 255, 0.15);
     border: none;
     cursor: pointer;
     padding: 0.5rem;
@@ -118,6 +118,12 @@ body.teacher-platform {
     height: 40px;
     position: relative;
     z-index: 1001;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .hamburger-icon,
@@ -192,11 +198,33 @@ body.teacher-platform {
 
 /* Sidebar */
 .sidebar {
-    width: 200px;
+    width: 260px;
     background: var(--sidebar-bg);
     color: white;
     padding: 2rem 0;
     box-shadow: var(--shadow);
+    transition: width 0.3s ease;
+}
+
+/* Sidebar Collapsed State */
+.sidebar.collapsed {
+    width: 70px;
+}
+
+.sidebar.collapsed .nav-text {
+    opacity: 0;
+    visibility: hidden;
+    width: 0;
+    overflow: hidden;
+}
+
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 1rem 0.5rem;
+}
+
+.sidebar.collapsed .sidebar-divider {
+    margin: 1rem 0.5rem;
 }
 
 .sidebar-nav {
@@ -213,6 +241,11 @@ body.teacher-platform {
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: all 0.3s;
+}
+
+.nav-text {
+    transition: opacity 0.3s ease, visibility 0.3s ease, width 0.3s ease;
+    white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -1458,17 +1491,12 @@ body.teacher-platform {
 }
 
 @media (max-width: 768px) {
-    /* Show hamburger button on mobile */
-    .sidebar-toggle {
-        display: block;
-    }
-
-    /* Make sidebar fixed and hidden by default */
+    /* Make sidebar fixed and hidden by default on mobile */
     .sidebar {
         position: fixed;
         top: 0;
         left: -280px; /* Hidden off-screen */
-        width: 280px;
+        width: 280px !important; /* Override collapsed width */
         height: 100vh;
         padding: 2rem 0;
         background: var(--sidebar-bg);
@@ -1478,9 +1506,25 @@ body.teacher-platform {
         overflow-y: auto;
     }
 
-    /* Show sidebar when active */
+    /* Show sidebar when active on mobile */
     .sidebar.active {
         left: 0;
+    }
+
+    /* Remove collapsed state on mobile */
+    .sidebar.collapsed {
+        width: 280px !important;
+    }
+
+    .sidebar.collapsed .nav-text {
+        opacity: 1 !important;
+        visibility: visible !important;
+        width: auto !important;
+    }
+
+    .sidebar.collapsed .nav-item {
+        justify-content: flex-start !important;
+        padding: 1rem 1.5rem !important;
     }
 
     /* Sidebar navigation back to vertical on mobile */

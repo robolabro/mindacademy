@@ -70,7 +70,7 @@ function initMessages() {
 }
 
 /**
- * Initialize mobile menu toggle
+ * Initialize mobile menu toggle and desktop collapse
  */
 function initMobileMenu() {
     const sidebarToggle = document.getElementById('sidebarToggle');
@@ -79,12 +79,21 @@ function initMobileMenu() {
 
     if (!sidebarToggle || !sidebar || !overlay) return;
 
+    // Restore collapsed state from localStorage on desktop
+    restoreSidebarState();
+
     // Toggle sidebar on button click
     sidebarToggle.addEventListener('click', () => {
-        toggleSidebar();
+        if (window.innerWidth > 768) {
+            // Desktop: Toggle collapsed state
+            toggleCollapse();
+        } else {
+            // Mobile: Toggle visibility
+            toggleSidebar();
+        }
     });
 
-    // Close sidebar when clicking overlay
+    // Close sidebar when clicking overlay (mobile only)
     overlay.addEventListener('click', () => {
         closeSidebar();
     });
@@ -100,14 +109,21 @@ function initMobileMenu() {
         });
     });
 
-    // Close sidebar on window resize if open and screen becomes large
+    // Handle window resize
     window.addEventListener('resize', () => {
-        if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
-            closeSidebar();
+        if (window.innerWidth > 768) {
+            // Desktop mode: close mobile sidebar if open, restore collapsed state
+            if (sidebar.classList.contains('active')) {
+                closeSidebar();
+            }
+            restoreSidebarState();
+        } else {
+            // Mobile mode: remove collapsed class
+            sidebar.classList.remove('collapsed');
         }
     });
 
-    // Helper functions
+    // Helper functions for Mobile
     function toggleSidebar() {
         sidebar.classList.toggle('active');
         overlay.classList.toggle('active');
@@ -126,6 +142,27 @@ function initMobileMenu() {
         overlay.classList.remove('active');
         sidebarToggle.classList.remove('active');
         document.body.style.overflow = '';
+    }
+
+    // Helper functions for Desktop Collapse
+    function toggleCollapse() {
+        sidebar.classList.toggle('collapsed');
+
+        // Save state to localStorage
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
+    }
+
+    function restoreSidebarState() {
+        // Only restore on desktop
+        if (window.innerWidth <= 768) return;
+
+        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (isCollapsed) {
+            sidebar.classList.add('collapsed');
+        } else {
+            sidebar.classList.remove('collapsed');
+        }
     }
 }
 
