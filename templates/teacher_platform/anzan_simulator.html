@@ -1802,18 +1802,43 @@ function generateExerciseTerms(settings) {
         termsArray.push(generateNumber(settings, true));
 
         // Pre-calculate term types distribution for Small Friends levels
-        // This ensures EVERY exercise has a guaranteed mix of formulas
+        // This ensures EVERY exercise has a GUARANTEED mix of formulas
+        // 100% guarantee: current formula + previous formulas/direct both appear
         let termTypesDistribution = [];
         if (isSmallFriendsLevel(complexity)) {
             const formulaNumber = getSmallFriendsFormulaNumber(complexity);
             const availableFormulas = getAvailableFormulasForLevel(complexity);
             const remainingTerms = terms - 1; // Exclude first term
 
-            // Calculate how many terms for each type based on 80/20 rule
-            const currentFormulaCount = Math.floor(remainingTerms * 0.8);
-            const otherTermsCount = remainingTerms - currentFormulaCount;
+            // GUARANTEE: Always include at least 1 current formula term
+            // GUARANTEE: Always include at least 1 previous/direct term (if available)
+            // Then distribute the rest with 60-70% current, 30-40% other
 
-            // Build distribution array with pre-allocated types
+            let currentFormulaCount, otherTermsCount;
+
+            if (remainingTerms === 1) {
+                // Only 1 term available, use current formula
+                currentFormulaCount = 1;
+                otherTermsCount = 0;
+            } else if (remainingTerms === 2) {
+                // 2 terms: 1 current + 1 other (50/50)
+                currentFormulaCount = 1;
+                otherTermsCount = 1;
+            } else {
+                // 3+ terms: guarantee at least 1 of each, then distribute rest at 65/35
+                const minCurrent = 1;
+                const minOther = 1;
+                const flexibleTerms = remainingTerms - minCurrent - minOther;
+
+                // Distribute flexible terms: 65% current, 35% other
+                const additionalCurrent = Math.floor(flexibleTerms * 0.65);
+                const additionalOther = flexibleTerms - additionalCurrent;
+
+                currentFormulaCount = minCurrent + additionalCurrent;
+                otherTermsCount = minOther + additionalOther;
+            }
+
+            // Build distribution array with current formula terms
             for (let j = 0; j < currentFormulaCount; j++) {
                 termTypesDistribution.push({
                     type: 'current',
@@ -1822,39 +1847,42 @@ function generateExerciseTerms(settings) {
                 });
             }
 
-            // Distribute remaining terms between previous formulas and direct calculations
-            if (availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0) {
-                const directCount = Math.floor(otherTermsCount * 0.3); // 30% of minority are direct
-                const previousCount = otherTermsCount - directCount;
+            // Distribute "other" terms between previous formulas and direct calculations
+            if (otherTermsCount > 0) {
+                if (availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0) {
+                    // Split other terms: 70% previous formulas, 30% direct
+                    const directCount = Math.floor(otherTermsCount * 0.3);
+                    const previousCount = otherTermsCount - directCount;
 
-                // Add previous formula terms
-                for (let j = 0; j < previousCount; j++) {
-                    const randomFormula = availableFormulas.previousFormulas[
-                        Math.floor(Math.random() * availableFormulas.previousFormulas.length)
-                    ];
-                    termTypesDistribution.push({
-                        type: 'previous',
-                        formulaNumber: randomFormula.number,
-                        formulaType: randomFormula.type
-                    });
-                }
+                    // Add previous formula terms
+                    for (let j = 0; j < previousCount; j++) {
+                        const randomFormula = availableFormulas.previousFormulas[
+                            Math.floor(Math.random() * availableFormulas.previousFormulas.length)
+                        ];
+                        termTypesDistribution.push({
+                            type: 'previous',
+                            formulaNumber: randomFormula.number,
+                            formulaType: randomFormula.type
+                        });
+                    }
 
-                // Add direct calculation terms
-                for (let j = 0; j < directCount; j++) {
-                    termTypesDistribution.push({
-                        type: 'direct',
-                        formulaNumber: null,
-                        formulaType: null
-                    });
-                }
-            } else {
-                // No previous formulas, use direct calculations for the minority
-                for (let j = 0; j < otherTermsCount; j++) {
-                    termTypesDistribution.push({
-                        type: 'direct',
-                        formulaNumber: null,
-                        formulaType: null
-                    });
+                    // Add direct calculation terms
+                    for (let j = 0; j < directCount; j++) {
+                        termTypesDistribution.push({
+                            type: 'direct',
+                            formulaNumber: null,
+                            formulaType: null
+                        });
+                    }
+                } else {
+                    // No previous formulas available, use direct calculations
+                    for (let j = 0; j < otherTermsCount; j++) {
+                        termTypesDistribution.push({
+                            type: 'direct',
+                            formulaNumber: null,
+                            formulaType: null
+                        });
+                    }
                 }
             }
 
