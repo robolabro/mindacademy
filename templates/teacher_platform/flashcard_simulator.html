@@ -2523,7 +2523,9 @@
         } else if (elementId.includes('To')) {
             newValue = Math.max(1, Math.min(999, newValue));
         } else if (elementId.includes('Addends')) {
-            newValue = Math.max(2, Math.min(5, newValue));
+            // Small Friends All requires minimum 3 addends for sufficient exercise variety
+            const minAddends = (currentSettings.exercises.level === 'small-friends-all') ? 3 : 2;
+            newValue = Math.max(minAddends, Math.min(5, newValue));
         }
 
         // Update element value (works for both input and span)
@@ -2557,7 +2559,9 @@
         if (field === 'from' || field === 'to') {
             value = Math.max(1, Math.min(999, value));
         } else if (field === 'addends') {
-            value = Math.max(2, Math.min(5, value));
+            // Small Friends All requires minimum 3 addends for sufficient exercise variety
+            const minAddends = (currentSettings.exercises.level === 'small-friends-all') ? 3 : 2;
+            value = Math.max(minAddends, Math.min(5, value));
         }
 
         // Update element with validated value
@@ -2633,6 +2637,18 @@
             document.querySelector('[data-section="1"]').click();
         } else {
             sectionRow.style.display = 'flex';
+        }
+
+        // Small Friends All requires minimum 3 addends for sufficient exercise variety (120 unique exercises)
+        const addendsInput = document.getElementById('exerciseAddends');
+        if (level === 'small-friends-all') {
+            addendsInput.min = 3;
+            if (currentSettings.exercises.addends < 3) {
+                currentSettings.exercises.addends = 3;
+                addendsInput.value = 3;
+            }
+        } else {
+            addendsInput.min = 2;
         }
     }
 
