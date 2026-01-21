@@ -2328,6 +2328,7 @@
 <script>
     // Global state
     let currentMode = null;
+    let lastExercise = null; // Track last exercise to prevent consecutive duplicates
     let currentSettings = {
         training: {
             direction: 'abacus-to-number',
@@ -3911,6 +3912,9 @@
 
     // Exercises Mode
     function startExercises() {
+        // Reset duplicate tracking for new session
+        lastExercise = null;
+
         stats.correct = 0;
         stats.incorrect = 0;
         document.getElementById('exercisesCorrect').textContent = '0';
@@ -3936,6 +3940,23 @@
         nextExercise();
     }
 
+    // Helper: Check if two exercises are identical
+    function exercisesAreEqual(ex1, ex2) {
+        if (!ex1 || !ex2) return false;
+        if (ex1.numbers.length !== ex2.numbers.length) return false;
+        if (ex1.operators.length !== ex2.operators.length) return false;
+
+        for (let i = 0; i < ex1.numbers.length; i++) {
+            if (ex1.numbers[i] !== ex2.numbers[i]) return false;
+        }
+
+        for (let i = 0; i < ex1.operators.length; i++) {
+            if (ex1.operators[i] !== ex2.operators[i]) return false;
+        }
+
+        return true;
+    }
+
     function nextExercise() {
         const { formulas, level, section, addends } = currentSettings.exercises;
         const content = document.getElementById('exercisesContent');
@@ -3949,9 +3970,10 @@
         let operators = [];
         let correctAnswer = 0;
 
-        // Regenerate exercise until we get a valid result (>0 and <100)
+        // Regenerate exercise until we get a valid result (>0 and <100) and different from last exercise
         let attempts = 0;
         const maxAttempts = 100;
+        let isDuplicate = false;
         do {
             const exerciseData = generateExerciseForLevel(level, formula, section, addends);
             numbers = exerciseData.numbers;
@@ -3968,12 +3990,18 @@
                 }
             }
 
+            // Check if this exercise is a duplicate of the last one
+            isDuplicate = exercisesAreEqual({ numbers, operators }, lastExercise);
+
             attempts++;
             if (attempts >= maxAttempts) {
                 console.warn('Could not generate valid exercise after', maxAttempts, 'attempts');
                 break;
             }
-        } while (correctAnswer <= 0 || correctAnswer >= 100);
+        } while (correctAnswer <= 0 || correctAnswer >= 100 || isDuplicate);
+
+        // Save this exercise as the last one
+        lastExercise = { numbers: [...numbers], operators: [...operators] };
 
         // Display problem
         const problemDiv = document.createElement('div');
