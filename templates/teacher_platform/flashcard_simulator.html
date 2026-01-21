@@ -3223,22 +3223,16 @@
     }
 
     // Helper: Generate all Small Friends formulas
-    // Progressive logic: 50% direct counting + 50% small friends
+    // Only generates Small Friends formulas (no direct counting or big friends)
     function generateSmallFriendsAll(addends, formula, section) {
-        const rand = Math.random();
-        if (rand < 0.5) {
-            // 50% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
-        } else {
-            // 50% - Generate small friends
-            const smallFormulas = formula === 'addition'
-                ? [1, 2, 3, 4]
-                : formula === 'subtraction'
-                ? [-1, -2, -3, -4]
-                : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
-            const randomFormula = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
-            return generateSmallFriendsExercise(randomFormula, addends, formula);
-        }
+        // 100% - Generate small friends only
+        const smallFormulas = formula === 'addition'
+            ? [1, 2, 3, 4]
+            : formula === 'subtraction'
+            ? [-1, -2, -3, -4]
+            : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+        const randomFormula = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+        return generateSmallFriendsExercise(randomFormula, addends, formula);
     }
 
     // Helper: Generate Big Friends exercise for specific formula

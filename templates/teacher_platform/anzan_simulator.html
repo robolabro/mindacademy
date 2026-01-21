@@ -1486,14 +1486,9 @@ function generateNumber(settings, isFirstTerm = false) {
 
 // Helper: Generate number for Small Friends levels (50% direct + 50% small friends)
 function generateSmallFriendsNumber(complexity, digits) {
-    const rand = Math.random();
-    if (rand < 0.5) {
-        // 50% - Direct counting
-        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
-    } else {
-        // 50% - Small friends appropriate numbers
-        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
-    }
+    // Only generate numbers appropriate for Small Friends formulas
+    // No direct counting numbers - only numbers that require Small Friends formulas
+    return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
 }
 
 // Helper: Generate number for Big Friends levels (33% direct + 33% small + 34% big)
@@ -1674,12 +1669,13 @@ function getAvailableFormulasForLevel(complexity) {
     const match = complexity.match(/small-(plus|minus)-(\d)/);
 
     if (!match) {
-        // If it's small-friends-all, all formulas are available
+        // If it's small-friends-all, all small friends formulas are available
+        // Only Small Friends formulas - no direct counting or big friends
         if (complexity === 'small-friends-all') {
             return {
                 currentFormula: null, // No specific current formula
                 previousFormulas: [1, 2, 3, 4],
-                canUseDirect: true,
+                canUseDirect: false, // No direct counting for this level
                 isPlus: null
             };
         }
