@@ -1644,6 +1644,63 @@ function getSmallFriendsFormulaNumber(complexity) {
 }
 
 /**
+ * Gets all available formulas for a given Small Friends complexity level
+ * This includes the current formula and all previously learned formulas
+ *
+ * Returns an object with:
+ * - currentFormula: the current formula number (1-4)
+ * - previousFormulas: array of all previous formula numbers
+ * - canUseDirect: whether direct calculations (4, 5, 9) are available
+ * - isPlus: whether it's a plus formula (true) or minus formula (false)
+ */
+function getAvailableFormulasForLevel(complexity) {
+    const match = complexity.match(/small-(plus|minus)-(\d)/);
+
+    if (!match) {
+        // If it's small-friends-all, all formulas are available
+        if (complexity === 'small-friends-all') {
+            return {
+                currentFormula: null, // No specific current formula
+                previousFormulas: [1, 2, 3, 4],
+                canUseDirect: true,
+                isPlus: null
+            };
+        }
+        return null;
+    }
+
+    const isPlus = match[1] === 'plus';
+    const currentFormula = parseInt(match[2]);
+
+    // Build array of previous formulas based on the order:
+    // For plus: +1, +2, +3, +4
+    // For minus: -1, -2, -3, -4
+    const previousFormulas = [];
+
+    // Add all previous plus formulas (always available)
+    for (let i = 1; i < currentFormula; i++) {
+        previousFormulas.push({ type: 'plus', number: i });
+    }
+
+    // If this is a minus formula, also add +4 (last plus formula)
+    if (!isPlus) {
+        previousFormulas.push({ type: 'plus', number: 4 });
+
+        // Add previous minus formulas
+        for (let i = 1; i < currentFormula; i++) {
+            previousFormulas.push({ type: 'minus', number: i });
+        }
+    }
+
+    return {
+        currentFormula: currentFormula,
+        previousFormulas: previousFormulas,
+        canUseDirect: true, // Direct calculations with 4, 5, 9 are always available
+        isPlus: isPlus
+    };
+}
+
+/**
  * Checks if an operation can be performed directly on the soroban without using formulas
  * For "direct calculation", we need to ensure operations don't require Small Friends or Big Friends formulas
  *
@@ -1835,11 +1892,20 @@ function generateExerciseTerms(settings) {
                     validTermFound = true;
                 }
             } else if (isSmallFriendsLevel(complexity)) {
-                // For Small Friends levels, ensure some operations REQUIRE Small Friends formulas
+                // For Small Friends levels, use progressive learning:
+                // - 60-80% current formula
+                // - 20-40% previous formulas + direct calculations
                 const currentResult = calculateResult(termsArray, operations.slice(0, -1));
                 const formulaNumber = getSmallFriendsFormulaNumber(complexity);
+                const availableFormulas = getAvailableFormulasForLevel(complexity);
 
-                console.log('[generateExerciseTerms] Small Friends level:', { complexity, formulaNumber, currentResult, op });
+                console.log('[generateExerciseTerms] Small Friends level:', {
+                    complexity,
+                    formulaNumber,
+                    currentResult,
+                    op,
+                    availableFormulas
+                });
 
                 // Check if it's possible to generate a valid term for this operation
                 // For addition: need currentResult + 1 <= 9 (can add at least 1)
@@ -1852,30 +1918,117 @@ function generateExerciseTerms(settings) {
                     break;
                 }
 
-                // Try to generate a term that requires a Small Friends formula
-                // 60% chance to require formula, 40% chance for direct calculation
-                const shouldRequireFormula = Math.random() < 0.6;
+                // Decide what type of calculation to generate
+                // 60-80% chance for current formula, rest for previous formulas + direct
+                const rand = Math.random();
+                const currentFormulaWeight = 0.6 + Math.random() * 0.2; // Random between 0.6 and 0.8
+                let targetType; // 'current', 'previous', or 'direct'
+                let targetFormulaNumber = null;
+                let targetFormulaType = null; // 'plus' or 'minus'
 
-                while (!validTermFound && termAttempts < 30) {
-                    term = Math.floor(Math.random() * 4) + 1; // 1-4 for Small Friends
+                if (formulaNumber !== null && rand < currentFormulaWeight) {
+                    // Use current formula
+                    targetType = 'current';
+                    targetFormulaNumber = formulaNumber;
+                    targetFormulaType = availableFormulas.isPlus ? 'plus' : 'minus';
+                } else if (availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0) {
+                    // Split remaining probability between previous formulas and direct
+                    const remainingWeight = 1 - currentFormulaWeight;
+                    const directWeight = remainingWeight * 0.3; // 30% of remaining goes to direct
 
-                    // If this is a specific formula level (e.g., small-plus-1), prioritize that operand
-                    if (formulaNumber !== null && shouldRequireFormula && Math.random() < 0.7) {
-                        term = formulaNumber;
+                    if (Math.random() < directWeight / remainingWeight) {
+                        // Use direct calculation
+                        targetType = 'direct';
+                    } else {
+                        // Use a previous formula
+                        targetType = 'previous';
+                        const randomFormula = availableFormulas.previousFormulas[
+                            Math.floor(Math.random() * availableFormulas.previousFormulas.length)
+                        ];
+                        targetFormulaNumber = randomFormula.number;
+                        targetFormulaType = randomFormula.type;
                     }
+                } else {
+                    // No previous formulas available, use current or direct
+                    targetType = Math.random() < 0.7 ? 'current' : 'direct';
+                    if (targetType === 'current') {
+                        targetFormulaNumber = formulaNumber;
+                        targetFormulaType = availableFormulas.isPlus ? 'plus' : 'minus';
+                    }
+                }
 
-                    const result = op === '+' ? currentResult + term : currentResult - term;
+                console.log('[generateExerciseTerms] Selected target:', {
+                    targetType,
+                    targetFormulaNumber,
+                    targetFormulaType,
+                    currentFormulaWeight
+                });
 
-                    // Check if result is valid (1-9)
-                    if (result >= 1 && result <= 9) {
-                        const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
+                // Generate term based on target type
+                while (!validTermFound && termAttempts < 30) {
+                    if (targetType === 'direct') {
+                        // Generate a direct calculation term (operations with 4, 5, 9 that don't require formulas)
+                        // For direct calculations, we can use any number that can be performed directly
+                        const directOptions = [];
 
-                        // Accept if: should require formula AND does, OR should not require formula AND doesn't
-                        if (shouldRequireFormula === requiresFormula) {
+                        // Can we add/subtract 1-4 without formulas?
+                        for (let t = 1; t <= 9; t++) {
+                            const testResult = op === '+' ? currentResult + t : currentResult - t;
+                            if (testResult >= 1 && testResult <= 9) {
+                                // Check if this can be done directly (without formulas)
+                                if (!requiresSmallFriendsFormula(currentResult, op, t)) {
+                                    directOptions.push(t);
+                                }
+                            }
+                        }
+
+                        if (directOptions.length > 0) {
+                            term = directOptions[Math.floor(Math.random() * directOptions.length)];
                             validTermFound = true;
-                            console.log('[generateExerciseTerms] Found valid Small Friends term:', {
-                                currentResult, op, term, result, requiresFormula, shouldRequireFormula
+                            console.log('[generateExerciseTerms] Found direct calculation term:', {
+                                currentResult, op, term, result: op === '+' ? currentResult + term : currentResult - term
                             });
+                        } else {
+                            // No direct options, fallback to formula
+                            targetType = 'current';
+                            targetFormulaNumber = formulaNumber;
+                            targetFormulaType = availableFormulas.isPlus ? 'plus' : 'minus';
+                        }
+                    } else {
+                        // Generate a formula term (current or previous)
+                        // Determine the operation type based on targetFormulaType
+                        let useAddition = (targetFormulaType === 'plus');
+
+                        // If the current operation doesn't match the formula type, try to use the formula number
+                        // but accept the current operation
+                        if ((op === '+' && !useAddition) || (op === '-' && useAddition)) {
+                            // Operation doesn't match formula type
+                            // Try to generate a term that still requires the target formula
+                            // For flexibility, we'll accept any term that creates the needed situation
+                        }
+
+                        // Generate term based on target formula number
+                        term = targetFormulaNumber || (Math.floor(Math.random() * 4) + 1);
+
+                        const result = op === '+' ? currentResult + term : currentResult - term;
+
+                        // Check if result is valid (1-9)
+                        if (result >= 1 && result <= 9) {
+                            const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
+
+                            // For formula types, we want to ensure it requires a formula
+                            if (requiresFormula) {
+                                validTermFound = true;
+                                console.log('[generateExerciseTerms] Found formula term:', {
+                                    currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula
+                                });
+                            } else if (termAttempts > 15) {
+                                // After many attempts, accept even if it doesn't require formula
+                                validTermFound = true;
+                                console.log('[generateExerciseTerms] Accepting non-formula term after many attempts:', {
+                                    currentResult, op, term, result
+                                });
+                            }
                         }
                     }
 
