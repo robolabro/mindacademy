@@ -1644,6 +1644,23 @@ function getSmallFriendsFormulaNumber(complexity) {
 }
 
 /**
+ * Checks if it's possible to generate a valid term that requires the formula
+ * from the current state
+ */
+function canGenerateFormulaFromState(currentValue, operation, formulaNumber) {
+    // Check if using the specific formula number would require the formula
+    const result = operation === '+' ? currentValue + formulaNumber : currentValue - formulaNumber;
+
+    // Must be in valid range
+    if (result < 1 || result > 9) {
+        return false;
+    }
+
+    // Check if this operation would require the formula
+    return requiresSmallFriendsFormula(currentValue, operation, formulaNumber);
+}
+
+/**
  * Gets all available formulas for a given Small Friends complexity level
  * This includes the current formula and all previously learned formulas
  *
@@ -2094,21 +2111,51 @@ function generateExerciseTerms(settings) {
                     } else {
                         // Generate a formula term (current or previous)
                         // Operation is already set correctly to match targetFormulaType
-                        // Generate term based on target formula number
-                        term = targetFormulaNumber || (Math.floor(Math.random() * 4) + 1);
 
-                        const result = op === '+' ? currentResult + term : currentResult - term;
+                        // First check: Can we generate a valid formula term with the target formula number?
+                        if (termAttempts === 0 && targetFormulaNumber && !canGenerateFormulaFromState(currentResult, op, targetFormulaNumber)) {
+                            console.log('[generateExerciseTerms] Cannot generate target formula from current state:', {
+                                currentResult, op, targetFormulaNumber
+                            });
 
-                        // Check if result is valid (1-9)
-                        if (result >= 1 && result <= 9) {
-                            const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
+                            // Try to find ANY formula number (1-4) that would work
+                            let foundAlternative = false;
+                            for (let altNum = 1; altNum <= 4; altNum++) {
+                                if (canGenerateFormulaFromState(currentResult, op, altNum)) {
+                                    term = altNum;
+                                    validTermFound = true;
+                                    foundAlternative = true;
+                                    console.log('[generateExerciseTerms] Using alternative formula number:', {
+                                        currentResult, op, term, original: targetFormulaNumber
+                                    });
+                                    break;
+                                }
+                            }
 
-                            // For formula types, we want to ensure it requires a formula
-                            if (requiresFormula) {
-                                validTermFound = true;
-                                console.log('[generateExerciseTerms] Found formula term:', {
-                                    currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula
-                                });
+                            // If no formula works from this state, try direct calculation
+                            if (!foundAlternative) {
+                                console.log('[generateExerciseTerms] No formula possible, trying direct calculation');
+                                targetType = 'direct';
+                                // Will try direct calculation in next iteration
+                                continue;
+                            }
+                        } else {
+                            // Generate term based on target formula number
+                            term = targetFormulaNumber || (Math.floor(Math.random() * 4) + 1);
+
+                            const result = op === '+' ? currentResult + term : currentResult - term;
+
+                            // Check if result is valid (1-9)
+                            if (result >= 1 && result <= 9) {
+                                const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
+
+                                // For formula types, we want to ensure it requires a formula
+                                if (requiresFormula) {
+                                    validTermFound = true;
+                                    console.log('[generateExerciseTerms] Found formula term:', {
+                                        currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula
+                                    });
+                                }
                             }
                         }
                     }
@@ -2116,10 +2163,27 @@ function generateExerciseTerms(settings) {
                     termAttempts++;
                 }
 
-                // If no valid term found after all attempts, regenerate the entire exercise
-                // This ensures we ONLY accept terms that actually require the formula technique
+                // If no valid term found after all attempts, try direct calculation as final fallback
                 if (!validTermFound) {
-                    console.log('[generateExerciseTerms] Could not find valid formula term after 30 attempts, regenerating exercise:', {
+                    console.log('[generateExerciseTerms] Attempting direct calculation as final fallback');
+
+                    // Try to find a direct calculation term
+                    for (let t = 1; t <= 9; t++) {
+                        const testResult = op === '+' ? currentResult + t : currentResult - t;
+                        if (testResult >= 1 && testResult <= 9 && !requiresSmallFriendsFormula(currentResult, op, t)) {
+                            term = t;
+                            validTermFound = true;
+                            console.log('[generateExerciseTerms] Using direct calculation fallback:', {
+                                currentResult, op, term, result: testResult
+                            });
+                            break;
+                        }
+                    }
+                }
+
+                // If still no valid term, regenerate the entire exercise
+                if (!validTermFound) {
+                    console.log('[generateExerciseTerms] No valid term possible, regenerating exercise:', {
                         currentResult, op, targetFormulaNumber, targetType
                     });
                     // Break out and regenerate the entire exercise
