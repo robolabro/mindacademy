@@ -1437,10 +1437,10 @@ function generateSmallFriendsNumber(complexity, digits) {
     const rand = Math.random();
     if (rand < 0.5) {
         // 50% - Direct counting
-        return Math.floor(Math.random() * 10); // 0-9
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
     } else {
         // 50% - Small friends appropriate numbers
-        return Math.floor(Math.random() * 10); // 0-9
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
     }
 }
 
@@ -1449,10 +1449,10 @@ function generateBigFriendsNumber(complexity, digits) {
     const rand = Math.random();
     if (rand < 0.33) {
         // 33% - Direct counting
-        return Math.floor(Math.random() * 10); // 0-9
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
     } else if (rand < 0.66) {
         // 33% - Small friends
-        return Math.floor(Math.random() * 10); // 0-9
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
     } else {
         // 34% - Big friends
         const max = parseInt('9'.repeat(digits));
@@ -1466,10 +1466,10 @@ function generateFamilyNumber(digits) {
     const rand = Math.random();
     if (rand < 0.25) {
         // 25% - Direct counting
-        return Math.floor(Math.random() * 10); // 0-9
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
     } else if (rand < 0.5) {
         // 25% - Small friends
-        return Math.floor(Math.random() * 10); // 0-9
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
     } else if (rand < 0.75) {
         // 25% - Big friends
         const max = parseInt('9'.repeat(digits));
@@ -1517,6 +1517,16 @@ function getComplexityLimit(complexity) {
             return 5;
         case 'direct-to-9':
             return 9;
+        case 'small-plus-1':
+        case 'small-plus-2':
+        case 'small-plus-3':
+        case 'small-plus-4':
+        case 'small-minus-1':
+        case 'small-minus-2':
+        case 'small-minus-3':
+        case 'small-minus-4':
+        case 'small-friends-all':
+            return 5; // Small Friends formulas work within 1-5 range
         default:
             return null; // No limit for other complexity levels
     }
