@@ -2107,9 +2107,34 @@ function generateExerciseTerms(settings) {
                     termAttempts++;
                 }
 
-                // If no valid term found after attempts, fall back to standard generation
-                // to ensure we always generate the requested number of terms
-                if (!validTermFound) {
+                // If no valid term found after attempts, try to find ANY valid term
+                // that doesn't use Small Friends combinations
+                if (!validTermFound && isDirectCalculationLevel(complexity)) {
+                    const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+
+                    // Try all possible terms 1-9 to find one that works
+                    for (let t = 1; t <= 9; t++) {
+                        const testResult = op === '+' ? currentResult + t : currentResult - t;
+
+                        // Check if this term is valid for direct calculation
+                        if (testResult >= 1 && testResult <= maxLimit &&
+                            !shouldAvoidTermRepetition(termsArray, t) &&
+                            !isSmallFriendsCombination(currentResult, op, t)) {
+                            term = t;
+                            validTermFound = true;
+                            break;
+                        }
+                    }
+
+                    // If still no valid term found, regenerate the entire exercise
+                    if (!validTermFound) {
+                        console.log('[generateExerciseTerms] No valid term found, regenerating exercise');
+                        termsArray = [];
+                        operations = [];
+                        break;
+                    }
+                } else if (!validTermFound) {
+                    // For non-direct calculation levels, use standard generation
                     term = generateNumber(settings, false);
                     validTermFound = true;
                 }
