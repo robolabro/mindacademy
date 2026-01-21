@@ -1841,6 +1841,17 @@ function generateExerciseTerms(settings) {
 
                 console.log('[generateExerciseTerms] Small Friends level:', { complexity, formulaNumber, currentResult, op });
 
+                // Check if it's possible to generate a valid term for this operation
+                // For addition: need currentResult + 1 <= 9 (can add at least 1)
+                // For subtraction: need currentResult - 1 >= 1 (can subtract at least 1)
+                if ((op === '+' && currentResult >= 9) || (op === '-' && currentResult <= 1)) {
+                    console.log('[generateExerciseTerms] Impossible to generate valid Small Friends term, regenerating exercise:', { currentResult, op });
+                    // Break out and regenerate the entire exercise
+                    termsArray = [];
+                    operations = [];
+                    break;
+                }
+
                 // Try to generate a term that requires a Small Friends formula
                 // 60% chance to require formula, 40% chance for direct calculation
                 const shouldRequireFormula = Math.random() < 0.6;
@@ -1874,12 +1885,14 @@ function generateExerciseTerms(settings) {
                 // If no valid term found, use fallback that at least stays in range
                 if (!validTermFound) {
                     if (op === '+') {
-                        term = Math.min(4, 9 - currentResult);
+                        // Ensure we generate at least 1, not 0
+                        term = Math.max(1, Math.min(4, 9 - currentResult));
                     } else {
-                        term = Math.min(4, currentResult - 1);
+                        // Ensure we generate at least 1, not 0
+                        term = Math.max(1, Math.min(4, currentResult - 1));
                     }
                     validTermFound = true;
-                    console.log('[generateExerciseTerms] Using fallback term for Small Friends:', { term });
+                    console.log('[generateExerciseTerms] Using fallback term for Small Friends:', { term, currentResult });
                 }
             } else {
                 // For other complexity levels, use standard generation
