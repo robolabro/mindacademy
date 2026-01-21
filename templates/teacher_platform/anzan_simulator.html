@@ -1630,6 +1630,43 @@ function requiresSmallFriendsFormula(currentValue, operation, operand) {
 }
 
 /**
+ * Checks if a combination is a Small Friends exercise combination
+ * These combinations should be avoided in direct calculation mode to prevent confusion
+ *
+ * Small Friends exercise combinations (regardless of whether they require the formula):
+ * Addition formulas:
+ *   +1 (4+1): starting number 4
+ *   +2 (3+2, 4+2): starting numbers 3, 4
+ *   +3 (2+3, 3+3, 4+3): starting numbers 2, 3, 4
+ *   +4 (1+4, 2+4, 3+4, 4+4): starting numbers 1, 2, 3, 4
+ *
+ * Subtraction formulas:
+ *   -1, -2, -3, -4: starting numbers 5, 6, 7, 8, 9
+ */
+function isSmallFriendsCombination(currentValue, operation, operand) {
+    // Only check for operands 1-4 (Small Friends formulas)
+    if (operand < 1 || operand > 4) {
+        return false;
+    }
+
+    if (operation === '+') {
+        // Check if this is one of the Small Friends addition combinations
+        // +1: starting from 4 (4+1)
+        // +2: starting from 3 or 4 (3+2, 4+2)
+        // +3: starting from 2, 3, or 4 (2+3, 3+3, 4+3)
+        // +4: starting from 1, 2, 3, or 4 (1+4, 2+4, 3+4, 4+4)
+        const minStartingNumber = 5 - operand; // For +1: 4, +2: 3, +3: 2, +4: 1
+        return currentValue >= minStartingNumber && currentValue <= 4;
+    } else if (operation === '-') {
+        // Check if this is one of the Small Friends subtraction combinations
+        // -1, -2, -3, -4: all starting from 5-9
+        return currentValue >= 5 && currentValue <= 9;
+    }
+
+    return false;
+}
+
+/**
  * Gets the specific formula number for a Small Friends complexity level
  * Returns the number (1-4) or null if not a specific formula level
  */
@@ -2026,7 +2063,8 @@ function generateExerciseTerms(settings) {
                         if (maxDirectAddition >= 1) {
                             term = Math.floor(Math.random() * maxDirectAddition) + 1;
                             if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
-                                !shouldAvoidTermRepetition(termsArray, term)) {
+                                !shouldAvoidTermRepetition(termsArray, term) &&
+                                !isSmallFriendsCombination(currentResult, op, term)) {
                                 validTermFound = true;
                             }
                         } else {
@@ -2055,7 +2093,8 @@ function generateExerciseTerms(settings) {
                         if (maxDirectSubtraction >= 1) {
                             term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
                             if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
-                                !shouldAvoidTermRepetition(termsArray, term)) {
+                                !shouldAvoidTermRepetition(termsArray, term) &&
+                                !isSmallFriendsCombination(currentResult, op, term)) {
                                 validTermFound = true;
                             }
                         } else {
