@@ -2391,6 +2391,14 @@ function runTrainingExercise() {
         attempts++;
     }
 
+    // If still duplicate after max attempts, clear older entries to make room
+    if (isDuplicate && exerciseData.training.lastCalculations.length > 0) {
+        console.warn('[runTrainingExercise] Could not find unique exercise after', maxAttempts, 'attempts. Clearing oldest entries.');
+        // Remove the oldest half of entries to reduce constraints
+        const entriesToRemove = Math.ceil(exerciseData.training.lastCalculations.length / 2);
+        exerciseData.training.lastCalculations.splice(0, entriesToRemove);
+    }
+
     // Store this calculation in history (keep last 5 for better diversity)
     exerciseData.training.lastCalculations.push(calculationStr);
     if (exerciseData.training.lastCalculations.length > 5) {
@@ -2602,6 +2610,14 @@ function runSeriesExercise() {
         }
 
         attempts++;
+    }
+
+    // If still duplicate after max attempts, clear older entries to make room
+    if (isDuplicate && settings.lastCalculations.length > 0) {
+        console.warn('[runSeriesExercise] Could not find unique exercise after', maxAttempts, 'attempts. Clearing oldest entries.');
+        // Remove the oldest half of entries to reduce constraints
+        const entriesToRemove = Math.ceil(settings.lastCalculations.length / 2);
+        settings.lastCalculations.splice(0, entriesToRemove);
     }
 
     // Store this calculation in history (keep last 5 for better diversity)
@@ -2883,6 +2899,14 @@ function runStudentExercise(studentId) {
         // Check if this calculation was generated recently
         isDuplicate = student.lastCalculations.includes(calculationStr);
         attempts++;
+    }
+
+    // If still duplicate after max attempts, clear older entries to make room
+    if (isDuplicate && student.lastCalculations.length > 0) {
+        console.warn('[runClassroomExercise] Could not find unique exercise after', maxAttempts, 'attempts for student', studentId, '. Clearing oldest entries.');
+        // Remove the oldest half of entries to reduce constraints
+        const entriesToRemove = Math.ceil(student.lastCalculations.length / 2);
+        student.lastCalculations.splice(0, entriesToRemove);
     }
 
     // Store this calculation in history (keep last 3)
