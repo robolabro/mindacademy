@@ -1235,9 +1235,44 @@ function selectMode(mode) {
     document.getElementById('modeSelection').style.display = 'none';
     document.getElementById(mode + 'Mode').classList.add('active');
 
+    // Sync UI with current exerciseData
+    if (mode === 'training' || mode === 'series') {
+        syncModeUI(mode);
+    }
+
     if (mode === 'classroom') {
         initializeClassroom();
     }
+}
+
+// Sync mode UI elements with exerciseData
+function syncModeUI(mode) {
+    const data = exerciseData[mode];
+    const prefix = mode.charAt(0).toUpperCase() + mode.slice(1);
+
+    // Sync number inputs
+    const termsElement = document.getElementById(mode + 'Terms');
+    if (termsElement && data.terms !== undefined) {
+        termsElement.textContent = data.terms;
+    }
+
+    const digitsElement = document.getElementById(mode + 'Digits');
+    if (digitsElement && data.digits !== undefined) {
+        digitsElement.textContent = data.digits;
+    }
+
+    const speedElement = document.getElementById(mode + 'Speed');
+    if (speedElement && data.speed !== undefined) {
+        speedElement.textContent = data.speed.toFixed(1);
+    }
+
+    // Sync complexity dropdown
+    const complexityElement = document.getElementById(mode + 'Complexity');
+    if (complexityElement && data.complexity !== undefined) {
+        complexityElement.value = data.complexity;
+    }
+
+    console.log(`[syncModeUI] Synced ${mode} mode UI with exerciseData:`, data);
 }
 
 function backToModes() {
@@ -1295,9 +1330,11 @@ function adjustNumber(id, delta) {
     // Update state
     const mode = id.includes('training') ? 'training' :
                  id.includes('series') ? 'series' : 'classroom';
-    const setting = id.replace(mode.charAt(0).toUpperCase() + mode.slice(1), '').toLowerCase();
+    // Extract setting name by removing the mode prefix (case-insensitive)
+    const setting = id.replace(new RegExp('^' + mode, 'i'), '').toLowerCase();
     if (exerciseData[mode]) {
         exerciseData[mode][setting] = value;
+        console.log(`[adjustNumber] Updated ${mode}.${setting} = ${value}`, exerciseData[mode]);
     }
 }
 
@@ -1619,6 +1656,8 @@ function generateExerciseTerms(settings) {
     const { terms, operation, negative, complexity } = settings;
     const maxLimit = getComplexityLimit(complexity);
 
+    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, maxLimit });
+
     // For direct calculation levels, regenerate if result is 0 or invalid
     let maxAttempts = 50; // Increased attempts for better results
     let attempt = 0;
@@ -1759,11 +1798,13 @@ function generateExerciseTerms(settings) {
         }
 
         // Valid result found
+        console.log('[generateExerciseTerms] Generated valid exercise:', { termsCount: termsArray.length, terms: termsArray, operations });
         return { terms: termsArray, operations: operations };
 
     } while (maxLimit !== null && attempt < maxAttempts);
 
     // Fallback: return last generated result even if not perfect
+    console.log('[generateExerciseTerms] Returning fallback exercise:', { termsCount: termsArray.length, terms: termsArray, operations });
     return { terms: termsArray, operations: operations };
 }
 
@@ -1797,6 +1838,8 @@ function startTraining() {
 
     // Reset calculation history for new session
     settings.lastCalculations = [];
+
+    console.log('[startTraining] Settings:', settings);
 
     document.getElementById('trainingSettings').style.display = 'none';
     document.querySelector('#trainingMode .start-btn').style.display = 'none';
