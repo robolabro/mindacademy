@@ -2109,12 +2109,6 @@ function generateExerciseTerms(settings) {
                                 console.log('[generateExerciseTerms] Found formula term:', {
                                     currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula
                                 });
-                            } else if (termAttempts > 15) {
-                                // After many attempts, accept even if it doesn't require formula
-                                validTermFound = true;
-                                console.log('[generateExerciseTerms] Accepting non-formula term after many attempts:', {
-                                    currentResult, op, term, result
-                                });
                             }
                         }
                     }
@@ -2122,17 +2116,16 @@ function generateExerciseTerms(settings) {
                     termAttempts++;
                 }
 
-                // If no valid term found, use fallback that at least stays in range
+                // If no valid term found after all attempts, regenerate the entire exercise
+                // This ensures we ONLY accept terms that actually require the formula technique
                 if (!validTermFound) {
-                    if (op === '+') {
-                        // Ensure we generate at least 1, not 0
-                        term = Math.max(1, Math.min(4, 9 - currentResult));
-                    } else {
-                        // Ensure we generate at least 1, not 0
-                        term = Math.max(1, Math.min(4, currentResult - 1));
-                    }
-                    validTermFound = true;
-                    console.log('[generateExerciseTerms] Using fallback term for Small Friends:', { term, currentResult });
+                    console.log('[generateExerciseTerms] Could not find valid formula term after 30 attempts, regenerating exercise:', {
+                        currentResult, op, targetFormulaNumber, targetType
+                    });
+                    // Break out and regenerate the entire exercise
+                    termsArray = [];
+                    operations = [];
+                    break;
                 }
             } else {
                 // For other complexity levels, use standard generation
