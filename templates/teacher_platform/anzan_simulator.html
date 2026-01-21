@@ -1893,8 +1893,8 @@ function generateExerciseTerms(settings) {
                 }
             } else if (isSmallFriendsLevel(complexity)) {
                 // For Small Friends levels, use progressive learning:
-                // - 60-80% current formula
-                // - 20-40% previous formulas + direct calculations
+                // - 80% current formula
+                // - 20% previous formulas + direct calculations
                 const currentResult = calculateResult(termsArray, operations.slice(0, -1));
                 const formulaNumber = getSmallFriendsFormulaNumber(complexity);
                 const availableFormulas = getAvailableFormulasForLevel(complexity);
@@ -1919,9 +1919,9 @@ function generateExerciseTerms(settings) {
                 }
 
                 // Decide what type of calculation to generate
-                // 60-80% chance for current formula, rest for previous formulas + direct
+                // 80% chance for current formula, 20% for previous formulas + direct
                 const rand = Math.random();
-                const currentFormulaWeight = 0.6 + Math.random() * 0.2; // Random between 0.6 and 0.8
+                const currentFormulaWeight = 0.8; // Fixed 80% for current formula
                 let targetType; // 'current', 'previous', or 'direct'
                 let targetFormulaNumber = null;
                 let targetFormulaType = null; // 'plus' or 'minus'
@@ -1949,8 +1949,8 @@ function generateExerciseTerms(settings) {
                         targetFormulaType = randomFormula.type;
                     }
                 } else {
-                    // No previous formulas available, use current or direct
-                    targetType = Math.random() < 0.7 ? 'current' : 'direct';
+                    // No previous formulas available, use current or direct (80/20 split)
+                    targetType = Math.random() < 0.8 ? 'current' : 'direct';
                     if (targetType === 'current') {
                         targetFormulaNumber = formulaNumber;
                         targetFormulaType = availableFormulas.isPlus ? 'plus' : 'minus';
