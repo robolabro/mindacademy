@@ -1196,7 +1196,8 @@ let exerciseData = {
         current: 1,
         generatedTerms: [],
         generatedOperations: [],
-        correctAnswer: 0
+        correctAnswer: 0,
+        lastCalculations: [] // Store last 3 calculations to avoid duplicates
     },
     series: {
         complexity: 'direct-counting',
@@ -1213,7 +1214,8 @@ let exerciseData = {
         exercises: [],
         correct: 0,
         incorrect: 0,
-        timer: null
+        timer: null,
+        lastCalculations: [] // Store last 3 calculations to avoid duplicates
     },
     classroom: {
         studentsCount: 4,
@@ -1795,6 +1797,9 @@ function startTraining() {
     const settings = exerciseData.training;
     settings.complexity = document.getElementById('trainingComplexity').value;
 
+    // Reset calculation history for new session
+    settings.lastCalculations = [];
+
     document.getElementById('trainingSettings').style.display = 'none';
     document.querySelector('#trainingMode .start-btn').style.display = 'none';
     document.getElementById('trainingExercise').style.display = 'flex';
@@ -1804,8 +1809,35 @@ function startTraining() {
 
 function runTrainingExercise() {
     const settings = exerciseData.training;
-    const { terms, operations } = generateExerciseTerms(settings);
-    const correctAnswer = calculateResult(terms, operations);
+
+    // Generate unique calculation (avoid duplicates)
+    let terms, operations, correctAnswer, calculationStr;
+    let isDuplicate = true;
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    while (isDuplicate && attempts < maxAttempts) {
+        const generated = generateExerciseTerms(settings);
+        terms = generated.terms;
+        operations = generated.operations;
+        correctAnswer = calculateResult(terms, operations);
+
+        // Create string representation for comparison
+        calculationStr = terms[0].toString();
+        for (let i = 0; i < operations.length; i++) {
+            calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+        }
+
+        // Check if this calculation was generated recently
+        isDuplicate = exerciseData.training.lastCalculations.includes(calculationStr);
+        attempts++;
+    }
+
+    // Store this calculation in history (keep last 3)
+    exerciseData.training.lastCalculations.push(calculationStr);
+    if (exerciseData.training.lastCalculations.length > 3) {
+        exerciseData.training.lastCalculations.shift(); // Remove oldest
+    }
 
     exerciseData.training.generatedTerms = terms;
     exerciseData.training.generatedOperations = operations;
@@ -1936,6 +1968,7 @@ function startSeries() {
     settings.correct = 0;
     settings.incorrect = 0;
     settings.startTime = Date.now();
+    settings.lastCalculations = []; // Reset calculation history
 
     document.getElementById('seriesCorrect').textContent = '0';
     document.getElementById('seriesIncorrect').textContent = '0';
@@ -1971,10 +2004,37 @@ function updateSeriesTimer(remainingSeconds) {
 
 function runSeriesExercise() {
     const settings = exerciseData.series;
-    const { terms, operations } = generateExerciseTerms(settings);
-    const correctAnswer = calculateResult(terms, operations);
-    const exerciseStartTime = Date.now();
 
+    // Generate unique calculation (avoid duplicates)
+    let terms, operations, correctAnswer, calculationStr;
+    let isDuplicate = true;
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    while (isDuplicate && attempts < maxAttempts) {
+        const generated = generateExerciseTerms(settings);
+        terms = generated.terms;
+        operations = generated.operations;
+        correctAnswer = calculateResult(terms, operations);
+
+        // Create string representation for comparison
+        calculationStr = terms[0].toString();
+        for (let i = 0; i < operations.length; i++) {
+            calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+        }
+
+        // Check if this calculation was generated recently
+        isDuplicate = settings.lastCalculations.includes(calculationStr);
+        attempts++;
+    }
+
+    // Store this calculation in history (keep last 3)
+    settings.lastCalculations.push(calculationStr);
+    if (settings.lastCalculations.length > 3) {
+        settings.lastCalculations.shift(); // Remove oldest
+    }
+
+    const exerciseStartTime = Date.now();
     const content = document.getElementById('seriesContent');
 
     // Show countdown 3, 2, 1
@@ -2176,7 +2236,8 @@ function initializeClassroom() {
             exercises: [],
             correct: 0,
             incorrect: 0,
-            isRunning: false
+            isRunning: false,
+            lastCalculations: [] // Store last 3 calculations to avoid duplicates
         };
         exerciseData.classroom.students.push(studentData);
 
@@ -2215,6 +2276,7 @@ function startClassroom() {
     exerciseData.classroom.students.forEach((student, index) => {
         if (!student.isRunning) {
             student.isRunning = true;
+            student.lastCalculations = []; // Reset calculation history
             runStudentExercise(index);
         }
     });
@@ -2224,10 +2286,36 @@ function runStudentExercise(studentId) {
     const student = exerciseData.classroom.students[studentId];
     if (!student.isRunning) return;
 
-    const { terms, operations } = generateExerciseTerms(student.settings);
-    const correctAnswer = calculateResult(terms, operations);
-    const exerciseStartTime = Date.now();
+    // Generate unique calculation (avoid duplicates)
+    let terms, operations, correctAnswer, calculationStr;
+    let isDuplicate = true;
+    let attempts = 0;
+    const maxAttempts = 20;
 
+    while (isDuplicate && attempts < maxAttempts) {
+        const generated = generateExerciseTerms(student.settings);
+        terms = generated.terms;
+        operations = generated.operations;
+        correctAnswer = calculateResult(terms, operations);
+
+        // Create string representation for comparison
+        calculationStr = terms[0].toString();
+        for (let i = 0; i < operations.length; i++) {
+            calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+        }
+
+        // Check if this calculation was generated recently
+        isDuplicate = student.lastCalculations.includes(calculationStr);
+        attempts++;
+    }
+
+    // Store this calculation in history (keep last 3)
+    student.lastCalculations.push(calculationStr);
+    if (student.lastCalculations.length > 3) {
+        student.lastCalculations.shift(); // Remove oldest
+    }
+
+    const exerciseStartTime = Date.now();
     const area = document.getElementById(`student-area-${studentId}`);
     area.innerHTML = '<div class="student-number-display">Pregătește-te...</div>';
 
