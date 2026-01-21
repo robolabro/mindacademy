@@ -1585,6 +1585,65 @@ function getComplexityLimit(complexity) {
 }
 
 /**
+ * Checks if the complexity level is a "direct calculation" level
+ * Direct calculation levels should NOT require formulas
+ */
+function isDirectCalculationLevel(complexity) {
+    return ['direct-to-4', 'direct-to-5', 'direct-to-9', 'direct-counting'].includes(complexity);
+}
+
+/**
+ * Checks if the complexity level is a "Small Friends" formula level
+ */
+function isSmallFriendsLevel(complexity) {
+    return complexity.startsWith('small-') || complexity === 'small-friends-all';
+}
+
+/**
+ * Checks if an operation REQUIRES a Small Friends formula
+ * Small Friends formulas are needed when:
+ * - Adding to a value in lower beads (1-4) would cross into 5+ but stay in 5-9
+ * - Subtracting from 5 (heaven bead) requires going back to lower beads
+ *
+ * Small Friends formulas:
+ * +1 = +5-4, +2 = +5-3, +3 = +5-2, +4 = +5-1
+ * -1 = -5+4, -2 = -5+3, -3 = -5+2, -4 = -5+1
+ */
+function requiresSmallFriendsFormula(currentValue, operation, operand) {
+    const result = operation === '+' ? currentValue + operand : currentValue - operand;
+
+    if (operation === '+') {
+        // Adding from 1-4 to get 5-9 requires Small Friends (except reaching exactly 5)
+        if (currentValue >= 1 && currentValue <= 4 && result >= 5 && result <= 9) {
+            // Can reach 5 directly (just use heaven bead), but 6-9 need Small Friends
+            return result > 5;
+        }
+    } else if (operation === '-') {
+        // Subtracting from 5 to get 1-4 requires Small Friends
+        if (currentValue === 5 && operand >= 1 && operand <= 4) {
+            return true;
+        }
+        // Subtracting from 6-9 where we need to remove the heaven bead
+        if (currentValue >= 6 && currentValue <= 9 && result >= 1 && result <= 4) {
+            const lowerBeadsUsed = currentValue - 5;
+            // If we need to subtract more than the lower beads we have
+            return operand > lowerBeadsUsed;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Gets the specific formula number for a Small Friends complexity level
+ * Returns the number (1-4) or null if not a specific formula level
+ */
+function getSmallFriendsFormulaNumber(complexity) {
+    const match = complexity.match(/small-(plus|minus)-(\d)/);
+    return match ? parseInt(match[2]) : null;
+}
+
+/**
  * Checks if an operation can be performed directly on the soroban without using formulas
  * For "direct calculation", we need to ensure operations don't require Small Friends or Big Friends formulas
  *
@@ -1700,7 +1759,7 @@ function generateExerciseTerms(settings) {
             let termAttempts = 0;
 
             // For direct calculation levels, ensure operations can be performed directly
-            if (maxLimit !== null) {
+            if (isDirectCalculationLevel(complexity)) {
                 const currentResult = calculateResult(termsArray, operations.slice(0, -1));
                 const isLastOperation = (i === terms - 1);
 
@@ -1775,6 +1834,53 @@ function generateExerciseTerms(settings) {
                     term = generateNumber(settings, false);
                     validTermFound = true;
                 }
+            } else if (isSmallFriendsLevel(complexity)) {
+                // For Small Friends levels, ensure some operations REQUIRE Small Friends formulas
+                const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+                const formulaNumber = getSmallFriendsFormulaNumber(complexity);
+
+                console.log('[generateExerciseTerms] Small Friends level:', { complexity, formulaNumber, currentResult, op });
+
+                // Try to generate a term that requires a Small Friends formula
+                // 60% chance to require formula, 40% chance for direct calculation
+                const shouldRequireFormula = Math.random() < 0.6;
+
+                while (!validTermFound && termAttempts < 30) {
+                    term = Math.floor(Math.random() * 4) + 1; // 1-4 for Small Friends
+
+                    // If this is a specific formula level (e.g., small-plus-1), prioritize that operand
+                    if (formulaNumber !== null && shouldRequireFormula && Math.random() < 0.7) {
+                        term = formulaNumber;
+                    }
+
+                    const result = op === '+' ? currentResult + term : currentResult - term;
+
+                    // Check if result is valid (1-9)
+                    if (result >= 1 && result <= 9) {
+                        const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
+
+                        // Accept if: should require formula AND does, OR should not require formula AND doesn't
+                        if (shouldRequireFormula === requiresFormula) {
+                            validTermFound = true;
+                            console.log('[generateExerciseTerms] Found valid Small Friends term:', {
+                                currentResult, op, term, result, requiresFormula, shouldRequireFormula
+                            });
+                        }
+                    }
+
+                    termAttempts++;
+                }
+
+                // If no valid term found, use fallback that at least stays in range
+                if (!validTermFound) {
+                    if (op === '+') {
+                        term = Math.min(4, 9 - currentResult);
+                    } else {
+                        term = Math.min(4, currentResult - 1);
+                    }
+                    validTermFound = true;
+                    console.log('[generateExerciseTerms] Using fallback term for Small Friends:', { term });
+                }
             } else {
                 // For other complexity levels, use standard generation
                 term = generateNumber(settings, false);
@@ -1798,8 +1904,8 @@ function generateExerciseTerms(settings) {
         // Calculate final result
         result = calculateResult(termsArray, operations);
 
-        // For direct calculation levels, ensure result is valid (not 0)
-        if (maxLimit !== null) {
+        // For direct calculation and Small Friends levels, ensure result is valid (not 0)
+        if (isDirectCalculationLevel(complexity) || isSmallFriendsLevel(complexity)) {
             if (result <= 0 || result > maxLimit) {
                 attempt++;
                 if (attempt >= maxAttempts) {
@@ -1814,7 +1920,7 @@ function generateExerciseTerms(settings) {
         console.log('[generateExerciseTerms] Generated valid exercise:', { termsCount: termsArray.length, terms: termsArray, operations });
         return { terms: termsArray, operations: operations };
 
-    } while (maxLimit !== null && attempt < maxAttempts);
+    } while ((isDirectCalculationLevel(complexity) || isSmallFriendsLevel(complexity)) && attempt < maxAttempts);
 
     // Fallback: return last generated result even if not perfect
     console.log('[generateExerciseTerms] Returning fallback exercise:', { termsCount: termsArray.length, terms: termsArray, operations });
