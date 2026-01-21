@@ -1798,6 +1798,52 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
     return true;
 }
 
+/**
+ * Checks if a term should be avoided due to excessive repetition in the exercise
+ * @param {Array} termsArray - Array of terms generated so far
+ * @param {number} candidateTerm - The term being considered for addition
+ * @returns {boolean} - True if the term should be avoided (too many repetitions)
+ */
+function shouldAvoidTermRepetition(termsArray, candidateTerm) {
+    if (termsArray.length === 0) return false;
+
+    // Configuration: Max consecutive repetitions and max total occurrences
+    const MAX_CONSECUTIVE_REPETITIONS = 2;
+    const MAX_TOTAL_OCCURRENCES = 3;
+
+    // Check 1: Count total occurrences of this term
+    const totalOccurrences = termsArray.filter(t => Math.abs(t) === Math.abs(candidateTerm)).length;
+    if (totalOccurrences >= MAX_TOTAL_OCCURRENCES) {
+        console.log('[shouldAvoidTermRepetition] Avoiding term due to max total occurrences:', {
+            term: candidateTerm,
+            totalOccurrences,
+            max: MAX_TOTAL_OCCURRENCES
+        });
+        return true;
+    }
+
+    // Check 2: Count consecutive repetitions at the end of the array
+    let consecutiveCount = 0;
+    for (let i = termsArray.length - 1; i >= 0; i--) {
+        if (Math.abs(termsArray[i]) === Math.abs(candidateTerm)) {
+            consecutiveCount++;
+        } else {
+            break;
+        }
+    }
+
+    if (consecutiveCount >= MAX_CONSECUTIVE_REPETITIONS) {
+        console.log('[shouldAvoidTermRepetition] Avoiding term due to consecutive repetitions:', {
+            term: candidateTerm,
+            consecutiveCount,
+            max: MAX_CONSECUTIVE_REPETITIONS
+        });
+        return true;
+    }
+
+    return false;
+}
+
 function generateExerciseTerms(settings) {
     const { terms, operation, negative, complexity } = settings;
     const maxLimit = getComplexityLimit(complexity);
@@ -1983,7 +2029,8 @@ function generateExerciseTerms(settings) {
 
                         if (maxDirectAddition >= 1) {
                             term = Math.floor(Math.random() * maxDirectAddition) + 1;
-                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation)) {
+                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
+                                !shouldAvoidTermRepetition(termsArray, term)) {
                                 validTermFound = true;
                             }
                         } else {
@@ -2011,7 +2058,8 @@ function generateExerciseTerms(settings) {
 
                         if (maxDirectSubtraction >= 1) {
                             term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
-                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation)) {
+                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
+                                !shouldAvoidTermRepetition(termsArray, term)) {
                                 validTermFound = true;
                             }
                         } else {
@@ -2095,10 +2143,14 @@ function generateExerciseTerms(settings) {
 
                         if (directOptions.length > 0) {
                             term = directOptions[Math.floor(Math.random() * directOptions.length)];
-                            validTermFound = true;
-                            console.log('[generateExerciseTerms] Found direct calculation term:', {
-                                currentResult, op, term, result: op === '+' ? currentResult + term : currentResult - term
-                            });
+
+                            // Check for excessive repetition
+                            if (!shouldAvoidTermRepetition(termsArray, term)) {
+                                validTermFound = true;
+                                console.log('[generateExerciseTerms] Found direct calculation term:', {
+                                    currentResult, op, term, result: op === '+' ? currentResult + term : currentResult - term
+                                });
+                            }
                         } else {
                             // No direct options, fallback to formula
                             targetType = 'current';
@@ -2121,7 +2173,8 @@ function generateExerciseTerms(settings) {
                             // Try to find ANY formula number (1-4) that would work
                             let foundAlternative = false;
                             for (let altNum = 1; altNum <= 4; altNum++) {
-                                if (canGenerateFormulaFromState(currentResult, op, altNum)) {
+                                if (canGenerateFormulaFromState(currentResult, op, altNum) &&
+                                    !shouldAvoidTermRepetition(termsArray, altNum)) {
                                     term = altNum;
                                     validTermFound = true;
                                     foundAlternative = true;
@@ -2150,7 +2203,8 @@ function generateExerciseTerms(settings) {
                                 const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
 
                                 // For formula types, we want to ensure it requires a formula
-                                if (requiresFormula) {
+                                // Also check for excessive repetition
+                                if (requiresFormula && !shouldAvoidTermRepetition(termsArray, term)) {
                                     validTermFound = true;
                                     console.log('[generateExerciseTerms] Found formula term:', {
                                         currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula
@@ -2170,7 +2224,9 @@ function generateExerciseTerms(settings) {
                     // Try to find a direct calculation term
                     for (let t = 1; t <= 9; t++) {
                         const testResult = op === '+' ? currentResult + t : currentResult - t;
-                        if (testResult >= 1 && testResult <= 9 && !requiresSmallFriendsFormula(currentResult, op, t)) {
+                        if (testResult >= 1 && testResult <= 9 &&
+                            !requiresSmallFriendsFormula(currentResult, op, t) &&
+                            !shouldAvoidTermRepetition(termsArray, t)) {
                             term = t;
                             validTermFound = true;
                             console.log('[generateExerciseTerms] Using direct calculation fallback:', {
@@ -2193,13 +2249,27 @@ function generateExerciseTerms(settings) {
                 }
             } else {
                 // For other complexity levels, use standard generation
-                term = generateNumber(settings, false);
+                // Try to avoid excessive repetition
+                let standardAttempts = 0;
+                while (!validTermFound && standardAttempts < 20) {
+                    term = generateNumber(settings, false);
 
-                // Handle negative numbers
-                if (negative === 'yes' && Math.random() > 0.7) {
-                    term = -term;
+                    // Handle negative numbers
+                    if (negative === 'yes' && Math.random() > 0.7) {
+                        term = -term;
+                    }
+
+                    // Check for excessive repetition
+                    if (!shouldAvoidTermRepetition(termsArray, term)) {
+                        validTermFound = true;
+                    }
+                    standardAttempts++;
                 }
-                validTermFound = true;
+
+                // If no valid term found after attempts, use the last generated one anyway
+                if (!validTermFound) {
+                    validTermFound = true;
+                }
             }
 
             termsArray.push(term);
