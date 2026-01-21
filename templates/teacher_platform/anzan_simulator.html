@@ -1404,8 +1404,21 @@ function generateNumber(settings, isFirstTerm = false) {
             break;
         case 'direct-counting':
             const max = parseInt('9'.repeat(digits));
-            const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 0;
-            num = Math.floor(Math.random() * (max - min + 1)) + min;
+            const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+            // For first term, ensure better distribution across the range
+            if (isFirstTerm && digits === 1) {
+                // Use weighted random to favor variety: 30% low (1-3), 40% mid (4-6), 30% high (7-9)
+                const range = Math.random();
+                if (range < 0.3) {
+                    num = Math.floor(Math.random() * 3) + 1; // 1-3
+                } else if (range < 0.7) {
+                    num = Math.floor(Math.random() * 3) + 4; // 4-6
+                } else {
+                    num = Math.floor(Math.random() * 3) + 7; // 7-9
+                }
+            } else {
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+            }
             break;
 
         // Small Friends levels - Progressive logic: 50% direct + 50% small friends
@@ -1851,11 +1864,11 @@ function startTraining() {
 function runTrainingExercise() {
     const settings = exerciseData.training;
 
-    // Generate unique calculation (avoid duplicates)
+    // Generate unique calculation (avoid duplicates and similar patterns)
     let terms, operations, correctAnswer, calculationStr;
     let isDuplicate = true;
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 30;
 
     while (isDuplicate && attempts < maxAttempts) {
         const generated = generateExerciseTerms(settings);
@@ -1871,12 +1884,30 @@ function runTrainingExercise() {
 
         // Check if this calculation was generated recently
         isDuplicate = exerciseData.training.lastCalculations.includes(calculationStr);
+
+        // Also check if the starting pattern is too similar (first 2 terms)
+        if (!isDuplicate && exerciseData.training.lastCalculations.length > 0) {
+            const currentStart = terms.length >= 2 ?
+                `${terms[0]} ${operations[0]} ${terms[1]}` :
+                terms[0].toString();
+
+            // Check if any recent calculation starts with the same pattern
+            const hasSimilarStart = exerciseData.training.lastCalculations.some(calc => {
+                return calc.startsWith(currentStart);
+            });
+
+            // If we have similar starts in the last calculations, try again (but less strict than exact duplicates)
+            if (hasSimilarStart && attempts < maxAttempts / 2) {
+                isDuplicate = true;
+            }
+        }
+
         attempts++;
     }
 
-    // Store this calculation in history (keep last 3)
+    // Store this calculation in history (keep last 5 for better diversity)
     exerciseData.training.lastCalculations.push(calculationStr);
-    if (exerciseData.training.lastCalculations.length > 3) {
+    if (exerciseData.training.lastCalculations.length > 5) {
         exerciseData.training.lastCalculations.shift(); // Remove oldest
     }
 
@@ -2046,11 +2077,11 @@ function updateSeriesTimer(remainingSeconds) {
 function runSeriesExercise() {
     const settings = exerciseData.series;
 
-    // Generate unique calculation (avoid duplicates)
+    // Generate unique calculation (avoid duplicates and similar patterns)
     let terms, operations, correctAnswer, calculationStr;
     let isDuplicate = true;
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 30;
 
     while (isDuplicate && attempts < maxAttempts) {
         const generated = generateExerciseTerms(settings);
@@ -2066,12 +2097,30 @@ function runSeriesExercise() {
 
         // Check if this calculation was generated recently
         isDuplicate = settings.lastCalculations.includes(calculationStr);
+
+        // Also check if the starting pattern is too similar (first 2 terms)
+        if (!isDuplicate && settings.lastCalculations.length > 0) {
+            const currentStart = terms.length >= 2 ?
+                `${terms[0]} ${operations[0]} ${terms[1]}` :
+                terms[0].toString();
+
+            // Check if any recent calculation starts with the same pattern
+            const hasSimilarStart = settings.lastCalculations.some(calc => {
+                return calc.startsWith(currentStart);
+            });
+
+            // If we have similar starts in the last calculations, try again (but less strict than exact duplicates)
+            if (hasSimilarStart && attempts < maxAttempts / 2) {
+                isDuplicate = true;
+            }
+        }
+
         attempts++;
     }
 
-    // Store this calculation in history (keep last 3)
+    // Store this calculation in history (keep last 5 for better diversity)
     settings.lastCalculations.push(calculationStr);
-    if (settings.lastCalculations.length > 3) {
+    if (settings.lastCalculations.length > 5) {
         settings.lastCalculations.shift(); // Remove oldest
     }
 
