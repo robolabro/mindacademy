@@ -3069,25 +3069,81 @@
         }
     }
 
+    // Helper: Get allowed Big Friends formulas for progressive learning
+    // Progressive logic: Each Big Friends formula can use all previously learned formulas
+    // Learning order: +1, +2, +3, +4, +5, -1, -2, -3, -4, -5, +6, +7, +8, +9, -6, -7, -8, -9
+    function getAllowedBigFriendsFormulas(target) {
+        const allowedFormulas = [];
+
+        // Define the learning order
+        const learningOrder = [
+            1, 2, 3, 4, 5,      // First: +1 to +5
+            -1, -2, -3, -4, -5,  // Then: -1 to -5
+            6, 7, 8, 9,          // Then: +6 to +9
+            -6, -7, -8, -9       // Finally: -6 to -9
+        ];
+
+        // Find the position of current target in learning order
+        const targetIndex = learningOrder.indexOf(target);
+
+        if (targetIndex === -1) {
+            // Target not found in learning order (shouldn't happen)
+            return [];
+        }
+
+        // All formulas before this one can be used
+        for (let i = 0; i < targetIndex; i++) {
+            allowedFormulas.push(learningOrder[i]);
+        }
+
+        return allowedFormulas;
+    }
+
     // Helper: Generate Big Friends with Progressive levels (for specific big friends levels)
-    // Progressive logic: 33% direct + 33% small friends + 34% specific big friend
+    // Progressive logic: Direct (4,5,9) + Small Friends (all) + Previously learned Big Friends
     function generateBigFriendsWithProgressive(target, addends, formula, section) {
+        const allowedBigFriends = getAllowedBigFriendsFormulas(target);
+
+        // Calculate probability distribution
+        // If no previous Big Friends, split between Direct and Small Friends
+        // Otherwise: 30% Direct, 30% Small Friends, 40% Previous Big Friends
+        const hasPreviousBigFriends = allowedBigFriends.length > 0;
         const rand = Math.random();
-        if (rand < 0.33) {
-            // 33% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
-        } else if (rand < 0.66) {
-            // 33% - Generate small friends
-            const smallFormulas = formula === 'addition'
-                ? [1, 2, 3, 4]
-                : formula === 'subtraction'
-                ? [-1, -2, -3, -4]
-                : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
-            const randomSmall = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
-            return generateSmallFriendsExercise(randomSmall, addends, formula);
+
+        if (!hasPreviousBigFriends) {
+            // First Big Friends formula (+1): only Direct and Small Friends available
+            if (rand < 0.5) {
+                // 50% - Generate direct counting
+                return generateDirectTo(9, addends, formula);
+            } else {
+                // 50% - Generate small friends
+                const smallFormulas = formula === 'addition'
+                    ? [1, 2, 3, 4]
+                    : formula === 'subtraction'
+                    ? [-1, -2, -3, -4]
+                    : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+                const randomSmall = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+                return generateSmallFriendsExercise(randomSmall, addends, formula);
+            }
         } else {
-            // 34% - Generate specific big friend exercise
-            return generateBigFriendsExercise(target, addends, formula, section);
+            // Has previous Big Friends: use progressive distribution
+            if (rand < 0.3) {
+                // 30% - Generate direct counting
+                return generateDirectTo(9, addends, formula);
+            } else if (rand < 0.6) {
+                // 30% - Generate small friends
+                const smallFormulas = formula === 'addition'
+                    ? [1, 2, 3, 4]
+                    : formula === 'subtraction'
+                    ? [-1, -2, -3, -4]
+                    : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+                const randomSmall = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+                return generateSmallFriendsExercise(randomSmall, addends, formula);
+            } else {
+                // 40% - Generate previously learned Big Friends
+                const randomBigFriend = allowedBigFriends[getRandomNumber(0, allowedBigFriends.length - 1)];
+                return generateBigFriendsExercise(randomBigFriend, addends, formula, section);
+            }
         }
     }
 
