@@ -1801,6 +1801,78 @@ function generateExerciseTerms(settings) {
         // Generate first term (always positive)
         termsArray.push(generateNumber(settings, true));
 
+        // Pre-calculate term types distribution for Small Friends levels
+        // This ensures EVERY exercise has a guaranteed mix of formulas
+        let termTypesDistribution = [];
+        if (isSmallFriendsLevel(complexity)) {
+            const formulaNumber = getSmallFriendsFormulaNumber(complexity);
+            const availableFormulas = getAvailableFormulasForLevel(complexity);
+            const remainingTerms = terms - 1; // Exclude first term
+
+            // Calculate how many terms for each type based on 80/20 rule
+            const currentFormulaCount = Math.floor(remainingTerms * 0.8);
+            const otherTermsCount = remainingTerms - currentFormulaCount;
+
+            // Build distribution array with pre-allocated types
+            for (let j = 0; j < currentFormulaCount; j++) {
+                termTypesDistribution.push({
+                    type: 'current',
+                    formulaNumber: formulaNumber,
+                    formulaType: availableFormulas.isPlus ? 'plus' : 'minus'
+                });
+            }
+
+            // Distribute remaining terms between previous formulas and direct calculations
+            if (availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0) {
+                const directCount = Math.floor(otherTermsCount * 0.3); // 30% of minority are direct
+                const previousCount = otherTermsCount - directCount;
+
+                // Add previous formula terms
+                for (let j = 0; j < previousCount; j++) {
+                    const randomFormula = availableFormulas.previousFormulas[
+                        Math.floor(Math.random() * availableFormulas.previousFormulas.length)
+                    ];
+                    termTypesDistribution.push({
+                        type: 'previous',
+                        formulaNumber: randomFormula.number,
+                        formulaType: randomFormula.type
+                    });
+                }
+
+                // Add direct calculation terms
+                for (let j = 0; j < directCount; j++) {
+                    termTypesDistribution.push({
+                        type: 'direct',
+                        formulaNumber: null,
+                        formulaType: null
+                    });
+                }
+            } else {
+                // No previous formulas, use direct calculations for the minority
+                for (let j = 0; j < otherTermsCount; j++) {
+                    termTypesDistribution.push({
+                        type: 'direct',
+                        formulaNumber: null,
+                        formulaType: null
+                    });
+                }
+            }
+
+            // Shuffle the distribution to avoid predictable patterns
+            // Fisher-Yates shuffle algorithm
+            for (let j = termTypesDistribution.length - 1; j > 0; j--) {
+                const k = Math.floor(Math.random() * (j + 1));
+                [termTypesDistribution[j], termTypesDistribution[k]] = [termTypesDistribution[k], termTypesDistribution[j]];
+            }
+
+            console.log('[generateExerciseTerms] Pre-calculated term types distribution:', {
+                totalTerms: remainingTerms,
+                currentFormulaCount,
+                otherTermsCount,
+                distribution: termTypesDistribution.map(t => t.type)
+            });
+        }
+
         // Generate remaining terms
         for (let i = 1; i < terms; i++) {
             let op;
@@ -1892,9 +1964,10 @@ function generateExerciseTerms(settings) {
                     validTermFound = true;
                 }
             } else if (isSmallFriendsLevel(complexity)) {
-                // For Small Friends levels, use progressive learning:
-                // - 80% current formula
-                // - 20% previous formulas + direct calculations
+                // For Small Friends levels, use progressive learning with GUARANTEED mix:
+                // - 80% current formula (majority)
+                // - 20% previous formulas + direct calculations (minority)
+                // The distribution is pre-calculated to ensure every exercise has variety
                 const currentResult = calculateResult(termsArray, operations.slice(0, -1));
                 const formulaNumber = getSmallFriendsFormulaNumber(complexity);
                 const availableFormulas = getAvailableFormulasForLevel(complexity);
@@ -1918,50 +1991,21 @@ function generateExerciseTerms(settings) {
                     break;
                 }
 
-                // Decide what type of calculation to generate
-                // 80% chance for current formula, 20% for previous formulas + direct
-                const rand = Math.random();
-                const currentFormulaWeight = 0.8; // Fixed 80% for current formula
-                let targetType; // 'current', 'previous', or 'direct'
-                let targetFormulaNumber = null;
-                let targetFormulaType = null; // 'plus' or 'minus'
+                // Use pre-calculated term type from distribution instead of random selection
+                // This guarantees that every exercise will have a mix of formulas
+                const termIndex = i - 1; // Adjust for first term (which is always positive)
+                const termTypeConfig = termTypesDistribution[termIndex];
 
-                if (formulaNumber !== null && rand < currentFormulaWeight) {
-                    // Use current formula
-                    targetType = 'current';
-                    targetFormulaNumber = formulaNumber;
-                    targetFormulaType = availableFormulas.isPlus ? 'plus' : 'minus';
-                } else if (availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0) {
-                    // Split remaining probability between previous formulas and direct
-                    const remainingWeight = 1 - currentFormulaWeight;
-                    const directWeight = remainingWeight * 0.3; // 30% of remaining goes to direct
+                let targetType = termTypeConfig.type;
+                let targetFormulaNumber = termTypeConfig.formulaNumber;
+                let targetFormulaType = termTypeConfig.formulaType;
 
-                    if (Math.random() < directWeight / remainingWeight) {
-                        // Use direct calculation
-                        targetType = 'direct';
-                    } else {
-                        // Use a previous formula
-                        targetType = 'previous';
-                        const randomFormula = availableFormulas.previousFormulas[
-                            Math.floor(Math.random() * availableFormulas.previousFormulas.length)
-                        ];
-                        targetFormulaNumber = randomFormula.number;
-                        targetFormulaType = randomFormula.type;
-                    }
-                } else {
-                    // No previous formulas available, use current or direct (80/20 split)
-                    targetType = Math.random() < 0.8 ? 'current' : 'direct';
-                    if (targetType === 'current') {
-                        targetFormulaNumber = formulaNumber;
-                        targetFormulaType = availableFormulas.isPlus ? 'plus' : 'minus';
-                    }
-                }
-
-                console.log('[generateExerciseTerms] Selected target:', {
+                console.log('[generateExerciseTerms] Using pre-allocated target from distribution:', {
+                    termIndex,
                     targetType,
                     targetFormulaNumber,
                     targetFormulaType,
-                    currentFormulaWeight
+                    distributionPosition: `${termIndex + 1}/${termTypesDistribution.length}`
                 });
 
                 // Generate term based on target type
