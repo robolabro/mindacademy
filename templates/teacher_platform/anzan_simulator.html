@@ -1904,11 +1904,33 @@ function generateExerciseTerms(settings) {
         // Generate remaining terms
         for (let i = 1; i < terms; i++) {
             let op;
-            if (operation === 'mixed') {
-                op = Math.random() > 0.5 ? '+' : '-';
+
+            // For Small Friends levels, determine operation based on pre-allocated formula type
+            if (isSmallFriendsLevel(complexity) && termTypesDistribution.length > 0) {
+                const termIndex = i - 1;
+                const termTypeConfig = termTypesDistribution[termIndex];
+
+                // Force operation to match formula type for formula terms
+                if (termTypeConfig.type === 'current' || termTypeConfig.type === 'previous') {
+                    // Use formula type to determine operation
+                    op = termTypeConfig.formulaType === 'plus' ? '+' : '-';
+                } else {
+                    // For direct calculations, use normal logic
+                    if (operation === 'mixed') {
+                        op = Math.random() > 0.5 ? '+' : '-';
+                    } else {
+                        op = operation === 'addition' ? '+' : '-';
+                    }
+                }
             } else {
-                op = operation === 'addition' ? '+' : '-';
+                // Normal operation selection for non-Small Friends levels
+                if (operation === 'mixed') {
+                    op = Math.random() > 0.5 ? '+' : '-';
+                } else {
+                    op = operation === 'addition' ? '+' : '-';
+                }
             }
+
             operations.push(op);
 
             let term;
@@ -2065,20 +2087,13 @@ function generateExerciseTerms(settings) {
                             targetType = 'current';
                             targetFormulaNumber = formulaNumber;
                             targetFormulaType = availableFormulas.isPlus ? 'plus' : 'minus';
+                            // Update operation to match formula type
+                            op = targetFormulaType === 'plus' ? '+' : '-';
+                            operations[operations.length - 1] = op;
                         }
                     } else {
                         // Generate a formula term (current or previous)
-                        // Determine the operation type based on targetFormulaType
-                        let useAddition = (targetFormulaType === 'plus');
-
-                        // If the current operation doesn't match the formula type, try to use the formula number
-                        // but accept the current operation
-                        if ((op === '+' && !useAddition) || (op === '-' && useAddition)) {
-                            // Operation doesn't match formula type
-                            // Try to generate a term that still requires the target formula
-                            // For flexibility, we'll accept any term that creates the needed situation
-                        }
-
+                        // Operation is already set correctly to match targetFormulaType
                         // Generate term based on target formula number
                         term = targetFormulaNumber || (Math.floor(Math.random() * 4) + 1);
 
