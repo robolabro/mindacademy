@@ -1808,8 +1808,8 @@ function shouldAvoidTermRepetition(termsArray, candidateTerm) {
     if (termsArray.length === 0) return false;
 
     // Configuration: Max consecutive repetitions and max total occurrences
-    const MAX_CONSECUTIVE_REPETITIONS = 2;
-    const MAX_TOTAL_OCCURRENCES = 3;
+    const MAX_CONSECUTIVE_REPETITIONS = 1;
+    const MAX_TOTAL_OCCURRENCES = 2;
 
     // Check 1: Count total occurrences of this term
     const totalOccurrences = termsArray.filter(t => Math.abs(t) === Math.abs(candidateTerm)).length;
@@ -2399,10 +2399,12 @@ function runTrainingExercise() {
         exerciseData.training.lastCalculations.splice(0, entriesToRemove);
     }
 
-    // Store this calculation in history (keep last 5 for better diversity)
-    exerciseData.training.lastCalculations.push(calculationStr);
-    if (exerciseData.training.lastCalculations.length > 5) {
-        exerciseData.training.lastCalculations.shift(); // Remove oldest
+    // Store this calculation in history ONLY if it's not already there (keep last 10 for better diversity)
+    if (!exerciseData.training.lastCalculations.includes(calculationStr)) {
+        exerciseData.training.lastCalculations.push(calculationStr);
+        if (exerciseData.training.lastCalculations.length > 10) {
+            exerciseData.training.lastCalculations.shift(); // Remove oldest
+        }
     }
 
     exerciseData.training.generatedTerms = terms;
@@ -2620,10 +2622,12 @@ function runSeriesExercise() {
         settings.lastCalculations.splice(0, entriesToRemove);
     }
 
-    // Store this calculation in history (keep last 5 for better diversity)
-    settings.lastCalculations.push(calculationStr);
-    if (settings.lastCalculations.length > 5) {
-        settings.lastCalculations.shift(); // Remove oldest
+    // Store this calculation in history ONLY if it's not already there (keep last 10 for better diversity)
+    if (!settings.lastCalculations.includes(calculationStr)) {
+        settings.lastCalculations.push(calculationStr);
+        if (settings.lastCalculations.length > 10) {
+            settings.lastCalculations.shift(); // Remove oldest
+        }
     }
 
     const exerciseStartTime = Date.now();
@@ -2909,10 +2913,12 @@ function runStudentExercise(studentId) {
         student.lastCalculations.splice(0, entriesToRemove);
     }
 
-    // Store this calculation in history (keep last 3)
-    student.lastCalculations.push(calculationStr);
-    if (student.lastCalculations.length > 3) {
-        student.lastCalculations.shift(); // Remove oldest
+    // Store this calculation in history ONLY if it's not already there (keep last 10 for better diversity)
+    if (!student.lastCalculations.includes(calculationStr)) {
+        student.lastCalculations.push(calculationStr);
+        if (student.lastCalculations.length > 10) {
+            student.lastCalculations.shift(); // Remove oldest
+        }
     }
 
     const exerciseStartTime = Date.now();
