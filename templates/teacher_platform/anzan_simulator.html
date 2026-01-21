@@ -1717,9 +1717,11 @@ function generateExerciseTerms(settings) {
                     termAttempts++;
                 }
 
-                // If no valid term found after attempts, regenerate entire exercise
+                // If no valid term found after attempts, fall back to standard generation
+                // to ensure we always generate the requested number of terms
                 if (!validTermFound) {
-                    break; // Break inner loop to regenerate
+                    term = generateNumber(settings, false);
+                    validTermFound = true;
                 }
             } else {
                 // For other complexity levels, use standard generation
@@ -1730,10 +1732,6 @@ function generateExerciseTerms(settings) {
                     term = -term;
                 }
                 validTermFound = true;
-            }
-
-            if (!validTermFound) {
-                break; // Regenerate entire exercise
             }
 
             termsArray.push(term);
