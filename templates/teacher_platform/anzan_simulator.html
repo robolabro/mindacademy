@@ -2356,6 +2356,21 @@ function generateExerciseTerms(settings) {
             }
         }
 
+        // For direct-to-5 complexity, ensure at least one term is 5 (either +5 or -5)
+        // This guarantees practice with the heaven bead (5) in every exercise
+        if (complexity === 'direct-to-5') {
+            const hasFive = termsArray.some(term => Math.abs(term) === 5);
+            if (!hasFive) {
+                console.log('[generateExerciseTerms] direct-to-5: No term with value 5, regenerating exercise');
+                attempt++;
+                if (attempt >= maxAttempts) {
+                    // If max attempts reached, return what we have
+                    break;
+                }
+                continue; // Regenerate
+            }
+        }
+
         // Valid result found
         console.log('[generateExerciseTerms] Generated valid exercise:', { termsCount: termsArray.length, terms: termsArray, operations });
         return { terms: termsArray, operations: operations };
