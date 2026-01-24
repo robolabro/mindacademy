@@ -1561,7 +1561,7 @@ function getComplexityLimit(complexity) {
         case 'direct-to-4':
             return 4;
         case 'direct-to-5':
-            return 5;
+            return 9; // Allow results up to 9 to enable more exercise variety while using terms 1-5
         case 'direct-to-9':
             return 9;
         case 'small-plus-1':
@@ -1890,7 +1890,17 @@ function generateExerciseTerms(settings) {
     let termsArray = [];
     let operations = [];
 
+    // Safety timeout: prevent infinite loops by tracking generation time
+    const startTime = Date.now();
+    const maxGenerationTime = 5000; // 5 seconds max
+
     do {
+        // Safety check: if generation takes more than 5 seconds, break out
+        if (Date.now() - startTime > maxGenerationTime) {
+            console.error('[generateExerciseTerms] Generation timeout exceeded! Breaking out to prevent browser hang.');
+            alert('Eroare la generarea exercițiului. Vă rugăm încercați din nou sau schimbați setările.');
+            break;
+        }
         termsArray = [];
         operations = [];
 
@@ -2361,10 +2371,22 @@ function generateExerciseTerms(settings) {
         if (complexity === 'direct-to-5') {
             const hasFive = termsArray.some(term => Math.abs(term) === 5);
             if (!hasFive) {
-                console.log('[generateExerciseTerms] direct-to-5: No term with value 5, regenerating exercise');
+                console.log('[generateExerciseTerms] direct-to-5: No term with value 5, regenerating exercise. Attempt:', attempt + 1, '/', maxAttempts);
+                console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
                 attempt++;
                 if (attempt >= maxAttempts) {
-                    // If max attempts reached, return what we have
+                    // If max attempts reached, force add a 5 to make it valid
+                    console.warn('[generateExerciseTerms] Max attempts reached! Forcing number 5 into exercise.');
+                    // Replace a random term (not the first) with 5
+                    if (termsArray.length > 1) {
+                        const randomIndex = Math.floor(Math.random() * (termsArray.length - 1)) + 1;
+                        const oldTerm = termsArray[randomIndex];
+                        termsArray[randomIndex] = 5;
+                        console.log('[generateExerciseTerms] Replaced term at index', randomIndex, 'from', oldTerm, 'to 5');
+                        // Recalculate result with the forced 5
+                        result = calculateResult(termsArray, operations);
+                        console.log('[generateExerciseTerms] New result after forcing 5:', result);
+                    }
                     break;
                 }
                 continue; // Regenerate
