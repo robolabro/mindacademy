@@ -1400,7 +1400,15 @@ function generateNumber(settings, isFirstTerm = false) {
             break;
         case 'direct-to-9':
             // Direct calculation with 9: use only 1-9 (all beads available, no 0)
-            num = Math.floor(Math.random() * 9) + 1; // 1-9
+            // Favor larger numbers (6-9) with 60% probability for increased difficulty
+            const rand = Math.random();
+            if (rand < 0.6) {
+                // 60% - Generate large numbers (6-9) to challenge kids with heaven+earth bead combinations
+                num = Math.floor(Math.random() * 4) + 6; // 6-9
+            } else {
+                // 40% - Generate smaller numbers (1-5)
+                num = Math.floor(Math.random() * 5) + 1; // 1-5
+            }
             break;
         case 'direct-counting':
             const max = parseInt('9'.repeat(digits));
@@ -2496,27 +2504,48 @@ function generateExerciseTerms(settings) {
             }
         }
 
-        // For direct-to-9 complexity, ensure at least one term is 6, 7, 8, or 9 (either + or -)
-        // This guarantees practice with larger numbers while avoiding Small/Big Friends
+        // For direct-to-9 complexity, ensure sufficient practice with large numbers (6-9)
+        // Goal: >70% of non-first terms should be 6-9 to challenge kids with heaven+earth bead combinations
         if (complexity === 'direct-to-9') {
+            // Check if at least one large number exists
             const hasLargeNumber = termsArray.some(term => Math.abs(term) >= 6 && Math.abs(term) <= 9);
-            if (!hasLargeNumber) {
-                console.log('[generateExerciseTerms] direct-to-9: No term with value 6-9, regenerating exercise. Attempt:', attempt + 1, '/', maxAttempts);
+
+            // Count large numbers in non-first positions (positions 2, 3, 4, etc.)
+            const nonFirstTerms = termsArray.slice(1); // Exclude first term
+            const largeNumbersInLaterPositions = nonFirstTerms.filter(term => Math.abs(term) >= 6 && Math.abs(term) <= 9).length;
+            const largeNumberPercentage = nonFirstTerms.length > 0 ? (largeNumbersInLaterPositions / nonFirstTerms.length) : 0;
+
+            // Require: at least 1 large number total AND >70% of non-first terms are large numbers
+            const meetsRequirement = hasLargeNumber && largeNumberPercentage >= 0.7;
+
+            if (!meetsRequirement) {
+                console.log('[generateExerciseTerms] direct-to-9: Insufficient large numbers (6-9). Current: ' +
+                    (largeNumberPercentage * 100).toFixed(0) + '% of non-first terms. Target: >70%. Attempt:',
+                    attempt + 1, '/', maxAttempts);
                 console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
                 attempt++;
                 if (attempt >= maxAttempts) {
-                    // If max attempts reached, force add a large number to make it valid
-                    console.warn('[generateExerciseTerms] Max attempts reached! Forcing large number (6-9) into exercise.');
-                    // Replace a random term (not the first) with a random number from 6-9
+                    // If max attempts reached, force large numbers to meet the requirement
+                    console.warn('[generateExerciseTerms] Max attempts reached! Forcing large numbers (6-9) into exercise.');
                     if (termsArray.length > 1) {
-                        const randomIndex = Math.floor(Math.random() * (termsArray.length - 1)) + 1;
-                        const randomLargeNum = Math.floor(Math.random() * 4) + 6; // Random number 6-9
-                        const oldTerm = termsArray[randomIndex];
-                        termsArray[randomIndex] = randomLargeNum;
-                        console.log('[generateExerciseTerms] Replaced term at index', randomIndex, 'from', oldTerm, 'to', randomLargeNum);
-                        // Recalculate result with the forced large number
+                        // Calculate how many terms we need to replace to reach >70%
+                        const targetCount = Math.ceil(nonFirstTerms.length * 0.7);
+                        const needToAdd = targetCount - largeNumbersInLaterPositions;
+
+                        console.log('[generateExerciseTerms] Need to add', needToAdd, 'more large numbers to reach 70% target');
+
+                        // Replace random non-first terms with large numbers
+                        for (let j = 0; j < needToAdd && j < nonFirstTerms.length; j++) {
+                            const randomIndex = Math.floor(Math.random() * (termsArray.length - 1)) + 1;
+                            const randomLargeNum = Math.floor(Math.random() * 4) + 6; // Random number 6-9
+                            const oldTerm = termsArray[randomIndex];
+                            termsArray[randomIndex] = randomLargeNum;
+                            console.log('[generateExerciseTerms] Replaced term at index', randomIndex, 'from', oldTerm, 'to', randomLargeNum);
+                        }
+
+                        // Recalculate result with the forced large numbers
                         result = calculateResult(termsArray, operations);
-                        console.log('[generateExerciseTerms] New result after forcing large number:', result);
+                        console.log('[generateExerciseTerms] New result after forcing large numbers:', result);
                     }
                     break;
                 }
