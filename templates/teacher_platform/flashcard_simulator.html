@@ -5,15 +5,59 @@
 
 {% block extra_css %}
 <style>
+    /* Hide platform sidebar for flashcard page */
+    .sidebar {
+        display: none !important;
+    }
+
+    /* Make main content take full width without sidebar */
+    .teacher-layout {
+        display: block !important;
+    }
+
+    /* Hide platform sidebar and header in fullscreen */
+    :fullscreen ~ * .sidebar,
+    :-webkit-full-screen ~ * .sidebar,
+    :-moz-full-screen ~ * .sidebar,
+    :fullscreen ~ * header,
+    :-webkit-full-screen ~ * header,
+    :-moz-full-screen ~ * header,
+    :fullscreen ~ * nav,
+    :-webkit-full-screen ~ * nav,
+    :-moz-full-screen ~ * nav {
+        display: none !important;
+    }
+
+    /* Global fullscreen optimization */
+    :fullscreen,
+    :-webkit-full-screen,
+    :-moz-full-screen {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    }
+
     .flashcard-container {
-        padding: 2rem;
+        padding: 0;
+        margin: 0;
         max-width: 100%;
-        min-height: calc(100vh - 180px);
+        height: calc(100vh - 73px);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    }
+
+    /* Override main-content padding for flashcard page */
+    .main-content {
+        padding: 0 !important;
+    }
+
+    /* Hide sidebar and header in fullscreen */
+    :fullscreen .flashcard-container,
+    :-webkit-full-screen .flashcard-container,
+    :-moz-full-screen .flashcard-container {
+        padding: 0;
+        height: 100vh;
     }
 
     /* Mode Selection Screen */
@@ -96,12 +140,14 @@
     .mode-screen {
         display: none;
         background: white;
-        border-radius: 20px;
-        padding: 2rem;
+        border-radius: 12px;
+        margin: 1.5rem;
+        padding: 0.5rem;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-        max-width: 1200px;
-        width: 95%;
-        min-height: 600px;
+        /* max-width: 1500px; */
+        width: 99%;
+        height: 96vh;
+        max-height: 96vh;
     }
 
     .mode-screen.active {
@@ -109,12 +155,55 @@
         flex-direction: column;
     }
 
+    /* Fullscreen mode - maximize space */
+    :fullscreen .mode-screen,
+    :-webkit-full-screen .mode-screen,
+    :-moz-full-screen .mode-screen {
+        width: 100%;
+        max-width: none;
+        height: 100vh;
+        border-radius: 0;
+        padding: 0.5rem;
+        margin: 0;
+    }
+
+    /* Fullscreen classwork - no lateral padding */
+    :fullscreen #classworkMode,
+    :-webkit-full-screen #classworkMode,
+    :-moz-full-screen #classworkMode {
+        padding: 0;
+        background: white;
+    }
+
+    /* Hide mode header in fullscreen for Classwork */
+    :fullscreen #classworkMode .mode-header,
+    :-webkit-full-screen #classworkMode .mode-header,
+    :-moz-full-screen #classworkMode .mode-header {
+        display: none;
+    }
+
+    /* Hide mode header in fullscreen for Exercises */
+    :fullscreen #exercisesMode .mode-header,
+    :-webkit-full-screen #exercisesMode .mode-header,
+    :-moz-full-screen #exercisesMode .mode-header {
+        margin-bottom: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    /* Maximize exercise area in fullscreen */
+    :fullscreen .exercise-area,
+    :-webkit-full-screen .exercise-area,
+    :-moz-full-screen .exercise-area {
+        height: calc(100vh - 60px);
+        padding: 0.3rem;
+    }
+
     .mode-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
         border-bottom: 2px solid #f0f0f0;
     }
 
@@ -142,9 +231,9 @@
 
     .settings-panel {
         background: #f8f9fa;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
+        border-radius: 10px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
     }
 
     .settings-row {
@@ -275,16 +364,16 @@
     }
 
     .start-btn {
-        padding: 0.8rem 2.5rem;
+        padding: 0.6rem 2rem;
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         color: white;
         border: none;
-        border-radius: 10px;
+        border-radius: 8px;
         cursor: pointer;
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
         transition: all 0.3s ease;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
         align-self: center;
     }
 
@@ -296,21 +385,21 @@
     .instructions-panel {
         background: #fff3cd;
         border-left: 4px solid #ffc107;
-        padding: 1.5rem;
+        padding: 0.75rem;
         border-radius: 8px;
-        margin-bottom: 2rem;
+        margin-bottom: 0.75rem;
     }
 
     .instructions-panel h3 {
         color: #856404;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
     }
 
     .instructions-panel p {
         color: #856404;
-        line-height: 1.6;
-        margin-bottom: 0.5rem;
+        line-height: 1.5;
+        margin-bottom: 0.3rem;
     }
 
     .instructions-panel ul {
@@ -325,11 +414,12 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        padding: 2rem;
+        justify-content: flex-start;
+        padding: 0.5rem;
         background: #f8f9fa;
-        border-radius: 15px;
-        min-height: 600px;
+        border-radius: 10px;
+        height: calc(96vh - 100px);
+        overflow-y: auto;
     }
 
     .countdown {
@@ -346,11 +436,11 @@
 
     .mini-abacus {
         background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        margin-bottom: 2rem;
-        width: 100%;
+        border-radius: 10px;
+        padding: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 0.75rem;
+        /* width: 100%; */
         display: flex;
         justify-content: center;
     }
@@ -362,7 +452,7 @@
         background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
         border-radius: 20px;
         border: 8px solid #654321;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
     }
 
     .rod-mini {
@@ -392,7 +482,7 @@
         width: 40px;
         height: 6px;
         background: linear-gradient(to right, #2c2c2c 0%, #1a1a1a 50%, #2c2c2c 100%);
-        border-radius: 3px;
+        border-radius: 2px;
         z-index: 5;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     }
@@ -418,6 +508,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        left: 50%;
+        transform: translateX(-50%);
     }
 
     .beads-section-mini.top {
@@ -438,7 +530,8 @@
         transition: all 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
         cursor: pointer;
         margin: 4px 0;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        flex-shrink: 0;
     }
 
     /* Top beads (heaven - value 5) */
@@ -581,12 +674,39 @@
         font-size: 1.3rem;
     }
 
+    /* Training Mode padding */
+    #trainingMode {
+        padding: 2rem;
+    }
+
+    /* Student individual Start button */
+    .student-start-btn {
+        padding: 0.8rem 1.5rem;
+        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 1rem auto;
+        display: block;
+        box-shadow: 0 4px 12px rgba(0, 176, 155, 0.3);
+    }
+
+    .student-start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 176, 155, 0.4);
+    }
+
     /* Classwork Mode */
     .classwork-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 0.35rem;
+        padding: 0.35rem 0.5rem;
     }
 
     .classwork-controls {
@@ -635,53 +755,257 @@
 
     .students-grid {
         display: grid;
+        gap: 0.4rem;
+        height: calc(96vh - 60px);
+        overflow-y: auto;
+        padding: 0.2rem;
+    }
+
+    /* Fixed grid layout based on number of students */
+    /* 1-4 students: 2x2 grid (25% each) */
+    .students-grid.students-1-4 {
         grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
-        height: 600px;
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* 5-8 students: 4x2 grid (12.5% each) */
+    .students-grid.students-5-8 {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* 9-10 students: keep flexible */
+    .students-grid.students-9-10 {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    /* Adaptive grid based on number of students visible */
+    @media (min-width: 1400px) {
+        .students-grid.students-9-10 {
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
     }
 
     .student-panel {
         background: #f8f9fa;
         border: 2px solid #dee2e6;
-        border-radius: 15px;
-        padding: 1.5rem;
+        border-radius: 8px;
+        padding: 0.35rem;
         display: flex;
         flex-direction: column;
+        /* min-height: 340px; */
+        /* max-height: 480px; */
+        overflow-y: auto;
+    }
+
+    /* Compact abacus for student panels */
+    .student-panel .mini-abacus {
+        padding: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .student-panel .abacus-frame-mini {
+        gap: 2rem;
+        padding: 1rem 1.5rem;
+        border: 4px solid #654321;
+    }
+
+    .student-panel .rod-line-mini {
+        width: 5px;
+        height: 260px;
+    }
+
+    .student-panel .bead-mini {
+        width: 28px;
+        height: 28px;
+        margin: 2px 0;
+    }
+
+    .student-panel .divider-mini {
+        width: 30px;
+        height: 4px;
+    }
+
+    .student-panel .bead-mini.top.active {
+        transform: translateY(25px);
+    }
+
+    .student-panel .bead-mini.top.active:hover {
+        transform: translateY(25px) scale(1.05);
+    }
+
+    .student-panel .bead-mini.bottom.active {
+        transform: translateY(-50px);
+    }
+
+    .student-panel .bead-mini.bottom.active:hover {
+        transform: translateY(-50px) scale(1.05);
+    }
+
+    /* Compact elements in student panel */
+    .student-panel .not-solved-text {
+        font-size: 0.9rem;
+        padding: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .student-panel .answer-area {
+        gap: 0.25rem;
+        padding: 0.25rem;
+    }
+
+    .student-panel .answer-area .answer-input {
+        max-width: 100%;
+        padding: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .student-panel .answer-btn {
+        padding: 0.5rem 1.2rem;
+        font-size: 0.95rem;
+    }
+
+    .student-panel .countdown {
+        font-size: 2.5rem;
+    }
+
+    .student-panel .your-answer-label {
+        font-size: 0.85rem;
+        margin-bottom: 0.2rem;
+    }
+
+    /* Fullscreen optimizations */
+    :fullscreen .students-grid,
+    :-webkit-full-screen .students-grid,
+    :-moz-full-screen .students-grid {
+        height: 100vh;
+        gap: 0.2rem;
+        padding: 0;
+    }
+
+    /* Fullscreen: Fixed grid for 1-4 students */
+    :fullscreen .students-grid.students-1-4,
+    :-webkit-full-screen .students-grid.students-1-4,
+    :-moz-full-screen .students-grid.students-1-4 {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* Fullscreen: Fixed grid for 5-8 students */
+    :fullscreen .students-grid.students-5-8,
+    :-webkit-full-screen .students-grid.students-5-8,
+    :-moz-full-screen .students-grid.students-5-8 {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    /* Fullscreen: Flexible grid for 9-10 students */
+    :fullscreen .students-grid.students-9-10,
+    :-webkit-full-screen .students-grid.students-9-10,
+    :-moz-full-screen .students-grid.students-9-10 {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    :fullscreen .student-panel,
+    :-webkit-full-screen .student-panel,
+    :-moz-full-screen .student-panel {
+        padding: 0.3rem;
+        min-height: 320px;
+        max-height: 480px;
+    }
+
+    :fullscreen .classwork-header,
+    :-webkit-full-screen .classwork-header,
+    :-moz-full-screen .classwork-header {
+        margin-bottom: 0.25rem;
+        padding: 0.25rem;
+    }
+
+    :fullscreen .student-panel .abacus-frame-mini,
+    :-webkit-full-screen .student-panel .abacus-frame-mini,
+    :-moz-full-screen .student-panel .abacus-frame-mini {
+        gap: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    :fullscreen .student-panel .rod-line-mini,
+    :-webkit-full-screen .student-panel .rod-line-mini,
+    :-moz-full-screen .student-panel .rod-line-mini {
+        width: 9px;
+        height: 220px;
+    }
+
+    :fullscreen .student-panel .bead-mini,
+    :-webkit-full-screen .student-panel .bead-mini,
+    :-moz-full-screen .student-panel .bead-mini {
+        width: 52px;
+        height: 52px;
+    }
+
+    :fullscreen .student-panel .divider-mini,
+    :-webkit-full-screen .student-panel .divider-mini,
+    :-moz-full-screen .student-panel .divider-mini {
+        width: 40px;
+        height: 6px;
+    }
+
+    :fullscreen .student-panel .bead-mini.top.active,
+    :-webkit-full-screen .student-panel .bead-mini.top.active,
+    :-moz-full-screen .student-panel .bead-mini.top.active {
+        transform: translateY(42px);
+    }
+
+    :fullscreen .student-panel .bead-mini.top.active:hover,
+    :-webkit-full-screen .student-panel .bead-mini.top.active:hover,
+    :-moz-full-screen .student-panel .bead-mini.top.active:hover {
+        transform: translateY(42px) scale(1.05);
+    }
+
+    :fullscreen .student-panel .bead-mini.bottom.active,
+    :-webkit-full-screen .student-panel .bead-mini.bottom.active,
+    :-moz-full-screen .student-panel .bead-mini.bottom.active {
+        transform: translateY(-50px);
+    }
+
+    :fullscreen .student-panel .bead-mini.bottom.active:hover,
+    :-webkit-full-screen .student-panel .bead-mini.bottom.active:hover,
+    :-moz-full-screen .student-panel .bead-mini.bottom.active:hover {
+        transform: translateY(-50px) scale(1.05);
     }
 
     .student-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #dee2e6;
-        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid #dee2e6;
+        gap: 0.3rem;
     }
 
     .student-name-input {
-        padding: 0.5rem;
-        font-size: 1rem;
+        padding: 0.3rem 0.4rem;
+        font-size: 0.9rem;
         border: 1px solid #ced4da;
-        border-radius: 5px;
+        border-radius: 4px;
         flex: 1;
-        max-width: 150px;
+        max-width: 120px;
     }
 
     .student-header-buttons {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.3rem;
         align-items: center;
     }
 
     .student-status {
         display: none;
-        width: 30px;
-        height: 30px;
-        border-radius: 5px;
+        width: 26px;
+        height: 26px;
+        border-radius: 4px;
         align-items: center;
         justify-content: center;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
 
     .student-status.show {
@@ -702,10 +1026,10 @@
         background: #6c757d;
         color: white;
         border: none;
-        border-radius: 5px;
-        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        padding: 0.3rem 0.5rem;
         cursor: pointer;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         transition: all 0.2s ease;
     }
 
@@ -717,10 +1041,10 @@
         background: #dc3545;
         color: white;
         border: none;
-        border-radius: 5px;
-        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        padding: 0.3rem 0.5rem;
         cursor: pointer;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
 
     .delete-student-btn:hover {
@@ -936,22 +1260,22 @@
         <h1 class="mode-title">Alege Modul de Lucru</h1>
         <button class="back-btn" onclick="window.history.back()" style="margin-bottom: 2rem;">← Înapoi</button>
         <div class="mode-grid">
-            <div class="mode-card" onclick="selectMode('training')">
+            <div class="mode-card" data-mode="training" onclick="selectMode('training')">
                 <div class="mode-card-icon">📚</div>
                 <div class="mode-card-title">Mod Antrenament</div>
                 <div class="mode-card-desc">Învață să recunoști numerele pe soroban</div>
             </div>
-            <div class="mode-card" onclick="selectMode('flash')">
+            <div class="mode-card" data-mode="flash" onclick="selectMode('flash')">
                 <div class="mode-card-icon">⚡</div>
                 <div class="mode-card-title">Mod Flash</div>
                 <div class="mode-card-desc">Exercițiu de viteză pentru recunoaștere rapidă</div>
             </div>
-            <div class="mode-card" onclick="selectMode('exercises')">
+            <div class="mode-card" data-mode="exercises" onclick="selectMode('exercises')">
                 <div class="mode-card-icon">🧮</div>
                 <div class="mode-card-title">Exerciții</div>
                 <div class="mode-card-desc">Rezolvă probleme de matematică cu soroban</div>
             </div>
-            <div class="mode-card" onclick="selectMode('classwork')">
+            <div class="mode-card" data-mode="classwork" onclick="selectMode('classwork')">
                 <div class="mode-card-icon">👥</div>
                 <div class="mode-card-title">Lucru în Clasă</div>
                 <div class="mode-card-desc">Practică împreună cu 4 elevi simultan</div>
@@ -1142,9 +1466,9 @@
                 <span class="setting-label">Formula:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-formula="addition">Adunare</button>
+                        <button class="toggle-btn" data-formula="addition">Adunare</button>
                         <button class="toggle-btn" data-formula="subtraction">Scădere</button>
-                        <button class="toggle-btn" data-formula="mixed">Mixt</button>
+                        <button class="toggle-btn active" data-formula="mixed">Mixt</button>
                     </div>
                 </div>
             </div>
@@ -1153,48 +1477,11 @@
                 <span class="setting-label">Nivel:</span>
                 <div class="setting-controls">
                     <select id="levelSelect" class="level-select" onchange="updateLevel()">
-                        <optgroup label="Numărare directă">
-                            <option value="direct-to-4">Numărare directă până la 4</option>
-                            <option value="direct-to-5">Numărare directă până la 5</option>
-                            <option value="direct-to-9">Numărare directă până la 9</option>
-                            <option value="direct-counting" selected>Numărare directă</option>
-                        </optgroup>
-                        <optgroup label="Prieteni mici (Small Friends)">
-                            <option value="small-plus-1">+1 = +5 - 4</option>
-                            <option value="small-plus-2">+2 = +5 - 3</option>
-                            <option value="small-plus-3">+3 = +5 - 2</option>
-                            <option value="small-plus-4">+4 = +5 - 1</option>
-                            <option value="small-minus-1">-1 = +4 - 5</option>
-                            <option value="small-minus-2">-2 = +3 - 5</option>
-                            <option value="small-minus-3">-3 = +2 - 5</option>
-                            <option value="small-minus-4">-4 = +1 - 5</option>
-                            <option value="small-friends-all">Prieteni mici (toate)</option>
-                        </optgroup>
-                        <optgroup label="Prieteni mari (Big Friends)">
-                            <option value="big-plus-1">+1 = +10 - 9</option>
-                            <option value="big-plus-2">+2 = +10 - 8</option>
-                            <option value="big-plus-3">+3 = +10 - 7</option>
-                            <option value="big-plus-4">+4 = +10 - 6</option>
-                            <option value="big-plus-5">+5 = +10 - 5</option>
-                            <option value="big-plus-6">+6 = +10 - 4</option>
-                            <option value="big-plus-7">+7 = +10 - 3</option>
-                            <option value="big-plus-8">+8 = +10 - 2</option>
-                            <option value="big-plus-9">+9 = +10 - 1</option>
-                            <option value="big-minus-1">-1 = -10 + 9</option>
-                            <option value="big-minus-2">-2 = -10 + 8</option>
-                            <option value="big-minus-3">-3 = -10 + 7</option>
-                            <option value="big-minus-4">-4 = -10 + 6</option>
-                            <option value="big-minus-5">-5 = -10 + 5</option>
-                            <option value="big-minus-6">-6 = -10 + 4</option>
-                            <option value="big-minus-7">-7 = -10 + 3</option>
-                            <option value="big-minus-8">-8 = -10 + 2</option>
-                            <option value="big-minus-9">-9 = -10 + 1</option>
-                            <option value="big-friends-all">Prieteni mari (toate)</option>
-                        </optgroup>
-                        <optgroup label="Combinații">
-                            <option value="family">Familia (Small + Big Friends)</option>
-                            <option value="mix">Mix (toate variantele)</option>
-                        </optgroup>
+                        <option value="direct-counting" selected>Calcul direct</option>
+                        <option value="small-friends-all">Prietenii Mici</option>
+                        <option value="big-friends-all">Prietenii Mari</option>
+                        <option value="family">Familia</option>
+                        <option value="mix">Mixt</option>
                     </select>
                 </div>
             </div>
@@ -1225,8 +1512,8 @@
                 <span class="setting-label">Răspuns prin:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-answer="number">Număr</button>
-                        <button class="toggle-btn" data-answer="abacus">Pe soroban</button>
+                        <button class="toggle-btn" data-answer="number">Număr</button>
+                        <button class="toggle-btn active" data-answer="abacus">Pe soroban</button>
                     </div>
                 </div>
             </div>
@@ -1270,7 +1557,7 @@
             </div>
         </div>
 
-        <div class="students-grid" id="studentsGrid">
+        <div class="students-grid students-1-4" id="studentsGrid">
             <div class="student-panel" data-student-id="1">
                 <div class="student-header">
                     <input type="text" class="student-name-input" value="Nume copil 1" placeholder="Nume elev">
@@ -1281,6 +1568,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(1)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="1"></div>
                     </div>
@@ -1290,7 +1579,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(1)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1304,6 +1592,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(2)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="2"></div>
                     </div>
@@ -1313,7 +1603,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(2)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1327,6 +1616,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(3)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="3"></div>
                     </div>
@@ -1336,7 +1627,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(3)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1350,6 +1640,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(4)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="4"></div>
                     </div>
@@ -1359,7 +1651,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(4)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1373,6 +1664,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(5)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="5"></div>
                     </div>
@@ -1382,7 +1675,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(5)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1396,6 +1688,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(6)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="6"></div>
                     </div>
@@ -1405,7 +1699,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(6)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1419,6 +1712,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(7)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="7"></div>
                     </div>
@@ -1428,7 +1723,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(7)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1442,6 +1736,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(8)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="8"></div>
                     </div>
@@ -1451,7 +1747,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(8)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1465,6 +1760,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(9)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="9"></div>
                     </div>
@@ -1474,7 +1771,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(9)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
 
@@ -1488,6 +1784,8 @@
                     </div>
                 </div>
                 <div class="student-exercise">
+                    <button class="student-start-btn" onclick="startSingleStudent(10)" style="display: block;">▶️ Start</button>
+                    <div class="countdown" style="display: none;"></div>
                     <div class="mini-abacus" style="display: none;">
                         <div class="abacus-frame-mini" data-student="10"></div>
                     </div>
@@ -1497,7 +1795,6 @@
                         <input type="text" class="answer-input" placeholder="Răspuns">
                         <button class="answer-btn" onclick="checkStudentAnswer(10)">Answer</button>
                     </div>
-                    <div class="countdown" style="display: none;"></div>
                 </div>
             </div>
         </div>
@@ -1580,15 +1877,6 @@
             </div>
             <div class="settings-panel">
                 <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="1" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="1" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
                         <div class="number-input">
@@ -1613,7 +1901,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(1, -0.1)">−</button>
-                            <span class="number-display" id="student1Speed">1</span>
+                            <span class="number-display" id="student1Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(1, 0.1)">+</button>
                         </div>
                     </div>
@@ -1630,15 +1918,6 @@
                 <button class="close-modal" onclick="closeStudentSettings(2)">×</button>
             </div>
             <div class="settings-panel">
-                <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="2" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="2" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
@@ -1664,7 +1943,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(2, -0.1)">−</button>
-                            <span class="number-display" id="student2Speed">1</span>
+                            <span class="number-display" id="student2Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(2, 0.1)">+</button>
                         </div>
                     </div>
@@ -1681,15 +1960,6 @@
                 <button class="close-modal" onclick="closeStudentSettings(3)">×</button>
             </div>
             <div class="settings-panel">
-                <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="3" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="3" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
@@ -1715,7 +1985,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(3, -0.1)">−</button>
-                            <span class="number-display" id="student3Speed">1</span>
+                            <span class="number-display" id="student3Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(3, 0.1)">+</button>
                         </div>
                     </div>
@@ -1732,15 +2002,6 @@
                 <button class="close-modal" onclick="closeStudentSettings(4)">×</button>
             </div>
             <div class="settings-panel">
-                <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="4" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="4" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
@@ -1766,7 +2027,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(4, -0.1)">−</button>
-                            <span class="number-display" id="student4Speed">1</span>
+                            <span class="number-display" id="student4Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(4, 0.1)">+</button>
                         </div>
                     </div>
@@ -1783,15 +2044,6 @@
                 <button class="close-modal" onclick="closeStudentSettings(5)">×</button>
             </div>
             <div class="settings-panel">
-                <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="5" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="5" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
@@ -1817,7 +2069,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(5, -0.1)">−</button>
-                            <span class="number-display" id="student5Speed">1</span>
+                            <span class="number-display" id="student5Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(5, 0.1)">+</button>
                         </div>
                     </div>
@@ -1834,15 +2086,6 @@
                 <button class="close-modal" onclick="closeStudentSettings(6)">×</button>
             </div>
             <div class="settings-panel">
-                <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="6" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="6" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
@@ -1868,7 +2111,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(6, -0.1)">−</button>
-                            <span class="number-display" id="student6Speed">1</span>
+                            <span class="number-display" id="student6Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(6, 0.1)">+</button>
                         </div>
                     </div>
@@ -1885,15 +2128,6 @@
                 <button class="close-modal" onclick="closeStudentSettings(7)">×</button>
             </div>
             <div class="settings-panel">
-                <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="7" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="7" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
@@ -1919,7 +2153,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(7, -0.1)">−</button>
-                            <span class="number-display" id="student7Speed">1</span>
+                            <span class="number-display" id="student7Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(7, 0.1)">+</button>
                         </div>
                     </div>
@@ -1936,15 +2170,6 @@
                 <button class="close-modal" onclick="closeStudentSettings(8)">×</button>
             </div>
             <div class="settings-panel">
-                <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="8" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="8" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
@@ -1970,7 +2195,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(8, -0.1)">−</button>
-                            <span class="number-display" id="student8Speed">1</span>
+                            <span class="number-display" id="student8Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(8, 0.1)">+</button>
                         </div>
                     </div>
@@ -1987,15 +2212,6 @@
                 <button class="close-modal" onclick="closeStudentSettings(9)">×</button>
             </div>
             <div class="settings-panel">
-                <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="9" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="9" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
@@ -2021,7 +2237,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(9, -0.1)">−</button>
-                            <span class="number-display" id="student9Speed">1</span>
+                            <span class="number-display" id="student9Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(9, 0.1)">+</button>
                         </div>
                     </div>
@@ -2038,15 +2254,6 @@
                 <button class="close-modal" onclick="closeStudentSettings(10)">×</button>
             </div>
             <div class="settings-panel">
-                <div class="settings-row">
-                    <span class="setting-label">Direction</span>
-                    <div class="setting-controls">
-                        <div class="toggle-group">
-                            <button class="toggle-btn" data-student="10" data-setting="direction" data-value="abacus-to-number">Abacus</button>
-                            <button class="toggle-btn active" data-student="10" data-setting="direction" data-value="number-to-abacus">Number</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="settings-row">
                     <span class="setting-label">From</span>
                     <div class="setting-controls">
@@ -2072,7 +2279,7 @@
                     <div class="setting-controls">
                         <div class="number-input">
                             <button class="number-btn" onclick="adjustStudentSpeed(10, -0.1)">−</button>
-                            <span class="number-display" id="student10Speed">1</span>
+                            <span class="number-display" id="student10Speed">3</span>
                             <button class="number-btn" onclick="adjustStudentSpeed(10, 0.1)">+</button>
                         </div>
                     </div>
@@ -2121,6 +2328,7 @@
 <script>
     // Global state
     let currentMode = null;
+    let lastExercise = null; // Track last exercise to prevent consecutive duplicates
     let currentSettings = {
         training: {
             direction: 'abacus-to-number',
@@ -2135,11 +2343,11 @@
             duration: 'unlimited'
         },
         exercises: {
-            formulas: ['addition'],  // Changed to array to support multiple selections
+            formulas: ['mixed'],  // Changed to array to support multiple selections
             level: 'direct-counting',
             section: 1,
             addends: 2,
-            answer: 'number'
+            answer: 'abacus'
         },
         classwork: {
             direction: 'abacus-to-number',
@@ -2149,16 +2357,16 @@
             simple: 'ordinary'
         },
         students: {
-            1: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            2: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            3: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            4: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            5: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            6: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            7: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            8: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            9: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' },
-            10: { direction: 'number-to-abacus', from: 1, to: 99, speed: 1.0, simple: 'ordinary' }
+            1: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            2: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            3: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            4: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            5: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            6: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            7: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            8: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            9: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' },
+            10: { direction: 'abacus-to-number', from: 1, to: 99, speed: 3.0, simple: 'ordinary' }
         }
     };
 
@@ -2203,21 +2411,49 @@
 
     // Mode selection
     function selectMode(mode) {
-        document.getElementById('modeSelection').style.display = 'none';
+        console.log('selectMode called with mode:', mode);
+
+        const modeSelection = document.getElementById('modeSelection');
+        console.log('modeSelection element:', modeSelection);
+
+        if (!modeSelection) {
+            console.error('modeSelection element not found!');
+            return;
+        }
+
+        modeSelection.style.display = 'none';
 
         if (mode === 'training') {
-            document.getElementById('trainingMode').classList.add('active');
-            currentMode = 'training';
+            const trainingMode = document.getElementById('trainingMode');
+            console.log('trainingMode element:', trainingMode);
+            if (trainingMode) {
+                trainingMode.classList.add('active');
+                currentMode = 'training';
+            }
         } else if (mode === 'flash') {
-            document.getElementById('flashMode').classList.add('active');
-            currentMode = 'flash';
+            const flashMode = document.getElementById('flashMode');
+            console.log('flashMode element:', flashMode);
+            if (flashMode) {
+                flashMode.classList.add('active');
+                currentMode = 'flash';
+            }
         } else if (mode === 'exercises') {
-            document.getElementById('exercisesMode').classList.add('active');
-            currentMode = 'exercises';
+            const exercisesMode = document.getElementById('exercisesMode');
+            console.log('exercisesMode element:', exercisesMode);
+            if (exercisesMode) {
+                exercisesMode.classList.add('active');
+                currentMode = 'exercises';
+            }
         } else if (mode === 'classwork') {
-            document.getElementById('classworkMode').classList.add('active');
-            currentMode = 'classwork';
+            const classworkMode = document.getElementById('classworkMode');
+            console.log('classworkMode element:', classworkMode);
+            if (classworkMode) {
+                classworkMode.classList.add('active');
+                currentMode = 'classwork';
+            }
         }
+
+        console.log('selectMode finished, currentMode:', currentMode);
     }
 
     function backToModes() {
@@ -2231,7 +2467,7 @@
         document.getElementById('flashExercise').style.display = 'none';
         document.getElementById('exercisesArea').style.display = 'none';
 
-        // Restore settings and instructions for flash mode
+        // Restore settings and instructions for all modes
         const flashMode = document.getElementById('flashMode');
         const flashSettingsPanel = flashMode.querySelector('.settings-panel');
         const flashInstructionsPanel = flashMode.querySelector('.instructions-panel');
@@ -2240,6 +2476,24 @@
         if (flashSettingsPanel) flashSettingsPanel.style.display = 'block';
         if (flashInstructionsPanel) flashInstructionsPanel.style.display = 'block';
         if (flashStartBtn) flashStartBtn.style.display = 'block';
+
+        const trainingMode = document.getElementById('trainingMode');
+        const trainingSettingsPanel = trainingMode.querySelector('.settings-panel');
+        const trainingInstructionsPanel = trainingMode.querySelector('.instructions-panel');
+        const trainingStartBtn = trainingMode.querySelector('.start-btn');
+
+        if (trainingSettingsPanel) trainingSettingsPanel.style.display = 'block';
+        if (trainingInstructionsPanel) trainingInstructionsPanel.style.display = 'block';
+        if (trainingStartBtn) trainingStartBtn.style.display = 'block';
+
+        const exercisesMode = document.getElementById('exercisesMode');
+        const exercisesSettingsPanel = exercisesMode.querySelector('.settings-panel');
+        const exercisesInstructionsPanel = exercisesMode.querySelector('.instructions-panel');
+        const exercisesStartBtn = exercisesMode.querySelector('.start-btn');
+
+        if (exercisesSettingsPanel) exercisesSettingsPanel.style.display = 'block';
+        if (exercisesInstructionsPanel) exercisesInstructionsPanel.style.display = 'block';
+        if (exercisesStartBtn) exercisesStartBtn.style.display = 'block';
 
         // Reset stats
         stats.correct = 0;
@@ -2269,7 +2523,9 @@
         } else if (elementId.includes('To')) {
             newValue = Math.max(1, Math.min(999, newValue));
         } else if (elementId.includes('Addends')) {
-            newValue = Math.max(2, Math.min(5, newValue));
+            // Small Friends All requires minimum 3 addends for sufficient exercise variety
+            const minAddends = (currentSettings.exercises.level === 'small-friends-all') ? 3 : 2;
+            newValue = Math.max(minAddends, Math.min(5, newValue));
         }
 
         // Update element value (works for both input and span)
@@ -2303,7 +2559,9 @@
         if (field === 'from' || field === 'to') {
             value = Math.max(1, Math.min(999, value));
         } else if (field === 'addends') {
-            value = Math.max(2, Math.min(5, value));
+            // Small Friends All requires minimum 3 addends for sufficient exercise variety
+            const minAddends = (currentSettings.exercises.level === 'small-friends-all') ? 3 : 2;
+            value = Math.max(minAddends, Math.min(5, value));
         }
 
         // Update element with validated value
@@ -2341,6 +2599,18 @@
         headerElement.textContent = newValue;
         if (modalElement) modalElement.textContent = newValue;
 
+        // Update grid layout class based on student count
+        const grid = document.getElementById('studentsGrid');
+        grid.classList.remove('students-1-4', 'students-5-8', 'students-9-10');
+
+        if (newValue <= 4) {
+            grid.classList.add('students-1-4');
+        } else if (newValue <= 8) {
+            grid.classList.add('students-5-8');
+        } else {
+            grid.classList.add('students-9-10');
+        }
+
         // Show/hide student panels based on count
         const panels = document.querySelectorAll('.student-panel');
         panels.forEach((panel, index) => {
@@ -2367,6 +2637,18 @@
             document.querySelector('[data-section="1"]').click();
         } else {
             sectionRow.style.display = 'flex';
+        }
+
+        // Small Friends All requires minimum 3 addends for sufficient exercise variety (120 unique exercises)
+        const addendsInput = document.getElementById('exerciseAddends');
+        if (level === 'small-friends-all') {
+            addendsInput.min = 3;
+            if (currentSettings.exercises.addends < 3) {
+                currentSettings.exercises.addends = 3;
+                addendsInput.value = 3;
+            }
+        } else {
+            addendsInput.min = 2;
         }
     }
 
@@ -2443,6 +2725,31 @@
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+    /**
+     * SOROBAN CALCULATION METHODS
+     * ===========================
+     *
+     * 1. DIRECT CALCULATION
+     *    - Simplest method: move beads directly toward the reckoning bar
+     *    - No carries, borrows, or complementary numbers needed
+     *    - Requires enough beads available on the current rod
+     *    - Example: 2 + 2 = move two beads up, then two more up
+     *
+     * 2. SMALL FRIENDS (5-Complements)
+     *    - Used when not enough beads available, but 5-bead (heavenly bead) is available
+     *    - Pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
+     *    - Addition: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
+     *    - Subtraction: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
+     *    - Example: 4 + 1 = Add 5, then subtract 4 (friend of 1)
+     *
+     * 3. BIG FRIENDS (10-Complements)
+     *    - Used when rod is full; must carry to or borrow from next rod (tens place)
+     *    - Pairs that sum to 10: (1,9), (2,8), (3,7), (4,6), (5,5)
+     *    - Addition: +9 = +10-1, +8 = +10-2, ... +1 = +10-9
+     *    - Subtraction: -9 = -10+1, -8 = -10+2, ... -1 = -10+9
+     *    - Example: 9 + 1 = Add 10 on next rod, subtract 9 from current rod
+     */
+
     // Generate exercise based on level
     function generateExerciseForLevel(level, formula, section, addends) {
         const maxDigits = section;
@@ -2479,110 +2786,176 @@
                 }
                 // Generate operators based on formula
                 for (let i = 1; i < addends; i++) {
-                    operators.push(formula === 'addition' ? '+' : '-');
+                    if (formula === 'mixed') {
+                        operators.push(Math.random() < 0.5 ? '+' : '-');
+                    } else {
+                        operators.push(formula === 'addition' ? '+' : '-');
+                    }
                 }
                 break;
 
             // Small Friends - Addition
+            // Progressive logic: 50% direct counting + 50% small friends
             case 'small-plus-1':
-                numbers = generateSmallFriendsExercise(1, addends, formula);
+                const result1 = generateSmallFriendsWithDirect(1, addends, formula, section);
+                numbers = result1.numbers;
+                operators = result1.operators || [];
                 break;
             case 'small-plus-2':
-                numbers = generateSmallFriendsExercise(2, addends, formula);
+                const result2 = generateSmallFriendsWithDirect(2, addends, formula, section);
+                numbers = result2.numbers;
+                operators = result2.operators || [];
                 break;
             case 'small-plus-3':
-                numbers = generateSmallFriendsExercise(3, addends, formula);
+                const result3 = generateSmallFriendsWithDirect(3, addends, formula, section);
+                numbers = result3.numbers;
+                operators = result3.operators || [];
                 break;
             case 'small-plus-4':
-                numbers = generateSmallFriendsExercise(4, addends, formula);
+                const resultSp4 = generateSmallFriendsWithDirect(4, addends, formula, section);
+                numbers = resultSp4.numbers;
+                operators = resultSp4.operators || [];
                 break;
 
             // Small Friends - Subtraction
             case 'small-minus-1':
-                numbers = generateSmallFriendsExercise(-1, addends, formula);
+                const resultm1 = generateSmallFriendsWithDirect(-1, addends, formula, section);
+                numbers = resultm1.numbers;
+                operators = resultm1.operators || [];
                 break;
             case 'small-minus-2':
-                numbers = generateSmallFriendsExercise(-2, addends, formula);
+                const resultm2 = generateSmallFriendsWithDirect(-2, addends, formula, section);
+                numbers = resultm2.numbers;
+                operators = resultm2.operators || [];
                 break;
             case 'small-minus-3':
-                numbers = generateSmallFriendsExercise(-3, addends, formula);
+                const resultm3 = generateSmallFriendsWithDirect(-3, addends, formula, section);
+                numbers = resultm3.numbers;
+                operators = resultm3.operators || [];
                 break;
             case 'small-minus-4':
-                numbers = generateSmallFriendsExercise(-4, addends, formula);
+                const resultm4 = generateSmallFriendsWithDirect(-4, addends, formula, section);
+                numbers = resultm4.numbers;
+                operators = resultm4.operators || [];
                 break;
 
             case 'small-friends-all':
-                numbers = generateSmallFriendsAll(addends, formula);
+                const resultSAll = generateSmallFriendsAll(addends, formula, section);
+                numbers = resultSAll.numbers;
+                operators = resultSAll.operators || [];
                 break;
 
             // Big Friends - Addition
+            // Progressive logic: 33% direct + 33% small friends + 34% big friends
             case 'big-plus-1':
-                numbers = generateBigFriendsExercise(1, addends, formula, section);
+                const resultB1 = generateBigFriendsWithProgressive(1, addends, formula, section);
+                numbers = resultB1.numbers;
+                operators = resultB1.operators || [];
                 break;
             case 'big-plus-2':
-                numbers = generateBigFriendsExercise(2, addends, formula, section);
+                const resultB2 = generateBigFriendsWithProgressive(2, addends, formula, section);
+                numbers = resultB2.numbers;
+                operators = resultB2.operators || [];
                 break;
             case 'big-plus-3':
-                numbers = generateBigFriendsExercise(3, addends, formula, section);
+                const resultB3 = generateBigFriendsWithProgressive(3, addends, formula, section);
+                numbers = resultB3.numbers;
+                operators = resultB3.operators || [];
                 break;
             case 'big-plus-4':
-                numbers = generateBigFriendsExercise(4, addends, formula, section);
+                const resultB4 = generateBigFriendsWithProgressive(4, addends, formula, section);
+                numbers = resultB4.numbers;
+                operators = resultB4.operators || [];
                 break;
             case 'big-plus-5':
-                numbers = generateBigFriendsExercise(5, addends, formula, section);
+                const resultB5 = generateBigFriendsWithProgressive(5, addends, formula, section);
+                numbers = resultB5.numbers;
+                operators = resultB5.operators || [];
                 break;
             case 'big-plus-6':
-                numbers = generateBigFriendsExercise(6, addends, formula, section);
+                const resultB6 = generateBigFriendsWithProgressive(6, addends, formula, section);
+                numbers = resultB6.numbers;
+                operators = resultB6.operators || [];
                 break;
             case 'big-plus-7':
-                numbers = generateBigFriendsExercise(7, addends, formula, section);
+                const resultB7 = generateBigFriendsWithProgressive(7, addends, formula, section);
+                numbers = resultB7.numbers;
+                operators = resultB7.operators || [];
                 break;
             case 'big-plus-8':
-                numbers = generateBigFriendsExercise(8, addends, formula, section);
+                const resultB8 = generateBigFriendsWithProgressive(8, addends, formula, section);
+                numbers = resultB8.numbers;
+                operators = resultB8.operators || [];
                 break;
             case 'big-plus-9':
-                numbers = generateBigFriendsExercise(9, addends, formula, section);
+                const resultB9 = generateBigFriendsWithProgressive(9, addends, formula, section);
+                numbers = resultB9.numbers;
+                operators = resultB9.operators || [];
                 break;
 
             // Big Friends - Subtraction
             case 'big-minus-1':
-                numbers = generateBigFriendsExercise(-1, addends, formula, section);
+                const resultBm1 = generateBigFriendsWithProgressive(-1, addends, formula, section);
+                numbers = resultBm1.numbers;
+                operators = resultBm1.operators || [];
                 break;
             case 'big-minus-2':
-                numbers = generateBigFriendsExercise(-2, addends, formula, section);
+                const resultBm2 = generateBigFriendsWithProgressive(-2, addends, formula, section);
+                numbers = resultBm2.numbers;
+                operators = resultBm2.operators || [];
                 break;
             case 'big-minus-3':
-                numbers = generateBigFriendsExercise(-3, addends, formula, section);
+                const resultBm3 = generateBigFriendsWithProgressive(-3, addends, formula, section);
+                numbers = resultBm3.numbers;
+                operators = resultBm3.operators || [];
                 break;
             case 'big-minus-4':
-                numbers = generateBigFriendsExercise(-4, addends, formula, section);
+                const resultBm4 = generateBigFriendsWithProgressive(-4, addends, formula, section);
+                numbers = resultBm4.numbers;
+                operators = resultBm4.operators || [];
                 break;
             case 'big-minus-5':
-                numbers = generateBigFriendsExercise(-5, addends, formula, section);
+                const resultBm5 = generateBigFriendsWithProgressive(-5, addends, formula, section);
+                numbers = resultBm5.numbers;
+                operators = resultBm5.operators || [];
                 break;
             case 'big-minus-6':
-                numbers = generateBigFriendsExercise(-6, addends, formula, section);
+                const resultBm6 = generateBigFriendsWithProgressive(-6, addends, formula, section);
+                numbers = resultBm6.numbers;
+                operators = resultBm6.operators || [];
                 break;
             case 'big-minus-7':
-                numbers = generateBigFriendsExercise(-7, addends, formula, section);
+                const resultBm7 = generateBigFriendsWithProgressive(-7, addends, formula, section);
+                numbers = resultBm7.numbers;
+                operators = resultBm7.operators || [];
                 break;
             case 'big-minus-8':
-                numbers = generateBigFriendsExercise(-8, addends, formula, section);
+                const resultBm8 = generateBigFriendsWithProgressive(-8, addends, formula, section);
+                numbers = resultBm8.numbers;
+                operators = resultBm8.operators || [];
                 break;
             case 'big-minus-9':
-                numbers = generateBigFriendsExercise(-9, addends, formula, section);
+                const resultBm9 = generateBigFriendsWithProgressive(-9, addends, formula, section);
+                numbers = resultBm9.numbers;
+                operators = resultBm9.operators || [];
                 break;
 
             case 'big-friends-all':
-                numbers = generateBigFriendsAll(addends, formula, section);
+                const resultBAll = generateBigFriendsAll(addends, formula, section);
+                numbers = resultBAll.numbers;
+                operators = resultBAll.operators || [];
                 break;
 
             case 'family':
-                numbers = generateFamily(addends, formula, section);
+                const resultFamily = generateFamily(addends, formula, section);
+                numbers = resultFamily.numbers;
+                operators = resultFamily.operators || [];
                 break;
 
             case 'mix':
-                numbers = generateMix(addends, formula, section);
+                const resultMix = generateMix(addends, formula, section);
+                numbers = resultMix.numbers;
+                operators = resultMix.operators || [];
                 break;
 
             default:
@@ -2592,14 +2965,22 @@
                 }
                 // Generate operators based on formula
                 for (let i = 1; i < addends; i++) {
-                    operators.push(formula === 'addition' ? '+' : '-');
+                    if (formula === 'mixed') {
+                        operators.push(Math.random() < 0.5 ? '+' : '-');
+                    } else {
+                        operators.push(formula === 'addition' ? '+' : '-');
+                    }
                 }
         }
 
         // If no operators were set, default to the formula operator
         if (operators.length === 0 && numbers.length > 1) {
             for (let i = 1; i < numbers.length; i++) {
-                operators.push(formula === 'addition' ? '+' : '-');
+                if (formula === 'mixed') {
+                    operators.push(Math.random() < 0.5 ? '+' : '-');
+                } else {
+                    operators.push(formula === 'addition' ? '+' : '-');
+                }
             }
         }
 
@@ -2692,15 +3073,112 @@
         return { numbers, operators };
     }
 
+    // Helper: Generate Small Friends with Direct Counting (for specific small friends levels)
+    // Progressive logic: 50% direct counting + 50% specific small friend
+    function generateSmallFriendsWithDirect(target, addends, formula, section) {
+        const rand = Math.random();
+        if (rand < 0.5) {
+            // 50% - Generate direct counting
+            return generateDirectTo(9, addends, formula);
+        } else {
+            // 50% - Generate specific small friend exercise
+            return generateSmallFriendsExercise(target, addends, formula);
+        }
+    }
+
+    // Helper: Get allowed Big Friends formulas for progressive learning
+    // Progressive logic: Each Big Friends formula can use all previously learned formulas
+    // Learning order: +1, +2, +3, +4, +5, -1, -2, -3, -4, -5, +6, +7, +8, +9, -6, -7, -8, -9
+    function getAllowedBigFriendsFormulas(target) {
+        const allowedFormulas = [];
+
+        // Define the learning order
+        const learningOrder = [
+            1, 2, 3, 4, 5,      // First: +1 to +5
+            -1, -2, -3, -4, -5,  // Then: -1 to -5
+            6, 7, 8, 9,          // Then: +6 to +9
+            -6, -7, -8, -9       // Finally: -6 to -9
+        ];
+
+        // Find the position of current target in learning order
+        const targetIndex = learningOrder.indexOf(target);
+
+        if (targetIndex === -1) {
+            // Target not found in learning order (shouldn't happen)
+            return [];
+        }
+
+        // All formulas before this one can be used
+        for (let i = 0; i < targetIndex; i++) {
+            allowedFormulas.push(learningOrder[i]);
+        }
+
+        return allowedFormulas;
+    }
+
+    // Helper: Generate Big Friends with Progressive levels (for specific big friends levels)
+    // Progressive logic: Direct (4,5,9) + Small Friends (all) + Previously learned Big Friends
+    function generateBigFriendsWithProgressive(target, addends, formula, section) {
+        const allowedBigFriends = getAllowedBigFriendsFormulas(target);
+
+        // Calculate probability distribution
+        // If no previous Big Friends, split between Direct and Small Friends
+        // Otherwise: 30% Direct, 30% Small Friends, 40% Previous Big Friends
+        const hasPreviousBigFriends = allowedBigFriends.length > 0;
+        const rand = Math.random();
+
+        if (!hasPreviousBigFriends) {
+            // First Big Friends formula (+1): only Direct and Small Friends available
+            if (rand < 0.5) {
+                // 50% - Generate direct counting
+                return generateDirectTo(9, addends, formula);
+            } else {
+                // 50% - Generate small friends
+                const smallFormulas = formula === 'addition'
+                    ? [1, 2, 3, 4]
+                    : formula === 'subtraction'
+                    ? [-1, -2, -3, -4]
+                    : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+                const randomSmall = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+                return generateSmallFriendsExercise(randomSmall, addends, formula);
+            }
+        } else {
+            // Has previous Big Friends: use progressive distribution
+            if (rand < 0.3) {
+                // 30% - Generate direct counting
+                return generateDirectTo(9, addends, formula);
+            } else if (rand < 0.6) {
+                // 30% - Generate small friends
+                const smallFormulas = formula === 'addition'
+                    ? [1, 2, 3, 4]
+                    : formula === 'subtraction'
+                    ? [-1, -2, -3, -4]
+                    : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+                const randomSmall = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+                return generateSmallFriendsExercise(randomSmall, addends, formula);
+            } else {
+                // 40% - Generate previously learned Big Friends
+                const randomBigFriend = allowedBigFriends[getRandomNumber(0, allowedBigFriends.length - 1)];
+                return generateBigFriendsExercise(randomBigFriend, addends, formula, section);
+            }
+        }
+    }
+
     // Helper: Generate Small Friends exercise for specific formula
+    // Small Friends are pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
+    // Addition formulas: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
+    // Subtraction formulas: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
     function generateSmallFriendsExercise(target, addends, formula) {
         const numbers = [];
+        const operators = [];
         const absTarget = Math.abs(target);
 
         if (formula === 'addition' && target > 0) {
             // For addition: need first number where adding target requires 5-complement
-            // Example for +1: first number should be 4 (4+1 needs +5-4)
+            // Example: +1 = +5-4, so we need a number that already has 4 (like 4, 14, 24, etc.)
+            // For +4 = +5-1, we need a number that ends in 1 or higher
             const validFirstNumbers = [];
+            // Numbers that will require using the small friend formula
             for (let i = (5 - absTarget); i <= 4; i++) {
                 validFirstNumbers.push(i);
             }
@@ -2708,126 +3186,261 @@
 
             // Add the target number
             numbers.push(absTarget);
+            operators.push('+');
 
-            // Fill remaining addends with random 1-9
+            // Fill remaining addends with random 1-4 to keep it simple
             for (let i = 2; i < addends; i++) {
-                numbers.push(getRandomNumber(1, 9));
+                numbers.push(getRandomNumber(1, 4));
+                operators.push('+');
             }
         } else if (formula === 'subtraction' && target < 0) {
             // For subtraction: need first number that when subtracting requires 5-complement
-            // Example for -1: first number should be 5 (5-1 needs +4-5)
-            numbers.push(5 + absTarget - 1);
+            // Example: -1 = -5+4, so we need a number like 5, 6, 7, 8, or 9 (has 5-bead active)
+            // First number should be 5 to 9 to require the formula
+            const validFirstNumbers = [5, 6, 7, 8, 9];
+            numbers.push(validFirstNumbers[getRandomNumber(0, validFirstNumbers.length - 1)]);
 
             // Subtract the target amount
             numbers.push(absTarget);
+            operators.push('-');
 
-            // Fill remaining with random
+            // Fill remaining with random 1-4
             for (let i = 2; i < addends; i++) {
                 numbers.push(getRandomNumber(1, 4));
+                operators.push('-');
+            }
+        } else if (formula === 'mixed') {
+            // For mixed: generate with random operators
+            const validFirstNumbers = target > 0
+                ? (function() {
+                    const arr = [];
+                    for (let i = (5 - absTarget); i <= 4; i++) arr.push(i);
+                    return arr;
+                })()
+                : [5, 6, 7, 8, 9];
+            numbers.push(validFirstNumbers[getRandomNumber(0, validFirstNumbers.length - 1)]);
+
+            // Add remaining numbers with random operators
+            for (let i = 1; i < addends; i++) {
+                numbers.push(getRandomNumber(1, 4));
+                operators.push(Math.random() < 0.5 ? '+' : '-');
             }
         } else {
             // Fallback
             for (let i = 0; i < addends; i++) {
                 numbers.push(getRandomNumber(1, 9));
             }
+            for (let i = 1; i < addends; i++) {
+                operators.push(formula === 'addition' ? '+' : '-');
+            }
         }
 
-        return numbers;
+        return { numbers, operators };
     }
 
     // Helper: Generate all Small Friends formulas
-    function generateSmallFriendsAll(addends, formula) {
+    // Only generates Small Friends formulas (no direct counting or big friends)
+    function generateSmallFriendsAll(addends, formula, section) {
+        // 100% - Generate small friends only
         const smallFormulas = formula === 'addition'
             ? [1, 2, 3, 4]
-            : [-1, -2, -3, -4];
+            : formula === 'subtraction'
+            ? [-1, -2, -3, -4]
+            : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
         const randomFormula = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
         return generateSmallFriendsExercise(randomFormula, addends, formula);
     }
 
     // Helper: Generate Big Friends exercise for specific formula
+    // Big Friends are pairs that sum to 10: (1,9), (2,8), (3,7), (4,6), (5,5)
+    // Addition formulas: +9 = +10-1, +8 = +10-2, +7 = +10-3, ... +1 = +10-9
+    // Subtraction formulas: -9 = -10+1, -8 = -10+2, -7 = -10+3, ... -1 = -10+9
     function generateBigFriendsExercise(target, addends, formula, section) {
         const numbers = [];
+        const operators = [];
         const absTarget = Math.abs(target);
         const maxDigits = section;
         const maxNum = Math.pow(10, maxDigits) - 1;
 
         if (formula === 'addition' && target > 0) {
             // For addition: need first number where adding target requires 10-complement
-            // Example for +1: first number should be 9 (9+1 needs +10-9)
+            // Example: +1 = +10-9, so first number ends in 9 (like 9, 19, 29, etc.)
+            // Example: +9 = +10-1, so first number ends in 1 or higher (like 1-9, 11-19, etc.)
+            // Must carry to next rod - units digit should be (10 - target) or higher
             const minFirst = Math.max(1, 10 - absTarget);
             const maxFirst = Math.min(9, maxNum);
             numbers.push(getRandomNumber(minFirst, maxFirst));
 
             // Add the target number
             numbers.push(absTarget);
+            operators.push('+');
 
-            // Fill remaining addends
+            // Fill remaining addends with small numbers
             for (let i = 2; i < addends; i++) {
                 numbers.push(getRandomNumber(1, Math.min(9, maxNum)));
+                operators.push('+');
             }
         } else if (formula === 'subtraction' && target < 0) {
             // For subtraction: need first number that when subtracting requires 10-complement
-            // Example for -1: first number should be 10 (10-1 needs -10+9)
+            // Example: -1 = -10+9, so first number should be 10, 20, 30, etc. (ends in 0)
+            // Example: -9 = -10+1, so first number should be 10-18, 20-28, etc.
+            // Must borrow from next rod - units digit should be less than target
             const minFirst = Math.max(10, absTarget);
             const maxFirst = Math.min(10 + 9, maxNum);
             numbers.push(getRandomNumber(minFirst, maxFirst));
 
             // Subtract the target amount
             numbers.push(absTarget);
+            operators.push('-');
 
-            // Fill remaining
+            // Fill remaining with small numbers
             for (let i = 2; i < addends; i++) {
                 numbers.push(getRandomNumber(1, Math.min(5, maxNum)));
+                operators.push('-');
+            }
+        } else if (formula === 'mixed') {
+            // For mixed: generate with random operators
+            const minFirst = target > 0 ? Math.max(1, 10 - absTarget) : Math.max(10, absTarget);
+            const maxFirst = Math.min(target > 0 ? 9 : 19, maxNum);
+            numbers.push(getRandomNumber(minFirst, maxFirst));
+
+            // Add remaining numbers with random operators
+            for (let i = 1; i < addends; i++) {
+                numbers.push(getRandomNumber(1, Math.min(9, maxNum)));
+                operators.push(Math.random() < 0.5 ? '+' : '-');
             }
         } else {
             // Fallback
             for (let i = 0; i < addends; i++) {
                 numbers.push(getRandomNumber(1, maxNum));
             }
+            for (let i = 1; i < addends; i++) {
+                operators.push(formula === 'addition' ? '+' : '-');
+            }
         }
 
-        return numbers;
+        return { numbers, operators };
     }
 
     // Helper: Generate all Big Friends formulas
+    // Progressive logic: 33% direct + 33% small friends + 34% big friends
     function generateBigFriendsAll(addends, formula, section) {
-        const bigFormulas = formula === 'addition'
-            ? [1, 2, 3, 4, 5, 6, 7, 8, 9]
-            : [-1, -2, -3, -4, -5, -6, -7, -8, -9];
-        const randomFormula = bigFormulas[getRandomNumber(0, bigFormulas.length - 1)];
-        return generateBigFriendsExercise(randomFormula, addends, formula, section);
-    }
-
-    // Helper: Generate Family (Small + Big Friends)
-    function generateFamily(addends, formula, section) {
-        const useSmall = getRandomNumber(0, 1) === 0;
-        if (useSmall) {
-            return generateSmallFriendsAll(addends, formula);
+        const rand = Math.random();
+        if (rand < 0.33) {
+            // 33% - Generate direct counting
+            return generateDirectTo(9, addends, formula);
+        } else if (rand < 0.66) {
+            // 33% - Generate small friends
+            const smallFormulas = formula === 'addition'
+                ? [1, 2, 3, 4]
+                : formula === 'subtraction'
+                ? [-1, -2, -3, -4]
+                : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+            const randomFormula = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+            return generateSmallFriendsExercise(randomFormula, addends, formula);
         } else {
-            return generateBigFriendsAll(addends, formula, section);
+            // 34% - Generate big friends
+            const bigFormulas = formula === 'addition'
+                ? [1, 2, 3, 4, 5, 6, 7, 8, 9]
+                : formula === 'subtraction'
+                ? [-1, -2, -3, -4, -5, -6, -7, -8, -9]
+                : Math.random() < 0.5 ? [1, 2, 3, 4, 5, 6, 7, 8, 9] : [-1, -2, -3, -4, -5, -6, -7, -8, -9];
+            const randomFormula = bigFormulas[getRandomNumber(0, bigFormulas.length - 1)];
+            return generateBigFriendsExercise(randomFormula, addends, formula, section);
         }
     }
 
-    // Helper: Generate Mix (all variants)
+    // Helper: Generate Family (Direct + Small + Big Friends + Combined)
+    // Progressive logic: 25% each level
+    function generateFamily(addends, formula, section) {
+        const rand = Math.random();
+        if (rand < 0.25) {
+            // 25% - Generate direct counting
+            return generateDirectTo(9, addends, formula);
+        } else if (rand < 0.5) {
+            // 25% - Generate small friends
+            const smallFormulas = formula === 'addition'
+                ? [1, 2, 3, 4]
+                : formula === 'subtraction'
+                ? [-1, -2, -3, -4]
+                : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+            const randomFormula = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+            return generateSmallFriendsExercise(randomFormula, addends, formula);
+        } else if (rand < 0.75) {
+            // 25% - Generate big friends
+            const bigFormulas = formula === 'addition'
+                ? [1, 2, 3, 4, 5, 6, 7, 8, 9]
+                : formula === 'subtraction'
+                ? [-1, -2, -3, -4, -5, -6, -7, -8, -9]
+                : Math.random() < 0.5 ? [1, 2, 3, 4, 5, 6, 7, 8, 9] : [-1, -2, -3, -4, -5, -6, -7, -8, -9];
+            const randomFormula = bigFormulas[getRandomNumber(0, bigFormulas.length - 1)];
+            return generateBigFriendsExercise(randomFormula, addends, formula, section);
+        } else {
+            // 25% - Generate combined (family - exercises requiring both small and big friends)
+            const maxDigits = section;
+            const maxNum = Math.pow(10, maxDigits) - 1;
+            const numbers = [];
+            const operators = [];
+            for (let i = 0; i < addends; i++) {
+                numbers.push(getRandomNumber(1, maxNum));
+            }
+            for (let i = 1; i < addends; i++) {
+                if (formula === 'mixed') {
+                    operators.push(Math.random() < 0.5 ? '+' : '-');
+                } else {
+                    operators.push(formula === 'addition' ? '+' : '-');
+                }
+            }
+            return { numbers, operators };
+        }
+    }
+
+    // Helper: Generate Mix (all variants including all progressive levels)
+    // Progressive logic: includes direct, small friends, big friends, and complex combinations
     function generateMix(addends, formula, section) {
         const maxDigits = section;
         const maxNum = Math.pow(10, maxDigits) - 1;
-        const variant = getRandomNumber(0, 3);
+        const rand = Math.random();
 
-        switch (variant) {
-            case 0:
-                return generateDirectTo(9, addends, formula);
-            case 1:
-                return generateSmallFriendsAll(addends, formula);
-            case 2:
-                return generateBigFriendsAll(addends, formula, section);
-            case 3:
-            default:
-                const numbers = [];
-                for (let i = 0; i < addends; i++) {
-                    numbers.push(getRandomNumber(1, maxNum));
+        if (rand < 0.2) {
+            // 20% - Generate direct counting
+            return generateDirectTo(9, addends, formula);
+        } else if (rand < 0.4) {
+            // 20% - Generate small friends
+            const smallFormulas = formula === 'addition'
+                ? [1, 2, 3, 4]
+                : formula === 'subtraction'
+                ? [-1, -2, -3, -4]
+                : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+            const randomFormula = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+            return generateSmallFriendsExercise(randomFormula, addends, formula);
+        } else if (rand < 0.6) {
+            // 20% - Generate big friends
+            const bigFormulas = formula === 'addition'
+                ? [1, 2, 3, 4, 5, 6, 7, 8, 9]
+                : formula === 'subtraction'
+                ? [-1, -2, -3, -4, -5, -6, -7, -8, -9]
+                : Math.random() < 0.5 ? [1, 2, 3, 4, 5, 6, 7, 8, 9] : [-1, -2, -3, -4, -5, -6, -7, -8, -9];
+            const randomFormula = bigFormulas[getRandomNumber(0, bigFormulas.length - 1)];
+            return generateBigFriendsExercise(randomFormula, addends, formula, section);
+        } else if (rand < 0.8) {
+            // 20% - Generate family (combined small + big friends)
+            return generateFamily(addends, formula, section);
+        } else {
+            // 20% - Generate complex/random numbers (may require multiple techniques)
+            const numbers = [];
+            const operators = [];
+            for (let i = 0; i < addends; i++) {
+                numbers.push(getRandomNumber(1, maxNum));
+            }
+            for (let i = 1; i < addends; i++) {
+                if (formula === 'mixed') {
+                    operators.push(Math.random() < 0.5 ? '+' : '-');
+                } else {
+                    operators.push(formula === 'addition' ? '+' : '-');
                 }
-                return numbers;
+            }
+            return { numbers, operators };
         }
     }
 
@@ -2887,7 +3500,24 @@
         stats.incorrect = 0;
         document.getElementById('trainingCorrect').textContent = '0';
         document.getElementById('trainingIncorrect').textContent = '0';
-        document.getElementById('trainingExercise').style.display = 'flex';
+
+        // Hide settings and instructions when exercise starts
+        const trainingMode = document.getElementById('trainingMode');
+        const settingsPanel = trainingMode.querySelector('.settings-panel');
+        const instructionsPanel = trainingMode.querySelector('.instructions-panel');
+        const startBtn = trainingMode.querySelector('.start-btn');
+
+        if (settingsPanel) settingsPanel.style.display = 'none';
+        if (instructionsPanel) instructionsPanel.style.display = 'none';
+        if (startBtn) startBtn.style.display = 'none';
+
+        // Show exercise area
+        const exerciseArea = document.getElementById('trainingExercise');
+        exerciseArea.style.display = 'flex';
+
+        // Scroll to top of exercise area to make it visible
+        exerciseArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
         nextTrainingExercise();
     }
 
@@ -3292,12 +3922,49 @@
 
     // Exercises Mode
     function startExercises() {
+        // Reset duplicate tracking for new session
+        lastExercise = null;
+
         stats.correct = 0;
         stats.incorrect = 0;
         document.getElementById('exercisesCorrect').textContent = '0';
         document.getElementById('exercisesIncorrect').textContent = '0';
-        document.getElementById('exercisesArea').style.display = 'flex';
+
+        // Hide settings and instructions when exercise starts
+        const exercisesMode = document.getElementById('exercisesMode');
+        const settingsPanel = exercisesMode.querySelector('.settings-panel');
+        const instructionsPanel = exercisesMode.querySelector('.instructions-panel');
+        const startBtn = exercisesMode.querySelector('.start-btn');
+
+        if (settingsPanel) settingsPanel.style.display = 'none';
+        if (instructionsPanel) instructionsPanel.style.display = 'none';
+        if (startBtn) startBtn.style.display = 'none';
+
+        // Show exercise area
+        const exerciseArea = document.getElementById('exercisesArea');
+        exerciseArea.style.display = 'flex';
+
+        // Scroll to top of exercise area to make it visible
+        exerciseArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
         nextExercise();
+    }
+
+    // Helper: Check if two exercises are identical
+    function exercisesAreEqual(ex1, ex2) {
+        if (!ex1 || !ex2) return false;
+        if (ex1.numbers.length !== ex2.numbers.length) return false;
+        if (ex1.operators.length !== ex2.operators.length) return false;
+
+        for (let i = 0; i < ex1.numbers.length; i++) {
+            if (ex1.numbers[i] !== ex2.numbers[i]) return false;
+        }
+
+        for (let i = 0; i < ex1.operators.length; i++) {
+            if (ex1.operators[i] !== ex2.operators[i]) return false;
+        }
+
+        return true;
     }
 
     function nextExercise() {
@@ -3311,31 +3978,55 @@
         // Generate exercise based on level
         let numbers = [];
         let operators = [];
-        const exerciseData = generateExerciseForLevel(level, formula, section, addends);
-        numbers = exerciseData.numbers;
-        operators = exerciseData.operators || [];
+        let correctAnswer = 0;
 
-        // Calculate correct answer using individual operators
-        let correctAnswer = numbers[0];
-        for (let i = 1; i < numbers.length; i++) {
-            const operator = operators[i - 1] || (formula === 'addition' ? '+' : '-');
-            if (operator === '+') {
-                correctAnswer += numbers[i];
-            } else {
-                correctAnswer -= numbers[i];
+        // Regenerate exercise until we get a valid result (>0 and <100) and different from last exercise
+        let attempts = 0;
+        const maxAttempts = 100;
+        let isDuplicate = false;
+        do {
+            const exerciseData = generateExerciseForLevel(level, formula, section, addends);
+            numbers = exerciseData.numbers;
+            operators = exerciseData.operators || [];
+
+            // Calculate correct answer using individual operators
+            correctAnswer = numbers[0];
+            for (let i = 1; i < numbers.length; i++) {
+                const operator = operators[i - 1] || (formula === 'addition' ? '+' : '-');
+                if (operator === '+') {
+                    correctAnswer += numbers[i];
+                } else {
+                    correctAnswer -= numbers[i];
+                }
             }
-        }
+
+            // Check if this exercise is a duplicate of the last one
+            isDuplicate = exercisesAreEqual({ numbers, operators }, lastExercise);
+
+            attempts++;
+            if (attempts >= maxAttempts) {
+                console.warn('Could not generate valid exercise after', maxAttempts, 'attempts');
+                break;
+            }
+        } while (correctAnswer <= 0 || correctAnswer >= 100 || isDuplicate);
+
+        // Save this exercise as the last one
+        lastExercise = { numbers: [...numbers], operators: [...operators] };
 
         // Display problem
         const problemDiv = document.createElement('div');
-        problemDiv.style.fontSize = '2rem';
-        problemDiv.style.marginBottom = '2rem';
+        problemDiv.style.fontSize = '1.5rem';
+        problemDiv.style.marginBottom = '1rem';
         problemDiv.style.textAlign = 'center';
+        problemDiv.style.display = 'flex';
+        problemDiv.style.alignItems = 'center';
+        problemDiv.style.justifyContent = 'center';
+        problemDiv.style.flexWrap = 'wrap';
+        problemDiv.style.gap = '0.5rem';
 
         numbers.forEach((num, index) => {
             const abacusDiv = document.createElement('div');
             abacusDiv.style.display = 'inline-block';
-            abacusDiv.style.margin = '0 1rem';
             const frame = document.createElement('div');
             frame.className = 'abacus-frame-mini';
             abacusDiv.appendChild(frame);
@@ -3344,34 +4035,59 @@
 
             if (index < numbers.length - 1) {
                 const operator = document.createElement('span');
-                operator.textContent = ' ' + (operators[index] || (formula === 'addition' ? '+' : '-')) + ' ';
-                operator.style.fontSize = '2rem';
-                operator.style.margin = '0 1rem';
+                operator.textContent = operators[index] || (formula === 'addition' ? '+' : '-');
+                operator.style.fontSize = '1.5rem';
+                operator.style.fontWeight = 'bold';
                 problemDiv.appendChild(operator);
             }
         });
 
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.className = 'answer-input';
-        input.placeholder = 'Introdu răspunsul';
-        input.dataset.correctAnswer = correctAnswer;
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
-            }
-        });
+        // Check if answer should be entered on abacus or as number
+        const answerType = currentSettings.exercises.answer;
 
-        const submitBtn = document.createElement('button');
-        submitBtn.className = 'submit-btn';
-        submitBtn.textContent = 'Verifică';
-        submitBtn.onclick = () => checkExerciseAnswer(parseInt(input.value), correctAnswer);
+        if (answerType === 'abacus') {
+            // Create interactive abacus for answer (starting at 0)
+            const answerAbacusDiv = document.createElement('div');
+            answerAbacusDiv.className = 'mini-abacus';
+            const answerFrame = document.createElement('div');
+            answerFrame.className = 'abacus-frame-mini';
+            answerFrame.id = 'exerciseAnswerAbacus';
+            answerAbacusDiv.appendChild(answerFrame);
+            createMiniAbacus(0, answerFrame);
+            makeAbacusInteractive(answerFrame);
 
-        content.appendChild(problemDiv);
-        content.appendChild(input);
-        content.appendChild(submitBtn);
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkExerciseAbacusAnswer(answerFrame, correctAnswer);
 
-        setTimeout(() => input.focus(), 100);
+            content.appendChild(problemDiv);
+            content.appendChild(answerAbacusDiv);
+            content.appendChild(submitBtn);
+        } else {
+            // Original number input
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'answer-input';
+            input.placeholder = 'Introdu răspunsul';
+            input.dataset.correctAnswer = correctAnswer;
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
+                }
+            });
+
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'submit-btn';
+            submitBtn.textContent = 'Verifică';
+            submitBtn.onclick = () => checkExerciseAnswer(parseInt(input.value), correctAnswer);
+
+            content.appendChild(problemDiv);
+            content.appendChild(input);
+            content.appendChild(submitBtn);
+
+            setTimeout(() => input.focus(), 100);
+        }
     }
 
     function checkExerciseAnswer(answer, correctAnswer) {
@@ -3387,6 +4103,50 @@
         } else {
             feedback.classList.add('incorrect');
             feedback.textContent = `✗ Greșit! Răspunsul corect: ${correctAnswer}`;
+            stats.incorrect++;
+            document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
+        }
+
+        content.appendChild(feedback);
+
+        setTimeout(() => {
+            nextExercise();
+        }, 2000);
+    }
+
+    function checkExerciseAbacusAnswer(frame, correctAnswer) {
+        // Read answer from interactive abacus
+        const rods = frame.querySelectorAll('.rod-mini');
+        let abacusNumber = 0;
+
+        rods.forEach((rod, index) => {
+            let digitValue = 0;
+
+            // Check top bead (heaven - value 5)
+            const topBead = rod.querySelector('.bead-mini.top');
+            if (topBead && topBead.classList.contains('active')) {
+                digitValue += 5;
+            }
+
+            // Check bottom beads (earth - value 1 each)
+            const bottomBeads = rod.querySelectorAll('.bead-mini.bottom.active');
+            digitValue += bottomBeads.length;
+
+            abacusNumber += digitValue * Math.pow(10, rods.length - 1 - index);
+        });
+
+        const content = document.getElementById('exercisesContent');
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+
+        if (abacusNumber === correctAnswer) {
+            feedback.classList.add('correct');
+            feedback.textContent = '✓ Corect!';
+            stats.correct++;
+            document.getElementById('exercisesCorrect').textContent = stats.correct;
+        } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = `✗ Greșit! Răspunsul corect: ${correctAnswer} (Tu ai introdus: ${abacusNumber})`;
             stats.incorrect++;
             document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
         }
@@ -3448,8 +4208,43 @@
         const element = document.getElementById(`student${studentId}Speed`);
         let currentValue = parseFloat(element.textContent);
         let newValue = Math.max(0.1, Math.min(3.0, currentValue + delta));
-        element.textContent = newValue.toFixed(0);
+        element.textContent = newValue.toFixed(1);
         currentSettings.students[studentId].speed = newValue;
+    }
+
+    function startSingleStudent(studentId) {
+        const panel = document.querySelector(`.student-panel[data-student-id="${studentId}"]`);
+        if (!panel) return;
+
+        // Reset student state
+        studentResults[studentId] = null;
+        const statusDiv = panel.querySelector('.student-status');
+        statusDiv.classList.remove('show', 'correct', 'incorrect');
+
+        // Hide start button
+        const startBtn = panel.querySelector('.student-start-btn');
+        if (startBtn) startBtn.style.display = 'none';
+
+        // Hide other elements
+        panel.querySelector('.not-solved-text').style.display = 'none';
+        panel.querySelector('.answer-area').style.display = 'none';
+        panel.querySelector('.mini-abacus').style.display = 'none';
+
+        // Show countdown 3, 2, 1
+        const countdown = panel.querySelector('.countdown');
+        countdown.style.display = 'block';
+
+        let count = 3;
+        const countdownInterval = setInterval(() => {
+            countdown.textContent = count;
+            count--;
+
+            if (count < 0) {
+                clearInterval(countdownInterval);
+                countdown.style.display = 'none';
+                showSingleStudentExercise(studentId);
+            }
+        }, 1000);
     }
 
     function startAllStudents() {
@@ -3457,37 +4252,60 @@
             panel => panel.style.display !== 'none'
         );
 
-        // Reset all student states
+        // Start each student individually
         panels.forEach(panel => {
             const studentId = parseInt(panel.dataset.studentId);
-            studentResults[studentId] = null;
-            const statusDiv = panel.querySelector('.student-status');
-            statusDiv.classList.remove('show', 'correct', 'incorrect');
-            panel.querySelector('.not-solved-text').style.display = 'none';
-            panel.querySelector('.answer-area').style.display = 'none';
-            panel.querySelector('.mini-abacus').style.display = 'none';
+            startSingleStudent(studentId);
         });
+    }
 
-        // Show countdown 3, 2, 1
-        panels.forEach(panel => {
-            const countdown = panel.querySelector('.countdown');
-            countdown.style.display = 'block';
-        });
+    function showSingleStudentExercise(studentId) {
+        const panel = document.querySelector(`.student-panel[data-student-id="${studentId}"]`);
+        if (!panel) return;
 
-        let count = 3;
-        const countdownInterval = setInterval(() => {
-            panels.forEach(panel => {
-                const countdown = panel.querySelector('.countdown');
-                countdown.textContent = count;
-            });
+        const settings = currentSettings.students[studentId];
+        const number = getRandomNumber(settings.from, settings.to);
+        studentNumbers[studentId] = number;
 
-            count--;
+        const abacusContainer = panel.querySelector('.abacus-frame-mini');
+        const abacusDiv = panel.querySelector('.mini-abacus');
+        const answerArea = panel.querySelector('.answer-area');
+        const notSolvedText = panel.querySelector('.not-solved-text');
 
-            if (count < 0) {
-                clearInterval(countdownInterval);
-                showStudentExercise();
-            }
-        }, 1000);
+        if (settings.direction === 'abacus-to-number') {
+            // Show abacus with number first
+            createMiniAbacus(number, abacusContainer);
+            abacusDiv.style.display = 'block';
+
+            // After display time expires, hide abacus and show input
+            setTimeout(() => {
+                abacusDiv.style.display = 'none';
+
+                notSolvedText.textContent = 'Introdu numărul';
+                notSolvedText.style.display = 'block';
+
+                const input = answerArea.querySelector('.answer-input');
+                input.style.display = 'block';
+                answerArea.style.display = 'flex';
+
+                // Focus on input for quick entry
+                input.focus();
+            }, settings.speed * 1000);
+        } else {
+            // Number to abacus - show number and interactive abacus
+            notSolvedText.textContent = `Set this number on abacus: ${number}`;
+            notSolvedText.style.display = 'block';
+
+            // Create interactive abacus starting at 0
+            createMiniAbacus(0, abacusContainer);
+            makeAbacusInteractive(abacusContainer);
+            abacusDiv.style.display = 'block';
+
+            // Show answer area (button only, hide input)
+            const input = answerArea.querySelector('.answer-input');
+            input.style.display = 'none';
+            answerArea.style.display = 'flex';
+        }
     }
 
     function showStudentExercise() {
@@ -3497,47 +4315,7 @@
 
         panels.forEach(panel => {
             const studentId = parseInt(panel.dataset.studentId);
-            const settings = currentSettings.students[studentId];
-
-            const countdown = panel.querySelector('.countdown');
-            countdown.style.display = 'none';
-
-            const number = getRandomNumber(settings.from, settings.to);
-            studentNumbers[studentId] = number;
-
-            const abacusContainer = panel.querySelector('.abacus-frame-mini');
-            const abacusDiv = panel.querySelector('.mini-abacus');
-            const answerArea = panel.querySelector('.answer-area');
-            const notSolvedText = panel.querySelector('.not-solved-text');
-
-            if (settings.direction === 'abacus-to-number') {
-                createMiniAbacus(number, abacusContainer);
-                abacusDiv.style.display = 'block';
-
-                setTimeout(() => {
-                    abacusDiv.style.display = 'none';
-                    notSolvedText.style.display = 'block';
-
-                    // Show input for abacus-to-number mode
-                    const input = answerArea.querySelector('.answer-input');
-                    input.style.display = 'block';
-                    answerArea.style.display = 'flex';
-                }, settings.speed * 1000);
-            } else {
-                // Number to abacus - show number and interactive abacus
-                notSolvedText.textContent = `Set this number on abacus: ${number}`;
-                notSolvedText.style.display = 'block';
-
-                // Create interactive abacus starting at 0
-                createMiniAbacus(0, abacusContainer);
-                makeAbacusInteractive(abacusContainer);
-                abacusDiv.style.display = 'block';
-
-                // Show answer area (button only, hide input)
-                const input = answerArea.querySelector('.answer-input');
-                input.style.display = 'none';
-                answerArea.style.display = 'flex';
-            }
+            showSingleStudentExercise(studentId);
         });
     }
 
@@ -3605,6 +4383,12 @@
         if (input) {
             input.value = '';
         }
+
+        // Show Start button again for next round
+        const startBtn = panel.querySelector('.student-start-btn');
+        if (startBtn) {
+            startBtn.style.display = 'block';
+        }
     }
 
     function closeFeedbackModal() {
@@ -3647,9 +4431,43 @@
         alert('Funcționalitatea de eliminare a elevilor va fi implementată');
     }
 
+    // Explicitly expose functions to global scope for onclick handlers
+    window.selectMode = selectMode;
+    window.backToModes = backToModes;
+    window.startTraining = startTraining;
+    window.startFlash = startFlash;
+    window.startExercises = startExercises;
+    window.adjustNumber = adjustNumber;
+    window.adjustSpeed = adjustSpeed;
+    window.adjustStudentCount = adjustStudentCount;
+    window.openClassworkSettings = openClassworkSettings;
+    window.closeClassworkSettings = closeClassworkSettings;
+    window.startAllStudents = startAllStudents;
+    window.showResults = showResults;
+    window.toggleFullscreen = toggleFullscreen;
+    window.openStudentSettings = openStudentSettings;
+    window.closeStudentSettings = closeStudentSettings;
+    window.closeFeedbackModal = closeFeedbackModal;
+    window.closeFlashSummary = closeFlashSummary;
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Flashcard Simulator Initialized');
+        console.log('selectMode function exists:', typeof selectMode);
+        console.log('selectMode is in window:', typeof window.selectMode);
+
+        // Test if onclick handlers work
+        const modeCards = document.querySelectorAll('.mode-card');
+        console.log('Found mode cards:', modeCards.length);
+
+        // Verify that mode-card elements have onclick attributes
+        modeCards.forEach((card, index) => {
+            console.log(`Card ${index}:`, {
+                mode: card.getAttribute('data-mode'),
+                hasOnclick: card.hasAttribute('onclick'),
+                onclick: card.getAttribute('onclick')
+            });
+        });
     });
 </script>
 {% endblock %}

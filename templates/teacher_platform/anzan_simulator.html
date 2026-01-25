@@ -1,0 +1,3223 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Simulator Anzan (Calcul Mental){% endblock %}
+{% block page_title %}Anzan - Calcul Mental{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #667eea;
+        --secondary-color: #764ba2;
+        --success-color: #10b981;
+        --error-color: #ef4444;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --bg-light: #f9fafb;
+    }
+
+    .anzan-container {
+        padding: 2rem;
+        max-width: 100%;
+        min-height: calc(100vh - 180px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+    }
+
+    /* Mode Selection Screen */
+    .mode-selection {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        max-width: 900px;
+        width: 95%;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .mode-title {
+        text-align: center;
+        font-size: 2rem;
+        color: var(--text-primary);
+        margin-bottom: 2.5rem;
+        font-weight: 600;
+    }
+
+    .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .mode-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 2rem 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .mode-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+    }
+
+    .mode-card.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .mode-card-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .mode-card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .mode-card-desc {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+    }
+
+    /* Common Styles for All Modes */
+    .mode-screen {
+        display: none;
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        max-width: 1400px;
+        width: 95%;
+        min-height: 600px;
+    }
+
+    .mode-screen.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mode-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .mode-header h2 {
+        font-size: 1.8rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .back-btn {
+        padding: 0.6rem 1.5rem;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .settings-panel {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .settings-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .settings-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .setting-label {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        min-width: 150px;
+    }
+
+    .setting-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .number-input {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .number-btn {
+        width: 35px;
+        height: 35px;
+        border: none;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .number-btn:hover {
+        background: var(--secondary-color);
+        transform: scale(1.1);
+    }
+
+    .number-display {
+        min-width: 60px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .toggle-group {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .toggle-btn {
+        padding: 0.5rem 1rem;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .toggle-btn:hover {
+        border-color: var(--primary-color);
+    }
+
+    .toggle-btn.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .level-select {
+        padding: 0.6rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        min-width: 250px;
+    }
+
+    .level-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .start-btn {
+        padding: 1rem 3rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.3rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .start-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Exercise Area */
+    .exercise-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .number-display-area {
+        font-size: 5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+        animation: fadeInScale 0.3s ease;
+    }
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .operation-sign {
+        font-size: 4rem;
+        color: var(--text-secondary);
+        margin-right: 1rem;
+    }
+
+    .answer-input {
+        width: 400px;
+        padding: 1.2rem;
+        font-size: 2.5rem;
+        text-align: center;
+        border: 3px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .answer-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .submit-btn, .show-answer-btn {
+        padding: 1rem 3rem;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.3rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .submit-btn:hover, .show-answer-btn:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .feedback {
+        font-size: 1.5rem;
+        font-weight: 600;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        margin-top: 1rem;
+    }
+
+    .feedback.correct {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .feedback.incorrect {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        padding: 0.5rem 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .stat-value {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1.3rem;
+    }
+
+    /* Classroom Mode */
+    .classwork-controls {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .control-btn {
+        padding: 0.7rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .settings-btn {
+        background: #6c757d;
+        color: white;
+    }
+
+    .settings-btn:hover {
+        background: #5a6268;
+    }
+
+    .start-all-btn {
+        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        color: white;
+    }
+
+    .start-all-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
+    }
+
+    .results-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .results-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .students-setup {
+        margin-bottom: 2rem;
+    }
+
+    .students-count {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .students-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .student-panel {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 15px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dee2e6;
+        gap: 0.5rem;
+    }
+
+    .student-name-input {
+        padding: 0.5rem;
+        font-size: 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        flex: 1;
+    }
+
+    .student-exercise-area {
+        flex: 1;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .student-number-display {
+        font-size: 3rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    /* Reports */
+    .report-container {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+
+    .report-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .report-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .summary-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-value {
+        color: var(--text-primary);
+        font-size: 2rem;
+        font-weight: 600;
+    }
+
+    .exercises-list {
+        margin-top: 2rem;
+    }
+
+    .exercise-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .exercise-calculation {
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .exercise-result {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .user-answer {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+    }
+
+    .correct-indicator {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .correct-indicator.correct {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .correct-indicator.incorrect {
+        background: var(--error-color);
+        color: white;
+    }
+
+    /* Fullscreen */
+    .fullscreen-btn {
+        padding: 0.7rem 1.5rem;
+        background: #34d399;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .fullscreen-btn:hover {
+        background: #10b981;
+        transform: translateY(-2px);
+    }
+
+    /* Instructions Panel */
+    .instructions-panel {
+        background: #e0f2fe;
+        border-left: 4px solid #0284c7;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .instructions-panel h3 {
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .instructions-panel p {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .anzan-container {
+            padding: 1rem;
+        }
+
+        .mode-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .number-display-area {
+            font-size: 3rem;
+        }
+
+        .answer-input {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="anzan-container">
+    <!-- Mode Selection -->
+    <div id="modeSelection" class="mode-selection">
+        <h1 class="mode-title">🧠 Anzan - Calcul Mental</h1>
+
+        <div class="mode-grid">
+            <div class="mode-card" onclick="selectMode('training')">
+                <div class="mode-card-icon">🎯</div>
+                <div class="mode-card-title">Mod Antrenament</div>
+                <div class="mode-card-desc">Exersează calcul mental cu setări personalizate</div>
+            </div>
+
+            <div class="mode-card" onclick="selectMode('series')">
+                <div class="mode-card-icon">📊</div>
+                <div class="mode-card-title">Serii de Exerciții</div>
+                <div class="mode-card-desc">Rezolvă exerciții pe timp cu rapoarte detaliate</div>
+            </div>
+
+            <div class="mode-card" onclick="selectMode('classroom')">
+                <div class="mode-card-icon">👥</div>
+                <div class="mode-card-title">Lucru în Clasă</div>
+                <div class="mode-card-desc">Exerciții simultane pentru mai mulți elevi</div>
+            </div>
+
+            <div class="mode-card disabled">
+                <div class="mode-card-icon">⚔️</div>
+                <div class="mode-card-title">Luptă</div>
+                <div class="mode-card-desc">În curând...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Mode -->
+    <div id="trainingMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Mod Antrenament</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>📝 Instrucțiuni</h3>
+            <p>În acest mod vei vedea numere care apar și dispar cu viteza setată. Folosește sorobanul imaginar pentru a calcula rezultatul rapid!</p>
+        </div>
+
+        <div class="settings-panel" id="trainingSettings">
+            <div class="settings-row">
+                <span class="setting-label">Complexitate:</span>
+                <div class="setting-controls">
+                    <select id="trainingComplexity" class="level-select">
+                        <optgroup label="Calcul Direct">
+                            <option value="direct-to-4">Calcul direct cu 4</option>
+                            <option value="direct-to-5">Calcul direct cu 5</option>
+                            <option value="direct-to-9">Calcul direct cu 9</option>
+                            <option value="direct-counting" selected>Calcul direct</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mici">
+                            <option value="small-plus-1">+1 = +5 - 4</option>
+                            <option value="small-plus-2">+2 = +5 - 3</option>
+                            <option value="small-plus-3">+3 = +5 - 2</option>
+                            <option value="small-plus-4">+4 = +5 - 1</option>
+                            <option value="small-minus-1">-1 = +4 - 5</option>
+                            <option value="small-minus-2">-2 = +3 - 5</option>
+                            <option value="small-minus-3">-3 = +2 - 5</option>
+                            <option value="small-minus-4">-4 = +1 - 5</option>
+                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mari">
+                            <option value="big-plus-1">+1 = +10 - 9</option>
+                            <option value="big-plus-2">+2 = +10 - 8</option>
+                            <option value="big-plus-3">+3 = +10 - 7</option>
+                            <option value="big-plus-4">+4 = +10 - 6</option>
+                            <option value="big-plus-5">+5 = +10 - 5</option>
+                            <option value="big-plus-6">+6 = +10 - 4</option>
+                            <option value="big-plus-7">+7 = +10 - 3</option>
+                            <option value="big-plus-8">+8 = +10 - 2</option>
+                            <option value="big-plus-9">+9 = +10 - 1</option>
+                            <option value="big-minus-1">-1 = -10 + 9</option>
+                            <option value="big-minus-2">-2 = -10 + 8</option>
+                            <option value="big-minus-3">-3 = -10 + 7</option>
+                            <option value="big-minus-4">-4 = -10 + 6</option>
+                            <option value="big-minus-5">-5 = -10 + 5</option>
+                            <option value="big-minus-6">-6 = -10 + 4</option>
+                            <option value="big-minus-7">-7 = -10 + 3</option>
+                            <option value="big-minus-8">-8 = -10 + 2</option>
+                            <option value="big-minus-9">-9 = -10 + 1</option>
+                            <option value="big-friends-all">Prieteni mari (toate)</option>
+                        </optgroup>
+                        <optgroup label="Combinații">
+                            <option value="family">Familia (Small + Big)</option>
+                            <option value="mix">Mix (toate variantele)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Viteza (secunde):</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustSpeed('training', -0.1)">−</button>
+                        <span class="number-display" id="trainingSpeed">1.5</span>
+                        <button class="number-btn" onclick="adjustSpeed('training', 0.1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Cifre:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('trainingDigits', -1)">−</button>
+                        <span class="number-display" id="trainingDigits">1</span>
+                        <button class="number-btn" onclick="adjustNumber('trainingDigits', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Fracții:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-fractions="none">Nu</button>
+                        <button class="toggle-btn" data-fractions="one">1 zecimală</button>
+                        <button class="toggle-btn" data-fractions="two">2 zecimale</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Operație:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-operation="addition">Adunare</button>
+                        <button class="toggle-btn" data-operation="subtraction">Scădere</button>
+                        <button class="toggle-btn" data-operation="mixed">Amestecat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Numere negative:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-negative="no">Nu</button>
+                        <button class="toggle-btn" data-negative="yes">Da</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Termeni:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('trainingTerms', -1)">−</button>
+                        <span class="number-display" id="trainingTerms">3</span>
+                        <button class="number-btn" onclick="adjustNumber('trainingTerms', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Dictare:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-dictation="no">Nu</button>
+                        <button class="toggle-btn" data-dictation="yes">Da</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Afișează rezultatul:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-answer-mode="input">Introdu răspunsul</button>
+                        <button class="toggle-btn" data-answer-mode="show">Afișează răspunsul</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startTraining()">Start Antrenament!</button>
+
+        <div id="trainingExercise" class="exercise-area" style="display: none;">
+            <div id="trainingContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Exercițiu</div>
+                    <div class="stat-value" id="trainingCurrent">1</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise Series Mode -->
+    <div id="seriesMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Serii de Exerciții</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>📊 Instrucțiuni</h3>
+            <p>Rezolvă cât mai multe exerciții în timpul setat. La final vei primi un raport detaliat cu performanța ta!</p>
+        </div>
+
+        <div class="settings-panel" id="seriesSettings">
+            <!-- Same settings as training mode -->
+            <div class="settings-row">
+                <span class="setting-label">Complexitate:</span>
+                <div class="setting-controls">
+                    <select id="seriesComplexity" class="level-select">
+                        <optgroup label="Calcul Direct">
+                            <option value="direct-to-4">Calcul direct cu 4</option>
+                            <option value="direct-to-5">Calcul direct cu 5</option>
+                            <option value="direct-to-9">Calcul direct cu 9</option>
+                            <option value="direct-counting" selected>Calcul direct</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mici">
+                            <option value="small-plus-1">+1 = +5 - 4</option>
+                            <option value="small-plus-2">+2 = +5 - 3</option>
+                            <option value="small-plus-3">+3 = +5 - 2</option>
+                            <option value="small-plus-4">+4 = +5 - 1</option>
+                            <option value="small-minus-1">-1 = +4 - 5</option>
+                            <option value="small-minus-2">-2 = +3 - 5</option>
+                            <option value="small-minus-3">-3 = +2 - 5</option>
+                            <option value="small-minus-4">-4 = +1 - 5</option>
+                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mari">
+                            <option value="big-plus-1">+1 = +10 - 9</option>
+                            <option value="big-plus-2">+2 = +10 - 8</option>
+                            <option value="big-plus-3">+3 = +10 - 7</option>
+                            <option value="big-plus-4">+4 = +10 - 6</option>
+                            <option value="big-plus-5">+5 = +10 - 5</option>
+                            <option value="big-plus-6">+6 = +10 - 4</option>
+                            <option value="big-plus-7">+7 = +10 - 3</option>
+                            <option value="big-plus-8">+8 = +10 - 2</option>
+                            <option value="big-plus-9">+9 = +10 - 1</option>
+                            <option value="big-minus-1">-1 = -10 + 9</option>
+                            <option value="big-minus-2">-2 = -10 + 8</option>
+                            <option value="big-minus-3">-3 = -10 + 7</option>
+                            <option value="big-minus-4">-4 = -10 + 6</option>
+                            <option value="big-minus-5">-5 = -10 + 5</option>
+                            <option value="big-minus-6">-6 = -10 + 4</option>
+                            <option value="big-minus-7">-7 = -10 + 3</option>
+                            <option value="big-minus-8">-8 = -10 + 2</option>
+                            <option value="big-minus-9">-9 = -10 + 1</option>
+                            <option value="big-friends-all">Prieteni mari (toate)</option>
+                        </optgroup>
+                        <optgroup label="Combinații">
+                            <option value="family">Familia (Small + Big)</option>
+                            <option value="mix">Mix (toate variantele)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Durata:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-duration="1">1 minut</button>
+                        <button class="toggle-btn" data-duration="2">2 minute</button>
+                        <button class="toggle-btn" data-duration="3">3 minute</button>
+                        <button class="toggle-btn" data-duration="4">4 minute</button>
+                        <button class="toggle-btn" data-duration="5">5 minute</button>
+                        <button class="toggle-btn" data-duration="unlimited">Nelimitat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Viteza (secunde):</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustSpeed('series', -0.1)">−</button>
+                        <span class="number-display" id="seriesSpeed">1.5</span>
+                        <button class="number-btn" onclick="adjustSpeed('series', 0.1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Cifre:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('seriesDigits', -1)">−</button>
+                        <span class="number-display" id="seriesDigits">1</span>
+                        <button class="number-btn" onclick="adjustNumber('seriesDigits', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Fracții:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-fractions="none">Nu</button>
+                        <button class="toggle-btn" data-fractions="one">1 zecimală</button>
+                        <button class="toggle-btn" data-fractions="two">2 zecimale</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Operație:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-operation="addition">Adunare</button>
+                        <button class="toggle-btn" data-operation="subtraction">Scădere</button>
+                        <button class="toggle-btn" data-operation="mixed">Amestecat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Numere negative:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-negative="no">Nu</button>
+                        <button class="toggle-btn" data-negative="yes">Da</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Termeni:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('seriesTerms', -1)">−</button>
+                        <span class="number-display" id="seriesTerms">3</span>
+                        <button class="number-btn" onclick="adjustNumber('seriesTerms', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Dictare:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-dictation="no">Nu</button>
+                        <button class="toggle-btn" data-dictation="yes">Da</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Afișează rezultatul:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-answer-mode="input">Introdu răspunsul</button>
+                        <button class="toggle-btn" data-answer-mode="show">Afișează răspunsul</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startSeries()">Start Serie!</button>
+
+        <div id="seriesExercise" class="exercise-area" style="display: none;">
+            <div id="seriesContent"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Corecte</div>
+                    <div class="stat-value" id="seriesCorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Greșite</div>
+                    <div class="stat-value" id="seriesIncorrect">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Timp rămas</div>
+                    <div class="stat-value" id="seriesTimer">--</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="seriesReport" style="display: none;">
+            <div class="report-container">
+                <h2 class="report-header">📈 Raport Final</h2>
+                <div class="report-summary">
+                    <div class="summary-card">
+                        <div class="summary-label">Exerciții Totale</div>
+                        <div class="summary-value" id="reportTotal">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Răspunsuri Corecte</div>
+                        <div class="summary-value" id="reportCorrect">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Medie Corecte</div>
+                        <div class="summary-value" id="reportAvg">0%</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Timp Mediu</div>
+                        <div class="summary-value" id="reportAvgTime">0s</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--text-primary);">Istoric Exerciții</h3>
+                <div id="exercisesList" class="exercises-list"></div>
+
+                <button class="start-btn" style="margin-top: 2rem;" onclick="backToModes()">← Înapoi la Meniu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classroom Mode -->
+    <div id="classroomMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Lucru în Clasă</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="instructions-panel">
+            <h3>👥 Instrucțiuni</h3>
+            <p>Mod special pentru lucrul în clasă cu mai mulți elevi simultan. Fiecare elev are propriile setări și progres independent.</p>
+        </div>
+
+        <div class="classwork-controls">
+            <button class="control-btn settings-btn" onclick="toggleClassroomSettings()">⚙️ Setări Globale</button>
+            <button class="control-btn start-all-btn" onclick="startClassroom()">▶️ Start Toți</button>
+            <button class="control-btn results-btn" onclick="showClassroomResults()">📊 Rezultate</button>
+            <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()">🖥️ Fullscreen</button>
+        </div>
+
+        <div class="students-setup">
+            <div class="students-count">
+                <span class="setting-label">Număr elevi:</span>
+                <div class="number-input">
+                    <button class="number-btn" onclick="adjustStudents(-1)">−</button>
+                    <span class="number-display" id="studentsCount">4</span>
+                    <button class="number-btn" onclick="adjustStudents(1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-panel" id="classroomGlobalSettings" style="display: none;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Setări Globale (pentru toți elevii)</h3>
+            <div class="settings-row">
+                <span class="setting-label">Complexitate:</span>
+                <div class="setting-controls">
+                    <select id="classroomComplexity" class="level-select">
+                        <optgroup label="Calcul Direct">
+                            <option value="direct-to-4">Calcul direct cu 4</option>
+                            <option value="direct-to-5">Calcul direct cu 5</option>
+                            <option value="direct-to-9">Calcul direct cu 9</option>
+                            <option value="direct-counting" selected>Calcul direct</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mici">
+                            <option value="small-plus-1">+1 = +5 - 4</option>
+                            <option value="small-plus-2">+2 = +5 - 3</option>
+                            <option value="small-plus-3">+3 = +5 - 2</option>
+                            <option value="small-plus-4">+4 = +5 - 1</option>
+                            <option value="small-minus-1">-1 = +4 - 5</option>
+                            <option value="small-minus-2">-2 = +3 - 5</option>
+                            <option value="small-minus-3">-3 = +2 - 5</option>
+                            <option value="small-minus-4">-4 = +1 - 5</option>
+                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                        </optgroup>
+                        <optgroup label="Prieteni Mari">
+                            <option value="big-plus-1">+1 = +10 - 9</option>
+                            <option value="big-plus-2">+2 = +10 - 8</option>
+                            <option value="big-plus-3">+3 = +10 - 7</option>
+                            <option value="big-plus-4">+4 = +10 - 6</option>
+                            <option value="big-plus-5">+5 = +10 - 5</option>
+                            <option value="big-plus-6">+6 = +10 - 4</option>
+                            <option value="big-plus-7">+7 = +10 - 3</option>
+                            <option value="big-plus-8">+8 = +10 - 2</option>
+                            <option value="big-plus-9">+9 = +10 - 1</option>
+                            <option value="big-minus-1">-1 = -10 + 9</option>
+                            <option value="big-minus-2">-2 = -10 + 8</option>
+                            <option value="big-minus-3">-3 = -10 + 7</option>
+                            <option value="big-minus-4">-4 = -10 + 6</option>
+                            <option value="big-minus-5">-5 = -10 + 5</option>
+                            <option value="big-minus-6">-6 = -10 + 4</option>
+                            <option value="big-minus-7">-7 = -10 + 3</option>
+                            <option value="big-minus-8">-8 = -10 + 2</option>
+                            <option value="big-minus-9">-9 = -10 + 1</option>
+                            <option value="big-friends-all">Prieteni mari (toate)</option>
+                        </optgroup>
+                        <optgroup label="Combinații">
+                            <option value="family">Familia (Small + Big)</option>
+                            <option value="mix">Mix (toate variantele)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <button class="control-btn settings-btn" style="margin-top: 1rem;" onclick="toggleClassroomSettings()">Închide Setări</button>
+        </div>
+
+        <div id="studentsContainer" class="students-grid">
+            <!-- Student panels will be dynamically generated -->
+        </div>
+
+        <div id="classroomReport" style="display: none;">
+            <div class="report-container">
+                <h2 class="report-header">📊 Rezultate Clasă</h2>
+                <div id="classroomReportContent"></div>
+                <button class="start-btn" style="margin-top: 2rem;" onclick="backToClassroom()">← Înapoi la Clasă</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global state
+let currentMode = null;
+let exerciseData = {
+    training: {
+        complexity: 'direct-counting',
+        speed: 1.5,
+        digits: 1,
+        fractions: 'none',
+        operation: 'addition',
+        negative: 'no',
+        terms: 3,
+        dictation: 'no',
+        answerMode: 'input',
+        current: 1,
+        generatedTerms: [],
+        generatedOperations: [],
+        correctAnswer: 0,
+        lastCalculations: [] // Store last 3 calculations to avoid duplicates
+    },
+    series: {
+        complexity: 'direct-counting',
+        speed: 1.5,
+        digits: 1,
+        fractions: 'none',
+        operation: 'addition',
+        negative: 'no',
+        terms: 3,
+        dictation: 'no',
+        answerMode: 'input',
+        duration: 1,
+        startTime: null,
+        exercises: [],
+        correct: 0,
+        incorrect: 0,
+        timer: null,
+        lastCalculations: [] // Store last 3 calculations to avoid duplicates
+    },
+    classroom: {
+        studentsCount: 4,
+        students: [],
+        globalSettings: {
+            complexity: 'direct-counting'
+        }
+    }
+};
+
+// Speech synthesis
+let synth = window.speechSynthesis;
+
+// Mode Selection
+function selectMode(mode) {
+    currentMode = mode;
+    document.getElementById('modeSelection').style.display = 'none';
+    document.getElementById(mode + 'Mode').classList.add('active');
+
+    // Sync UI with current exerciseData
+    if (mode === 'training' || mode === 'series') {
+        syncModeUI(mode);
+    }
+
+    if (mode === 'classroom') {
+        initializeClassroom();
+    }
+}
+
+// Sync mode UI elements with exerciseData
+function syncModeUI(mode) {
+    const data = exerciseData[mode];
+    const prefix = mode.charAt(0).toUpperCase() + mode.slice(1);
+
+    // Sync number inputs
+    const termsElement = document.getElementById(mode + 'Terms');
+    if (termsElement && data.terms !== undefined) {
+        termsElement.textContent = data.terms;
+    }
+
+    const digitsElement = document.getElementById(mode + 'Digits');
+    if (digitsElement && data.digits !== undefined) {
+        digitsElement.textContent = data.digits;
+    }
+
+    const speedElement = document.getElementById(mode + 'Speed');
+    if (speedElement && data.speed !== undefined) {
+        speedElement.textContent = data.speed.toFixed(1);
+    }
+
+    // Sync complexity dropdown
+    const complexityElement = document.getElementById(mode + 'Complexity');
+    if (complexityElement && data.complexity !== undefined) {
+        complexityElement.value = data.complexity;
+    }
+
+    console.log(`[syncModeUI] Synced ${mode} mode UI with exerciseData:`, data);
+}
+
+function backToModes() {
+    // Hide all mode screens
+    document.querySelectorAll('.mode-screen').forEach(screen => {
+        screen.classList.remove('active');
+    });
+
+    // Reset exercise areas
+    document.querySelectorAll('.exercise-area').forEach(area => {
+        area.style.display = 'none';
+    });
+
+    // Reset main settings panels and start buttons for each mode
+    const mainSettingsPanels = ['trainingSettings', 'seriesSettings'];
+    mainSettingsPanels.forEach(id => {
+        const panel = document.getElementById(id);
+        if (panel) {
+            panel.style.display = 'block';
+        }
+    });
+
+    const startButtons = document.querySelectorAll('.start-btn');
+    startButtons.forEach(btn => {
+        btn.style.display = 'block';
+    });
+
+    // Hide reports
+    document.getElementById('seriesReport').style.display = 'none';
+    document.getElementById('classroomReport').style.display = 'none';
+
+    // Show mode selection
+    document.getElementById('modeSelection').style.display = 'block';
+    currentMode = null;
+}
+
+// Settings Controls
+function adjustNumber(id, delta) {
+    const element = document.getElementById(id);
+    let value = parseInt(element.textContent);
+
+    // Set min and max based on the setting
+    let min = 1, max = 9;
+    if (id.includes('Terms')) {
+        min = 2;
+        max = 20;
+    } else if (id.includes('Digits')) {
+        min = 1;
+        max = 9;
+    }
+
+    value = Math.max(min, Math.min(max, value + delta));
+    element.textContent = value;
+
+    // Update state
+    const mode = id.includes('training') ? 'training' :
+                 id.includes('series') ? 'series' : 'classroom';
+    // Extract setting name by removing the mode prefix (case-insensitive)
+    const setting = id.replace(new RegExp('^' + mode, 'i'), '').toLowerCase();
+    if (exerciseData[mode]) {
+        exerciseData[mode][setting] = value;
+        console.log(`[adjustNumber] Updated ${mode}.${setting} = ${value}`, exerciseData[mode]);
+    }
+}
+
+function adjustSpeed(mode, delta) {
+    const element = document.getElementById(mode + 'Speed');
+    let value = parseFloat(element.textContent);
+    value = Math.max(0.1, Math.min(5.0, value + delta));
+    element.textContent = value.toFixed(1);
+    exerciseData[mode].speed = value;
+}
+
+function adjustStudents(delta) {
+    const element = document.getElementById('studentsCount');
+    let value = parseInt(element.textContent);
+    value = Math.max(1, Math.min(8, value + delta));
+    element.textContent = value;
+    exerciseData.classroom.studentsCount = value;
+    initializeClassroom();
+}
+
+// Toggle button handlers
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('toggle-btn')) {
+        const parent = e.target.parentElement;
+        parent.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        e.target.classList.add('active');
+
+        // Update state based on data attribute
+        const mode = parent.closest('.mode-screen').id.replace('Mode', '');
+        if (e.target.dataset.fractions) {
+            exerciseData[mode].fractions = e.target.dataset.fractions;
+        } else if (e.target.dataset.operation) {
+            exerciseData[mode].operation = e.target.dataset.operation;
+        } else if (e.target.dataset.negative) {
+            exerciseData[mode].negative = e.target.dataset.negative;
+        } else if (e.target.dataset.dictation) {
+            exerciseData[mode].dictation = e.target.dataset.dictation;
+        } else if (e.target.dataset.answerMode) {
+            exerciseData[mode].answerMode = e.target.dataset.answerMode;
+        } else if (e.target.dataset.duration) {
+            exerciseData[mode].duration = e.target.dataset.duration;
+        }
+    }
+});
+
+// Number Generation Logic
+function generateNumber(settings, isFirstTerm = false) {
+    const { digits, fractions, complexity } = settings;
+
+    let num;
+
+    // Generate base number based on complexity
+    switch(complexity) {
+        case 'direct-to-4':
+            // Direct calculation with 4: use only 1-4 (no 0, beads available on soroban)
+            num = Math.floor(Math.random() * 4) + 1; // 1-4
+            break;
+        case 'direct-to-5':
+            // Direct calculation with 5: use only 1-5 (can use heaven bead, no 0)
+            num = Math.floor(Math.random() * 5) + 1; // 1-5
+            break;
+        case 'direct-to-9':
+            // Direct calculation with 9: use only 1-9 (all beads available, no 0)
+            num = Math.floor(Math.random() * 9) + 1; // 1-9
+            break;
+        case 'direct-counting':
+            const max = parseInt('9'.repeat(digits));
+            const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+            // For first term, ensure better distribution across the range
+            if (isFirstTerm && digits === 1) {
+                // Use weighted random to favor variety: 30% low (1-3), 40% mid (4-6), 30% high (7-9)
+                const range = Math.random();
+                if (range < 0.3) {
+                    num = Math.floor(Math.random() * 3) + 1; // 1-3
+                } else if (range < 0.7) {
+                    num = Math.floor(Math.random() * 3) + 4; // 4-6
+                } else {
+                    num = Math.floor(Math.random() * 3) + 7; // 7-9
+                }
+            } else {
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            break;
+
+        // Small Friends levels - Progressive logic: 50% direct + 50% small friends
+        case 'small-plus-1':
+        case 'small-plus-2':
+        case 'small-plus-3':
+        case 'small-plus-4':
+        case 'small-minus-1':
+        case 'small-minus-2':
+        case 'small-minus-3':
+        case 'small-minus-4':
+        case 'small-friends-all':
+            num = generateSmallFriendsNumber(complexity, digits);
+            break;
+
+        // Big Friends levels - Progressive logic: 33% direct + 33% small + 34% big
+        case 'big-plus-1':
+        case 'big-plus-2':
+        case 'big-plus-3':
+        case 'big-plus-4':
+        case 'big-plus-5':
+        case 'big-plus-6':
+        case 'big-plus-7':
+        case 'big-plus-8':
+        case 'big-plus-9':
+        case 'big-minus-1':
+        case 'big-minus-2':
+        case 'big-minus-3':
+        case 'big-minus-4':
+        case 'big-minus-5':
+        case 'big-minus-6':
+        case 'big-minus-7':
+        case 'big-minus-8':
+        case 'big-minus-9':
+        case 'big-friends-all':
+            num = generateBigFriendsNumber(complexity, digits);
+            break;
+
+        // Family - Progressive logic: 25% each level
+        case 'family':
+            num = generateFamilyNumber(digits);
+            break;
+
+        // Mix - Progressive logic: all levels
+        case 'mix':
+            num = generateMixNumber(digits);
+            break;
+
+        default:
+            // Fallback to direct counting
+            const maxNum = parseInt('9'.repeat(digits));
+            const minNum = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+            num = Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum;
+    }
+
+    // Add decimals if needed
+    if (fractions === 'one') {
+        num += Math.floor(Math.random() * 10) / 10;
+    } else if (fractions === 'two') {
+        num += Math.floor(Math.random() * 100) / 100;
+    }
+
+    return num;
+}
+
+// Helper: Generate number for Small Friends levels (50% direct + 50% small friends)
+function generateSmallFriendsNumber(complexity, digits) {
+    // Only generate numbers appropriate for Small Friends formulas
+    // No direct counting numbers - only numbers that require Small Friends formulas
+    return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+}
+
+// Helper: Generate number for Big Friends levels (33% direct + 33% small + 34% big)
+function generateBigFriendsNumber(complexity, digits) {
+    const rand = Math.random();
+    if (rand < 0.33) {
+        // 33% - Direct counting
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+    } else if (rand < 0.66) {
+        // 33% - Small friends
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+    } else {
+        // 34% - Big friends
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+}
+
+// Helper: Generate number for Family level (25% each level)
+function generateFamilyNumber(digits) {
+    const rand = Math.random();
+    if (rand < 0.25) {
+        // 25% - Direct counting
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+    } else if (rand < 0.5) {
+        // 25% - Small friends
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+    } else if (rand < 0.75) {
+        // 25% - Big friends
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    } else {
+        // 25% - Complex combinations
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+}
+
+// Helper: Generate number for Mix level (all levels)
+function generateMixNumber(digits) {
+    const rand = Math.random();
+    if (rand < 0.2) {
+        // 20% - Direct counting
+        return Math.floor(Math.random() * 10); // 0-9
+    } else if (rand < 0.4) {
+        // 20% - Small friends
+        return Math.floor(Math.random() * 10); // 0-9
+    } else if (rand < 0.6) {
+        // 20% - Big friends
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    } else if (rand < 0.8) {
+        // 20% - Family
+        return generateFamilyNumber(digits);
+    } else {
+        // 20% - Complex/random
+        const max = parseInt('9'.repeat(digits));
+        const min = digits > 1 ? parseInt('1' + '0'.repeat(digits - 1)) : 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+}
+
+// Helper: Get complexity limit for direct calculation levels
+function getComplexityLimit(complexity) {
+    switch(complexity) {
+        case 'direct-to-4':
+            return 4;
+        case 'direct-to-5':
+            return 9; // Allow results up to 9 to enable more exercise variety while using terms 1-5
+        case 'direct-to-9':
+            return 9;
+        case 'small-plus-1':
+        case 'small-plus-2':
+        case 'small-plus-3':
+        case 'small-plus-4':
+        case 'small-minus-1':
+        case 'small-minus-2':
+        case 'small-minus-3':
+        case 'small-minus-4':
+        case 'small-friends-all':
+            return 9; // Small Friends formulas can work with numbers 1-9
+        default:
+            return null; // No limit for other complexity levels
+    }
+}
+
+/**
+ * Checks if the complexity level is a "direct calculation" level
+ * Direct calculation levels should NOT require formulas
+ */
+function isDirectCalculationLevel(complexity) {
+    return ['direct-to-4', 'direct-to-5', 'direct-to-9', 'direct-counting'].includes(complexity);
+}
+
+/**
+ * Checks if the complexity level is a "Small Friends" formula level
+ */
+function isSmallFriendsLevel(complexity) {
+    return complexity.startsWith('small-') || complexity === 'small-friends-all';
+}
+
+/**
+ * Checks if an operation REQUIRES a Small Friends formula
+ * Small Friends formulas are needed when:
+ * - Adding to a value in lower beads (1-4) would cross into 5+ but stay in 5-9
+ * - Subtracting from 5 (heaven bead) requires going back to lower beads
+ *
+ * Small Friends formulas:
+ * +1 = +5-4, +2 = +5-3, +3 = +5-2, +4 = +5-1
+ * -1 = -5+4, -2 = -5+3, -3 = -5+2, -4 = -5+1
+ */
+function requiresSmallFriendsFormula(currentValue, operation, operand) {
+    const result = operation === '+' ? currentValue + operand : currentValue - operand;
+
+    if (operation === '+') {
+        // Adding from 1-4 to get 5-9 requires Small Friends (except reaching exactly 5)
+        if (currentValue >= 1 && currentValue <= 4 && result >= 5 && result <= 9) {
+            // Can reach 5 directly (just use heaven bead), but 6-9 need Small Friends
+            return result > 5;
+        }
+    } else if (operation === '-') {
+        // Subtracting from 5 to get 1-4 requires Small Friends
+        if (currentValue === 5 && operand >= 1 && operand <= 4) {
+            return true;
+        }
+        // Subtracting from 6-9 where we need to remove the heaven bead
+        if (currentValue >= 6 && currentValue <= 9 && result >= 1 && result <= 4) {
+            const lowerBeadsUsed = currentValue - 5;
+            // If we need to subtract more than the lower beads we have
+            return operand > lowerBeadsUsed;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Checks if a combination is a Small Friends exercise combination
+ * These combinations should be avoided in direct calculation mode to prevent confusion
+ *
+ * Small Friends exercise combinations (regardless of whether they require the formula):
+ * Addition formulas:
+ *   +1 (4+1): starting number 4
+ *   +2 (3+2, 4+2): starting numbers 3, 4
+ *   +3 (2+3, 3+3, 4+3): starting numbers 2, 3, 4
+ *   +4 (1+4, 2+4, 3+4, 4+4): starting numbers 1, 2, 3, 4
+ *
+ * Subtraction formulas:
+ *   -1, -2, -3, -4: starting numbers 5, 6, 7, 8, 9
+ */
+function isSmallFriendsCombination(currentValue, operation, operand) {
+    // Only check for operands 1-4 (Small Friends formulas)
+    if (operand < 1 || operand > 4) {
+        return false;
+    }
+
+    if (operation === '+') {
+        // Check if this is one of the Small Friends addition combinations
+        // +1: starting from 4 (4+1)
+        // +2: starting from 3 or 4 (3+2, 4+2)
+        // +3: starting from 2, 3, or 4 (2+3, 3+3, 4+3)
+        // +4: starting from 1, 2, 3, or 4 (1+4, 2+4, 3+4, 4+4)
+        const minStartingNumber = 5 - operand; // For +1: 4, +2: 3, +3: 2, +4: 1
+        return currentValue >= minStartingNumber && currentValue <= 4;
+    } else if (operation === '-') {
+        // Check if this is one of the Small Friends subtraction combinations
+        // -1, -2, -3, -4: all starting from 5-9
+        return currentValue >= 5 && currentValue <= 9;
+    }
+
+    return false;
+}
+
+/**
+ * Gets the specific formula number for a Small Friends complexity level
+ * Returns the number (1-4) or null if not a specific formula level
+ */
+function getSmallFriendsFormulaNumber(complexity) {
+    const match = complexity.match(/small-(plus|minus)-(\d)/);
+    return match ? parseInt(match[2]) : null;
+}
+
+/**
+ * Checks if it's possible to generate a valid term that requires the formula
+ * from the current state
+ */
+function canGenerateFormulaFromState(currentValue, operation, formulaNumber) {
+    // Check if using the specific formula number would require the formula
+    const result = operation === '+' ? currentValue + formulaNumber : currentValue - formulaNumber;
+
+    // Must be in valid range
+    if (result < 1 || result > 9) {
+        return false;
+    }
+
+    // Check if this operation would require the formula
+    return requiresSmallFriendsFormula(currentValue, operation, formulaNumber);
+}
+
+/**
+ * Gets all available formulas for a given Small Friends complexity level
+ * This includes the current formula and all previously learned formulas
+ *
+ * Returns an object with:
+ * - currentFormula: the current formula number (1-4)
+ * - previousFormulas: array of all previous formula numbers
+ * - canUseDirect: whether direct calculations (4, 5, 9) are available
+ * - isPlus: whether it's a plus formula (true) or minus formula (false)
+ */
+function getAvailableFormulasForLevel(complexity) {
+    const match = complexity.match(/small-(plus|minus)-(\d)/);
+
+    if (!match) {
+        // If it's small-friends-all, all small friends formulas are available
+        // Only Small Friends formulas - no direct counting or big friends
+        if (complexity === 'small-friends-all') {
+            return {
+                currentFormula: null, // No specific current formula
+                previousFormulas: [1, 2, 3, 4],
+                canUseDirect: false, // No direct counting for this level
+                isPlus: null
+            };
+        }
+        return null;
+    }
+
+    const isPlus = match[1] === 'plus';
+    const currentFormula = parseInt(match[2]);
+
+    // Build array of previous formulas based on the order:
+    // For plus: +1, +2, +3, +4
+    // For minus: -1, -2, -3, -4
+    const previousFormulas = [];
+
+    // Add all previous plus formulas (always available)
+    for (let i = 1; i < currentFormula; i++) {
+        previousFormulas.push({ type: 'plus', number: i });
+    }
+
+    // If this is a minus formula, also add +4 (last plus formula)
+    if (!isPlus) {
+        previousFormulas.push({ type: 'plus', number: 4 });
+
+        // Add previous minus formulas
+        for (let i = 1; i < currentFormula; i++) {
+            previousFormulas.push({ type: 'minus', number: i });
+        }
+    }
+
+    return {
+        currentFormula: currentFormula,
+        previousFormulas: previousFormulas,
+        canUseDirect: true, // Direct calculations with 4, 5, 9 are always available
+        isPlus: isPlus
+    };
+}
+
+/**
+ * Checks if an operation can be performed directly on the soroban without using formulas
+ * For "direct calculation", we need to ensure operations don't require Small Friends or Big Friends formulas
+ *
+ * Soroban mechanics for direct operations:
+ * - Values 1-4: use lower beads only
+ * - Value 5: uses heaven bead only
+ * - From 1-4: can add Y directly only if result <= 4 (stays in lower beads)
+ * - From 1-4: can subtract Y directly if Y <= current value
+ * - From 5: cannot subtract 1-4 directly (needs Small Friends formulas)
+ * - From 5: cannot add 1-4 directly (would need Big Friends formulas for 6-9)
+ */
+function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOperation) {
+    const result = operation === '+' ? currentValue + operand : currentValue - operand;
+
+    // Check bounds
+    if (result < 1 || result > maxLimit) return false;
+
+    // For direct calculation with limits (direct-to-4, direct-to-5, direct-to-9)
+    if (maxLimit !== null) {
+        if (operation === '+') {
+            // From 1-4: can only add if result stays <= 4 (direct within lower beads)
+            // If result would be 5+, it requires Small Friends formula (not direct)
+            if (currentValue <= 4) {
+                if (maxLimit === 4) {
+                    // For direct-to-4: result must stay <= 4
+                    return result <= 4;
+                } else if (maxLimit === 5) {
+                    // For direct-to-5: result can be 5 ONLY if it's the last operation
+                    // Otherwise must stay <= 4 (to avoid getting stuck at 5)
+                    if (result === 5) {
+                        return isLastOperation; // Allow 5 only as final result
+                    }
+                    return result <= 4;
+                } else if (maxLimit === 9) {
+                    // For direct-to-9 and direct-to-5 (maxLimit=9): can add directly if result <= 9
+                    // Direct-to-5 uses operands 1-5, so results 5-9 are all directly achievable
+                    // with the available beads (heaven bead + lower beads)
+                    return result <= 9;
+                }
+            } else if (currentValue === 5) {
+                // From 5: cannot add 1-4 directly (would need Big Friends for 6-9)
+                return false;
+            } else if (currentValue >= 6) {
+                // From 6-9: can add if we stay <= maxLimit and have beads available
+                if (maxLimit === 9) {
+                    const lowerBeadsUsed = currentValue - 5;
+                    const lowerBeadsAvailable = 4 - lowerBeadsUsed;
+                    return operand <= lowerBeadsAvailable && result <= 9;
+                }
+            }
+        } else {
+            // Subtraction
+            if (currentValue <= 4) {
+                // From 1-4: can subtract directly if we have enough lower beads
+                return operand <= currentValue;
+            } else if (currentValue === 5) {
+                // From 5 (heaven bead only): CANNOT subtract 1-4 directly
+                // Would need Small Friends formulas: -1=-5+4, -2=-5+3, -3=-5+2, -4=-5+1
+                return false;
+            } else if (currentValue >= 6 && maxLimit === 9) {
+                // From 6-9: can subtract from lower beads if available
+                const lowerBeadsUsed = currentValue - 5;
+                if (operand <= lowerBeadsUsed) {
+                    // Can subtract from lower beads directly
+                    return true;
+                } else if (operand === currentValue - 4) {
+                    // Subtracting down to 4 or less (removing heaven bead)
+                    return result <= 4;
+                }
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Checks if a term should be avoided due to excessive repetition in the exercise
+ * @param {Array} termsArray - Array of terms generated so far
+ * @param {number} candidateTerm - The term being considered for addition
+ * @returns {boolean} - True if the term should be avoided (too many repetitions)
+ */
+function shouldAvoidTermRepetition(termsArray, candidateTerm) {
+    if (termsArray.length === 0) return false;
+
+    // Configuration: Max consecutive repetitions and max total occurrences
+    const MAX_CONSECUTIVE_REPETITIONS = 1;
+    const MAX_TOTAL_OCCURRENCES = 2;
+
+    // Check 1: Count total occurrences of this term
+    const totalOccurrences = termsArray.filter(t => Math.abs(t) === Math.abs(candidateTerm)).length;
+    if (totalOccurrences >= MAX_TOTAL_OCCURRENCES) {
+        console.log('[shouldAvoidTermRepetition] Avoiding term due to max total occurrences:', {
+            term: candidateTerm,
+            totalOccurrences,
+            max: MAX_TOTAL_OCCURRENCES
+        });
+        return true;
+    }
+
+    // Check 2: Count consecutive repetitions at the end of the array
+    let consecutiveCount = 0;
+    for (let i = termsArray.length - 1; i >= 0; i--) {
+        if (Math.abs(termsArray[i]) === Math.abs(candidateTerm)) {
+            consecutiveCount++;
+        } else {
+            break;
+        }
+    }
+
+    if (consecutiveCount >= MAX_CONSECUTIVE_REPETITIONS) {
+        console.log('[shouldAvoidTermRepetition] Avoiding term due to consecutive repetitions:', {
+            term: candidateTerm,
+            consecutiveCount,
+            max: MAX_CONSECUTIVE_REPETITIONS
+        });
+        return true;
+    }
+
+    return false;
+}
+
+function generateExerciseTerms(settings) {
+    const { terms, operation, negative, complexity } = settings;
+    const maxLimit = getComplexityLimit(complexity);
+
+    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, maxLimit });
+
+    // For direct calculation levels, regenerate if result is 0 or invalid
+    let maxAttempts = 50; // Increased attempts for better results
+    let attempt = 0;
+    let result;
+    let termsArray = [];
+    let operations = [];
+
+    // Safety timeout: prevent infinite loops by tracking generation time
+    const startTime = Date.now();
+    const maxGenerationTime = 5000; // 5 seconds max
+
+    do {
+        // Safety check: if generation takes more than 5 seconds, break out
+        if (Date.now() - startTime > maxGenerationTime) {
+            console.error('[generateExerciseTerms] Generation timeout exceeded! Breaking out to prevent browser hang.');
+            alert('Eroare la generarea exercițiului. Vă rugăm încercați din nou sau schimbați setările.');
+            break;
+        }
+        termsArray = [];
+        operations = [];
+
+        // Generate first term (always positive)
+        termsArray.push(generateNumber(settings, true));
+
+        // Pre-calculate term types distribution for Small Friends levels
+        // This ensures EVERY exercise has a GUARANTEED mix of formulas
+        // 100% guarantee: current formula + previous formulas/direct both appear
+        let termTypesDistribution = [];
+        if (isSmallFriendsLevel(complexity)) {
+            const formulaNumber = getSmallFriendsFormulaNumber(complexity);
+            const availableFormulas = getAvailableFormulasForLevel(complexity);
+            const remainingTerms = terms - 1; // Exclude first term
+
+            // GUARANTEE: Always include at least 1 current formula term
+            // GUARANTEE: Always include at least 1 previous/direct term (if available)
+            // Then distribute the rest with 60-70% current, 30-40% other
+
+            let currentFormulaCount, otherTermsCount;
+
+            if (remainingTerms === 1) {
+                // Only 1 term available, use current formula
+                currentFormulaCount = 1;
+                otherTermsCount = 0;
+            } else if (remainingTerms === 2) {
+                // 2 terms: 1 current + 1 other (50/50)
+                currentFormulaCount = 1;
+                otherTermsCount = 1;
+            } else {
+                // 3+ terms: guarantee at least 1 of each, then distribute rest at 65/35
+                const minCurrent = 1;
+                const minOther = 1;
+                const flexibleTerms = remainingTerms - minCurrent - minOther;
+
+                // Distribute flexible terms: 65% current, 35% other
+                const additionalCurrent = Math.floor(flexibleTerms * 0.65);
+                const additionalOther = flexibleTerms - additionalCurrent;
+
+                currentFormulaCount = minCurrent + additionalCurrent;
+                otherTermsCount = minOther + additionalOther;
+            }
+
+            // Build distribution array with current formula terms
+            for (let j = 0; j < currentFormulaCount; j++) {
+                termTypesDistribution.push({
+                    type: 'current',
+                    formulaNumber: formulaNumber,
+                    formulaType: availableFormulas.isPlus ? 'plus' : 'minus'
+                });
+            }
+
+            // Distribute "other" terms between previous formulas and direct calculations
+            if (otherTermsCount > 0) {
+                if (availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0) {
+                    // Split other terms: 70% previous formulas, 30% direct
+                    const directCount = Math.floor(otherTermsCount * 0.3);
+                    const previousCount = otherTermsCount - directCount;
+
+                    // Add previous formula terms
+                    for (let j = 0; j < previousCount; j++) {
+                        const randomFormula = availableFormulas.previousFormulas[
+                            Math.floor(Math.random() * availableFormulas.previousFormulas.length)
+                        ];
+                        termTypesDistribution.push({
+                            type: 'previous',
+                            formulaNumber: randomFormula.number,
+                            formulaType: randomFormula.type
+                        });
+                    }
+
+                    // Add direct calculation terms
+                    for (let j = 0; j < directCount; j++) {
+                        termTypesDistribution.push({
+                            type: 'direct',
+                            formulaNumber: null,
+                            formulaType: null
+                        });
+                    }
+                } else {
+                    // No previous formulas available, use direct calculations
+                    for (let j = 0; j < otherTermsCount; j++) {
+                        termTypesDistribution.push({
+                            type: 'direct',
+                            formulaNumber: null,
+                            formulaType: null
+                        });
+                    }
+                }
+            }
+
+            // Shuffle the distribution to avoid predictable patterns
+            // Fisher-Yates shuffle algorithm
+            for (let j = termTypesDistribution.length - 1; j > 0; j--) {
+                const k = Math.floor(Math.random() * (j + 1));
+                [termTypesDistribution[j], termTypesDistribution[k]] = [termTypesDistribution[k], termTypesDistribution[j]];
+            }
+
+            console.log('[generateExerciseTerms] Pre-calculated term types distribution:', {
+                totalTerms: remainingTerms,
+                currentFormulaCount,
+                otherTermsCount,
+                distribution: termTypesDistribution.map(t => t.type)
+            });
+        }
+
+        // Generate remaining terms
+        for (let i = 1; i < terms; i++) {
+            let op;
+
+            // For Small Friends levels, determine operation based on pre-allocated formula type
+            if (isSmallFriendsLevel(complexity) && termTypesDistribution.length > 0) {
+                const termIndex = i - 1;
+                const termTypeConfig = termTypesDistribution[termIndex];
+
+                // Force operation to match formula type for formula terms
+                if (termTypeConfig.type === 'current' || termTypeConfig.type === 'previous') {
+                    // Use formula type to determine operation
+                    op = termTypeConfig.formulaType === 'plus' ? '+' : '-';
+                } else {
+                    // For direct calculations, use normal logic
+                    if (operation === 'mixed') {
+                        op = Math.random() > 0.5 ? '+' : '-';
+                    } else {
+                        op = operation === 'addition' ? '+' : '-';
+                    }
+                }
+            } else {
+                // Normal operation selection for non-Small Friends levels
+                if (operation === 'mixed') {
+                    op = Math.random() > 0.5 ? '+' : '-';
+                } else {
+                    op = operation === 'addition' ? '+' : '-';
+                }
+            }
+
+            operations.push(op);
+
+            let term;
+            let validTermFound = false;
+            let termAttempts = 0;
+
+            // For direct calculation levels, ensure operations can be performed directly
+            if (isDirectCalculationLevel(complexity)) {
+                const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+                const isLastOperation = (i === terms - 1);
+
+                // Try to find a valid term that can be performed directly
+                while (!validTermFound && termAttempts < 20) {
+                    if (op === '+') {
+                        // For addition: determine max we can add directly
+                        let maxDirectAddition;
+                        if (currentResult <= 4) {
+                            if (maxLimit === 4) {
+                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult);
+                            } else if (maxLimit === 5) {
+                                // Can add up to 4-currentResult to stay in lower beads
+                                // Or can reach 5 if it's the last operation
+                                maxDirectAddition = isLastOperation ?
+                                    Math.min(5 - currentResult, maxLimit - currentResult) :
+                                    Math.min(4 - currentResult, maxLimit - currentResult);
+                            } else {
+                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult);
+                            }
+                        } else {
+                            // From 5+, cannot add directly in our range
+                            maxDirectAddition = 0;
+                        }
+
+                        if (maxDirectAddition >= 1) {
+                            term = Math.floor(Math.random() * maxDirectAddition) + 1;
+                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
+                                !shouldAvoidTermRepetition(termsArray, term) &&
+                                !isSmallFriendsCombination(currentResult, op, term)) {
+                                validTermFound = true;
+                            }
+                        } else {
+                            // Switch to subtraction
+                            op = '-';
+                            operations[operations.length - 1] = op;
+                        }
+                    }
+
+                    if (op === '-' && !validTermFound) {
+                        // For subtraction: can only subtract what we have
+                        let maxDirectSubtraction;
+                        if (currentResult <= 4) {
+                            // Can subtract up to currentResult (have that many lower beads)
+                            maxDirectSubtraction = currentResult - 1; // Keep result >= 1
+                        } else if (currentResult === 5) {
+                            // From 5, cannot subtract 1-4 directly
+                            maxDirectSubtraction = 0;
+                        } else if (currentResult >= 6 && currentResult <= 9) {
+                            // Can subtract from lower beads
+                            maxDirectSubtraction = Math.min(currentResult - 5, currentResult - 1);
+                        } else {
+                            maxDirectSubtraction = 0;
+                        }
+
+                        if (maxDirectSubtraction >= 1) {
+                            term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
+                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
+                                !shouldAvoidTermRepetition(termsArray, term) &&
+                                !isSmallFriendsCombination(currentResult, op, term)) {
+                                validTermFound = true;
+                            }
+                        } else {
+                            // Switch to addition
+                            op = '+';
+                            operations[operations.length - 1] = op;
+                        }
+                    }
+
+                    termAttempts++;
+                }
+
+                // If no valid term found after attempts, try to find ANY valid term
+                // that doesn't use Small Friends combinations
+                if (!validTermFound && isDirectCalculationLevel(complexity)) {
+                    const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+
+                    // Try all possible terms 1-9 to find one that works
+                    for (let t = 1; t <= 9; t++) {
+                        const testResult = op === '+' ? currentResult + t : currentResult - t;
+
+                        // Check if this term is valid for direct calculation
+                        if (testResult >= 1 && testResult <= maxLimit &&
+                            !shouldAvoidTermRepetition(termsArray, t) &&
+                            !isSmallFriendsCombination(currentResult, op, t)) {
+                            term = t;
+                            validTermFound = true;
+                            break;
+                        }
+                    }
+
+                    // If still no valid term found, regenerate the entire exercise
+                    if (!validTermFound) {
+                        console.log('[generateExerciseTerms] No valid term found, regenerating exercise');
+                        termsArray = [];
+                        operations = [];
+                        break;
+                    }
+                } else if (!validTermFound) {
+                    // For non-direct calculation levels, use standard generation
+                    term = generateNumber(settings, false);
+                    validTermFound = true;
+                }
+            } else if (isSmallFriendsLevel(complexity)) {
+                // For Small Friends levels, use progressive learning with GUARANTEED mix:
+                // - 80% current formula (majority)
+                // - 20% previous formulas + direct calculations (minority)
+                // The distribution is pre-calculated to ensure every exercise has variety
+                const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+                const formulaNumber = getSmallFriendsFormulaNumber(complexity);
+                const availableFormulas = getAvailableFormulasForLevel(complexity);
+
+                console.log('[generateExerciseTerms] Small Friends level:', {
+                    complexity,
+                    formulaNumber,
+                    currentResult,
+                    op,
+                    availableFormulas
+                });
+
+                // Check if it's possible to generate a valid term for this operation
+                // For addition: need currentResult + 1 <= 9 (can add at least 1)
+                // For subtraction: need currentResult - 1 >= 1 (can subtract at least 1)
+                if ((op === '+' && currentResult >= 9) || (op === '-' && currentResult <= 1)) {
+                    console.log('[generateExerciseTerms] Impossible to generate valid Small Friends term, regenerating exercise:', { currentResult, op });
+                    // Break out and regenerate the entire exercise
+                    termsArray = [];
+                    operations = [];
+                    break;
+                }
+
+                // Use pre-calculated term type from distribution instead of random selection
+                // This guarantees that every exercise will have a mix of formulas
+                const termIndex = i - 1; // Adjust for first term (which is always positive)
+                const termTypeConfig = termTypesDistribution[termIndex];
+
+                let targetType = termTypeConfig.type;
+                let targetFormulaNumber = termTypeConfig.formulaNumber;
+                let targetFormulaType = termTypeConfig.formulaType;
+
+                console.log('[generateExerciseTerms] Using pre-allocated target from distribution:', {
+                    termIndex,
+                    targetType,
+                    targetFormulaNumber,
+                    targetFormulaType,
+                    distributionPosition: `${termIndex + 1}/${termTypesDistribution.length}`
+                });
+
+                // Generate term based on target type
+                while (!validTermFound && termAttempts < 30) {
+                    if (targetType === 'direct') {
+                        // Generate a direct calculation term (operations with 4, 5, 9 that don't require formulas)
+                        // For direct calculations, we can use any number that can be performed directly
+                        const directOptions = [];
+
+                        // Can we add/subtract 1-4 without formulas?
+                        for (let t = 1; t <= 9; t++) {
+                            const testResult = op === '+' ? currentResult + t : currentResult - t;
+                            if (testResult >= 1 && testResult <= 9) {
+                                // Check if this can be done directly (without formulas)
+                                if (!requiresSmallFriendsFormula(currentResult, op, t)) {
+                                    directOptions.push(t);
+                                }
+                            }
+                        }
+
+                        if (directOptions.length > 0) {
+                            term = directOptions[Math.floor(Math.random() * directOptions.length)];
+
+                            // Check for excessive repetition
+                            if (!shouldAvoidTermRepetition(termsArray, term)) {
+                                validTermFound = true;
+                                console.log('[generateExerciseTerms] Found direct calculation term:', {
+                                    currentResult, op, term, result: op === '+' ? currentResult + term : currentResult - term
+                                });
+                            }
+                        } else {
+                            // No direct options, fallback to formula
+                            targetType = 'current';
+                            targetFormulaNumber = formulaNumber;
+                            targetFormulaType = availableFormulas.isPlus ? 'plus' : 'minus';
+                            // Update operation to match formula type
+                            op = targetFormulaType === 'plus' ? '+' : '-';
+                            operations[operations.length - 1] = op;
+                        }
+                    } else {
+                        // Generate a formula term (current or previous)
+                        // Operation is already set correctly to match targetFormulaType
+
+                        // First check: Can we generate a valid formula term with the target formula number?
+                        if (termAttempts === 0 && targetFormulaNumber && !canGenerateFormulaFromState(currentResult, op, targetFormulaNumber)) {
+                            console.log('[generateExerciseTerms] Cannot generate target formula from current state:', {
+                                currentResult, op, targetFormulaNumber
+                            });
+
+                            // Try to find ANY formula number (1-4) that would work
+                            let foundAlternative = false;
+                            for (let altNum = 1; altNum <= 4; altNum++) {
+                                if (canGenerateFormulaFromState(currentResult, op, altNum) &&
+                                    !shouldAvoidTermRepetition(termsArray, altNum)) {
+                                    term = altNum;
+                                    validTermFound = true;
+                                    foundAlternative = true;
+                                    console.log('[generateExerciseTerms] Using alternative formula number:', {
+                                        currentResult, op, term, original: targetFormulaNumber
+                                    });
+                                    break;
+                                }
+                            }
+
+                            // If no formula works from this state, try direct calculation
+                            if (!foundAlternative) {
+                                console.log('[generateExerciseTerms] No formula possible, trying direct calculation');
+                                targetType = 'direct';
+                                // Will try direct calculation in next iteration
+                                continue;
+                            }
+                        } else {
+                            // Generate term based on target formula number
+                            term = targetFormulaNumber || (Math.floor(Math.random() * 4) + 1);
+
+                            const result = op === '+' ? currentResult + term : currentResult - term;
+
+                            // Check if result is valid (1-9)
+                            if (result >= 1 && result <= 9) {
+                                const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
+
+                                // For formula types, we want to ensure it requires a formula
+                                // Also check for excessive repetition
+                                if (requiresFormula && !shouldAvoidTermRepetition(termsArray, term)) {
+                                    validTermFound = true;
+                                    console.log('[generateExerciseTerms] Found formula term:', {
+                                        currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    termAttempts++;
+                }
+
+                // If no valid term found after all attempts, try direct calculation as final fallback
+                if (!validTermFound) {
+                    console.log('[generateExerciseTerms] Attempting direct calculation as final fallback');
+
+                    // Try to find a direct calculation term
+                    for (let t = 1; t <= 9; t++) {
+                        const testResult = op === '+' ? currentResult + t : currentResult - t;
+                        if (testResult >= 1 && testResult <= 9 &&
+                            !requiresSmallFriendsFormula(currentResult, op, t) &&
+                            !shouldAvoidTermRepetition(termsArray, t)) {
+                            term = t;
+                            validTermFound = true;
+                            console.log('[generateExerciseTerms] Using direct calculation fallback:', {
+                                currentResult, op, term, result: testResult
+                            });
+                            break;
+                        }
+                    }
+                }
+
+                // If still no valid term, regenerate the entire exercise
+                if (!validTermFound) {
+                    console.log('[generateExerciseTerms] No valid term possible, regenerating exercise:', {
+                        currentResult, op, targetFormulaNumber, targetType
+                    });
+                    // Break out and regenerate the entire exercise
+                    termsArray = [];
+                    operations = [];
+                    break;
+                }
+            } else {
+                // For other complexity levels, use standard generation
+                // Try to avoid excessive repetition
+                let standardAttempts = 0;
+                while (!validTermFound && standardAttempts < 20) {
+                    term = generateNumber(settings, false);
+
+                    // Handle negative numbers
+                    if (negative === 'yes' && Math.random() > 0.7) {
+                        term = -term;
+                    }
+
+                    // Check for excessive repetition
+                    if (!shouldAvoidTermRepetition(termsArray, term)) {
+                        validTermFound = true;
+                    }
+                    standardAttempts++;
+                }
+
+                // If no valid term found after attempts, use the last generated one anyway
+                if (!validTermFound) {
+                    validTermFound = true;
+                }
+            }
+
+            termsArray.push(term);
+        }
+
+        // If we didn't generate all terms, try again
+        if (termsArray.length < terms) {
+            attempt++;
+            continue;
+        }
+
+        // Calculate final result
+        result = calculateResult(termsArray, operations);
+
+        // For direct calculation and Small Friends levels, ensure result is valid (not 0)
+        if (isDirectCalculationLevel(complexity) || isSmallFriendsLevel(complexity)) {
+            if (result <= 0 || result > maxLimit) {
+                attempt++;
+                if (attempt >= maxAttempts) {
+                    // If max attempts reached, return what we have
+                    break;
+                }
+                continue; // Regenerate
+            }
+        }
+
+        // For direct-to-5 complexity, ensure at least one term is 5 (either +5 or -5)
+        // This guarantees practice with the heaven bead (5) in every exercise
+        if (complexity === 'direct-to-5') {
+            const hasFive = termsArray.some(term => Math.abs(term) === 5);
+            if (!hasFive) {
+                console.log('[generateExerciseTerms] direct-to-5: No term with value 5, regenerating exercise. Attempt:', attempt + 1, '/', maxAttempts);
+                console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
+                attempt++;
+                if (attempt >= maxAttempts) {
+                    // If max attempts reached, force add a 5 to make it valid
+                    console.warn('[generateExerciseTerms] Max attempts reached! Forcing number 5 into exercise.');
+                    // Replace a random term (not the first) with 5
+                    if (termsArray.length > 1) {
+                        const randomIndex = Math.floor(Math.random() * (termsArray.length - 1)) + 1;
+                        const oldTerm = termsArray[randomIndex];
+                        termsArray[randomIndex] = 5;
+                        console.log('[generateExerciseTerms] Replaced term at index', randomIndex, 'from', oldTerm, 'to 5');
+                        // Recalculate result with the forced 5
+                        result = calculateResult(termsArray, operations);
+                        console.log('[generateExerciseTerms] New result after forcing 5:', result);
+                    }
+                    break;
+                }
+                continue; // Regenerate
+            }
+        }
+
+        // Valid result found
+        console.log('[generateExerciseTerms] Generated valid exercise:', { termsCount: termsArray.length, terms: termsArray, operations });
+        return { terms: termsArray, operations: operations };
+
+    } while ((isDirectCalculationLevel(complexity) || isSmallFriendsLevel(complexity)) && attempt < maxAttempts);
+
+    // Fallback: return last generated result even if not perfect
+    console.log('[generateExerciseTerms] Returning fallback exercise:', { termsCount: termsArray.length, terms: termsArray, operations });
+    return { terms: termsArray, operations: operations };
+}
+
+function calculateResult(terms, operations) {
+    let result = terms[0];
+    for (let i = 0; i < operations.length; i++) {
+        if (operations[i] === '+') {
+            result += terms[i + 1];
+        } else {
+            result -= terms[i + 1];
+        }
+    }
+    return Math.round(result * 100) / 100; // Round to 2 decimals
+}
+
+// Text to Speech
+function speak(text) {
+    if (synth.speaking) {
+        synth.cancel();
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ro-RO';
+    utterance.rate = 1.0;
+    synth.speak(utterance);
+}
+
+// Training Mode
+function startTraining() {
+    const settings = exerciseData.training;
+    settings.complexity = document.getElementById('trainingComplexity').value;
+
+    // Reset calculation history for new session
+    settings.lastCalculations = [];
+
+    console.log('[startTraining] Settings:', settings);
+
+    document.getElementById('trainingSettings').style.display = 'none';
+    document.querySelector('#trainingMode .start-btn').style.display = 'none';
+    document.getElementById('trainingExercise').style.display = 'flex';
+
+    runTrainingExercise();
+}
+
+function runTrainingExercise() {
+    const settings = exerciseData.training;
+
+    // Generate unique calculation (avoid duplicates and similar patterns)
+    let terms, operations, correctAnswer, calculationStr;
+    let isDuplicate = true;
+    let attempts = 0;
+    const maxAttempts = 30;
+
+    while (isDuplicate && attempts < maxAttempts) {
+        const generated = generateExerciseTerms(settings);
+        terms = generated.terms;
+        operations = generated.operations;
+
+        // Safety check: if generation failed, show error and stop
+        if (!terms || terms.length === 0) {
+            console.error('[runTrainingExercise] Failed to generate valid exercise terms');
+            alert('Nu s-a putut genera un exercițiu valid. Vă rugăm încercați din nou sau schimbați setările.');
+            return;
+        }
+
+        correctAnswer = calculateResult(terms, operations);
+
+        // Create string representation for comparison
+        calculationStr = terms[0].toString();
+        for (let i = 0; i < operations.length; i++) {
+            calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+        }
+
+        // Check if this calculation was generated recently
+        isDuplicate = exerciseData.training.lastCalculations.includes(calculationStr);
+
+        // Also check if the starting pattern is too similar (first 2 terms)
+        if (!isDuplicate && exerciseData.training.lastCalculations.length > 0) {
+            const currentStart = terms.length >= 2 ?
+                `${terms[0]} ${operations[0]} ${terms[1]}` :
+                terms[0].toString();
+
+            // Check if any recent calculation starts with the same pattern
+            const hasSimilarStart = exerciseData.training.lastCalculations.some(calc => {
+                return calc.startsWith(currentStart);
+            });
+
+            // If we have similar starts in the last calculations, try again (but less strict than exact duplicates)
+            if (hasSimilarStart && attempts < maxAttempts / 2) {
+                isDuplicate = true;
+            }
+        }
+
+        attempts++;
+    }
+
+    // If still duplicate after max attempts, clear older entries to make room
+    if (isDuplicate && exerciseData.training.lastCalculations.length > 0) {
+        console.warn('[runTrainingExercise] Could not find unique exercise after', maxAttempts, 'attempts. Clearing oldest entries.');
+        // Remove the oldest half of entries to reduce constraints
+        const entriesToRemove = Math.ceil(exerciseData.training.lastCalculations.length / 2);
+        exerciseData.training.lastCalculations.splice(0, entriesToRemove);
+    }
+
+    // Store this calculation in history ONLY if it's not already there (keep last 10 for better diversity)
+    if (!exerciseData.training.lastCalculations.includes(calculationStr)) {
+        exerciseData.training.lastCalculations.push(calculationStr);
+        if (exerciseData.training.lastCalculations.length > 10) {
+            exerciseData.training.lastCalculations.shift(); // Remove oldest
+        }
+    }
+
+    exerciseData.training.generatedTerms = terms;
+    exerciseData.training.generatedOperations = operations;
+    exerciseData.training.correctAnswer = correctAnswer;
+
+    const content = document.getElementById('trainingContent');
+
+    // Show countdown 3, 2, 1
+    let countdown = 3;
+    content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+        } else {
+            clearInterval(countdownInterval);
+            content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
+            // Start showing terms after countdown
+            setTimeout(() => {
+                let currentTerm = 0;
+                const showNextTerm = () => {
+                    if (currentTerm < terms.length) {
+                        const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
+                        const term = terms[currentTerm];
+
+                        content.innerHTML = `
+                            <div class="number-display-area">
+                                ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                                ${Math.abs(term)}
+                            </div>
+                        `;
+
+                        if (settings.dictation === 'yes' && settings.speed >= 1.0) {
+                            const textToSpeak = operation ? `${operation === '+' ? 'plus' : 'minus'} ${Math.abs(term)}` : term.toString();
+                            speak(textToSpeak);
+                        }
+
+                        currentTerm++;
+                        setTimeout(showNextTerm, settings.speed * 1000);
+                    } else {
+                        // Show answer input or display
+                        if (settings.answerMode === 'input') {
+                            content.innerHTML = `
+                                <div class="number-display-area">Răspuns:</div>
+                                <input type="number" step="any" class="answer-input" id="trainingAnswer" autofocus>
+                                <button class="submit-btn" onclick="checkTrainingAnswer()">Verifică</button>
+                            `;
+                            document.getElementById('trainingAnswer').focus();
+                        } else {
+                            content.innerHTML = `
+                                <div class="number-display-area">Calculul s-a terminat</div>
+                                <button class="show-answer-btn" onclick="showTrainingAnswer()">Afișează Răspuns</button>
+                            `;
+                        }
+                    }
+                };
+
+                setTimeout(showNextTerm, 1000);
+            }, 500); // Small delay after "Pregătește-te..."
+        }
+    }, 1000); // 1 second per countdown number
+}
+
+function checkTrainingAnswer() {
+    const userAnswer = parseFloat(document.getElementById('trainingAnswer').value);
+    const correct = Math.abs(userAnswer - exerciseData.training.correctAnswer) < 0.01;
+    const { generatedTerms: terms, generatedOperations: operations } = exerciseData.training;
+
+    // Format the calculation for display
+    let calculationStr = terms[0].toString();
+    for (let i = 0; i < operations.length; i++) {
+        calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+    }
+    calculationStr += ` = ${exerciseData.training.correctAnswer}`;
+
+    const content = document.getElementById('trainingContent');
+    content.innerHTML = `
+        <div class="number-display-area">${exerciseData.training.correctAnswer}</div>
+        <div class="feedback ${correct ? 'correct' : 'incorrect'}">
+            ${correct ? '✓ Corect!' : '✗ Greșit!'}
+            <div style="margin-top: 0.5rem; font-size: 1rem; font-weight: normal;">
+                ${calculationStr}
+            </div>
+            ${!correct ? `<div style="margin-top: 0.3rem; font-size: 0.9rem;">Răspunsul tău: ${userAnswer}</div>` : ''}
+        </div>
+        <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
+    `;
+}
+
+function showTrainingAnswer() {
+    const { generatedTerms: terms, generatedOperations: operations, correctAnswer } = exerciseData.training;
+
+    // Format the calculation for display
+    let calculationStr = terms[0].toString();
+    for (let i = 0; i < operations.length; i++) {
+        calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+    }
+    calculationStr += ` = ${correctAnswer}`;
+
+    const content = document.getElementById('trainingContent');
+    content.innerHTML = `
+        <div class="number-display-area">${correctAnswer}</div>
+        <div style="margin-top: 1rem; font-size: 1.2rem; color: var(--text-primary);">
+            ${calculationStr}
+        </div>
+        <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
+    `;
+}
+
+function nextTrainingExercise() {
+    exerciseData.training.current++;
+    document.getElementById('trainingCurrent').textContent = exerciseData.training.current;
+    runTrainingExercise();
+}
+
+// Series Mode
+function startSeries() {
+    const settings = exerciseData.series;
+    settings.complexity = document.getElementById('seriesComplexity').value;
+
+    document.getElementById('seriesSettings').style.display = 'none';
+    document.querySelector('#seriesMode .start-btn').style.display = 'none';
+    document.getElementById('seriesExercise').style.display = 'flex';
+
+    // Reset stats
+    settings.exercises = [];
+    settings.correct = 0;
+    settings.incorrect = 0;
+    settings.startTime = Date.now();
+    settings.lastCalculations = []; // Reset calculation history
+
+    document.getElementById('seriesCorrect').textContent = '0';
+    document.getElementById('seriesIncorrect').textContent = '0';
+
+    // Start timer if not unlimited
+    if (settings.duration !== 'unlimited') {
+        const totalSeconds = parseInt(settings.duration) * 60;
+        updateSeriesTimer(totalSeconds);
+    } else {
+        document.getElementById('seriesTimer').textContent = '∞';
+    }
+
+    runSeriesExercise();
+}
+
+function updateSeriesTimer(remainingSeconds) {
+    const settings = exerciseData.series;
+
+    if (remainingSeconds <= 0) {
+        finishSeries();
+        return;
+    }
+
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    document.getElementById('seriesTimer').textContent =
+        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    settings.timer = setTimeout(() => {
+        updateSeriesTimer(remainingSeconds - 1);
+    }, 1000);
+}
+
+function runSeriesExercise() {
+    const settings = exerciseData.series;
+
+    // Generate unique calculation (avoid duplicates and similar patterns)
+    let terms, operations, correctAnswer, calculationStr;
+    let isDuplicate = true;
+    let attempts = 0;
+    const maxAttempts = 30;
+
+    while (isDuplicate && attempts < maxAttempts) {
+        const generated = generateExerciseTerms(settings);
+        terms = generated.terms;
+        operations = generated.operations;
+
+        // Safety check: if generation failed, show error and stop
+        if (!terms || terms.length === 0) {
+            console.error('[runSeriesExercise] Failed to generate valid exercise terms');
+            alert('Nu s-a putut genera un exercițiu valid. Vă rugăm încercați din nou sau schimbați setările.');
+            return;
+        }
+
+        correctAnswer = calculateResult(terms, operations);
+
+        // Create string representation for comparison
+        calculationStr = terms[0].toString();
+        for (let i = 0; i < operations.length; i++) {
+            calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+        }
+
+        // Check if this calculation was generated recently
+        isDuplicate = settings.lastCalculations.includes(calculationStr);
+
+        // Also check if the starting pattern is too similar (first 2 terms)
+        if (!isDuplicate && settings.lastCalculations.length > 0) {
+            const currentStart = terms.length >= 2 ?
+                `${terms[0]} ${operations[0]} ${terms[1]}` :
+                terms[0].toString();
+
+            // Check if any recent calculation starts with the same pattern
+            const hasSimilarStart = settings.lastCalculations.some(calc => {
+                return calc.startsWith(currentStart);
+            });
+
+            // If we have similar starts in the last calculations, try again (but less strict than exact duplicates)
+            if (hasSimilarStart && attempts < maxAttempts / 2) {
+                isDuplicate = true;
+            }
+        }
+
+        attempts++;
+    }
+
+    // If still duplicate after max attempts, clear older entries to make room
+    if (isDuplicate && settings.lastCalculations.length > 0) {
+        console.warn('[runSeriesExercise] Could not find unique exercise after', maxAttempts, 'attempts. Clearing oldest entries.');
+        // Remove the oldest half of entries to reduce constraints
+        const entriesToRemove = Math.ceil(settings.lastCalculations.length / 2);
+        settings.lastCalculations.splice(0, entriesToRemove);
+    }
+
+    // Store this calculation in history ONLY if it's not already there (keep last 10 for better diversity)
+    if (!settings.lastCalculations.includes(calculationStr)) {
+        settings.lastCalculations.push(calculationStr);
+        if (settings.lastCalculations.length > 10) {
+            settings.lastCalculations.shift(); // Remove oldest
+        }
+    }
+
+    const exerciseStartTime = Date.now();
+    const content = document.getElementById('seriesContent');
+
+    // Show countdown 3, 2, 1
+    let countdown = 3;
+    content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+        } else {
+            clearInterval(countdownInterval);
+            content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
+
+            // Start showing terms after countdown
+            setTimeout(() => {
+                let currentTerm = 0;
+                const showNextTerm = () => {
+                    if (currentTerm < terms.length) {
+                        const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
+                        const term = terms[currentTerm];
+
+                        content.innerHTML = `
+                            <div class="number-display-area">
+                                ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                                ${Math.abs(term)}
+                            </div>
+                        `;
+
+                        if (settings.dictation === 'yes' && settings.speed >= 1.0) {
+                            const textToSpeak = operation ? `${operation === '+' ? 'plus' : 'minus'} ${Math.abs(term)}` : term.toString();
+                            speak(textToSpeak);
+                        }
+
+                        currentTerm++;
+                        setTimeout(showNextTerm, settings.speed * 1000);
+                    } else {
+                        if (settings.answerMode === 'input') {
+                            content.innerHTML = `
+                                <div class="number-display-area">Răspuns:</div>
+                                <input type="number" step="any" class="answer-input" id="seriesAnswer" autofocus>
+                                <button class="submit-btn" onclick="checkSeriesAnswer(${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">Verifică</button>
+                            `;
+                            document.getElementById('seriesAnswer').focus();
+
+                            // Allow Enter key to submit
+                            document.getElementById('seriesAnswer').addEventListener('keypress', function(e) {
+                                if (e.key === 'Enter') {
+                                    checkSeriesAnswer(correctAnswer, exerciseStartTime, formatExercise(terms, operations));
+                                }
+                            });
+                        } else {
+                            content.innerHTML = `
+                                <div class="number-display-area">Calculul s-a terminat</div>
+                                <button class="show-answer-btn" onclick="showSeriesAnswer(${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">Afișează Răspuns</button>
+                            `;
+                        }
+                    }
+                };
+
+                setTimeout(showNextTerm, 1000);
+            }, 500); // Small delay after "Pregătește-te..."
+        }
+    }, 1000); // 1 second per countdown number
+}
+
+function formatExercise(terms, operations) {
+    let str = terms[0].toString();
+    for (let i = 0; i < operations.length; i++) {
+        str += ` ${operations[i]} ${terms[i + 1]}`;
+    }
+    return str;
+}
+
+function checkSeriesAnswer(correctAnswer, startTime, exerciseStr) {
+    const settings = exerciseData.series;
+    const userAnswer = parseFloat(document.getElementById('seriesAnswer').value);
+    const correct = Math.abs(userAnswer - correctAnswer) < 0.01;
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    // Save exercise result
+    settings.exercises.push({
+        exercise: exerciseStr,
+        correctAnswer: correctAnswer,
+        userAnswer: userAnswer,
+        correct: correct,
+        time: timeTaken
+    });
+
+    if (correct) {
+        settings.correct++;
+        document.getElementById('seriesCorrect').textContent = settings.correct;
+    } else {
+        settings.incorrect++;
+        document.getElementById('seriesIncorrect').textContent = settings.incorrect;
+    }
+
+    // Show brief feedback then next exercise
+    const content = document.getElementById('seriesContent');
+    content.innerHTML = `
+        <div class="number-display-area">${correctAnswer}</div>
+        <div class="feedback ${correct ? 'correct' : 'incorrect'}">
+            ${correct ? '✓ Corect!' : '✗ Greșit!'}
+            <div style="margin-top: 0.5rem; font-size: 1rem; font-weight: normal;">
+                ${exerciseStr} = ${correctAnswer}
+            </div>
+            ${!correct ? `<div style="margin-top: 0.3rem; font-size: 0.9rem;">Răspunsul tău: ${userAnswer}</div>` : ''}
+        </div>
+    `;
+
+    setTimeout(() => {
+        runSeriesExercise();
+    }, 1500);
+}
+
+function showSeriesAnswer(correctAnswer, startTime, exerciseStr) {
+    const settings = exerciseData.series;
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    settings.exercises.push({
+        exercise: exerciseStr,
+        correctAnswer: correctAnswer,
+        userAnswer: null,
+        correct: null,
+        time: timeTaken
+    });
+
+    const content = document.getElementById('seriesContent');
+    content.innerHTML = `
+        <div class="number-display-area">${correctAnswer}</div>
+        <div style="margin-top: 1rem; font-size: 1.2rem; color: var(--text-primary);">
+            ${exerciseStr} = ${correctAnswer}
+        </div>
+        <button class="submit-btn" style="margin-top: 2rem;" onclick="runSeriesExercise()">Următorul</button>
+    `;
+}
+
+function finishSeries() {
+    const settings = exerciseData.series;
+
+    if (settings.timer) {
+        clearTimeout(settings.timer);
+    }
+
+    document.getElementById('seriesExercise').style.display = 'none';
+    document.getElementById('seriesReport').style.display = 'block';
+
+    // Calculate statistics
+    const total = settings.exercises.length;
+    const correct = settings.correct;
+    const avgCorrect = total > 0 ? ((correct / total) * 100).toFixed(1) : 0;
+    const totalTime = settings.exercises.reduce((sum, ex) => sum + parseFloat(ex.time), 0);
+    const avgTime = total > 0 ? (totalTime / total).toFixed(2) : 0;
+
+    document.getElementById('reportTotal').textContent = total;
+    document.getElementById('reportCorrect').textContent = correct;
+    document.getElementById('reportAvg').textContent = avgCorrect + '%';
+    document.getElementById('reportAvgTime').textContent = avgTime + 's';
+
+    // Display exercises list
+    const exercisesList = document.getElementById('exercisesList');
+    exercisesList.innerHTML = settings.exercises.map((ex, index) => `
+        <div class="exercise-item">
+            <div class="exercise-calculation">${index + 1}. ${ex.exercise} = ${ex.correctAnswer}</div>
+            <div class="exercise-result">
+                <span class="user-answer">Răspuns: ${ex.userAnswer !== null ? ex.userAnswer : 'N/A'}</span>
+                ${ex.correct !== null ? `
+                    <div class="correct-indicator ${ex.correct ? 'correct' : 'incorrect'}">
+                        ${ex.correct ? '✓' : '✗'}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Classroom Mode
+function initializeClassroom() {
+    const count = exerciseData.classroom.studentsCount;
+    const container = document.getElementById('studentsContainer');
+
+    container.innerHTML = '';
+    exerciseData.classroom.students = [];
+
+    for (let i = 0; i < count; i++) {
+        const studentData = {
+            id: i,
+            name: `Elev ${i + 1}`,
+            settings: {
+                complexity: 'direct-counting',
+                speed: 1.5,
+                digits: 1,
+                fractions: 'none',
+                operation: 'addition',
+                negative: 'no',
+                terms: 3,
+                answerMode: 'input'
+            },
+            exercises: [],
+            correct: 0,
+            incorrect: 0,
+            isRunning: false,
+            lastCalculations: [] // Store last 3 calculations to avoid duplicates
+        };
+        exerciseData.classroom.students.push(studentData);
+
+        container.innerHTML += `
+            <div class="student-panel" id="student-${i}">
+                <div class="student-header">
+                    <input type="text" class="student-name-input" value="${studentData.name}"
+                           onchange="updateStudentName(${i}, this.value)">
+                    <button class="control-btn settings-btn" onclick="showStudentSettings(${i})">⚙️</button>
+                </div>
+                <div class="student-exercise-area" id="student-area-${i}">
+                    <div style="color: var(--text-secondary); text-align: center;">
+                        Așteaptă să înceapă...
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function updateStudentName(id, name) {
+    exerciseData.classroom.students[id].name = name;
+}
+
+function showStudentSettings(id) {
+    // TODO: Implement individual student settings modal
+    alert('Setări individuale pentru ' + exerciseData.classroom.students[id].name + ' (în dezvoltare)');
+}
+
+function toggleClassroomSettings() {
+    const settings = document.getElementById('classroomGlobalSettings');
+    settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+}
+
+function startClassroom() {
+    exerciseData.classroom.students.forEach((student, index) => {
+        if (!student.isRunning) {
+            student.isRunning = true;
+            student.lastCalculations = []; // Reset calculation history
+            runStudentExercise(index);
+        }
+    });
+}
+
+function runStudentExercise(studentId) {
+    const student = exerciseData.classroom.students[studentId];
+    if (!student.isRunning) return;
+
+    // Generate unique calculation (avoid duplicates)
+    let terms, operations, correctAnswer, calculationStr;
+    let isDuplicate = true;
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    while (isDuplicate && attempts < maxAttempts) {
+        const generated = generateExerciseTerms(student.settings);
+        terms = generated.terms;
+        operations = generated.operations;
+
+        // Safety check: if generation failed, skip this student's exercise
+        if (!terms || terms.length === 0) {
+            console.error('[runStudentExercise] Failed to generate valid exercise terms for student', studentId);
+            return;
+        }
+
+        correctAnswer = calculateResult(terms, operations);
+
+        // Create string representation for comparison
+        calculationStr = terms[0].toString();
+        for (let i = 0; i < operations.length; i++) {
+            calculationStr += ` ${operations[i]} ${terms[i + 1]}`;
+        }
+
+        // Check if this calculation was generated recently
+        isDuplicate = student.lastCalculations.includes(calculationStr);
+        attempts++;
+    }
+
+    // If still duplicate after max attempts, clear older entries to make room
+    if (isDuplicate && student.lastCalculations.length > 0) {
+        console.warn('[runClassroomExercise] Could not find unique exercise after', maxAttempts, 'attempts for student', studentId, '. Clearing oldest entries.');
+        // Remove the oldest half of entries to reduce constraints
+        const entriesToRemove = Math.ceil(student.lastCalculations.length / 2);
+        student.lastCalculations.splice(0, entriesToRemove);
+    }
+
+    // Store this calculation in history ONLY if it's not already there (keep last 10 for better diversity)
+    if (!student.lastCalculations.includes(calculationStr)) {
+        student.lastCalculations.push(calculationStr);
+        if (student.lastCalculations.length > 10) {
+            student.lastCalculations.shift(); // Remove oldest
+        }
+    }
+
+    const exerciseStartTime = Date.now();
+    const area = document.getElementById(`student-area-${studentId}`);
+    area.innerHTML = '<div class="student-number-display">Pregătește-te...</div>';
+
+    let currentTerm = 0;
+
+    const showNextTerm = () => {
+        if (currentTerm < terms.length && student.isRunning) {
+            const operation = currentTerm > 0 ? operations[currentTerm - 1] : '';
+            const term = terms[currentTerm];
+
+            area.innerHTML = `
+                <div class="student-number-display">
+                    ${operation ? `<span style="font-size: 2rem;">${operation}</span> ` : ''}
+                    ${Math.abs(term)}
+                </div>
+            `;
+
+            currentTerm++;
+            setTimeout(showNextTerm, student.settings.speed * 1000);
+        } else if (student.isRunning) {
+            if (student.settings.answerMode === 'input') {
+                area.innerHTML = `
+                    <input type="number" step="any" class="answer-input"
+                           style="width: 90%; font-size: 1.5rem;"
+                           id="student-answer-${studentId}" placeholder="Răspuns">
+                    <button class="submit-btn" style="padding: 0.5rem 1rem; font-size: 1rem;"
+                            onclick="checkStudentAnswer(${studentId}, ${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">
+                        ✓
+                    </button>
+                `;
+            } else {
+                area.innerHTML = `
+                    <button class="show-answer-btn" style="padding: 0.5rem 1rem; font-size: 1rem;"
+                            onclick="showStudentAnswer(${studentId}, ${correctAnswer}, ${exerciseStartTime}, '${formatExercise(terms, operations)}')">
+                        Afișează
+                    </button>
+                `;
+            }
+        }
+    };
+
+    setTimeout(showNextTerm, 1000);
+}
+
+function checkStudentAnswer(studentId, correctAnswer, startTime, exerciseStr) {
+    const student = exerciseData.classroom.students[studentId];
+    const input = document.getElementById(`student-answer-${studentId}`);
+    const userAnswer = parseFloat(input.value);
+    const correct = Math.abs(userAnswer - correctAnswer) < 0.01;
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    student.exercises.push({
+        exercise: exerciseStr,
+        correctAnswer: correctAnswer,
+        userAnswer: userAnswer,
+        correct: correct,
+        time: timeTaken
+    });
+
+    if (correct) {
+        student.correct++;
+    } else {
+        student.incorrect++;
+    }
+
+    const area = document.getElementById(`student-area-${studentId}`);
+    area.innerHTML = `
+        <div class="student-number-display">${correctAnswer}</div>
+        <div class="feedback ${correct ? 'correct' : 'incorrect'}" style="font-size: 1rem; padding: 0.5rem;">
+            ${correct ? '✓' : '✗'}
+        </div>
+    `;
+
+    setTimeout(() => {
+        if (student.isRunning) {
+            runStudentExercise(studentId);
+        }
+    }, 1000);
+}
+
+function showStudentAnswer(studentId, correctAnswer, startTime, exerciseStr) {
+    const student = exerciseData.classroom.students[studentId];
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    student.exercises.push({
+        exercise: exerciseStr,
+        correctAnswer: correctAnswer,
+        userAnswer: null,
+        correct: null,
+        time: timeTaken
+    });
+
+    const area = document.getElementById(`student-area-${studentId}`);
+    area.innerHTML = `
+        <div class="student-number-display">${correctAnswer}</div>
+        <button class="submit-btn" style="padding: 0.5rem 1rem; font-size: 1rem; margin-top: 1rem;"
+                onclick="runStudentExercise(${studentId})">
+            Următorul
+        </button>
+    `;
+}
+
+function showClassroomResults() {
+    // Stop all student exercises
+    exerciseData.classroom.students.forEach(student => {
+        student.isRunning = false;
+    });
+
+    document.getElementById('studentsContainer').style.display = 'none';
+    document.getElementById('classroomReport').style.display = 'block';
+
+    const reportContent = document.getElementById('classroomReportContent');
+    reportContent.innerHTML = exerciseData.classroom.students.map(student => {
+        const total = student.exercises.length;
+        const correct = student.correct;
+        const avgCorrect = total > 0 ? ((correct / total) * 100).toFixed(1) : 0;
+        const totalTime = student.exercises.reduce((sum, ex) => sum + parseFloat(ex.time), 0);
+        const avgTime = total > 0 ? (totalTime / total).toFixed(2) : 0;
+
+        return `
+            <div style="margin-bottom: 3rem;">
+                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">${student.name}</h3>
+                <div class="report-summary">
+                    <div class="summary-card">
+                        <div class="summary-label">Exerciții</div>
+                        <div class="summary-value">${total}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Corecte</div>
+                        <div class="summary-value">${correct}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Medie</div>
+                        <div class="summary-value">${avgCorrect}%</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Timp Mediu</div>
+                        <div class="summary-value">${avgTime}s</div>
+                    </div>
+                </div>
+                <div class="exercises-list">
+                    ${student.exercises.map((ex, index) => `
+                        <div class="exercise-item">
+                            <div class="exercise-calculation">${index + 1}. ${ex.exercise} = ${ex.correctAnswer}</div>
+                            <div class="exercise-result">
+                                <span class="user-answer">Răspuns: ${ex.userAnswer !== null ? ex.userAnswer : 'N/A'}</span>
+                                ${ex.correct !== null ? `
+                                    <div class="correct-indicator ${ex.correct ? 'correct' : 'incorrect'}">
+                                        ${ex.correct ? '✓' : '✗'}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function backToClassroom() {
+    document.getElementById('classroomReport').style.display = 'none';
+    document.getElementById('studentsContainer').style.display = 'grid';
+    initializeClassroom();
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Anzan Simulator loaded successfully!');
+});
+</script>
+{% endblock %}

@@ -929,6 +929,13 @@ def simulators_list(request):
             'url': 'teacher_platform:flashcard_simulator',
             'color': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
         },
+        {
+            'name': 'Anzan (Calcul Mental)',
+            'description': 'Calcul mental rapid cu soroban imaginar',
+            'icon': '🧠',
+            'url': 'teacher_platform:anzan_simulator',
+            'color': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+        },
         # Aici se vor adăuga alte simulatoare în viitor
     ]
 
@@ -954,3 +961,12 @@ def flashcard_simulator(request):
     Simulator de cartonașe flash pentru recunoașterea numerelor pe soroban
     """
     return render(request, 'teacher_platform/flashcard_simulator.html')
+
+
+@login_required
+@teacher_required
+def anzan_simulator(request):
+    """
+    Simulator Anzan pentru calcul mental rapid cu soroban imaginar
+    """
+    return render(request, 'teacher_platform/anzan_simulator.html')
