@@ -1941,12 +1941,13 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
  * @param {number} candidateTerm - The term being considered for addition
  * @returns {boolean} - True if the term should be avoided (too many repetitions)
  */
-function shouldAvoidTermRepetition(termsArray, candidateTerm) {
+function shouldAvoidTermRepetition(termsArray, candidateTerm, totalTermCount = 3) {
     if (termsArray.length === 0) return false;
 
     // Configuration: Max consecutive repetitions and max total occurrences
+    // For exercises with more terms, allow more repetitions (needed for larger exercises)
     const MAX_CONSECUTIVE_REPETITIONS = 1;
-    const MAX_TOTAL_OCCURRENCES = 2;
+    const MAX_TOTAL_OCCURRENCES = totalTermCount <= 3 ? 2 : totalTermCount === 4 ? 2 : 3; // 5+ terms: allow 3 occurrences
 
     // Check 1: Count total occurrences of this term
     const totalOccurrences = termsArray.filter(t => Math.abs(t) === Math.abs(candidateTerm)).length;
@@ -1988,20 +1989,22 @@ function generateExerciseTerms(settings) {
     console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, maxLimit });
 
     // For direct calculation levels, regenerate if result is 0 or invalid
-    let maxAttempts = 50; // Increased attempts for better results
+    // Dynamic attempts and timeout based on term count (more terms = more attempts needed)
+    let maxAttempts = terms <= 3 ? 50 : terms === 4 ? 75 : terms === 5 ? 100 : 150;
     let attempt = 0;
     let result;
     let termsArray = [];
     let operations = [];
 
     // Safety timeout: prevent infinite loops by tracking generation time
+    // More terms = longer timeout (combinatorial explosion)
     const startTime = Date.now();
-    const maxGenerationTime = 5000; // 5 seconds max
+    const maxGenerationTime = terms <= 3 ? 5000 : terms === 4 ? 8000 : terms === 5 ? 12000 : 15000;
 
     do {
-        // Safety check: if generation takes more than 5 seconds, break out
+        // Safety check: if generation takes more than max time, break out
         if (Date.now() - startTime > maxGenerationTime) {
-            console.error('[generateExerciseTerms] Generation timeout exceeded! Breaking out to prevent browser hang.');
+            console.error('[generateExerciseTerms] Generation timeout exceeded (' + (maxGenerationTime / 1000) + 's)! Breaking out to prevent browser hang.');
             alert('Eroare la generarea exercițiului. Vă rugăm încercați din nou sau schimbați setările.');
             break;
         }
@@ -2180,7 +2183,7 @@ function generateExerciseTerms(settings) {
                         if (maxDirectAddition >= 1) {
                             term = Math.floor(Math.random() * maxDirectAddition) + 1;
                             if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
-                                !shouldAvoidTermRepetition(termsArray, term) &&
+                                !shouldAvoidTermRepetition(termsArray, term, terms) &&
                                 !isSmallFriendsCombination(currentResult, op, term) &&
                                 !isBigFriendsCombination(currentResult, op, term)) {
                                 validTermFound = true;
@@ -2211,7 +2214,7 @@ function generateExerciseTerms(settings) {
                         if (maxDirectSubtraction >= 1) {
                             term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
                             if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
-                                !shouldAvoidTermRepetition(termsArray, term) &&
+                                !shouldAvoidTermRepetition(termsArray, term, terms) &&
                                 !isSmallFriendsCombination(currentResult, op, term) &&
                                 !isBigFriendsCombination(currentResult, op, term)) {
                                 validTermFound = true;
@@ -2238,7 +2241,7 @@ function generateExerciseTerms(settings) {
 
                         // Check if this term is valid for direct calculation
                         if (testResult >= 1 && testResult <= maxLimit &&
-                            !shouldAvoidTermRepetition(termsArray, t) &&
+                            !shouldAvoidTermRepetition(termsArray, t, terms) &&
                             !isSmallFriendsCombination(currentResult, op, t) &&
                             !isBigFriendsCombination(currentResult, op, t)) {
                             term = t;
@@ -2326,7 +2329,7 @@ function generateExerciseTerms(settings) {
                             term = directOptions[Math.floor(Math.random() * directOptions.length)];
 
                             // Check for excessive repetition
-                            if (!shouldAvoidTermRepetition(termsArray, term)) {
+                            if (!shouldAvoidTermRepetition(termsArray, term, terms)) {
                                 validTermFound = true;
                                 console.log('[generateExerciseTerms] Found direct calculation term:', {
                                     currentResult, op, term, result: op === '+' ? currentResult + term : currentResult - term
@@ -2355,7 +2358,7 @@ function generateExerciseTerms(settings) {
                             let foundAlternative = false;
                             for (let altNum = 1; altNum <= 4; altNum++) {
                                 if (canGenerateFormulaFromState(currentResult, op, altNum) &&
-                                    !shouldAvoidTermRepetition(termsArray, altNum)) {
+                                    !shouldAvoidTermRepetition(termsArray, altNum, terms)) {
                                     term = altNum;
                                     validTermFound = true;
                                     foundAlternative = true;
@@ -2385,7 +2388,7 @@ function generateExerciseTerms(settings) {
 
                                 // For formula types, we want to ensure it requires a formula
                                 // Also check for excessive repetition
-                                if (requiresFormula && !shouldAvoidTermRepetition(termsArray, term)) {
+                                if (requiresFormula && !shouldAvoidTermRepetition(termsArray, term, terms)) {
                                     validTermFound = true;
                                     console.log('[generateExerciseTerms] Found formula term:', {
                                         currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula
@@ -2407,7 +2410,7 @@ function generateExerciseTerms(settings) {
                         const testResult = op === '+' ? currentResult + t : currentResult - t;
                         if (testResult >= 1 && testResult <= 9 &&
                             !requiresSmallFriendsFormula(currentResult, op, t) &&
-                            !shouldAvoidTermRepetition(termsArray, t)) {
+                            !shouldAvoidTermRepetition(termsArray, t, terms)) {
                             term = t;
                             validTermFound = true;
                             console.log('[generateExerciseTerms] Using direct calculation fallback:', {
@@ -2441,7 +2444,7 @@ function generateExerciseTerms(settings) {
                     }
 
                     // Check for excessive repetition
-                    if (!shouldAvoidTermRepetition(termsArray, term)) {
+                    if (!shouldAvoidTermRepetition(termsArray, term, terms)) {
                         validTermFound = true;
                     }
                     standardAttempts++;
@@ -2521,7 +2524,8 @@ function generateExerciseTerms(settings) {
         }
 
         // For direct-to-9 complexity, ensure sufficient practice with large numbers (6-9)
-        // Goal: >70% of non-first terms should be 6-9 to challenge kids with heaven+earth bead combinations
+        // Goal: Dynamic percentage of non-first terms should be 6-9 based on term count
+        // 3 terms: 70%, 4 terms: 60%, 5 terms: 50%, 6+ terms: 40%
         if (complexity === 'direct-to-9') {
             // Check if at least one large number exists
             const hasLargeNumber = termsArray.some(term => Math.abs(term) >= 6 && Math.abs(term) <= 9);
@@ -2531,12 +2535,25 @@ function generateExerciseTerms(settings) {
             const largeNumbersInLaterPositions = nonFirstTerms.filter(term => Math.abs(term) >= 6 && Math.abs(term) <= 9).length;
             const largeNumberPercentage = nonFirstTerms.length > 0 ? (largeNumbersInLaterPositions / nonFirstTerms.length) : 0;
 
-            // Require: at least 1 large number total AND >70% of non-first terms are large numbers
-            const meetsRequirement = hasLargeNumber && largeNumberPercentage >= 0.7;
+            // Dynamic target percentage based on term count
+            // More terms = lower percentage requirement (harder to maintain result ≤9 with many large numbers)
+            let targetPercentage;
+            if (terms <= 3) {
+                targetPercentage = 0.7; // 70% for 3 terms
+            } else if (terms === 4) {
+                targetPercentage = 0.6; // 60% for 4 terms
+            } else if (terms === 5) {
+                targetPercentage = 0.5; // 50% for 5 terms (2 out of 4 non-first terms)
+            } else {
+                targetPercentage = 0.4; // 40% for 6+ terms
+            }
+
+            // Require: at least 1 large number total AND meets dynamic percentage requirement
+            const meetsRequirement = hasLargeNumber && largeNumberPercentage >= targetPercentage;
 
             if (!meetsRequirement) {
                 console.log('[generateExerciseTerms] direct-to-9: Insufficient large numbers (6-9). Current: ' +
-                    (largeNumberPercentage * 100).toFixed(0) + '% of non-first terms. Target: >70%. Attempt:',
+                    (largeNumberPercentage * 100).toFixed(0) + '% of non-first terms. Target: >' + (targetPercentage * 100).toFixed(0) + '%. Attempt:',
                     attempt + 1, '/', maxAttempts);
                 console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
                 attempt++;
@@ -2544,11 +2561,11 @@ function generateExerciseTerms(settings) {
                     // If max attempts reached, try to intelligently add large numbers without violating constraints
                     console.warn('[generateExerciseTerms] Max attempts reached! Attempting to add large numbers (6-9) while respecting constraints.');
                     if (termsArray.length > 1) {
-                        // Calculate how many terms we need to replace to reach >70%
-                        const targetCount = Math.ceil(nonFirstTerms.length * 0.7);
+                        // Calculate how many terms we need to replace to reach target percentage
+                        const targetCount = Math.ceil(nonFirstTerms.length * targetPercentage);
                         const needToAdd = targetCount - largeNumbersInLaterPositions;
 
-                        console.log('[generateExerciseTerms] Need to add', needToAdd, 'more large numbers to reach 70% target');
+                        console.log('[generateExerciseTerms] Need to add', needToAdd, 'more large numbers to reach', (targetPercentage * 100).toFixed(0) + '% target');
 
                         // Try to replace terms with large numbers that don't violate constraints
                         let successfulReplacements = 0;
