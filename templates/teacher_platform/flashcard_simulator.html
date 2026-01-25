@@ -2321,6 +2321,17 @@
             <button class="feedback-modal-btn" onclick="closeFlashSummary()">Închide</button>
         </div>
     </div>
+
+    <!-- Classwork Results Modal -->
+    <div id="classworkResultsModal" class="feedback-modal" style="display: none;">
+        <div class="feedback-modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <h2 class="feedback-modal-title">Rezultate Lucru în Clasă</h2>
+            <div id="classworkResultsContent" style="text-align: left; margin: 2rem 0; font-size: 1.1rem;">
+                <!-- Results will be dynamically populated here -->
+            </div>
+            <button class="feedback-modal-btn" onclick="closeClassworkResults()">Închide</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -2409,6 +2420,32 @@
         10: null
     };
 
+    let studentStats = {
+        1: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        2: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        3: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        4: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        5: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        6: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        7: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        8: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        9: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        10: { correct: 0, incorrect: 0, total: 0, responseTimes: [] }
+    };
+
+    let studentStartTimes = {
+        1: null,
+        2: null,
+        3: null,
+        4: null,
+        5: null,
+        6: null,
+        7: null,
+        8: null,
+        9: null,
+        10: null
+    };
+
     // Mode selection
     function selectMode(mode) {
         console.log('selectMode called with mode:', mode);
@@ -2450,6 +2487,13 @@
             if (classworkMode) {
                 classworkMode.classList.add('active');
                 currentMode = 'classwork';
+
+                // Reset statistics for all students
+                for (let i = 1; i <= 10; i++) {
+                    studentStats[i] = { correct: 0, incorrect: 0, total: 0, responseTimes: [] };
+                    studentStartTimes[i] = null;
+                    studentResults[i] = null;
+                }
             }
         }
 
@@ -4288,6 +4332,9 @@
                 input.style.display = 'block';
                 answerArea.style.display = 'flex';
 
+                // Start timing when answer input is shown
+                studentStartTimes[studentId] = Date.now();
+
                 // Focus on input for quick entry
                 input.focus();
             }, settings.speed * 1000);
@@ -4305,6 +4352,9 @@
             const input = answerArea.querySelector('.answer-input');
             input.style.display = 'none';
             answerArea.style.display = 'flex';
+
+            // Start timing when exercise is shown
+            studentStartTimes[studentId] = Date.now();
         }
     }
 
@@ -4358,6 +4408,20 @@
         const isCorrect = userAnswer === correctAnswer;
         studentResults[studentId] = isCorrect;
 
+        // Update statistics
+        studentStats[studentId].total++;
+        if (isCorrect) {
+            studentStats[studentId].correct++;
+        } else {
+            studentStats[studentId].incorrect++;
+        }
+
+        // Track response time
+        if (studentStartTimes[studentId]) {
+            const responseTime = Date.now() - studentStartTimes[studentId];
+            studentStats[studentId].responseTimes.push(responseTime);
+        }
+
         // Update status indicator
         const statusDiv = panel.querySelector('.student-status');
         statusDiv.classList.add('show');
@@ -4399,21 +4463,58 @@
         const panels = Array.from(document.querySelectorAll('.student-panel')).filter(
             panel => panel.style.display !== 'none'
         );
-        let results = 'Rezultate:\n\n';
+
+        const resultsContent = document.getElementById('classworkResultsContent');
+        resultsContent.innerHTML = '';
 
         panels.forEach((panel, index) => {
             const studentId = parseInt(panel.dataset.studentId);
             const name = panel.querySelector('.student-name-input').value;
-            const result = studentResults[studentId];
+            const stats = studentStats[studentId];
 
-            let status = 'Not answered';
-            if (result === true) status = '✓ Correct';
-            else if (result === false) status = `✗ Incorrect (Correct: ${studentNumbers[studentId]})`;
+            const totalExercises = stats.total;
+            const correctRate = totalExercises > 0 ? ((stats.correct / totalExercises) * 100).toFixed(1) : 0;
+            const avgResponseTime = stats.responseTimes.length > 0
+                ? (stats.responseTimes.reduce((a, b) => a + b, 0) / stats.responseTimes.length / 1000).toFixed(2)
+                : 0;
 
-            results += `${name}: ${status}\n`;
+            const studentCard = document.createElement('div');
+            studentCard.style.cssText = 'margin: 1.5rem 0; padding: 1.5rem; background: #f5f5f5; border-radius: 12px; border-left: 4px solid #2196F3;';
+
+            studentCard.innerHTML = `
+                <h3 style="margin: 0 0 1rem 0; color: #1976D2; font-size: 1.3rem;">${name}</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem;">
+                    <div style="padding: 0.8rem; background: #e8f5e9; border-radius: 8px;">
+                        <strong style="color: #2e7d32;">Răspunsuri corecte:</strong><br>
+                        <span style="font-size: 1.5rem; color: #1b5e20;">${stats.correct}</span>
+                    </div>
+                    <div style="padding: 0.8rem; background: #ffebee; border-radius: 8px;">
+                        <strong style="color: #c62828;">Răspunsuri greșite:</strong><br>
+                        <span style="font-size: 1.5rem; color: #b71c1c;">${stats.incorrect}</span>
+                    </div>
+                    <div style="padding: 0.8rem; background: #e3f2fd; border-radius: 8px;">
+                        <strong style="color: #1565c0;">Total exerciții:</strong><br>
+                        <span style="font-size: 1.5rem; color: #0d47a1;">${totalExercises}</span>
+                    </div>
+                    <div style="padding: 0.8rem; background: #fff3e0; border-radius: 8px;">
+                        <strong style="color: #e65100;">Rată de succes:</strong><br>
+                        <span style="font-size: 1.5rem; color: #bf360c;">${correctRate}%</span>
+                    </div>
+                    <div style="padding: 0.8rem; background: #f3e5f5; border-radius: 8px;">
+                        <strong style="color: #6a1b9a;">Timp mediu:</strong><br>
+                        <span style="font-size: 1.5rem; color: #4a148c;">${avgResponseTime}s</span>
+                    </div>
+                </div>
+            `;
+
+            resultsContent.appendChild(studentCard);
         });
 
-        alert(results);
+        document.getElementById('classworkResultsModal').style.display = 'flex';
+    }
+
+    function closeClassworkResults() {
+        document.getElementById('classworkResultsModal').style.display = 'none';
     }
 
     function toggleFullscreen() {
