@@ -1829,26 +1829,31 @@ function isSmallFriendsLevel(complexity) {
  * Small Friends formulas:
  * +1 = +5-4, +2 = +5-3, +3 = +5-2, +4 = +5-1
  * -1 = -5+4, -2 = -5+3, -3 = -5+2, -4 = -5+1
+ *
+ * For multi-digit numbers: checks only the last digit
  */
 function requiresSmallFriendsFormula(currentValue, operation, operand) {
-    const result = operation === '+' ? currentValue + operand : currentValue - operand;
+    // For multi-digit numbers, work with last digits only
+    const currentLastDigit = currentValue % 10;
+    const operandLastDigit = operand % 10;
+    const result = operation === '+' ? currentLastDigit + operandLastDigit : currentLastDigit - operandLastDigit;
 
     if (operation === '+') {
         // Adding from 1-4 to get 5-9 requires Small Friends (except reaching exactly 5)
-        if (currentValue >= 1 && currentValue <= 4 && result >= 5 && result <= 9) {
+        if (currentLastDigit >= 1 && currentLastDigit <= 4 && result >= 5 && result <= 9) {
             // Can reach 5 directly (just use heaven bead), but 6-9 need Small Friends
             return result > 5;
         }
     } else if (operation === '-') {
         // Subtracting from 5 to get 1-4 requires Small Friends
-        if (currentValue === 5 && operand >= 1 && operand <= 4) {
+        if (currentLastDigit === 5 && operandLastDigit >= 1 && operandLastDigit <= 4) {
             return true;
         }
         // Subtracting from 6-9 where we need to remove the heaven bead
-        if (currentValue >= 6 && currentValue <= 9 && result >= 1 && result <= 4) {
-            const lowerBeadsUsed = currentValue - 5;
+        if (currentLastDigit >= 6 && currentLastDigit <= 9 && result >= 1 && result <= 4) {
+            const lowerBeadsUsed = currentLastDigit - 5;
             // If we need to subtract more than the lower beads we have
-            return operand > lowerBeadsUsed;
+            return operandLastDigit > lowerBeadsUsed;
         }
     }
 
@@ -1868,10 +1873,16 @@ function requiresSmallFriendsFormula(currentValue, operation, operand) {
  *
  * Subtraction formulas:
  *   -1, -2, -3, -4: starting numbers 5, 6, 7, 8, 9
+ *
+ * For multi-digit numbers: checks only the last digit
  */
 function isSmallFriendsCombination(currentValue, operation, operand) {
+    // For multi-digit numbers, work with last digits only
+    const currentLastDigit = currentValue % 10;
+    const operandLastDigit = operand % 10;
+
     // Only check for operands 1-4 (Small Friends formulas)
-    if (operand < 1 || operand > 4) {
+    if (operandLastDigit < 1 || operandLastDigit > 4) {
         return false;
     }
 
@@ -1881,12 +1892,12 @@ function isSmallFriendsCombination(currentValue, operation, operand) {
         // +2: starting from 3 or 4 (3+2, 4+2)
         // +3: starting from 2, 3, or 4 (2+3, 3+3, 4+3)
         // +4: starting from 1, 2, 3, or 4 (1+4, 2+4, 3+4, 4+4)
-        const minStartingNumber = 5 - operand; // For +1: 4, +2: 3, +3: 2, +4: 1
-        return currentValue >= minStartingNumber && currentValue <= 4;
+        const minStartingNumber = 5 - operandLastDigit; // For +1: 4, +2: 3, +3: 2, +4: 1
+        return currentLastDigit >= minStartingNumber && currentLastDigit <= 4;
     } else if (operation === '-') {
         // Check if this is one of the Small Friends subtraction combinations
         // -1, -2, -3, -4: all starting from 5-9
-        return currentValue >= 5 && currentValue <= 9;
+        return currentLastDigit >= 5 && currentLastDigit <= 9;
     }
 
     return false;
@@ -1908,37 +1919,43 @@ function isSmallFriendsCombination(currentValue, operation, operand) {
  *   -7: from 1-6 (need to borrow from next column)
  *   -8: from 1-7 (need to borrow from next column)
  *   -9: from 1-8 (need to borrow from next column)
+ *
+ * For multi-digit numbers: checks only the last digit
  */
 function isBigFriendsCombination(currentValue, operation, operand) {
+    // For multi-digit numbers, work with last digits only
+    const currentLastDigit = currentValue % 10;
+    const operandLastDigit = operand % 10;
+
     // Only check for operands 6-9 (Big Friends formulas)
-    if (operand < 6 || operand > 9) {
+    if (operandLastDigit < 6 || operandLastDigit > 9) {
         return false;
     }
 
     if (operation === '+') {
         // For single-digit calculations (1-9), check if we can add directly
-        const result = currentValue + operand;
+        const result = currentLastDigit + operandLastDigit;
         // If result > 9, it would require carrying/Big Friends formula
         if (result > 9) {
             return true;
         }
         // Also avoid cases where we're adding to 5 (only heaven bead)
         // because adding 6-9 to 5 requires Big Friends
-        if (currentValue === 5) {
+        if (currentLastDigit === 5) {
             return true;
         }
     } else if (operation === '-') {
-        // For subtraction, if operand > currentValue, it would require borrowing/Big Friends
-        if (operand > currentValue) {
+        // For subtraction, if operand > currentValue (last digit), it would require borrowing/Big Friends
+        if (operandLastDigit > currentLastDigit) {
             return true;
         }
         // Also check if subtracting would require removing beads we don't have
-        // For values 6-9, we have heaven bead (5) + lower beads (currentValue-5)
-        if (currentValue >= 6 && currentValue <= 9) {
-            const lowerBeadsUsed = currentValue - 5;
+        // For values 6-9, we have heaven bead (5) + lower beads (currentLastDigit-5)
+        if (currentLastDigit >= 6 && currentLastDigit <= 9) {
+            const lowerBeadsUsed = currentLastDigit - 5;
             // If we need to subtract more than what's available on lower beads
             // and can't just remove heaven bead, it requires Big Friends
-            if (operand > lowerBeadsUsed && operand !== currentValue - 4) {
+            if (operandLastDigit > lowerBeadsUsed && operandLastDigit !== currentLastDigit - 4) {
                 return true;
             }
         }
@@ -2042,15 +2059,58 @@ function getAvailableFormulasForLevel(complexity) {
  * - From 1-4: can subtract Y directly if Y <= current value
  * - From 5: cannot subtract 1-4 directly (needs Small Friends formulas)
  * - From 5: cannot add 1-4 directly (would need Big Friends formulas for 6-9)
+ *
+ * For multi-digit numbers: applies the rules to the last digit only (units place)
+ * and ensures no carry/borrow between digits
  */
 function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOperation) {
     const result = operation === '+' ? currentValue + operand : currentValue - operand;
 
-    // Check bounds
-    if (result < 1 || result > maxLimit) return false;
+    // Check bounds - for multi-digit numbers, maxLimit applies to the entire number
+    // but for single-digit maxLimit (4, 5, 9), we need special handling
+    if (result < 1) return false;
+
+    // For single-digit soroban logic (direct-to-4, direct-to-5, direct-to-9)
+    if (maxLimit !== null && maxLimit <= 9) {
+        // For multi-digit numbers, check digit-by-digit
+        if (currentValue > 9 || operand > 9 || result > 9) {
+            // Multi-digit case: extract last digits and check for carry/borrow
+            const currentLastDigit = currentValue % 10;
+            const operandLastDigit = operand % 10;
+
+            if (operation === '+') {
+                // Check if there's a carry from the last digit
+                if (currentLastDigit + operandLastDigit >= 10) {
+                    return false; // Carry between digits - not direct
+                }
+            } else {
+                // Check if there's a borrow from the last digit
+                if (currentLastDigit < operandLastDigit) {
+                    return false; // Borrow between digits - not direct
+                }
+            }
+
+            // Now validate the last digit operation using the single-digit rules below
+            // Replace currentValue and operand with their last digits for validation
+            currentValue = currentLastDigit;
+            operand = operandLastDigit;
+
+            // Recalculate result for last digit
+            const lastDigitResult = operation === '+' ? currentValue + operand : currentValue - operand;
+
+            // Last digit result should be within 0-9 (no carry/borrow)
+            if (lastDigitResult < 0 || lastDigitResult > 9) return false;
+        } else {
+            // Single-digit case: check maxLimit
+            if (result > maxLimit) return false;
+        }
+    } else if (maxLimit !== null) {
+        // Large maxLimit: just check bounds
+        if (result > maxLimit) return false;
+    }
 
     // For direct calculation with limits (direct-to-4, direct-to-5, direct-to-9)
-    if (maxLimit !== null) {
+    if (maxLimit !== null && maxLimit <= 9) {
         if (operation === '+') {
             // From 1-4: can only add if result stays <= 4 (direct within lower beads)
             // If result would be 5+, it requires Small Friends formula (not direct)
