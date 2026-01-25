@@ -1785,12 +1785,9 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
                     }
                     return result <= 4;
                 } else if (maxLimit === 9) {
-                    // For direct-to-9: can add directly if result <= 9
-                    // But need to check if we're crossing the 5 boundary
-                    if (currentValue <= 4 && result > 4 && result < 9) {
-                        // Crossing from lower beads to heaven+lower requires formula
-                        return result === 5 && isLastOperation;
-                    }
+                    // For direct-to-9 and direct-to-5 (maxLimit=9): can add directly if result <= 9
+                    // Direct-to-5 uses operands 1-5, so results 5-9 are all directly achievable
+                    // with the available beads (heaven bead + lower beads)
                     return result <= 9;
                 }
             } else if (currentValue === 5) {
@@ -2457,6 +2454,14 @@ function runTrainingExercise() {
         const generated = generateExerciseTerms(settings);
         terms = generated.terms;
         operations = generated.operations;
+
+        // Safety check: if generation failed, show error and stop
+        if (!terms || terms.length === 0) {
+            console.error('[runTrainingExercise] Failed to generate valid exercise terms');
+            alert('Nu s-a putut genera un exercițiu valid. Vă rugăm încercați din nou sau schimbați setările.');
+            return;
+        }
+
         correctAnswer = calculateResult(terms, operations);
 
         // Create string representation for comparison
@@ -2680,6 +2685,14 @@ function runSeriesExercise() {
         const generated = generateExerciseTerms(settings);
         terms = generated.terms;
         operations = generated.operations;
+
+        // Safety check: if generation failed, show error and stop
+        if (!terms || terms.length === 0) {
+            console.error('[runSeriesExercise] Failed to generate valid exercise terms');
+            alert('Nu s-a putut genera un exercițiu valid. Vă rugăm încercați din nou sau schimbați setările.');
+            return;
+        }
+
         correctAnswer = calculateResult(terms, operations);
 
         // Create string representation for comparison
@@ -2989,6 +3002,13 @@ function runStudentExercise(studentId) {
         const generated = generateExerciseTerms(student.settings);
         terms = generated.terms;
         operations = generated.operations;
+
+        // Safety check: if generation failed, skip this student's exercise
+        if (!terms || terms.length === 0) {
+            console.error('[runStudentExercise] Failed to generate valid exercise terms for student', studentId);
+            return;
+        }
+
         correctAnswer = calculateResult(terms, operations);
 
         // Create string representation for comparison
