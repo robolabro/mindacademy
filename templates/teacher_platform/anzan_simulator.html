@@ -1530,15 +1530,25 @@ function generateNumber(settings, isFirstTerm = false) {
             break;
         case 'direct-to-5':
             // Direct calculation with 5: use only 1-5 for the last digit
+            // CRITICAL: For first term, use only 1-4 (not 5) to avoid getting stuck
+            // From 5, you cannot add (requires Big Friends) or subtract (requires Small Friends) directly
             if (digits === 1) {
-                num = Math.floor(Math.random() * 5) + 1; // 1-5
+                if (isFirstTerm) {
+                    num = Math.floor(Math.random() * 4) + 1; // 1-4 only for first term
+                } else {
+                    num = Math.floor(Math.random() * 5) + 1; // 1-5 for other terms
+                }
             } else {
                 // For multi-digit numbers, generate number with last digit 1-5
                 const max = parseInt('9'.repeat(digits));
                 const min = parseInt('1' + '0'.repeat(digits - 1));
                 num = Math.floor(Math.random() * (max - min + 1)) + min;
-                // Ensure last digit is 1-5
-                num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 5) + 1);
+                // Ensure last digit is 1-5 (or 1-4 for first term)
+                if (isFirstTerm) {
+                    num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 4) + 1);
+                } else {
+                    num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 5) + 1);
+                }
             }
             break;
         case 'direct-to-9':
@@ -2180,7 +2190,7 @@ function generateExerciseTerms(settings) {
 
     // For direct calculation levels, regenerate if result is 0 or invalid
     // Dynamic attempts and timeout based on term count (more terms = more attempts needed)
-    let maxAttempts = terms <= 3 ? 50 : terms === 4 ? 75 : terms === 5 ? 100 : 150;
+    let maxAttempts = terms <= 3 ? 50 : terms === 4 ? 75 : terms === 5 ? 200 : 150;
     let attempt = 0;
     let result;
     let termsArray = [];
@@ -2189,7 +2199,7 @@ function generateExerciseTerms(settings) {
     // Safety timeout: prevent infinite loops by tracking generation time
     // More terms = longer timeout (combinatorial explosion)
     const startTime = Date.now();
-    const maxGenerationTime = terms <= 3 ? 5000 : terms === 4 ? 8000 : terms === 5 ? 12000 : 15000;
+    const maxGenerationTime = terms <= 3 ? 5000 : terms === 4 ? 8000 : terms === 5 ? 20000 : 15000;
 
     do {
         // Safety check: if generation takes more than max time, break out
