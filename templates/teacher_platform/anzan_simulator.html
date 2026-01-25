@@ -2505,6 +2505,14 @@ function generateExerciseTerms(settings) {
                             attempt++;
                             continue;
                         }
+
+                        // CRITICAL: Validate no consecutive Big Friends formulas
+                        // This prevents confusing situations like 9 + 1 after already using Big Friends
+                        if (!validateNoConsecutiveBigFriends(termsArray, operations)) {
+                            console.warn('[generateExerciseTerms] Forcing 5 created consecutive Big Friends formulas. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
                     }
                     break;
                 }
@@ -2584,8 +2592,11 @@ function generateExerciseTerms(settings) {
                             // Validate all intermediate results would still be valid
                             const allIntermediatesValid = validateIntermediateResults(testTerms, operations);
 
+                            // Validate no consecutive Big Friends formulas
+                            const noConsecutiveBigFriends = validateNoConsecutiveBigFriends(testTerms, operations);
+
                             if (!wouldRequireSmallFriends && !wouldRequireBigFriends &&
-                                intermediateValid && finalResultValid && allIntermediatesValid) {
+                                intermediateValid && finalResultValid && allIntermediatesValid && noConsecutiveBigFriends) {
                                 // This replacement is valid!
                                 const oldTerm = termsArray[randomIndex];
                                 termsArray[randomIndex] = randomLargeNum;
@@ -2616,6 +2627,19 @@ function generateExerciseTerms(settings) {
                 }
                 continue; // Regenerate
             }
+        }
+
+        // Final validation: Check for consecutive Big Friends formulas
+        if (!validateNoConsecutiveBigFriends(termsArray, operations)) {
+            console.warn('[generateExerciseTerms] Exercise has consecutive Big Friends formulas. Regenerating. Attempt:', attempt + 1, '/', maxAttempts);
+            console.log('[generateExerciseTerms] Current terms:', termsArray, 'Operations:', operations);
+            attempt++;
+            if (attempt >= maxAttempts) {
+                // If max attempts reached, continue to return the exercise anyway
+                console.warn('[generateExerciseTerms] Max attempts reached, returning exercise with consecutive Big Friends anyway');
+                break;
+            }
+            continue; // Regenerate
         }
 
         // Valid result found
@@ -2671,6 +2695,99 @@ function validateIntermediateResults(terms, operations) {
             console.log('[validateIntermediateResults] Terms so far:', terms.slice(0, i + 2), 'Operations:', operations.slice(0, i + 1));
             return false;
         }
+    }
+
+    return true;
+}
+
+/**
+ * Checks if an operation requires a formula that involves carrying or complex bead manipulation
+ * This includes:
+ * - Big Friends formulas (operands 6-9) - these are always considered formula exercises in training
+ * - Any addition that results in >= 10 (carrying to next column) - uses formulas like +1=-9+10, +2=-8+10
+ * - Any subtraction that would require borrowing from next column
+ * @param {number} currentValue - The current value before the operation
+ * @param {string} operation - The operation ('+' or '-')
+ * @param {number} operand - The operand to add or subtract
+ * @returns {boolean} - True if a carrying/complex formula is required
+ */
+function requiresCarryingFormula(currentValue, operation, operand) {
+    if (operation === '+') {
+        const result = currentValue + operand;
+
+        // GOLDEN RULE: Any addition resulting in >= 10 requires a carrying formula
+        // Examples: 9+1 (formula: +1=-9+10), 8+2 (formula: +2=-8+10), 7+3, 6+4, etc.
+        if (result >= 10) {
+            return true;
+        }
+
+        // Big Friends operands (6-9): These are ALWAYS considered formula exercises in training context
+        // Even if they can technically be done directly (like 1+8=9), they are taught using formulas
+        // This is pedagogically important to maintain consistency in formula training
+        if (operand >= 6 && operand <= 9) {
+            // For Big Friends operands, check if formula would typically be used
+            // From the teaching perspective, +6,+7,+8,+9 are formula operations when:
+            // - The result would require using the +10-complement approach
+            // - Or when starting from values where direct manipulation is complex
+            return isBigFriendsCombination(currentValue, operation, operand);
+        }
+    } else if (operation === '-') {
+        // Check if subtraction would require borrowing from next column
+        if (operand > currentValue) {
+            return true;
+        }
+
+        // Big Friends operands (6-9): Check if formula is needed
+        if (operand >= 6 && operand <= 9) {
+            return isBigFriendsCombination(currentValue, operation, operand);
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Validates that we don't have consecutive formulas requiring carrying in an exercise
+ * This prevents pedagogically confusing situations where students need to apply
+ * complex formulas (Big Friends or carrying) multiple times in a row
+ * Golden rule: All carrying formulas with + give result >= 10
+ * Examples: 9+1 (formula: +1 = -9+10), 8+2 (formula: +2 = -8+10)
+ * @param {Array} terms - Array of numbers in the exercise
+ * @param {Array} operations - Array of operations ('+' or '-')
+ * @returns {boolean} - True if no consecutive carrying formulas found, false otherwise
+ */
+function validateNoConsecutiveBigFriends(terms, operations) {
+    let result = terms[0];
+    let previousRequiredCarrying = false;
+
+    // Check each step
+    for (let i = 0; i < operations.length; i++) {
+        const currentOp = operations[i];
+        const currentTerm = terms[i + 1];
+
+        // Check if current operation requires a carrying/complex formula
+        const currentRequiresCarrying = requiresCarryingFormula(result, currentOp, currentTerm);
+
+        // If both current and previous operations require carrying formulas, reject
+        if (currentRequiresCarrying && previousRequiredCarrying) {
+            console.log('[validateNoConsecutiveBigFriends] Consecutive carrying formulas detected at step', i + 1);
+            console.log('[validateNoConsecutiveBigFriends] Current value before operation:', result,
+                       'Operation:', currentOp, currentTerm, 'Result:',
+                       currentOp === '+' ? result + currentTerm : result - currentTerm);
+            console.log('[validateNoConsecutiveBigFriends] Terms so far:', terms.slice(0, i + 2),
+                       'Operations:', operations.slice(0, i + 1));
+            return false;
+        }
+
+        // Update result for next iteration
+        if (currentOp === '+') {
+            result += currentTerm;
+        } else {
+            result -= currentTerm;
+        }
+
+        // Update flag for next iteration
+        previousRequiredCarrying = currentRequiresCarrying;
     }
 
     return true;
