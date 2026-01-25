@@ -295,15 +295,44 @@
     }
 
     .number-display-area {
-        font-size: 5rem;
+        font-size: 8rem;
         font-weight: bold;
         color: var(--primary-color);
-        min-height: 150px;
+        min-height: 200px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 2rem;
         animation: fadeInScale 0.3s ease;
+    }
+
+    .countdown-circle {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 6rem;
+        font-weight: bold;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
     }
 
     @keyframes fadeInScale {
@@ -318,7 +347,7 @@
     }
 
     .operation-sign {
-        font-size: 4rem;
+        font-size: 6rem;
         color: var(--text-secondary);
         margin-right: 1rem;
     }
@@ -645,6 +674,47 @@
         margin-bottom: 0.5rem;
     }
 
+    /* Fullscreen styles */
+    :fullscreen .mode-screen,
+    :-webkit-full-screen .mode-screen,
+    :-moz-full-screen .mode-screen {
+        width: 100%;
+        max-width: none;
+        height: 100vh;
+        border-radius: 0;
+        padding: 0.5rem;
+        margin: 0;
+    }
+
+    /* Fullscreen classwork - no lateral padding */
+    :fullscreen #classroomMode,
+    :-webkit-full-screen #classroomMode,
+    :-moz-full-screen #classroomMode {
+        padding: 0;
+        background: white;
+    }
+
+    /* Hide mode header in fullscreen for Classwork */
+    :fullscreen #classroomMode .mode-header,
+    :-webkit-full-screen #classroomMode .mode-header,
+    :-moz-full-screen #classroomMode .mode-header {
+        display: none;
+    }
+
+    :fullscreen .student-panel,
+    :-webkit-full-screen .student-panel,
+    :-moz-full-screen .student-panel {
+        padding: 0.5rem;
+        min-height: 320px;
+    }
+
+    :fullscreen .students-grid,
+    :-webkit-full-screen .students-grid,
+    :-moz-full-screen .students-grid {
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .anzan-container {
@@ -710,7 +780,7 @@
     <div id="trainingMode" class="mode-screen">
         <div class="mode-header">
             <h2>Mod Antrenament</h2>
-            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+            <button class="back-btn" onclick="backFromTraining()">← Înapoi</button>
         </div>
 
         <div class="instructions-panel">
@@ -795,9 +865,9 @@
                 <span class="setting-label">Fracții:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-fractions="none">Nu</button>
-                        <button class="toggle-btn" data-fractions="one">1 zecimală</button>
-                        <button class="toggle-btn" data-fractions="two">2 zecimale</button>
+                        <button class="toggle-btn active" data-fractions="none" disabled style="opacity: 0.5; cursor: not-allowed;">Nu</button>
+                        <button class="toggle-btn" data-fractions="one" disabled style="opacity: 0.5; cursor: not-allowed;">1 zecimală</button>
+                        <button class="toggle-btn" data-fractions="two" disabled style="opacity: 0.5; cursor: not-allowed;">2 zecimale</button>
                     </div>
                 </div>
             </div>
@@ -806,9 +876,9 @@
                 <span class="setting-label">Operație:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-operation="addition">Adunare</button>
+                        <button class="toggle-btn" data-operation="addition">Adunare</button>
                         <button class="toggle-btn" data-operation="subtraction">Scădere</button>
-                        <button class="toggle-btn" data-operation="mixed">Amestecat</button>
+                        <button class="toggle-btn active" data-operation="mixed">Amestecat</button>
                     </div>
                 </div>
             </div>
@@ -817,8 +887,8 @@
                 <span class="setting-label">Numere negative:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-negative="no">Nu</button>
-                        <button class="toggle-btn" data-negative="yes">Da</button>
+                        <button class="toggle-btn active" data-negative="no" disabled style="opacity: 0.5; cursor: not-allowed;">Nu</button>
+                        <button class="toggle-btn" data-negative="yes" disabled style="opacity: 0.5; cursor: not-allowed;">Da</button>
                     </div>
                 </div>
             </div>
@@ -872,7 +942,7 @@
     <div id="seriesMode" class="mode-screen">
         <div class="mode-header">
             <h2>Serii de Exerciții</h2>
-            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+            <button class="back-btn" onclick="backFromSeries()">← Înapoi</button>
         </div>
 
         <div class="instructions-panel">
@@ -972,9 +1042,9 @@
                 <span class="setting-label">Fracții:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-fractions="none">Nu</button>
-                        <button class="toggle-btn" data-fractions="one">1 zecimală</button>
-                        <button class="toggle-btn" data-fractions="two">2 zecimale</button>
+                        <button class="toggle-btn active" data-fractions="none" disabled style="opacity: 0.5; cursor: not-allowed;">Nu</button>
+                        <button class="toggle-btn" data-fractions="one" disabled style="opacity: 0.5; cursor: not-allowed;">1 zecimală</button>
+                        <button class="toggle-btn" data-fractions="two" disabled style="opacity: 0.5; cursor: not-allowed;">2 zecimale</button>
                     </div>
                 </div>
             </div>
@@ -983,9 +1053,9 @@
                 <span class="setting-label">Operație:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-operation="addition">Adunare</button>
+                        <button class="toggle-btn" data-operation="addition">Adunare</button>
                         <button class="toggle-btn" data-operation="subtraction">Scădere</button>
-                        <button class="toggle-btn" data-operation="mixed">Amestecat</button>
+                        <button class="toggle-btn active" data-operation="mixed">Amestecat</button>
                     </div>
                 </div>
             </div>
@@ -994,8 +1064,8 @@
                 <span class="setting-label">Numere negative:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-negative="no">Nu</button>
-                        <button class="toggle-btn" data-negative="yes">Da</button>
+                        <button class="toggle-btn active" data-negative="no" disabled style="opacity: 0.5; cursor: not-allowed;">Nu</button>
+                        <button class="toggle-btn" data-negative="yes" disabled style="opacity: 0.5; cursor: not-allowed;">Da</button>
                     </div>
                 </div>
             </div>
@@ -1086,7 +1156,7 @@
     <div id="classroomMode" class="mode-screen">
         <div class="mode-header">
             <h2>Lucru în Clasă</h2>
-            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+            <button class="back-btn" onclick="backFromClassroom()">← Înapoi</button>
         </div>
 
         <div class="instructions-panel">
@@ -1189,7 +1259,7 @@ let exerciseData = {
         speed: 1.5,
         digits: 1,
         fractions: 'none',
-        operation: 'addition',
+        operation: 'mixed',
         negative: 'no',
         terms: 3,
         dictation: 'no',
@@ -1205,7 +1275,7 @@ let exerciseData = {
         speed: 1.5,
         digits: 1,
         fractions: 'none',
-        operation: 'addition',
+        operation: 'mixed',
         negative: 'no',
         terms: 3,
         dictation: 'no',
@@ -1310,6 +1380,60 @@ function backToModes() {
     currentMode = null;
 }
 
+// Smart back button for Training Mode
+function backFromTraining() {
+    const exerciseArea = document.getElementById('trainingExercise');
+    const settingsPanel = document.getElementById('trainingSettings');
+    const startButton = document.querySelector('#trainingMode .start-btn');
+
+    // If we're in the exercise area, go back to settings
+    if (exerciseArea && exerciseArea.style.display === 'flex') {
+        exerciseArea.style.display = 'none';
+        settingsPanel.style.display = 'block';
+        startButton.style.display = 'block';
+    } else {
+        // If we're in settings, go back to mode selection
+        backToModes();
+    }
+}
+
+// Smart back button for Series Mode
+function backFromSeries() {
+    const exerciseArea = document.getElementById('seriesExercise');
+    const settingsPanel = document.getElementById('seriesSettings');
+    const startButton = document.querySelector('#seriesMode .start-btn');
+    const reportArea = document.getElementById('seriesReport');
+
+    // If we're in the report, go back to mode selection
+    if (reportArea && reportArea.style.display === 'block') {
+        backToModes();
+    }
+    // If we're in the exercise area, go back to settings
+    else if (exerciseArea && exerciseArea.style.display === 'flex') {
+        exerciseArea.style.display = 'none';
+        settingsPanel.style.display = 'block';
+        startButton.style.display = 'block';
+    } else {
+        // If we're in settings, go back to mode selection
+        backToModes();
+    }
+}
+
+// Smart back button for Classroom Mode
+function backFromClassroom() {
+    const reportArea = document.getElementById('classroomReport');
+    const setupArea = document.querySelector('#classroomMode .students-setup');
+
+    // If we're in the report, go back to classroom setup
+    if (reportArea && reportArea.style.display === 'block') {
+        reportArea.style.display = 'none';
+        if (setupArea) setupArea.style.display = 'block';
+    } else {
+        // If we're in setup, go back to mode selection
+        backToModes();
+    }
+}
+
 // Settings Controls
 function adjustNumber(id, delta) {
     const element = document.getElementById(id);
@@ -1392,23 +1516,53 @@ function generateNumber(settings, isFirstTerm = false) {
     // Generate base number based on complexity
     switch(complexity) {
         case 'direct-to-4':
-            // Direct calculation with 4: use only 1-4 (no 0, beads available on soroban)
-            num = Math.floor(Math.random() * 4) + 1; // 1-4
+            // Direct calculation with 4: use only 1-4 for the last digit
+            if (digits === 1) {
+                num = Math.floor(Math.random() * 4) + 1; // 1-4
+            } else {
+                // For multi-digit numbers, generate number with last digit 1-4
+                const max = parseInt('9'.repeat(digits));
+                const min = parseInt('1' + '0'.repeat(digits - 1));
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+                // Ensure last digit is 1-4
+                num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 4) + 1);
+            }
             break;
         case 'direct-to-5':
-            // Direct calculation with 5: use only 1-5 (can use heaven bead, no 0)
-            num = Math.floor(Math.random() * 5) + 1; // 1-5
+            // Direct calculation with 5: use only 1-5 for the last digit
+            if (digits === 1) {
+                num = Math.floor(Math.random() * 5) + 1; // 1-5
+            } else {
+                // For multi-digit numbers, generate number with last digit 1-5
+                const max = parseInt('9'.repeat(digits));
+                const min = parseInt('1' + '0'.repeat(digits - 1));
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+                // Ensure last digit is 1-5
+                num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 5) + 1);
+            }
             break;
         case 'direct-to-9':
-            // Direct calculation with 9: use only 1-9 (all beads available, no 0)
-            // Favor larger numbers (6-9) with 60% probability for increased difficulty
-            const rand = Math.random();
-            if (rand < 0.6) {
-                // 60% - Generate large numbers (6-9) to challenge kids with heaven+earth bead combinations
-                num = Math.floor(Math.random() * 4) + 6; // 6-9
+            // Direct calculation with 9: use 1-9 for the last digit
+            if (digits === 1) {
+                // Favor larger numbers (6-9) with 60% probability for increased difficulty
+                const rand = Math.random();
+                if (rand < 0.6) {
+                    // 60% - Generate large numbers (6-9) to challenge kids with heaven+earth bead combinations
+                    num = Math.floor(Math.random() * 4) + 6; // 6-9
+                } else {
+                    // 40% - Generate smaller numbers (1-5)
+                    num = Math.floor(Math.random() * 5) + 1; // 1-5
+                }
             } else {
-                // 40% - Generate smaller numbers (1-5)
-                num = Math.floor(Math.random() * 5) + 1; // 1-5
+                // For multi-digit numbers, generate number with last digit 1-9
+                const max = parseInt('9'.repeat(digits));
+                const min = parseInt('1' + '0'.repeat(digits - 1));
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+                // Ensure last digit is 1-9 (no 0)
+                const lastDigit = num % 10;
+                if (lastDigit === 0) {
+                    num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+                }
             }
             break;
         case 'direct-counting':
@@ -1495,9 +1649,20 @@ function generateNumber(settings, isFirstTerm = false) {
 
 // Helper: Generate number for Small Friends levels (50% direct + 50% small friends)
 function generateSmallFriendsNumber(complexity, digits) {
-    // Only generate numbers appropriate for Small Friends formulas
-    // No direct counting numbers - only numbers that require Small Friends formulas
-    return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+    // Generate numbers with the specified number of digits
+    if (digits === 1) {
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+    } else {
+        const max = parseInt('9'.repeat(digits));
+        const min = parseInt('1' + '0'.repeat(digits - 1));
+        let num = Math.floor(Math.random() * (max - min + 1)) + min;
+        // Ensure last digit is not 0
+        const lastDigit = num % 10;
+        if (lastDigit === 0) {
+            num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+        }
+        return num;
+    }
 }
 
 // Helper: Generate number for Big Friends levels (33% direct + 33% small + 34% big)
@@ -1505,10 +1670,34 @@ function generateBigFriendsNumber(complexity, digits) {
     const rand = Math.random();
     if (rand < 0.33) {
         // 33% - Direct counting
-        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+        if (digits === 1) {
+            return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+        } else {
+            const max = parseInt('9'.repeat(digits));
+            const min = parseInt('1' + '0'.repeat(digits - 1));
+            let num = Math.floor(Math.random() * (max - min + 1)) + min;
+            // Ensure last digit is not 0
+            const lastDigit = num % 10;
+            if (lastDigit === 0) {
+                num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+            }
+            return num;
+        }
     } else if (rand < 0.66) {
         // 33% - Small friends
-        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+        if (digits === 1) {
+            return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+        } else {
+            const max = parseInt('9'.repeat(digits));
+            const min = parseInt('1' + '0'.repeat(digits - 1));
+            let num = Math.floor(Math.random() * (max - min + 1)) + min;
+            // Ensure last digit is not 0
+            const lastDigit = num % 10;
+            if (lastDigit === 0) {
+                num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+            }
+            return num;
+        }
     } else {
         // 34% - Big friends
         const max = parseInt('9'.repeat(digits));
@@ -2355,7 +2544,20 @@ function generateExerciseTerms(settings) {
                                 currentResult, op, targetFormulaNumber
                             });
 
-                            // Try to find ANY formula number (1-4) that would work
+                            // For specific formula levels (not "all"), be strict and regenerate
+                            // if we cannot use the target formula
+                            if (formulaNumber !== null) {
+                                // This is a specific formula level (e.g., +1, +2, etc.)
+                                // Don't use alternatives - regenerate the entire exercise instead
+                                console.log('[generateExerciseTerms] Cannot generate specific formula, regenerating exercise:', {
+                                    currentResult, op, targetFormulaNumber, complexity
+                                });
+                                termsArray = [];
+                                operations = [];
+                                break;
+                            }
+
+                            // For "all formulas" level, try to find ANY formula number (1-4) that would work
                             let foundAlternative = false;
                             for (let altNum = 1; altNum <= 4; altNum++) {
                                 if (canGenerateFormulaFromState(currentResult, op, altNum) &&
@@ -2915,12 +3117,12 @@ function runTrainingExercise() {
 
     // Show countdown 3, 2, 1
     let countdown = 3;
-    content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+    content.innerHTML = `<div class="number-display-area"><div class="countdown-circle">${countdown}</div></div>`;
 
     const countdownInterval = setInterval(() => {
         countdown--;
         if (countdown > 0) {
-            content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+            content.innerHTML = `<div class="number-display-area"><div class="countdown-circle">${countdown}</div></div>`;
         } else {
             clearInterval(countdownInterval);
             content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
@@ -2934,7 +3136,7 @@ function runTrainingExercise() {
 
                         content.innerHTML = `
                             <div class="number-display-area">
-                                ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                                ${operation && operation === '-' ? `<span class="operation-sign">${operation}</span>` : ''}
                                 ${Math.abs(term)}
                             </div>
                         `;
@@ -2954,7 +3156,14 @@ function runTrainingExercise() {
                                 <input type="number" step="any" class="answer-input" id="trainingAnswer" autofocus>
                                 <button class="submit-btn" onclick="checkTrainingAnswer()">Verifică</button>
                             `;
-                            document.getElementById('trainingAnswer').focus();
+                            const answerInput = document.getElementById('trainingAnswer');
+                            answerInput.focus();
+                            // Allow Enter key to submit
+                            answerInput.addEventListener('keypress', function(e) {
+                                if (e.key === 'Enter') {
+                                    checkTrainingAnswer();
+                                }
+                            });
                         } else {
                             content.innerHTML = `
                                 <div class="number-display-area">Calculul s-a terminat</div>
@@ -2992,8 +3201,16 @@ function checkTrainingAnswer() {
             </div>
             ${!correct ? `<div style="margin-top: 0.3rem; font-size: 0.9rem;">Răspunsul tău: ${userAnswer}</div>` : ''}
         </div>
-        <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
+        <button class="submit-btn" id="nextTrainingBtn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
+
+    // Allow Enter key to go to next exercise
+    document.addEventListener('keypress', function handleEnter(e) {
+        if (e.key === 'Enter') {
+            nextTrainingExercise();
+            document.removeEventListener('keypress', handleEnter);
+        }
+    });
 }
 
 function showTrainingAnswer() {
@@ -3014,6 +3231,14 @@ function showTrainingAnswer() {
         </div>
         <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
+
+    // Allow Enter key to go to next exercise
+    document.addEventListener('keypress', function handleEnter(e) {
+        if (e.key === 'Enter') {
+            nextTrainingExercise();
+            document.removeEventListener('keypress', handleEnter);
+        }
+    });
 }
 
 function nextTrainingExercise() {
@@ -3143,12 +3368,12 @@ function runSeriesExercise() {
 
     // Show countdown 3, 2, 1
     let countdown = 3;
-    content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+    content.innerHTML = `<div class="number-display-area"><div class="countdown-circle">${countdown}</div></div>`;
 
     const countdownInterval = setInterval(() => {
         countdown--;
         if (countdown > 0) {
-            content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+            content.innerHTML = `<div class="number-display-area"><div class="countdown-circle">${countdown}</div></div>`;
         } else {
             clearInterval(countdownInterval);
             content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
@@ -3163,7 +3388,7 @@ function runSeriesExercise() {
 
                         content.innerHTML = `
                             <div class="number-display-area">
-                                ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                                ${operation && operation === '-' ? `<span class="operation-sign">${operation}</span>` : ''}
                                 ${Math.abs(term)}
                             </div>
                         `;
