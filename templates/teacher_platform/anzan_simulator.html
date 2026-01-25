@@ -2533,8 +2533,8 @@ function generateExerciseTerms(settings) {
                 console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
                 attempt++;
                 if (attempt >= maxAttempts) {
-                    // If max attempts reached, force large numbers to meet the requirement
-                    console.warn('[generateExerciseTerms] Max attempts reached! Forcing large numbers (6-9) into exercise.');
+                    // If max attempts reached, try to intelligently add large numbers without violating constraints
+                    console.warn('[generateExerciseTerms] Max attempts reached! Attempting to add large numbers (6-9) while respecting constraints.');
                     if (termsArray.length > 1) {
                         // Calculate how many terms we need to replace to reach >70%
                         const targetCount = Math.ceil(nonFirstTerms.length * 0.7);
@@ -2542,23 +2542,72 @@ function generateExerciseTerms(settings) {
 
                         console.log('[generateExerciseTerms] Need to add', needToAdd, 'more large numbers to reach 70% target');
 
-                        // Replace random non-first terms with large numbers
-                        for (let j = 0; j < needToAdd && j < nonFirstTerms.length; j++) {
+                        // Try to replace terms with large numbers that don't violate constraints
+                        let successfulReplacements = 0;
+                        const maxReplacementAttempts = needToAdd * 10; // Try harder to find valid replacements
+                        let replacementAttempt = 0;
+
+                        while (successfulReplacements < needToAdd && replacementAttempt < maxReplacementAttempts) {
+                            replacementAttempt++;
+
+                            // Pick a random non-first term index
                             const randomIndex = Math.floor(Math.random() * (termsArray.length - 1)) + 1;
-                            const randomLargeNum = Math.floor(Math.random() * 4) + 6; // Random number 6-9
-                            const oldTerm = termsArray[randomIndex];
-                            termsArray[randomIndex] = randomLargeNum;
-                            console.log('[generateExerciseTerms] Replaced term at index', randomIndex, 'from', oldTerm, 'to', randomLargeNum);
+
+                            // Skip if this position already has a large number
+                            if (Math.abs(termsArray[randomIndex]) >= 6) {
+                                continue;
+                            }
+
+                            // Try a random large number (6-9)
+                            const randomLargeNum = Math.floor(Math.random() * 4) + 6;
+
+                            // Create a test copy to validate the replacement
+                            const testTerms = [...termsArray];
+                            testTerms[randomIndex] = randomLargeNum;
+
+                            // Calculate what the intermediate result would be at this position
+                            const precedingTerms = testTerms.slice(0, randomIndex);
+                            const precedingOps = operations.slice(0, randomIndex - 1);
+                            const currentResult = calculateResult(precedingTerms, precedingOps);
+                            const op = operations[randomIndex - 1];
+
+                            // Validate this replacement doesn't create formula requirements or invalid results
+                            const wouldRequireSmallFriends = isSmallFriendsCombination(currentResult, op, randomLargeNum);
+                            const wouldRequireBigFriends = isBigFriendsCombination(currentResult, op, randomLargeNum);
+                            const intermediateResult = op === '+' ? currentResult + randomLargeNum : currentResult - randomLargeNum;
+                            const intermediateValid = intermediateResult >= 1 && intermediateResult <= 9;
+
+                            // Calculate final result with this replacement
+                            const testResult = calculateResult(testTerms, operations);
+                            const finalResultValid = testResult >= 1 && testResult <= 9;
+
+                            // Validate all intermediate results would still be valid
+                            const allIntermediatesValid = validateIntermediateResults(testTerms, operations);
+
+                            if (!wouldRequireSmallFriends && !wouldRequireBigFriends &&
+                                intermediateValid && finalResultValid && allIntermediatesValid) {
+                                // This replacement is valid!
+                                const oldTerm = termsArray[randomIndex];
+                                termsArray[randomIndex] = randomLargeNum;
+                                successfulReplacements++;
+                                console.log('[generateExerciseTerms] Replaced term at index', randomIndex, 'from', oldTerm, 'to', randomLargeNum);
+                            }
                         }
 
-                        // Recalculate result with the forced large numbers
+                        // Recalculate result with the replaced large numbers
                         result = calculateResult(termsArray, operations);
-                        console.log('[generateExerciseTerms] New result after forcing large numbers:', result);
+                        console.log('[generateExerciseTerms] After intelligent replacement: added', successfulReplacements, 'large numbers. New result:', result);
 
-                        // CRITICAL: Validate that all intermediate results stay >= 1
-                        // Otherwise we could generate invalid exercises like: 6 - 5 + 3 - 6 + 5 (where 4 - 6 = -2)
-                        if (!validateIntermediateResults(termsArray, operations)) {
-                            console.warn('[generateExerciseTerms] Forcing large numbers created invalid intermediate results. Continuing regeneration.');
+                        // If we couldn't add enough large numbers while respecting constraints, continue regenerating
+                        if (successfulReplacements < needToAdd) {
+                            console.warn('[generateExerciseTerms] Could not add enough large numbers without violating constraints. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
+
+                        // Final validation: ensure result is within 1-9
+                        if (result < 1 || result > 9) {
+                            console.warn('[generateExerciseTerms] Final result', result, 'is outside valid range [1-9]. Continuing regeneration.');
                             attempt++;
                             continue;
                         }
