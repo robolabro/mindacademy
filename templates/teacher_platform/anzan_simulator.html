@@ -1555,7 +1555,7 @@ function generateMixNumber(digits) {
     }
 }
 
-// Helper: Get complexity limit for direct calculation levels
+// Helper: Get complexity limit for direct calculation levels (result limit)
 function getComplexityLimit(complexity) {
     switch(complexity) {
         case 'direct-to-4':
@@ -1564,6 +1564,8 @@ function getComplexityLimit(complexity) {
             return 9; // Allow results up to 9 to enable more exercise variety while using terms 1-5
         case 'direct-to-9':
             return 9;
+        case 'direct-counting':
+            return 9; // For single-digit direct counting
         case 'small-plus-1':
         case 'small-plus-2':
         case 'small-plus-3':
@@ -1576,6 +1578,22 @@ function getComplexityLimit(complexity) {
             return 9; // Small Friends formulas can work with numbers 1-9
         default:
             return null; // No limit for other complexity levels
+    }
+}
+
+// Helper: Get term limit for direct calculation levels (max value for operands/terms)
+function getTermLimit(complexity) {
+    switch(complexity) {
+        case 'direct-to-4':
+            return 4; // Terms can only be 1-4
+        case 'direct-to-5':
+            return 5; // Terms can only be 1-5
+        case 'direct-to-9':
+            return 9; // Terms can be 1-9
+        case 'direct-counting':
+            return 9; // Terms can be 1-9
+        default:
+            return null; // No term limit for other complexity levels
     }
 }
 
@@ -1661,6 +1679,61 @@ function isSmallFriendsCombination(currentValue, operation, operand) {
         // Check if this is one of the Small Friends subtraction combinations
         // -1, -2, -3, -4: all starting from 5-9
         return currentValue >= 5 && currentValue <= 9;
+    }
+
+    return false;
+}
+
+/**
+ * Checks if a combination is a Big Friends exercise combination
+ * These combinations should be avoided in direct calculation mode to prevent confusion
+ *
+ * Big Friends exercise combinations:
+ * Addition formulas (+6 to +9 from values that can't accommodate them directly):
+ *   +6: from 5 (5+6 would require +10-4 formula)
+ *   +7: from 4-5 (4+7, 5+7 would require +10-3 formula)
+ *   +8: from 3-5 (3+8, 4+8, 5+8 would require +10-2 formula)
+ *   +9: from 2-5 (2+9, 3+9, 4+9, 5+9 would require +10-1 formula)
+ *
+ * Subtraction formulas (-6 to -9 from values that can't accommodate them directly):
+ *   -6: from 1-5 (need to borrow from next column)
+ *   -7: from 1-6 (need to borrow from next column)
+ *   -8: from 1-7 (need to borrow from next column)
+ *   -9: from 1-8 (need to borrow from next column)
+ */
+function isBigFriendsCombination(currentValue, operation, operand) {
+    // Only check for operands 6-9 (Big Friends formulas)
+    if (operand < 6 || operand > 9) {
+        return false;
+    }
+
+    if (operation === '+') {
+        // For single-digit calculations (1-9), check if we can add directly
+        const result = currentValue + operand;
+        // If result > 9, it would require carrying/Big Friends formula
+        if (result > 9) {
+            return true;
+        }
+        // Also avoid cases where we're adding to 5 (only heaven bead)
+        // because adding 6-9 to 5 requires Big Friends
+        if (currentValue === 5) {
+            return true;
+        }
+    } else if (operation === '-') {
+        // For subtraction, if operand > currentValue, it would require borrowing/Big Friends
+        if (operand > currentValue) {
+            return true;
+        }
+        // Also check if subtracting would require removing beads we don't have
+        // For values 6-9, we have heaven bead (5) + lower beads (currentValue-5)
+        if (currentValue >= 6 && currentValue <= 9) {
+            const lowerBeadsUsed = currentValue - 5;
+            // If we need to subtract more than what's available on lower beads
+            // and can't just remove heaven bead, it requires Big Friends
+            if (operand > lowerBeadsUsed && operand !== currentValue - 4) {
+                return true;
+            }
+        }
     }
 
     return false;
@@ -1785,13 +1858,28 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
                     }
                     return result <= 4;
                 } else if (maxLimit === 9) {
-                    // For direct-to-9 and direct-to-5 (maxLimit=9): can add directly if result <= 9
-                    // Direct-to-5 uses operands 1-5, so results 5-9 are all directly achievable
-                    // with the available beads (heaven bead + lower beads)
-                    return result <= 9;
+                    // For direct-to-9 and direct-counting with maxLimit=9
+                    // From 1-4, we can add directly in these cases:
+                    if (result <= 4) {
+                        // Staying in lower beads (1-4) - always direct
+                        return true;
+                    } else if (result === 5) {
+                        // Reaching exactly 5 - direct (just flip heaven bead)
+                        return true;
+                    } else if (result >= 6 && result <= 9) {
+                        // Reaching 6-9 from 1-4 is direct ONLY if operand is 5
+                        // Example: 1+5=6, 2+5=7, 3+5=8, 4+5=9
+                        // But 4+3=7 requires Small Friends formula (+5-2+3)
+                        return operand === 5;
+                    }
+                    return false;
                 }
             } else if (currentValue === 5) {
-                // From 5: cannot add 1-4 directly (would need Big Friends for 6-9)
+                // From 5: can add 1-4 directly to get 6-9
+                // (heaven bead already set, just add lower beads)
+                if (maxLimit === 9 && operand >= 1 && operand <= 4) {
+                    return true;
+                }
                 return false;
             } else if (currentValue >= 6) {
                 // From 6-9: can add if we stay <= maxLimit and have beads available
@@ -1805,20 +1893,31 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
             // Subtraction
             if (currentValue <= 4) {
                 // From 1-4: can subtract directly if we have enough lower beads
-                return operand <= currentValue;
+                return operand <= currentValue && result >= 1;
             } else if (currentValue === 5) {
-                // From 5 (heaven bead only): CANNOT subtract 1-4 directly
-                // Would need Small Friends formulas: -1=-5+4, -2=-5+3, -3=-5+2, -4=-5+1
+                // From 5 (heaven bead only): can ONLY subtract 5 directly to get 0
+                // Subtracting 1-4 from 5 requires Small Friends formulas: -1=-5+4, -2=-5+3, etc.
+                // But we don't allow result 0, so no direct subtraction from 5
                 return false;
             } else if (currentValue >= 6 && maxLimit === 9) {
-                // From 6-9: can subtract from lower beads if available
+                // From 6-9: can subtract in these cases:
                 const lowerBeadsUsed = currentValue - 5;
                 if (operand <= lowerBeadsUsed) {
-                    // Can subtract from lower beads directly
+                    // Case 1: Subtract from lower beads only (e.g., 7-1=6, 9-3=6)
                     return true;
-                } else if (operand === currentValue - 4) {
-                    // Subtracting down to 4 or less (removing heaven bead)
-                    return result <= 4;
+                } else if (operand === 5) {
+                    // Case 2: Subtract exactly 5 (remove heaven bead, keep lower beads)
+                    // E.g., 6-5=1, 7-5=2, 8-5=3, 9-5=4
+                    return true;
+                } else if (operand === currentValue) {
+                    // Case 3: Subtract all (result = 0, not allowed)
+                    return false;
+                } else if (operand > lowerBeadsUsed && operand < currentValue) {
+                    // Case 4: Subtracting more than lower beads but less than total
+                    // Need to check if we can do this directly
+                    // E.g., 9-6=3 means removing heaven (5) and 1 lower bead
+                    // This can be done as: remove 5, then remove 1 more = direct if operand-5 <= lowerBeadsUsed
+                    return operand - 5 <= lowerBeadsUsed && operand - 5 >= 0;
                 }
                 return false;
             }
@@ -2045,6 +2144,9 @@ function generateExerciseTerms(settings) {
                 const currentResult = calculateResult(termsArray, operations.slice(0, -1));
                 const isLastOperation = (i === terms - 1);
 
+                // Get term limit for this complexity level
+                const termLimit = getTermLimit(complexity);
+
                 // Try to find a valid term that can be performed directly
                 while (!validTermFound && termAttempts < 20) {
                     if (op === '+') {
@@ -2052,15 +2154,15 @@ function generateExerciseTerms(settings) {
                         let maxDirectAddition;
                         if (currentResult <= 4) {
                             if (maxLimit === 4) {
-                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult);
+                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult, termLimit);
                             } else if (maxLimit === 5) {
                                 // Can add up to 4-currentResult to stay in lower beads
                                 // Or can reach 5 if it's the last operation
                                 maxDirectAddition = isLastOperation ?
-                                    Math.min(5 - currentResult, maxLimit - currentResult) :
-                                    Math.min(4 - currentResult, maxLimit - currentResult);
+                                    Math.min(5 - currentResult, maxLimit - currentResult, termLimit) :
+                                    Math.min(4 - currentResult, maxLimit - currentResult, termLimit);
                             } else {
-                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult);
+                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult, termLimit);
                             }
                         } else {
                             // From 5+, cannot add directly in our range
@@ -2071,7 +2173,8 @@ function generateExerciseTerms(settings) {
                             term = Math.floor(Math.random() * maxDirectAddition) + 1;
                             if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
                                 !shouldAvoidTermRepetition(termsArray, term) &&
-                                !isSmallFriendsCombination(currentResult, op, term)) {
+                                !isSmallFriendsCombination(currentResult, op, term) &&
+                                !isBigFriendsCombination(currentResult, op, term)) {
                                 validTermFound = true;
                             }
                         } else {
@@ -2086,13 +2189,13 @@ function generateExerciseTerms(settings) {
                         let maxDirectSubtraction;
                         if (currentResult <= 4) {
                             // Can subtract up to currentResult (have that many lower beads)
-                            maxDirectSubtraction = currentResult - 1; // Keep result >= 1
+                            maxDirectSubtraction = Math.min(currentResult - 1, termLimit); // Keep result >= 1
                         } else if (currentResult === 5) {
                             // From 5, cannot subtract 1-4 directly
                             maxDirectSubtraction = 0;
                         } else if (currentResult >= 6 && currentResult <= 9) {
                             // Can subtract from lower beads
-                            maxDirectSubtraction = Math.min(currentResult - 5, currentResult - 1);
+                            maxDirectSubtraction = Math.min(currentResult - 5, currentResult - 1, termLimit);
                         } else {
                             maxDirectSubtraction = 0;
                         }
@@ -2101,7 +2204,8 @@ function generateExerciseTerms(settings) {
                             term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
                             if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
                                 !shouldAvoidTermRepetition(termsArray, term) &&
-                                !isSmallFriendsCombination(currentResult, op, term)) {
+                                !isSmallFriendsCombination(currentResult, op, term) &&
+                                !isBigFriendsCombination(currentResult, op, term)) {
                                 validTermFound = true;
                             }
                         } else {
@@ -2115,18 +2219,20 @@ function generateExerciseTerms(settings) {
                 }
 
                 // If no valid term found after attempts, try to find ANY valid term
-                // that doesn't use Small Friends combinations
+                // that doesn't use Small Friends or Big Friends combinations
                 if (!validTermFound && isDirectCalculationLevel(complexity)) {
                     const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+                    const termLimit = getTermLimit(complexity);
 
-                    // Try all possible terms 1-9 to find one that works
-                    for (let t = 1; t <= 9; t++) {
+                    // Try all possible terms within the term limit to find one that works
+                    for (let t = 1; t <= termLimit; t++) {
                         const testResult = op === '+' ? currentResult + t : currentResult - t;
 
                         // Check if this term is valid for direct calculation
                         if (testResult >= 1 && testResult <= maxLimit &&
                             !shouldAvoidTermRepetition(termsArray, t) &&
-                            !isSmallFriendsCombination(currentResult, op, t)) {
+                            !isSmallFriendsCombination(currentResult, op, t) &&
+                            !isBigFriendsCombination(currentResult, op, t)) {
                             term = t;
                             validTermFound = true;
                             break;
@@ -2383,6 +2489,34 @@ function generateExerciseTerms(settings) {
                         // Recalculate result with the forced 5
                         result = calculateResult(termsArray, operations);
                         console.log('[generateExerciseTerms] New result after forcing 5:', result);
+                    }
+                    break;
+                }
+                continue; // Regenerate
+            }
+        }
+
+        // For direct-to-9 complexity, ensure at least one term is 6, 7, 8, or 9 (either + or -)
+        // This guarantees practice with larger numbers while avoiding Small/Big Friends
+        if (complexity === 'direct-to-9') {
+            const hasLargeNumber = termsArray.some(term => Math.abs(term) >= 6 && Math.abs(term) <= 9);
+            if (!hasLargeNumber) {
+                console.log('[generateExerciseTerms] direct-to-9: No term with value 6-9, regenerating exercise. Attempt:', attempt + 1, '/', maxAttempts);
+                console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
+                attempt++;
+                if (attempt >= maxAttempts) {
+                    // If max attempts reached, force add a large number to make it valid
+                    console.warn('[generateExerciseTerms] Max attempts reached! Forcing large number (6-9) into exercise.');
+                    // Replace a random term (not the first) with a random number from 6-9
+                    if (termsArray.length > 1) {
+                        const randomIndex = Math.floor(Math.random() * (termsArray.length - 1)) + 1;
+                        const randomLargeNum = Math.floor(Math.random() * 4) + 6; // Random number 6-9
+                        const oldTerm = termsArray[randomIndex];
+                        termsArray[randomIndex] = randomLargeNum;
+                        console.log('[generateExerciseTerms] Replaced term at index', randomIndex, 'from', oldTerm, 'to', randomLargeNum);
+                        // Recalculate result with the forced large number
+                        result = calculateResult(termsArray, operations);
+                        console.log('[generateExerciseTerms] New result after forcing large number:', result);
                     }
                     break;
                 }
