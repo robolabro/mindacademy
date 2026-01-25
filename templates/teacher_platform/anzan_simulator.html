@@ -2497,6 +2497,14 @@ function generateExerciseTerms(settings) {
                         // Recalculate result with the forced 5
                         result = calculateResult(termsArray, operations);
                         console.log('[generateExerciseTerms] New result after forcing 5:', result);
+
+                        // CRITICAL: Validate that all intermediate results stay >= 1
+                        // Otherwise we could generate invalid exercises like: 6 - 5 + 3 - 5 + 1 (where 4 - 5 = -1)
+                        if (!validateIntermediateResults(termsArray, operations)) {
+                            console.warn('[generateExerciseTerms] Forcing 5 created invalid intermediate results. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
                     }
                     break;
                 }
@@ -2546,6 +2554,14 @@ function generateExerciseTerms(settings) {
                         // Recalculate result with the forced large numbers
                         result = calculateResult(termsArray, operations);
                         console.log('[generateExerciseTerms] New result after forcing large numbers:', result);
+
+                        // CRITICAL: Validate that all intermediate results stay >= 1
+                        // Otherwise we could generate invalid exercises like: 6 - 5 + 3 - 6 + 5 (where 4 - 6 = -2)
+                        if (!validateIntermediateResults(termsArray, operations)) {
+                            console.warn('[generateExerciseTerms] Forcing large numbers created invalid intermediate results. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
                     }
                     break;
                 }
@@ -2574,6 +2590,41 @@ function calculateResult(terms, operations) {
         }
     }
     return Math.round(result * 100) / 100; // Round to 2 decimals
+}
+
+/**
+ * Validates that all intermediate results in an exercise stay >= 1
+ * This is critical for direct calculation modes to ensure valid soroban operations
+ * @param {Array} terms - Array of numbers in the exercise
+ * @param {Array} operations - Array of operations ('+' or '-')
+ * @returns {boolean} - True if all intermediate results are >= 1, false otherwise
+ */
+function validateIntermediateResults(terms, operations) {
+    let result = terms[0];
+
+    // First term must be >= 1
+    if (result < 1) {
+        console.log('[validateIntermediateResults] First term is < 1:', result);
+        return false;
+    }
+
+    // Check each intermediate step
+    for (let i = 0; i < operations.length; i++) {
+        if (operations[i] === '+') {
+            result += terms[i + 1];
+        } else {
+            result -= terms[i + 1];
+        }
+
+        // Intermediate result must stay >= 1
+        if (result < 1) {
+            console.log('[validateIntermediateResults] Intermediate result < 1 at step', i + 1, ':', result);
+            console.log('[validateIntermediateResults] Terms so far:', terms.slice(0, i + 2), 'Operations:', operations.slice(0, i + 1));
+            return false;
+        }
+    }
+
+    return true;
 }
 
 // Text to Speech
