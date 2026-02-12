@@ -1839,10 +1839,11 @@ function requiresSmallFriendsFormula(currentValue, operation, operand) {
     const result = operation === '+' ? currentLastDigit + operandLastDigit : currentLastDigit - operandLastDigit;
 
     if (operation === '+') {
-        // Adding from 1-4 to get 5-9 requires Small Friends (except reaching exactly 5)
+        // Adding from 1-4 to get 5-9 requires Small Friends formula
+        // Formula is needed when transitioning from lower beads (1-4) to heaven bead region (5-9)
+        // Example: 4+1=5 requires +1 = +5-4 (move heaven up, remove all 4 lower beads)
         if (currentLastDigit >= 1 && currentLastDigit <= 4 && result >= 5 && result <= 9) {
-            // Can reach 5 directly (just use heaven bead), but 6-9 need Small Friends
-            return result > 5;
+            return result >= 5;
         }
     } else if (operation === '-') {
         // Subtracting from 5 to get 1-4 requires Small Friends

@@ -88,10 +88,13 @@ class Exercise:
     def _requires_small_friends(self, current: int, number: int, operation: str) -> bool:
         """Check if operation requires Small Friends formula"""
         if operation == '+':
-            # Need Small Friends if adding would exceed 9 in ones place
+            # Need Small Friends if adding from 1-4 to reach 5-9
+            # Formula is needed when transitioning from lower beads (1-4) to heaven bead region (5-9)
+            # Example: 4+1=5 requires +1 = +5-4 (move heaven up, remove all 4 lower beads)
             current_ones = current % 10
             if 1 <= number <= 4:
-                return current_ones + number > 9 and current_ones < 5
+                result_ones = (current_ones + number) % 10
+                return current_ones >= 1 and current_ones <= 4 and result_ones >= 5 and result_ones <= 9
         else:  # operation == '-'
             current_ones = current % 10
             if 1 <= number <= 4:
