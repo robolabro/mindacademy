@@ -3270,11 +3270,12 @@ function runTrainingExercise() {
                             const answerInput = document.getElementById('trainingAnswer');
                             answerInput.focus();
                             // Allow Enter key to submit
-                            answerInput.addEventListener('keypress', function(e) {
-                                if (e.key === 'Enter') {
+                            currentTrainingInputListener = function(e) {
+                                if (e.key === 'Enter' && !e.repeat) {
                                     checkTrainingAnswer();
                                 }
-                            });
+                            };
+                            answerInput.addEventListener('keydown', currentTrainingInputListener);
                         } else {
                             content.innerHTML = `
                                 <div class="number-display-area">Calculul s-a terminat</div>
@@ -3290,11 +3291,20 @@ function runTrainingExercise() {
     }, 1000); // 1 second per countdown number
 }
 
-// Global variable to track the current Enter key listener
+// Global variables to track the current Enter key listeners
 let currentTrainingEnterListener = null;
+let currentTrainingInputListener = null;
 
 function checkTrainingAnswer() {
-    const userAnswer = parseFloat(document.getElementById('trainingAnswer').value);
+    // Clear input and its listener to prevent multiple submissions
+    const answerInput = document.getElementById('trainingAnswer');
+    const userAnswer = parseFloat(answerInput.value);
+
+    if (answerInput && currentTrainingInputListener) {
+        answerInput.removeEventListener('keydown', currentTrainingInputListener);
+        currentTrainingInputListener = null;
+    }
+
     const correct = Math.abs(userAnswer - exerciseData.training.correctAnswer) < 0.01;
     const { generatedTerms: terms, generatedOperations: operations } = exerciseData.training;
 
