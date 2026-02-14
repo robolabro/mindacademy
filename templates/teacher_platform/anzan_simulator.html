@@ -3290,6 +3290,9 @@ function runTrainingExercise() {
     }, 1000); // 1 second per countdown number
 }
 
+// Global variable to track the current Enter key listener
+let currentTrainingEnterListener = null;
+
 function checkTrainingAnswer() {
     const userAnswer = parseFloat(document.getElementById('trainingAnswer').value);
     const correct = Math.abs(userAnswer - exerciseData.training.correctAnswer) < 0.01;
@@ -3315,16 +3318,23 @@ function checkTrainingAnswer() {
         <button class="submit-btn" id="nextTrainingBtn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
 
-    // Add small delay before allowing Enter key to go to next exercise
+    // Remove any existing Enter key listener
+    if (currentTrainingEnterListener) {
+        document.removeEventListener('keydown', currentTrainingEnterListener);
+        currentTrainingEnterListener = null;
+    }
+
+    // Add delay before allowing Enter key to go to next exercise
     // This prevents immediate triggering if Enter is still pressed from submitting the answer
     setTimeout(() => {
-        document.addEventListener('keypress', function handleEnter(e) {
-            if (e.key === 'Enter') {
+        currentTrainingEnterListener = function handleEnter(e) {
+            // Ignore repeated keydown events while key is held down
+            if (e.key === 'Enter' && !e.repeat) {
                 nextTrainingExercise();
-                document.removeEventListener('keypress', handleEnter);
             }
-        });
-    }, 300);
+        };
+        document.addEventListener('keydown', currentTrainingEnterListener);
+    }, 500);
 }
 
 function showTrainingAnswer() {
@@ -3346,19 +3356,32 @@ function showTrainingAnswer() {
         <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
 
-    // Add small delay before allowing Enter key to go to next exercise
+    // Remove any existing Enter key listener
+    if (currentTrainingEnterListener) {
+        document.removeEventListener('keydown', currentTrainingEnterListener);
+        currentTrainingEnterListener = null;
+    }
+
+    // Add delay before allowing Enter key to go to next exercise
     // This prevents immediate triggering if Enter is still pressed
     setTimeout(() => {
-        document.addEventListener('keypress', function handleEnter(e) {
-            if (e.key === 'Enter') {
+        currentTrainingEnterListener = function handleEnter(e) {
+            // Ignore repeated keydown events while key is held down
+            if (e.key === 'Enter' && !e.repeat) {
                 nextTrainingExercise();
-                document.removeEventListener('keypress', handleEnter);
             }
-        });
-    }, 300);
+        };
+        document.addEventListener('keydown', currentTrainingEnterListener);
+    }, 500);
 }
 
 function nextTrainingExercise() {
+    // Remove any existing Enter key listener before starting next exercise
+    if (currentTrainingEnterListener) {
+        document.removeEventListener('keydown', currentTrainingEnterListener);
+        currentTrainingEnterListener = null;
+    }
+
     exerciseData.training.current++;
     document.getElementById('trainingCurrent').textContent = exerciseData.training.current;
     runTrainingExercise();

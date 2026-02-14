@@ -2393,6 +2393,11 @@
     let exerciseTimer = null;
     let flashTimer = null;
 
+    // Global variables to track Enter key listeners
+    let currentTrainingInputListener = null;
+    let currentFlashInputListener = null;
+    let currentExerciseInputListener = null;
+
     // Student-specific data
     let studentNumbers = {
         1: 0,
@@ -3584,11 +3589,14 @@
             input.type = 'number';
             input.className = 'answer-input';
             input.placeholder = 'Introdu numărul';
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
+
+            // Store listener reference for cleanup
+            currentTrainingInputListener = function(e) {
+                if (e.key === 'Enter' && !e.repeat) {
                     checkTrainingAnswer(parseInt(this.value));
                 }
-            });
+            };
+            input.addEventListener('keydown', currentTrainingInputListener);
 
             const submitBtn = document.createElement('button');
             submitBtn.className = 'submit-btn';
@@ -3628,6 +3636,14 @@
     }
 
     function checkTrainingAnswer(answer) {
+        // Clear input and its listener to prevent multiple submissions
+        const content = document.getElementById('trainingContent');
+        const input = content.querySelector('.answer-input');
+        if (input && currentTrainingInputListener) {
+            input.removeEventListener('keydown', currentTrainingInputListener);
+            currentTrainingInputListener = null;
+        }
+
         const feedback = document.createElement('div');
         feedback.className = 'feedback';
 
@@ -3643,7 +3659,7 @@
             document.getElementById('trainingIncorrect').textContent = stats.incorrect;
         }
 
-        const content = document.getElementById('trainingContent');
+        content.innerHTML = ''; // Clear content including input
         content.appendChild(feedback);
 
         setTimeout(() => {
@@ -3811,11 +3827,14 @@
                 input.type = 'number';
                 input.className = 'answer-input';
                 input.placeholder = 'Introdu numărul';
-                input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
+
+                // Store listener reference for cleanup
+                currentFlashInputListener = function(e) {
+                    if (e.key === 'Enter' && !e.repeat) {
                         checkFlashAnswer(parseInt(this.value));
                     }
-                });
+                };
+                input.addEventListener('keydown', currentFlashInputListener);
 
                 const submitBtn = document.createElement('button');
                 submitBtn.className = 'submit-btn';
@@ -3862,13 +3881,20 @@
     }
 
     function checkFlashAnswer(answer) {
+        // Clear input and its listener to prevent multiple submissions
+        const content = document.getElementById('flashContent');
+        const input = content.querySelector('.answer-input');
+        if (input && currentFlashInputListener) {
+            input.removeEventListener('keydown', currentFlashInputListener);
+            currentFlashInputListener = null;
+        }
+
         // Record response time
         if (stats.questionStartTime) {
             const responseTime = Date.now() - stats.questionStartTime;
             stats.responseTimes.push(responseTime);
         }
 
-        const content = document.getElementById('flashContent');
         const feedback = document.createElement('div');
         feedback.className = 'feedback';
 
@@ -3884,6 +3910,7 @@
             document.getElementById('flashIncorrect').textContent = stats.incorrect;
         }
 
+        content.innerHTML = ''; // Clear content including input
         content.appendChild(feedback);
 
         setTimeout(() => {
@@ -4115,11 +4142,14 @@
             input.className = 'answer-input';
             input.placeholder = 'Introdu răspunsul';
             input.dataset.correctAnswer = correctAnswer;
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
+
+            // Store listener reference for cleanup
+            currentExerciseInputListener = function(e) {
+                if (e.key === 'Enter' && !e.repeat) {
                     checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
                 }
-            });
+            };
+            input.addEventListener('keydown', currentExerciseInputListener);
 
             const submitBtn = document.createElement('button');
             submitBtn.className = 'submit-btn';
@@ -4135,7 +4165,14 @@
     }
 
     function checkExerciseAnswer(answer, correctAnswer) {
+        // Clear input and its listener to prevent multiple submissions
         const content = document.getElementById('exercisesContent');
+        const input = content.querySelector('.answer-input');
+        if (input && currentExerciseInputListener) {
+            input.removeEventListener('keydown', currentExerciseInputListener);
+            currentExerciseInputListener = null;
+        }
+
         const feedback = document.createElement('div');
         feedback.className = 'feedback';
 
@@ -4151,6 +4188,7 @@
             document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
         }
 
+        content.innerHTML = ''; // Clear content including input
         content.appendChild(feedback);
 
         setTimeout(() => {
