@@ -3275,13 +3275,16 @@ function checkTrainingAnswer() {
         <button class="submit-btn" id="nextTrainingBtn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
 
-    // Allow Enter key to go to next exercise
-    document.addEventListener('keypress', function handleEnter(e) {
-        if (e.key === 'Enter') {
-            nextTrainingExercise();
-            document.removeEventListener('keypress', handleEnter);
-        }
-    });
+    // Add small delay before allowing Enter key to go to next exercise
+    // This prevents immediate triggering if Enter is still pressed from submitting the answer
+    setTimeout(() => {
+        document.addEventListener('keypress', function handleEnter(e) {
+            if (e.key === 'Enter') {
+                nextTrainingExercise();
+                document.removeEventListener('keypress', handleEnter);
+            }
+        });
+    }, 300);
 }
 
 function showTrainingAnswer() {
@@ -3303,13 +3306,16 @@ function showTrainingAnswer() {
         <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
 
-    // Allow Enter key to go to next exercise
-    document.addEventListener('keypress', function handleEnter(e) {
-        if (e.key === 'Enter') {
-            nextTrainingExercise();
-            document.removeEventListener('keypress', handleEnter);
-        }
-    });
+    // Add small delay before allowing Enter key to go to next exercise
+    // This prevents immediate triggering if Enter is still pressed
+    setTimeout(() => {
+        document.addEventListener('keypress', function handleEnter(e) {
+            if (e.key === 'Enter') {
+                nextTrainingExercise();
+                document.removeEventListener('keypress', handleEnter);
+            }
+        });
+    }, 300);
 }
 
 function nextTrainingExercise() {
