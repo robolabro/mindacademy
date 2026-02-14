@@ -2543,12 +2543,27 @@ function generateExerciseTerms(settings) {
                 // Check if it's possible to generate a valid term for this operation
                 // For addition: need currentResult + 1 <= 9 (can add at least 1)
                 // For subtraction: need currentResult - 1 >= 1 (can subtract at least 1)
-                if ((op === '+' && currentResult >= 9) || (op === '-' && currentResult <= 1)) {
-                    console.log('[generateExerciseTerms] Impossible to generate valid Small Friends term, regenerating exercise:', { currentResult, op });
-                    // Break out and regenerate the entire exercise
-                    termsArray = [];
-                    operations = [];
-                    break;
+                // If not possible, switch operation instead of regenerating entire exercise
+                if (op === '+' && currentResult >= 9) {
+                    console.log('[generateExerciseTerms] Cannot add from currentResult=9, switching to subtraction:', { currentResult, op });
+                    op = '-';
+                    operations[operations.length - 1] = op;
+
+                    // Update the term type configuration to match the new operation
+                    const termIndex = i - 1;
+                    if (termTypesDistribution[termIndex].type !== 'direct') {
+                        termTypesDistribution[termIndex].formulaType = 'minus';
+                    }
+                } else if (op === '-' && currentResult <= 1) {
+                    console.log('[generateExerciseTerms] Cannot subtract from currentResult=1, switching to addition:', { currentResult, op });
+                    op = '+';
+                    operations[operations.length - 1] = op;
+
+                    // Update the term type configuration to match the new operation
+                    const termIndex = i - 1;
+                    if (termTypesDistribution[termIndex].type !== 'direct') {
+                        termTypesDistribution[termIndex].formulaType = 'plus';
+                    }
                 }
 
                 // Use pre-calculated term type from distribution instead of random selection
@@ -2695,10 +2710,35 @@ function generateExerciseTerms(settings) {
                     }
                 }
 
-                // If still no valid term, regenerate the entire exercise
+                // If still no valid term, try switching operation as last resort before regenerating
                 if (!validTermFound) {
-                    console.log('[generateExerciseTerms] No valid term possible, regenerating exercise:', {
-                        currentResult, op, targetFormulaNumber, targetType
+                    const originalOp = op;
+                    op = op === '+' ? '-' : '+';
+                    operations[operations.length - 1] = op;
+
+                    console.log('[generateExerciseTerms] Switching operation as last resort:', {
+                        currentResult, originalOp, newOp: op
+                    });
+
+                    // Try to find any valid term with the switched operation
+                    for (let t = 1; t <= 9; t++) {
+                        const testResult = op === '+' ? currentResult + t : currentResult - t;
+                        if (testResult >= 1 && testResult <= 9 &&
+                            !shouldAvoidTermRepetition(termsArray, t, terms)) {
+                            term = t;
+                            validTermFound = true;
+                            console.log('[generateExerciseTerms] Found valid term with switched operation:', {
+                                currentResult, op, term, result: testResult
+                            });
+                            break;
+                        }
+                    }
+                }
+
+                // If still no valid term after trying both operations, regenerate the entire exercise
+                if (!validTermFound) {
+                    console.log('[generateExerciseTerms] No valid term possible with either operation, regenerating exercise:', {
+                        currentResult, targetFormulaNumber, targetType
                     });
                     // Break out and regenerate the entire exercise
                     termsArray = [];
