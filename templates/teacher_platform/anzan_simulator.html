@@ -2504,7 +2504,8 @@ function generateExerciseTerms(settings) {
                         if (testResult >= 1 && testResult <= maxLimit &&
                             !shouldAvoidTermRepetition(termsArray, t, terms) &&
                             !isSmallFriendsCombination(currentResult, op, t) &&
-                            !isBigFriendsCombination(currentResult, op, t)) {
+                            !isBigFriendsCombination(currentResult, op, t) &&
+                            canPerformDirectly(currentResult, op, t, maxLimit, isLastOperation)) {
                             term = t;
                             validTermFound = true;
                             break;
@@ -2926,8 +2927,28 @@ function generateExerciseTerms(settings) {
                             // Validate no consecutive Big Friends formulas
                             const noConsecutiveBigFriends = validateNoConsecutiveBigFriends(testTerms, operations);
 
+                            // Validate that ALL operations in the exercise (not just the replaced one)
+                            // are still valid for direct calculation after the replacement.
+                            // Replacing a term changes the running total, which can make subsequent
+                            // operations require small/big friends formulas.
+                            let allOpsStillDirect = true;
+                            let runningVal = testTerms[0];
+                            for (let k = 0; k < operations.length; k++) {
+                                const stepOp = operations[k];
+                                const stepTerm = testTerms[k + 1];
+                                const isLastStep = (k === operations.length - 1);
+                                if (isSmallFriendsCombination(runningVal, stepOp, stepTerm) ||
+                                    isBigFriendsCombination(runningVal, stepOp, stepTerm) ||
+                                    !canPerformDirectly(runningVal, stepOp, stepTerm, maxLimit, isLastStep)) {
+                                    allOpsStillDirect = false;
+                                    break;
+                                }
+                                runningVal = stepOp === '+' ? runningVal + stepTerm : runningVal - stepTerm;
+                            }
+
                             if (!wouldRequireSmallFriends && !wouldRequireBigFriends &&
-                                intermediateValid && finalResultValid && allIntermediatesValid && noConsecutiveBigFriends) {
+                                intermediateValid && finalResultValid && allIntermediatesValid && noConsecutiveBigFriends &&
+                                allOpsStillDirect) {
                                 // This replacement is valid!
                                 const oldTerm = termsArray[randomIndex];
                                 termsArray[randomIndex] = randomLargeNum;
