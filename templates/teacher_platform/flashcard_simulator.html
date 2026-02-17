@@ -3061,17 +3061,18 @@
                 if (i > 0) operators.push('+');
             }
         } else if (formula === 'subtraction') {
-            // For subtraction, ensure result is not negative
-            // First number should be large enough to subtract all others
-            const minFirst = addends - 1; // At least 1 for each number to subtract
+            // For subtraction, ensure result is between 0 and maxUnits
+            // First number must be at least addends (1 for each subtracted number)
+            const minFirst = addends; // At least 1 for each subtracted term so result >= 0
             const firstNum = getRandomNumber(minFirst, maxUnits);
             numbers.push(firstNum);
 
             let remaining = firstNum;
             for (let i = 1; i < addends; i++) {
                 if (i === addends - 1) {
-                    // Last number: use whatever is left (at least 0, at most maxUnits)
-                    numbers.push(Math.max(0, Math.min(remaining, maxUnits)));
+                    // Last number: random between 1 and remaining (result can be 0 or positive)
+                    // This allows variants like 9-6=3, 9-7=2, 9-8=1, 9-9=0
+                    numbers.push(getRandomNumber(1, remaining));
                 } else {
                     // Generate a number that leaves room for remaining subtractions
                     const minForRemaining = addends - i - 1;
