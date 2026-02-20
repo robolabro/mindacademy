@@ -152,70 +152,25 @@ function formatExercise(ex) {
     return `${str} = ${ex.result}`;
 }
 
-// Generează 50 de exerciții
-console.log("Generare 50 exerciții de Calcul Direct\n");
+// Generează 50 de exerciții doar pentru Calcul Direct cu 9
+console.log("Generare 50 exerciții de Calcul Direct cu 9 (3, 4, 5 termeni)\n");
 console.log("=" .repeat(80));
 
 const exercises = [];
 
-// Mix de exerciții cu diferite numere de termeni și complexități
-const configs = [
-    // Direct to 4 (10 exerciții)
-    { terms: 3, complexity: 'direct-to-4' },
-    { terms: 3, complexity: 'direct-to-4' },
-    { terms: 3, complexity: 'direct-to-4' },
-    { terms: 4, complexity: 'direct-to-4' },
-    { terms: 4, complexity: 'direct-to-4' },
-    { terms: 4, complexity: 'direct-to-4' },
-    { terms: 5, complexity: 'direct-to-4' },
-    { terms: 5, complexity: 'direct-to-4' },
-    { terms: 5, complexity: 'direct-to-4' },
-    { terms: 9, complexity: 'direct-to-4' },
+// Doar Direct to 9 cu 3, 4, 5 termeni (50 exerciții)
+const configs = [];
 
-    // Direct to 5 (20 exerciții)
-    { terms: 3, complexity: 'direct-to-5' },
-    { terms: 3, complexity: 'direct-to-5' },
-    { terms: 3, complexity: 'direct-to-5' },
-    { terms: 3, complexity: 'direct-to-5' },
-    { terms: 4, complexity: 'direct-to-5' },
-    { terms: 4, complexity: 'direct-to-5' },
-    { terms: 4, complexity: 'direct-to-5' },
-    { terms: 4, complexity: 'direct-to-5' },
-    { terms: 5, complexity: 'direct-to-5' },
-    { terms: 5, complexity: 'direct-to-5' },
-    { terms: 5, complexity: 'direct-to-5' },
-    { terms: 5, complexity: 'direct-to-5' },
-    { terms: 9, complexity: 'direct-to-5' },
-    { terms: 9, complexity: 'direct-to-5' },
-    { terms: 9, complexity: 'direct-to-5' },
-    { terms: 9, complexity: 'direct-to-5' },
-    { terms: 3, complexity: 'direct-to-5' },
-    { terms: 4, complexity: 'direct-to-5' },
-    { terms: 5, complexity: 'direct-to-5' },
-    { terms: 9, complexity: 'direct-to-5' },
-
-    // Direct to 9 (20 exerciții)
-    { terms: 3, complexity: 'direct-to-9' },
-    { terms: 3, complexity: 'direct-to-9' },
-    { terms: 3, complexity: 'direct-to-9' },
-    { terms: 3, complexity: 'direct-to-9' },
-    { terms: 4, complexity: 'direct-to-9' },
-    { terms: 4, complexity: 'direct-to-9' },
-    { terms: 4, complexity: 'direct-to-9' },
-    { terms: 4, complexity: 'direct-to-9' },
-    { terms: 5, complexity: 'direct-to-9' },
-    { terms: 5, complexity: 'direct-to-9' },
-    { terms: 5, complexity: 'direct-to-9' },
-    { terms: 5, complexity: 'direct-to-9' },
-    { terms: 9, complexity: 'direct-to-9' },
-    { terms: 9, complexity: 'direct-to-9' },
-    { terms: 9, complexity: 'direct-to-9' },
-    { terms: 9, complexity: 'direct-to-9' },
-    { terms: 3, complexity: 'direct-to-9' },
-    { terms: 4, complexity: 'direct-to-9' },
-    { terms: 5, complexity: 'direct-to-9' },
-    { terms: 9, complexity: 'direct-to-9' },
-];
+// Distribuție echilibrată: ~17 cu 3 termeni, ~17 cu 4 termeni, ~16 cu 5 termeni
+for (let i = 0; i < 17; i++) {
+    configs.push({ terms: 3, complexity: 'direct-to-9' });
+}
+for (let i = 0; i < 17; i++) {
+    configs.push({ terms: 4, complexity: 'direct-to-9' });
+}
+for (let i = 0; i < 16; i++) {
+    configs.push({ terms: 5, complexity: 'direct-to-9' });
+}
 
 for (let i = 0; i < configs.length; i++) {
     const config = configs[i];
