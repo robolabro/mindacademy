@@ -2926,7 +2926,7 @@ function generateExerciseTerms(settings) {
 
         // For direct-to-9 complexity, ensure sufficient practice with large numbers (6-9)
         // Goal: Dynamic percentage of non-first terms should be 6-9 based on term count
-        // 3 terms: 70%, 4 terms: 60%, 5 terms: 50%, 6+ terms: 40%
+        // 3 terms: 70%, 4 terms: 50%, 5+ terms: 40%
         if (complexity === 'direct-to-9') {
             // Check if at least one large number exists
             const hasLargeNumber = termsArray.some(term => Math.abs(term) >= 6 && Math.abs(term) <= 9);
@@ -2942,11 +2942,9 @@ function generateExerciseTerms(settings) {
             if (terms <= 3) {
                 targetPercentage = 0.7; // 70% for 3 terms
             } else if (terms === 4) {
-                targetPercentage = 0.6; // 60% for 4 terms
-            } else if (terms === 5) {
-                targetPercentage = 0.5; // 50% for 5 terms (2 out of 4 non-first terms)
+                targetPercentage = 0.5; // 50% for 4 terms
             } else {
-                targetPercentage = 0.4; // 40% for 6+ terms
+                targetPercentage = 0.4; // 40% for 5+ terms (more relaxed for complexity)
             }
 
             // Require: at least 1 large number total AND meets dynamic percentage requirement
@@ -3393,10 +3391,14 @@ function runTrainingExercise() {
         terms = generated.terms;
         operations = generated.operations;
 
-        // Safety check: if generation failed, show error and stop
+        // Safety check: if generation failed, show error and return to settings
         if (!terms || terms.length === 0) {
             console.error('[runTrainingExercise] Failed to generate valid exercise terms');
             alert('Nu s-a putut genera un exercițiu valid. Vă rugăm încercați din nou sau schimbați setările.');
+            // Return to training settings screen instead of leaving blank screen
+            document.getElementById('trainingExercise').style.display = 'none';
+            document.getElementById('trainingSettings').style.display = 'block';
+            document.querySelector('#trainingMode .start-btn').style.display = 'block';
             return;
         }
 
@@ -3686,10 +3688,19 @@ function runSeriesExercise() {
         terms = generated.terms;
         operations = generated.operations;
 
-        // Safety check: if generation failed, show error and stop
+        // Safety check: if generation failed, show error and return to settings
         if (!terms || terms.length === 0) {
             console.error('[runSeriesExercise] Failed to generate valid exercise terms');
             alert('Nu s-a putut genera un exercițiu valid. Vă rugăm încercați din nou sau schimbați setările.');
+            // Return to series settings screen instead of leaving blank screen
+            document.getElementById('seriesExercise').style.display = 'none';
+            document.getElementById('seriesSettings').style.display = 'block';
+            document.querySelector('#seriesMode .start-btn').style.display = 'block';
+            // Clear timer if running
+            if (settings.timer) {
+                clearTimeout(settings.timer);
+                settings.timer = null;
+            }
             return;
         }
 
@@ -4003,9 +4014,18 @@ function runStudentExercise(studentId) {
         terms = generated.terms;
         operations = generated.operations;
 
-        // Safety check: if generation failed, skip this student's exercise
+        // Safety check: if generation failed, stop this student's exercise
         if (!terms || terms.length === 0) {
             console.error('[runStudentExercise] Failed to generate valid exercise terms for student', studentId);
+            student.isRunning = false;
+            // Update student card to show error state
+            const studentCard = document.getElementById(`student${studentId}`);
+            if (studentCard) {
+                const cardContent = studentCard.querySelector('.student-card-content');
+                if (cardContent) {
+                    cardContent.innerHTML = '<div style="color: red; text-align: center;">Eroare la generare<br>Schimbați setările</div>';
+                }
+            }
             return;
         }
 
