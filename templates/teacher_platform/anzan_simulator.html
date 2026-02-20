@@ -2288,23 +2288,11 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
 function shouldAvoidTermRepetition(termsArray, candidateTerm, totalTermCount = 3) {
     if (termsArray.length === 0) return false;
 
-    // Configuration: Max consecutive repetitions and max total occurrences
-    // For exercises with more terms, allow more repetitions (needed for larger exercises)
+    // Configuration: Max consecutive repetitions only
+    // REMOVED: Max total occurrences check (was limiting variety too much)
     const MAX_CONSECUTIVE_REPETITIONS = 1;
-    const MAX_TOTAL_OCCURRENCES = totalTermCount <= 3 ? 2 : totalTermCount === 4 ? 2 : 3; // 5+ terms: allow 3 occurrences
 
-    // Check 1: Count total occurrences of this term
-    const totalOccurrences = termsArray.filter(t => Math.abs(t) === Math.abs(candidateTerm)).length;
-    if (totalOccurrences >= MAX_TOTAL_OCCURRENCES) {
-        console.log('[shouldAvoidTermRepetition] Avoiding term due to max total occurrences:', {
-            term: candidateTerm,
-            totalOccurrences,
-            max: MAX_TOTAL_OCCURRENCES
-        });
-        return true;
-    }
-
-    // Check 2: Count consecutive repetitions at the end of the array
+    // Count consecutive repetitions at the end of the array
     let consecutiveCount = 0;
     for (let i = termsArray.length - 1; i >= 0; i--) {
         if (Math.abs(termsArray[i]) === Math.abs(candidateTerm)) {
@@ -2931,20 +2919,20 @@ function generateExerciseTerms(settings) {
             // Check if at least one large number exists
             const hasLargeNumber = termsArray.some(term => Math.abs(term) >= 6 && Math.abs(term) <= 9);
 
-            // Count large numbers in non-first positions (positions 2, 3, 4, etc.)
-            const nonFirstTerms = termsArray.slice(1); // Exclude first term
-            const largeNumbersInLaterPositions = nonFirstTerms.filter(term => Math.abs(term) >= 6 && Math.abs(term) <= 9).length;
-            const largeNumberPercentage = nonFirstTerms.length > 0 ? (largeNumbersInLaterPositions / nonFirstTerms.length) : 0;
+            // MODIFIED: Count large numbers in ALL positions (including first term)
+            // Previous version excluded first term, limiting variety
+            const largeNumbersCount = termsArray.filter(term => Math.abs(term) >= 6 && Math.abs(term) <= 9).length;
+            const largeNumberPercentage = termsArray.length > 0 ? (largeNumbersCount / termsArray.length) : 0;
 
             // Dynamic target percentage based on term count
-            // More terms = lower percentage requirement (harder to maintain result ≤9 with many large numbers)
+            // More terms = lower percentage requirement
             let targetPercentage;
             if (terms <= 3) {
-                targetPercentage = 0.7; // 70% for 3 terms
+                targetPercentage = 0.5; // 50% for 3 terms (was 70% of non-first, now more relaxed)
             } else if (terms === 4) {
-                targetPercentage = 0.5; // 50% for 4 terms
+                targetPercentage = 0.4; // 40% for 4 terms (was 50% of non-first)
             } else {
-                targetPercentage = 0.4; // 40% for 5+ terms (more relaxed for complexity)
+                targetPercentage = 0.3; // 30% for 5+ terms (was 40% of non-first)
             }
 
             // Require: at least 1 large number total AND meets dynamic percentage requirement
@@ -2952,7 +2940,7 @@ function generateExerciseTerms(settings) {
 
             if (!meetsRequirement) {
                 console.log('[generateExerciseTerms] direct-to-9: Insufficient large numbers (6-9). Current: ' +
-                    (largeNumberPercentage * 100).toFixed(0) + '% of non-first terms. Target: >' + (targetPercentage * 100).toFixed(0) + '%. Attempt:',
+                    (largeNumberPercentage * 100).toFixed(0) + '% of all terms. Target: >' + (targetPercentage * 100).toFixed(0) + '%. Attempt:',
                     attempt + 1, '/', maxAttempts);
                 console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
                 attempt++;
@@ -2961,8 +2949,8 @@ function generateExerciseTerms(settings) {
                     console.warn('[generateExerciseTerms] Max attempts reached! Attempting to add large numbers (6-9) while respecting constraints.');
                     if (termsArray.length > 1) {
                         // Calculate how many terms we need to replace to reach target percentage
-                        const targetCount = Math.ceil(nonFirstTerms.length * targetPercentage);
-                        const needToAdd = targetCount - largeNumbersInLaterPositions;
+                        const targetCount = Math.ceil(termsArray.length * targetPercentage);
+                        const needToAdd = targetCount - largeNumbersCount;
 
                         console.log('[generateExerciseTerms] Need to add', needToAdd, 'more large numbers to reach', (targetPercentage * 100).toFixed(0) + '% target');
 
@@ -2974,8 +2962,8 @@ function generateExerciseTerms(settings) {
                         while (successfulReplacements < needToAdd && replacementAttempt < maxReplacementAttempts) {
                             replacementAttempt++;
 
-                            // Pick a random non-first term index
-                            const randomIndex = Math.floor(Math.random() * (termsArray.length - 1)) + 1;
+                            // MODIFIED: Pick a random term index (including first term)
+                            const randomIndex = Math.floor(Math.random() * termsArray.length);
 
                             // Skip if this position already has a large number
                             if (Math.abs(termsArray[randomIndex]) >= 6) {
@@ -2999,7 +2987,7 @@ function generateExerciseTerms(settings) {
                             const wouldRequireSmallFriends = isSmallFriendsCombination(currentResult, op, randomLargeNum);
                             const wouldRequireBigFriends = isBigFriendsCombination(currentResult, op, randomLargeNum);
                             const intermediateResult = op === '+' ? currentResult + randomLargeNum : currentResult - randomLargeNum;
-                            const intermediateValid = intermediateResult >= 1 && intermediateResult <= 9;
+                            const intermediateValid = intermediateResult >= 1; // RELAXED: removed <= 9 restriction
 
                             // Calculate final result with this replacement
                             const testResult = calculateResult(testTerms, operations);
@@ -3067,29 +3055,27 @@ function generateExerciseTerms(settings) {
         }
 
         // For Small Friends complexity, ensure sufficient practice with digit 5
-        // Goal: Dynamic percentage of non-first terms should be 5 based on term count
+        // MODIFIED: Dynamic percentage of ALL terms should be 5 based on term count
         // This promotes pedagogical exercises like: 4+5-2-5+1 or 3-2+5+2-5
-        // 3 terms: 80%, 4 terms: 70%, 5 terms: 60%, 6+ terms: 50%
+        // Including first term for more variety
         if (isSmallFriendsLevel(complexity)) {
             // Check if at least one term is 5
             const hasFive = termsArray.some(term => Math.abs(term) === 5);
 
-            // Count digit 5 in non-first positions (positions 2, 3, 4, etc.)
-            const nonFirstTerms = termsArray.slice(1); // Exclude first term
-            const fivesInLaterPositions = nonFirstTerms.filter(term => Math.abs(term) === 5).length;
-            const fivePercentage = nonFirstTerms.length > 0 ? (fivesInLaterPositions / nonFirstTerms.length) : 0;
+            // MODIFIED: Count digit 5 in ALL positions (including first term)
+            const fivesCount = termsArray.filter(term => Math.abs(term) === 5).length;
+            const fivePercentage = termsArray.length > 0 ? (fivesCount / termsArray.length) : 0;
 
-            // Dynamic target percentage based on term count
-            // More terms = lower percentage requirement (harder to maintain result within 1-9 with many 5s)
+            // Dynamic target percentage based on term count (adjusted for all terms)
             let targetPercentage;
             if (terms <= 3) {
-                targetPercentage = 0.8; // 80% for 3 terms
+                targetPercentage = 0.6; // 60% for 3 terms (was 80% of non-first)
             } else if (terms === 4) {
-                targetPercentage = 0.7; // 70% for 4 terms
+                targetPercentage = 0.5; // 50% for 4 terms (was 70% of non-first)
             } else if (terms === 5) {
-                targetPercentage = 0.6; // 60% for 5 terms (2-3 out of 4 non-first terms)
+                targetPercentage = 0.4; // 40% for 5 terms (was 60% of non-first)
             } else {
-                targetPercentage = 0.5; // 50% for 6+ terms
+                targetPercentage = 0.3; // 30% for 6+ terms (was 50% of non-first)
             }
 
             // Require: at least 1 digit 5 total AND meets dynamic percentage requirement
@@ -3097,7 +3083,7 @@ function generateExerciseTerms(settings) {
 
             if (!meetsRequirement) {
                 console.log('[generateExerciseTerms] Small Friends: Insufficient digit 5 usage. Current: ' +
-                    (fivePercentage * 100).toFixed(0) + '% of non-first terms. Target: >=' + (targetPercentage * 100).toFixed(0) + '%. Attempt:',
+                    (fivePercentage * 100).toFixed(0) + '% of all terms. Target: >=' + (targetPercentage * 100).toFixed(0) + '%. Attempt:',
                     attempt + 1, '/', maxAttempts);
                 console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
                 attempt++;
@@ -3106,8 +3092,8 @@ function generateExerciseTerms(settings) {
                     console.warn('[generateExerciseTerms] Max attempts reached! Attempting to add digit 5 while respecting Small Friends constraints.');
                     if (termsArray.length > 1) {
                         // Calculate how many terms we need to replace to reach target percentage
-                        const targetCount = Math.ceil(nonFirstTerms.length * targetPercentage);
-                        const needToAdd = targetCount - fivesInLaterPositions;
+                        const targetCount = Math.ceil(termsArray.length * targetPercentage);
+                        const needToAdd = targetCount - fivesCount;
 
                         console.log('[generateExerciseTerms] Need to add', needToAdd, 'more digit 5s to reach', (targetPercentage * 100).toFixed(0) + '% target');
 
@@ -3119,8 +3105,8 @@ function generateExerciseTerms(settings) {
                         while (successfulReplacements < needToAdd && replacementAttempt < maxReplacementAttempts) {
                             replacementAttempt++;
 
-                            // Pick a random non-first term index
-                            const randomIndex = Math.floor(Math.random() * (termsArray.length - 1)) + 1;
+                            // MODIFIED: Pick a random term index (including first term)
+                            const randomIndex = Math.floor(Math.random() * termsArray.length);
 
                             // Skip if this position already has a 5
                             if (Math.abs(termsArray[randomIndex]) === 5) {
@@ -3140,7 +3126,7 @@ function generateExerciseTerms(settings) {
                             // For Small Friends, we want to ensure that using 5 is VALID at this position
                             // Check if this would require a Small Friends formula (which is GOOD for Small Friends levels)
                             const intermediateResult = op === '+' ? currentResult + 5 : currentResult - 5;
-                            const intermediateValid = intermediateResult >= 1 && intermediateResult <= 9;
+                            const intermediateValid = intermediateResult >= 1; // RELAXED: removed <= 9 restriction
 
                             // Calculate final result with this replacement
                             const testResult = calculateResult(testTerms, operations);
@@ -3245,7 +3231,9 @@ function validateIntermediateResults(terms, operations) {
             result -= terms[i + 1];
         }
 
-        // Intermediate result must stay >= 1
+        // RELAXED: Allow intermediate results > 9 (removed upper bound restriction)
+        // Only check that intermediate result doesn't go negative
+        // This allows more variety in exercises, especially more subtractions
         if (result < 1) {
             console.log('[validateIntermediateResults] Intermediate result < 1 at step', i + 1, ':', result);
             console.log('[validateIntermediateResults] Terms so far:', terms.slice(0, i + 2), 'Operations:', operations.slice(0, i + 1));
