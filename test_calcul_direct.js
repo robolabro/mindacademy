@@ -152,38 +152,68 @@ function formatExercise(ex) {
     return `${str} = ${ex.result}`;
 }
 
-// Generează 20 de exerciții
-console.log("Generare 20 exerciții de Calcul Direct\n");
+// Generează 50 de exerciții
+console.log("Generare 50 exerciții de Calcul Direct\n");
 console.log("=" .repeat(80));
 
 const exercises = [];
 
 // Mix de exerciții cu diferite numere de termeni și complexități
 const configs = [
-    // Direct to 4 (3 exerciții)
+    // Direct to 4 (10 exerciții)
+    { terms: 3, complexity: 'direct-to-4' },
+    { terms: 3, complexity: 'direct-to-4' },
     { terms: 3, complexity: 'direct-to-4' },
     { terms: 4, complexity: 'direct-to-4' },
+    { terms: 4, complexity: 'direct-to-4' },
+    { terms: 4, complexity: 'direct-to-4' },
     { terms: 5, complexity: 'direct-to-4' },
+    { terms: 5, complexity: 'direct-to-4' },
+    { terms: 5, complexity: 'direct-to-4' },
+    { terms: 9, complexity: 'direct-to-4' },
 
-    // Direct to 5 (7 exerciții)
+    // Direct to 5 (20 exerciții)
+    { terms: 3, complexity: 'direct-to-5' },
+    { terms: 3, complexity: 'direct-to-5' },
     { terms: 3, complexity: 'direct-to-5' },
     { terms: 3, complexity: 'direct-to-5' },
     { terms: 4, complexity: 'direct-to-5' },
     { terms: 4, complexity: 'direct-to-5' },
+    { terms: 4, complexity: 'direct-to-5' },
+    { terms: 4, complexity: 'direct-to-5' },
+    { terms: 5, complexity: 'direct-to-5' },
+    { terms: 5, complexity: 'direct-to-5' },
     { terms: 5, complexity: 'direct-to-5' },
     { terms: 5, complexity: 'direct-to-5' },
     { terms: 9, complexity: 'direct-to-5' },
+    { terms: 9, complexity: 'direct-to-5' },
+    { terms: 9, complexity: 'direct-to-5' },
+    { terms: 9, complexity: 'direct-to-5' },
+    { terms: 3, complexity: 'direct-to-5' },
+    { terms: 4, complexity: 'direct-to-5' },
+    { terms: 5, complexity: 'direct-to-5' },
+    { terms: 9, complexity: 'direct-to-5' },
 
-    // Direct to 9 (10 exerciții)
+    // Direct to 9 (20 exerciții)
+    { terms: 3, complexity: 'direct-to-9' },
     { terms: 3, complexity: 'direct-to-9' },
     { terms: 3, complexity: 'direct-to-9' },
     { terms: 3, complexity: 'direct-to-9' },
     { terms: 4, complexity: 'direct-to-9' },
     { terms: 4, complexity: 'direct-to-9' },
     { terms: 4, complexity: 'direct-to-9' },
+    { terms: 4, complexity: 'direct-to-9' },
+    { terms: 5, complexity: 'direct-to-9' },
+    { terms: 5, complexity: 'direct-to-9' },
     { terms: 5, complexity: 'direct-to-9' },
     { terms: 5, complexity: 'direct-to-9' },
     { terms: 9, complexity: 'direct-to-9' },
+    { terms: 9, complexity: 'direct-to-9' },
+    { terms: 9, complexity: 'direct-to-9' },
+    { terms: 9, complexity: 'direct-to-9' },
+    { terms: 3, complexity: 'direct-to-9' },
+    { terms: 4, complexity: 'direct-to-9' },
+    { terms: 5, complexity: 'direct-to-9' },
     { terms: 9, complexity: 'direct-to-9' },
 ];
 
