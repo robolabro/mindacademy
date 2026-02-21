@@ -2290,7 +2290,8 @@ function shouldAvoidTermRepetition(termsArray, candidateTerm, totalTermCount = 3
 
     // Configuration: Max consecutive repetitions only
     // REMOVED: Max total occurrences check (was limiting variety too much)
-    const MAX_CONSECUTIVE_REPETITIONS = 1;
+    // RELAXED: Allow up to 2 consecutive same terms (was 1, too restrictive)
+    const MAX_CONSECUTIVE_REPETITIONS = 2;
 
     // Count consecutive repetitions at the end of the array
     let consecutiveCount = 0;
@@ -2926,13 +2927,14 @@ function generateExerciseTerms(settings) {
 
             // Dynamic target percentage based on term count
             // More terms = lower percentage requirement
+            // RELAXED: Further reduced percentages to allow more exercise variety
             let targetPercentage;
             if (terms <= 3) {
-                targetPercentage = 0.5; // 50% for 3 terms (was 70% of non-first, now more relaxed)
+                targetPercentage = 0.34; // 34% for 3 terms (~1 large number) (was 50%, too strict)
             } else if (terms === 4) {
-                targetPercentage = 0.4; // 40% for 4 terms (was 50% of non-first)
+                targetPercentage = 0.25; // 25% for 4 terms (~1 large number) (was 40%, too strict)
             } else {
-                targetPercentage = 0.3; // 30% for 5+ terms (was 40% of non-first)
+                targetPercentage = 0.20; // 20% for 5+ terms (~1 large number) (was 30%, too strict)
             }
 
             // Require: at least 1 large number total AND meets dynamic percentage requirement
