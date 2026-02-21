@@ -2339,7 +2339,8 @@
 <script>
     // Global state
     let currentMode = null;
-    let lastExercise = null; // Track last exercise to prevent consecutive duplicates
+    let exerciseHistory = []; // Track all exercises in session to prevent duplicates
+    const MAX_HISTORY_SIZE = 100; // Keep last 100 exercises to prevent memory issues
     let currentSettings = {
         training: {
             direction: 'abacus-to-number',
@@ -4013,7 +4014,7 @@
     // Exercises Mode
     function startExercises() {
         // Reset duplicate tracking for new session
-        lastExercise = null;
+        exerciseHistory = [];
 
         stats.correct = 0;
         stats.incorrect = 0;
@@ -4090,8 +4091,10 @@
                 }
             }
 
-            // Check if this exercise is a duplicate of the last one
-            isDuplicate = exercisesAreEqual({ numbers, operators }, lastExercise);
+            // Check if this exercise is a duplicate of any in the history
+            isDuplicate = exerciseHistory.some(prevExercise =>
+                exercisesAreEqual({ numbers, operators }, prevExercise)
+            );
 
             attempts++;
             if (attempts >= maxAttempts) {
@@ -4100,8 +4103,13 @@
             }
         } while (correctAnswer <= 0 || correctAnswer >= 100 || isDuplicate);
 
-        // Save this exercise as the last one
-        lastExercise = { numbers: [...numbers], operators: [...operators] };
+        // Add this exercise to history
+        exerciseHistory.push({ numbers: [...numbers], operators: [...operators] });
+
+        // Limit history size to prevent memory issues
+        if (exerciseHistory.length > MAX_HISTORY_SIZE) {
+            exerciseHistory.shift(); // Remove oldest exercise
+        }
 
         // Display problem
         const problemDiv = document.createElement('div');
