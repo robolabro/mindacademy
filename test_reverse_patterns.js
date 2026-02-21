@@ -1,10 +1,8 @@
 /**
- * Test to verify that direct-to-9 exercises include large negative numbers (-6, -7, -8, -9)
- *
- * This script extracts the exercise generation logic and tests it
+ * Test to verify that immediate reverse operations (+5-5, +6-6, etc.) are avoided
  */
 
-// Extract the core logic from anzan_simulator.html
+// Copy all helper functions from test_direct9_negatives.js
 function getComplexityLimit(complexity) {
     if (complexity === 'direct-to-9') return 9;
     return null;
@@ -46,16 +44,16 @@ function isAllowedOperation(currentValue, operation, operand, complexity) {
     };
     const directTo9New = {
         '+': [
-            [1,6],[1,7],[1,8],  // 1+6=7, 1+7=8, 1+8=9
-            [2,6],[2,7],        // 2+6=8, 2+7=9
-            [3,6],              // 3+6=9
-            [4,5]               // 4+5=9
+            [1,6],[1,7],[1,8],
+            [2,6],[2,7],
+            [3,6],
+            [4,5]
         ],
         '-': [
-            [6,1],[6,5],[6,6],                          // 6-1=5, 6-5=1, 6-6=0
-            [7,1],[7,2],[7,5],[7,6],[7,7],              // 7-1=6, 7-2=5, 7-5=2, 7-6=1, 7-7=0
-            [8,1],[8,2],[8,3],[8,5],[8,6],[8,7],[8,8],  // 8-1=7, 8-2=6, 8-3=5, 8-5=3, 8-6=2, 8-7=1, 8-8=0
-            [9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7],[9,8],[9,9]  // All subtractions from 9
+            [6,1],[6,5],[6,6],
+            [7,1],[7,2],[7,5],[7,6],[7,7],
+            [8,1],[8,2],[8,3],[8,5],[8,6],[8,7],[8,8],
+            [9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7],[9,8],[9,9]
         ]
     };
 
@@ -97,8 +95,6 @@ function shouldAvoidTermRepetition(termsArray, candidateTerm) {
 }
 
 function isImmediateReverseOperation(operations, termsArray, currentOp, currentTerm) {
-    // Prevent simple patterns like +5-5, +6-6, -7+7, etc.
-    // Check if the last operation was the opposite of the current one with the same term
     if (operations.length === 0 || termsArray.length === 0) {
         return false;
     }
@@ -106,7 +102,6 @@ function isImmediateReverseOperation(operations, termsArray, currentOp, currentT
     const lastOp = operations[operations.length - 1];
     const lastTerm = termsArray[termsArray.length - 1];
 
-    // If last operation was + and current is -, or vice versa, with the same term
     if ((lastOp === '+' && currentOp === '-' || lastOp === '-' && currentOp === '+') &&
         lastTerm === currentTerm) {
         return true;
@@ -171,14 +166,11 @@ function generateExerciseTerms(settings) {
         termsArray = [];
         operations = [];
 
-        // Generate first term (always positive)
         termsArray.push(generateNumber(settings, true));
 
-        // Generate remaining terms
         for (let i = 1; i < terms; i++) {
             let op;
 
-            // Normal operation selection
             if (operation === 'mixed') {
                 op = Math.random() > 0.5 ? '+' : '-';
             } else {
@@ -195,34 +187,26 @@ function generateExerciseTerms(settings) {
                 const currentResult = calculateResult(termsArray, operations.slice(0, -1));
                 const termLimit = getTermLimit(complexity);
 
-                // NEW APPROACH: Build list of ALL possible operations (op + term combinations)
-                // instead of choosing operation first, then trying terms.
-                // This prevents getting stuck when result is small (e.g., after 9-7=2, we can't subtract 6-9)
                 let possibleOperations = [];
 
-                // Add all addition operations
                 for (let t = 1; t <= termLimit; t++) {
                     possibleOperations.push({ op: '+', term: t });
                 }
 
-                // Add all subtraction operations
                 for (let t = 1; t <= termLimit; t++) {
                     possibleOperations.push({ op: '-', term: t });
                 }
 
-                // Shuffle the list to randomize (Fisher-Yates shuffle)
                 for (let j = possibleOperations.length - 1; j > 0; j--) {
                     const k = Math.floor(Math.random() * (j + 1));
                     [possibleOperations[j], possibleOperations[k]] = [possibleOperations[k], possibleOperations[j]];
                 }
 
-                // Try each operation in the shuffled list
                 for (const opConfig of possibleOperations) {
                     const testOp = opConfig.op;
                     const testTerm = opConfig.term;
                     const testResult = testOp === '+' ? currentResult + testTerm : currentResult - testTerm;
 
-                    // Check if this operation creates a valid result and follows all rules
                     if (testResult >= 1 && testResult <= maxLimit &&
                         isAllowedOperation(currentResult, testOp, testTerm, complexity) &&
                         !shouldAvoidTermRepetition(termsArray, testTerm, terms) &&
@@ -231,7 +215,7 @@ function generateExerciseTerms(settings) {
                         !isImmediateReverseOperation(operations, termsArray, testOp, testTerm)) {
                         term = testTerm;
                         op = testOp;
-                        operations[operations.length - 1] = testOp; // Update the operation we pushed earlier
+                        operations[operations.length - 1] = testOp;
                         validTermFound = true;
                         break;
                     }
@@ -257,72 +241,58 @@ function generateExerciseTerms(settings) {
 
 // Run the test
 console.log('='.repeat(80));
-console.log('Testing direct-to-9 exercise generation for large negative numbers (-6, -7, -8, -9)');
+console.log('Testing that immediate reverse operations (+5-5, +6-6, etc.) are avoided');
 console.log('='.repeat(80));
 
 const settings = {
     digits: 1,
-    terms: 3,
+    terms: 4, // Using 4 terms to have 3 operations (more chances to detect patterns)
     operation: 'mixed',
     complexity: 'direct-to-9'
 };
 
-const operationCounts = {
-    '+1': 0, '+2': 0, '+3': 0, '+4': 0, '+5': 0, '+6': 0, '+7': 0, '+8': 0, '+9': 0,
-    '-1': 0, '-2': 0, '-3': 0, '-4': 0, '-5': 0, '-6': 0, '-7': 0, '-8': 0, '-9': 0
-};
-
-const numTests = 5000;
+const numTests = 10000;
+let reversePatternCount = 0;
+const reversePatterns = [];
 
 console.log(`\nGenerating ${numTests} exercises with settings:`, settings);
-console.log('');
+console.log('Checking for immediate reverse operations (e.g., +5-5, +6-6, -7+7)...\n');
 
 for (let i = 0; i < numTests; i++) {
     const exercise = generateExerciseTerms(settings);
 
-    // Count each operation
-    for (let j = 0; j < exercise.operations.length; j++) {
-        const op = exercise.operations[j];
-        const term = exercise.termsArray[j + 1];
-        const key = op + term;
-        operationCounts[key]++;
+    // Check for immediate reverse operations
+    for (let j = 1; j < exercise.operations.length; j++) {
+        const prevOp = exercise.operations[j - 1];
+        const currOp = exercise.operations[j];
+        const prevTerm = exercise.termsArray[j];
+        const currTerm = exercise.termsArray[j + 1];
+
+        // Check if current operation reverses the previous one
+        if ((prevOp === '+' && currOp === '-' || prevOp === '-' && currOp === '+') &&
+            prevTerm === currTerm) {
+            reversePatternCount++;
+            const pattern = `${prevOp}${prevTerm} ${currOp}${currTerm}`;
+            reversePatterns.push({
+                exercise: exercise.termsArray.map((t, idx) =>
+                    idx === 0 ? t : exercise.operations[idx - 1] + t
+                ).join(' '),
+                pattern: pattern
+            });
+        }
     }
 }
 
-// Display results
-console.log('Operation distribution across ' + numTests + ' exercises (each with ' + (settings.terms - 1) + ' operations):');
-console.log('-'.repeat(80));
-
-console.log('\nADDITIONS:');
-const additions = ['+1', '+2', '+3', '+4', '+5', '+6', '+7', '+8', '+9'];
-for (const op of additions) {
-    const count = operationCounts[op];
-    const percentage = ((count / (numTests * (settings.terms - 1))) * 100).toFixed(1);
-    const bar = '█'.repeat(Math.floor(count / 20));
-    console.log(`  ${op.padEnd(4)} : ${count.toString().padStart(4)} (${percentage.padStart(5)}%)  ${bar}`);
-}
-
-console.log('\nSUBTRACTIONS:');
-const subtractions = ['-1', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9'];
-for (const op of subtractions) {
-    const count = operationCounts[op];
-    const percentage = ((count / (numTests * (settings.terms - 1))) * 100).toFixed(1);
-    const bar = '█'.repeat(Math.floor(count / 20));
-    console.log(`  ${op.padEnd(4)} : ${count.toString().padStart(4)} (${percentage.padStart(5)}%)  ${bar}`);
-}
-
-// Check for missing large negative numbers
-console.log('\n' + '='.repeat(80));
-const largeNegatives = ['-6', '-7', '-8', '-9'];
-const missingLargeNegatives = largeNegatives.filter(op => operationCounts[op] === 0);
-
-if (missingLargeNegatives.length > 0) {
-    console.log('⚠️  PROBLEM FOUND: The following large negative numbers are MISSING:');
-    console.log('   ', missingLargeNegatives.join(', '));
+console.log('='.repeat(80));
+if (reversePatternCount === 0) {
+    console.log('✓ SUCCESS: No immediate reverse operations found!');
+    console.log(`  All ${numTests} exercises avoid simple patterns like +5-5, +6-6, etc.`);
 } else {
-    const totalLargeNegatives = largeNegatives.reduce((sum, op) => sum + operationCounts[op], 0);
-    const percentage = ((totalLargeNegatives / (numTests * (settings.terms - 1))) * 100).toFixed(1);
-    console.log('✓ All large negative numbers (-6, -7, -8, -9) are present');
-    console.log(`  Total large negatives: ${totalLargeNegatives} (${percentage}% of all operations)`);
+    console.log('⚠️  PROBLEM FOUND: Immediate reverse operations detected!');
+    console.log(`  Found ${reversePatternCount} reverse patterns in ${numTests} exercises`);
+    console.log('\n  First 10 examples:');
+    reversePatterns.slice(0, 10).forEach(({ exercise, pattern }) => {
+        console.log(`    ${exercise} (contains: ${pattern})`);
+    });
 }
 console.log('='.repeat(80));

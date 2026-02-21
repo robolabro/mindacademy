@@ -2329,6 +2329,39 @@ function shouldAvoidTermRepetition(termsArray, candidateTerm, totalTermCount = 3
     return false;
 }
 
+/**
+ * Check if current operation would immediately reverse the previous operation
+ * Example: +5 followed by -5, or -6 followed by +6
+ * These patterns should be avoided as they're too simple/predictable
+ * @param {Array} operations - Array of operations (+, -)
+ * @param {Array} termsArray - Array of term values
+ * @param {string} currentOp - Current operation (+ or -)
+ * @param {number} currentTerm - Current term value
+ * @returns {boolean} - True if this would immediately reverse the last operation
+ */
+function isImmediateReverseOperation(operations, termsArray, currentOp, currentTerm) {
+    // Prevent simple patterns like +5-5, +6-6, -7+7, etc.
+    // Check if the last operation was the opposite of the current one with the same term
+    if (operations.length === 0 || termsArray.length === 0) {
+        return false;
+    }
+
+    const lastOp = operations[operations.length - 1];
+    const lastTerm = termsArray[termsArray.length - 1];
+
+    // If last operation was + and current is -, or vice versa, with the same term
+    if ((lastOp === '+' && currentOp === '-' || lastOp === '-' && currentOp === '+') &&
+        lastTerm === currentTerm) {
+        console.log('[isImmediateReverseOperation] Avoiding immediate reverse operation:', {
+            last: lastOp + lastTerm,
+            current: currentOp + currentTerm
+        });
+        return true;
+    }
+
+    return false;
+}
+
 function generateExerciseTerms(settings) {
     const { terms, operation, negative, complexity } = settings;
     const maxLimit = getComplexityLimit(complexity);
@@ -2502,91 +2535,63 @@ function generateExerciseTerms(settings) {
                 const currentResult = calculateResult(termsArray, operations.slice(0, -1));
                 const termLimit = getTermLimit(complexity);
 
-                // SIMPLIFIED LOGIC: Just try all possible terms and check with isAllowedOperation
-                // This is much simpler and works correctly with the operation tables
+                // NEW APPROACH: Build list of ALL possible operations (op + term combinations)
+                // instead of choosing operation first, then trying terms.
+                // This prevents getting stuck when result is small (e.g., after 9-7=2, we can't subtract 6-9)
+                let possibleOperations = [];
 
-                // Build list of terms to try based on operation and complexity
-                let termsToTry = [];
-
-                // For direct-to-9/direct-counting subtractions from 6-9: favor large numbers
-                // Try in descending order (9, 8, 7, 6, ..., 1) to increase exposure to challenging operations
-                if (op === '-' && (complexity === 'direct-to-9' || complexity === 'direct-counting') &&
-                    currentResult >= 6 && currentResult <= 9) {
-                    // Weighted selection: 70% large numbers (6-9), 30% small (1-5)
-                    if (Math.random() < 0.7) {
-                        // Try large numbers first (descending)
-                        for (let t = Math.min(termLimit, 9); t >= 6; t--) termsToTry.push(t);
-                        // Then small numbers
-                        for (let t = 5; t >= 1; t--) termsToTry.push(t);
-                    } else {
-                        // Try small numbers first
-                        for (let t = 1; t <= 5; t++) termsToTry.push(t);
-                        // Then large numbers (descending)
-                        for (let t = Math.min(termLimit, 9); t >= 6; t--) termsToTry.push(t);
-                    }
-                } else {
-                    // For all other cases: uniform distribution
-                    for (let t = 1; t <= termLimit; t++) {
-                        termsToTry.push(t);
-                    }
-                    // Shuffle for randomness
-                    for (let j = termsToTry.length - 1; j > 0; j--) {
-                        const k = Math.floor(Math.random() * (j + 1));
-                        [termsToTry[j], termsToTry[k]] = [termsToTry[k], termsToTry[j]];
-                    }
+                // Add all addition operations
+                for (let t = 1; t <= termLimit; t++) {
+                    possibleOperations.push({ op: '+', term: t });
                 }
 
-                // Try each term in the list
-                for (const t of termsToTry) {
-                    const testResult = op === '+' ? currentResult + t : currentResult - t;
+                // Add all subtraction operations
+                for (let t = 1; t <= termLimit; t++) {
+                    possibleOperations.push({ op: '-', term: t });
+                }
 
-                    // Check if this term creates a valid operation
+                // Shuffle the list to randomize (Fisher-Yates shuffle)
+                for (let j = possibleOperations.length - 1; j > 0; j--) {
+                    const k = Math.floor(Math.random() * (j + 1));
+                    [possibleOperations[j], possibleOperations[k]] = [possibleOperations[k], possibleOperations[j]];
+                }
+
+                console.log('[generateExerciseTerms] Trying all operations randomly for', complexity, 'at currentResult=', currentResult);
+
+                // Try each operation in the shuffled list
+                for (const opConfig of possibleOperations) {
+                    const testOp = opConfig.op;
+                    const testTerm = opConfig.term;
+                    const testResult = testOp === '+' ? currentResult + testTerm : currentResult - testTerm;
+
+                    // Check if this operation creates a valid result and follows all rules
                     if (testResult >= 1 && testResult <= maxLimit &&
-                        isAllowedOperation(currentResult, op, t, complexity) &&
-                        !shouldAvoidTermRepetition(termsArray, t, terms) &&
-                        !isSmallFriendsCombination(currentResult, op, t) &&
-                        !isBigFriendsCombination(currentResult, op, t)) {
-                        term = t;
+                        isAllowedOperation(currentResult, testOp, testTerm, complexity) &&
+                        !shouldAvoidTermRepetition(termsArray, testTerm, terms) &&
+                        !isSmallFriendsCombination(currentResult, testOp, testTerm) &&
+                        !isBigFriendsCombination(currentResult, testOp, testTerm) &&
+                        !isImmediateReverseOperation(operations, termsArray, testOp, testTerm)) {
+                        term = testTerm;
+                        op = testOp;
+                        operations[operations.length - 1] = testOp; // Update the operation we pushed earlier
                         validTermFound = true;
+                        console.log('[generateExerciseTerms] Found valid operation:', {
+                            currentResult,
+                            operation: testOp + testTerm,
+                            newResult: testResult
+                        });
                         break;
                     }
 
                     termAttempts++;
-                    if (termAttempts >= 20) break;
                 }
 
-                // If no valid term found with current operation, try switching operation
+                // If no valid operation found, regenerate the entire exercise
                 if (!validTermFound) {
-                    const altOp = op === '+' ? '-' : '+';
-
-                    // Try all terms with the alternative operation
-                    for (let t = 1; t <= termLimit; t++) {
-                        const testResult = altOp === '+' ? currentResult + t : currentResult - t;
-
-                        if (testResult >= 1 && testResult <= maxLimit &&
-                            isAllowedOperation(currentResult, altOp, t, complexity) &&
-                            !shouldAvoidTermRepetition(termsArray, t, terms) &&
-                            !isSmallFriendsCombination(currentResult, altOp, t) &&
-                            !isBigFriendsCombination(currentResult, altOp, t)) {
-                            term = t;
-                            op = altOp;
-                            operations[operations.length - 1] = altOp;
-                            validTermFound = true;
-                            break;
-                        }
-                    }
-                }
-
-                // If still no valid term found, regenerate the entire exercise
-                if (!validTermFound) {
-                    console.log('[generateExerciseTerms] No valid term found for', complexity, 'at currentResult=', currentResult, ', regenerating exercise');
+                    console.log('[generateExerciseTerms] No valid operation found for', complexity, 'at currentResult=', currentResult, ', regenerating exercise');
                     termsArray = [];
                     operations = [];
                     break;
-                } else if (!validTermFound) {
-                    // For non-direct calculation levels, use standard generation
-                    term = generateNumber(settings, false);
-                    validTermFound = true;
                 }
             } else if (isSmallFriendsLevel(complexity)) {
                 // For Small Friends levels, use progressive learning with GUARANTEED mix:
