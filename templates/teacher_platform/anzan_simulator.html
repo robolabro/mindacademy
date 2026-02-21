@@ -2539,8 +2539,14 @@ function generateExerciseTerms(settings) {
                             // From 5, cannot subtract 1-4 directly
                             maxDirectSubtraction = 0;
                         } else if (currentResult >= 6 && currentResult <= 9) {
-                            // Can subtract from lower beads
-                            maxDirectSubtraction = Math.min(currentResult - 5, currentResult - 1, termLimit);
+                            // For direct-to-9, allow larger terms (6-9) to enable operations like 8-6, 9-7, etc.
+                            // isAllowedOperation will filter out invalid combinations
+                            if (complexity === 'direct-to-9' || complexity === 'direct-counting') {
+                                maxDirectSubtraction = termLimit; // Allow full range for direct-to-9
+                            } else {
+                                // Can subtract from lower beads only
+                                maxDirectSubtraction = Math.min(currentResult - 5, currentResult - 1, termLimit);
+                            }
                         } else {
                             maxDirectSubtraction = 0;
                         }
