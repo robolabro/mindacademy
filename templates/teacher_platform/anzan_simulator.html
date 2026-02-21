@@ -2097,8 +2097,22 @@ function isAllowedOperation(currentValue, operation, operand, complexity) {
         '-': [[6,1],[6,5],[7,1],[7,2],[7,5],[8,1],[8,2],[8,3],[8,5],[9,1],[9,2],[9,3],[9,4],[9,5]]
     };
     const directTo9New = {
-        '+': [[1,6],[1,7],[1,8],[2,6],[2,7],[3,6]],
-        '-': [[6,6],[7,6],[7,7],[8,6],[8,7],[8,8],[9,6],[9,7],[9,8],[9,9]]
+        // Direct-to-9 additions: ALL operations where result <= 9 and no Big Friends formulas needed
+        // Includes operations from values 1-5 adding to reach 6-9
+        '+': [
+            [1,6],[1,7],[1,8],  // 1+6=7, 1+7=8, 1+8=9
+            [2,6],[2,7],        // 2+6=8, 2+7=9
+            [3,6],              // 3+6=9
+            [4,5]               // 4+5=9 (heaven bead only, already in directTo5New but added for completeness)
+        ],
+        // Direct-to-9 subtractions: ALL operations where result >= 0 and no Small Friends formulas needed
+        // Includes ALL subtractions from 6-9 that can be done directly
+        '-': [
+            [6,1],[6,5],[6,6],                          // 6-1=5, 6-5=1, 6-6=0
+            [7,1],[7,2],[7,5],[7,6],[7,7],              // 7-1=6, 7-2=5, 7-5=2, 7-6=1, 7-7=0
+            [8,1],[8,2],[8,3],[8,5],[8,6],[8,7],[8,8],  // 8-1=7, 8-2=6, 8-3=5, 8-5=3, 8-6=2, 8-7=1, 8-8=0
+            [9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7],[9,8],[9,9]  // All subtractions from 9
+        ]
     };
 
     const ops4 = directTo4[operation] || [];
@@ -2486,152 +2500,89 @@ function generateExerciseTerms(settings) {
             // For direct calculation levels, ensure operations can be performed directly
             if (isDirectCalculationLevel(complexity)) {
                 const currentResult = calculateResult(termsArray, operations.slice(0, -1));
-                const isLastOperation = (i === terms - 1);
-
-                // Get term limit for this complexity level
                 const termLimit = getTermLimit(complexity);
 
-                // Try to find a valid term that can be performed directly
-                while (!validTermFound && termAttempts < 20) {
-                    if (op === '+') {
-                        // For addition: determine max we can add directly
-                        let maxDirectAddition;
-                        if (currentResult <= 4) {
-                            if (maxLimit === 4) {
-                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult, termLimit);
-                            } else if (maxLimit === 5) {
-                                // Can add up to 4-currentResult to stay in lower beads
-                                // Or can reach 5 if it's the last operation
-                                maxDirectAddition = isLastOperation ?
-                                    Math.min(5 - currentResult, maxLimit - currentResult, termLimit) :
-                                    Math.min(4 - currentResult, maxLimit - currentResult, termLimit);
-                            } else {
-                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult, termLimit);
-                            }
-                        } else {
-                            // From 5+, cannot add directly in our range
-                            maxDirectAddition = 0;
-                        }
+                // SIMPLIFIED LOGIC: Just try all possible terms and check with isAllowedOperation
+                // This is much simpler and works correctly with the operation tables
 
-                        if (maxDirectAddition >= 1) {
-                            term = Math.floor(Math.random() * maxDirectAddition) + 1;
-                            if (isAllowedOperation(currentResult, op, term, complexity) && // R1 (replaces canPerformDirectly)
-                                // canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) && // R1 DISABLED
-                                !shouldAvoidTermRepetition(termsArray, term, terms) &&
-                                !isSmallFriendsCombination(currentResult, op, term) &&
-                                !isBigFriendsCombination(currentResult, op, term)) {
-                                validTermFound = true;
-                            }
-                        } else {
-                            // Switch to subtraction
-                            op = '-';
-                            operations[operations.length - 1] = op;
-                        }
+                // Build list of terms to try based on operation and complexity
+                let termsToTry = [];
+
+                // For direct-to-9/direct-counting subtractions from 6-9: favor large numbers
+                // Try in descending order (9, 8, 7, 6, ..., 1) to increase exposure to challenging operations
+                if (op === '-' && (complexity === 'direct-to-9' || complexity === 'direct-counting') &&
+                    currentResult >= 6 && currentResult <= 9) {
+                    // Weighted selection: 70% large numbers (6-9), 30% small (1-5)
+                    if (Math.random() < 0.7) {
+                        // Try large numbers first (descending)
+                        for (let t = Math.min(termLimit, 9); t >= 6; t--) termsToTry.push(t);
+                        // Then small numbers
+                        for (let t = 5; t >= 1; t--) termsToTry.push(t);
+                    } else {
+                        // Try small numbers first
+                        for (let t = 1; t <= 5; t++) termsToTry.push(t);
+                        // Then large numbers (descending)
+                        for (let t = Math.min(termLimit, 9); t >= 6; t--) termsToTry.push(t);
                     }
+                } else {
+                    // For all other cases: uniform distribution
+                    for (let t = 1; t <= termLimit; t++) {
+                        termsToTry.push(t);
+                    }
+                    // Shuffle for randomness
+                    for (let j = termsToTry.length - 1; j > 0; j--) {
+                        const k = Math.floor(Math.random() * (j + 1));
+                        [termsToTry[j], termsToTry[k]] = [termsToTry[k], termsToTry[j]];
+                    }
+                }
 
-                    if (op === '-' && !validTermFound) {
-                        // For subtraction: can only subtract what we have
-                        let maxDirectSubtraction;
-                        if (currentResult <= 4) {
-                            // Can subtract up to currentResult (have that many lower beads)
-                            maxDirectSubtraction = Math.min(currentResult - 1, termLimit); // Keep result >= 1
-                        } else if (currentResult === 5) {
-                            // From 5, cannot subtract 1-4 directly
-                            maxDirectSubtraction = 0;
-                        } else if (currentResult >= 6 && currentResult <= 9) {
-                            // For direct-to-9, allow larger terms (6-9) to enable operations like 8-6, 9-7, etc.
-                            // isAllowedOperation will filter out invalid combinations
-                            if (complexity === 'direct-to-9' || complexity === 'direct-counting') {
-                                maxDirectSubtraction = termLimit; // Allow full range for direct-to-9
-                            } else {
-                                // Can subtract from lower beads only
-                                maxDirectSubtraction = Math.min(currentResult - 5, currentResult - 1, termLimit);
-                            }
-                        } else {
-                            maxDirectSubtraction = 0;
-                        }
+                // Try each term in the list
+                for (const t of termsToTry) {
+                    const testResult = op === '+' ? currentResult + t : currentResult - t;
 
-                        if (maxDirectSubtraction >= 1) {
-                            // For direct-to-9, when subtracting from 6-9, favor large numbers (6-9) to increase
-                            // exposure to challenging combinations like 8-6, 9-7, 9-8, etc.
-                            // 70% chance for large numbers (6-9), 30% for small (1-5)
-                            if ((complexity === 'direct-to-9' || complexity === 'direct-counting') &&
-                                currentResult >= 6 && currentResult <= 9 && maxDirectSubtraction >= 6) {
-                                if (Math.random() < 0.7) {
-                                    // 70% - Generate large numbers (6-9)
-                                    term = Math.floor(Math.random() * 4) + 6; // 6-9
-                                } else {
-                                    // 30% - Generate smaller numbers (1-5)
-                                    term = Math.floor(Math.random() * 5) + 1; // 1-5
-                                }
-                            } else {
-                                // For other cases, use uniform distribution
-                                term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
-                            }
-
-                            if (isAllowedOperation(currentResult, op, term, complexity) && // R1 (replaces canPerformDirectly)
-                                // canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) && // R1 DISABLED
-                                !shouldAvoidTermRepetition(termsArray, term, terms) &&
-                                !isSmallFriendsCombination(currentResult, op, term) &&
-                                !isBigFriendsCombination(currentResult, op, term)) {
-                                validTermFound = true;
-                            }
-                        } else {
-                            // Switch to addition
-                            op = '+';
-                            operations[operations.length - 1] = op;
-                        }
+                    // Check if this term creates a valid operation
+                    if (testResult >= 1 && testResult <= maxLimit &&
+                        isAllowedOperation(currentResult, op, t, complexity) &&
+                        !shouldAvoidTermRepetition(termsArray, t, terms) &&
+                        !isSmallFriendsCombination(currentResult, op, t) &&
+                        !isBigFriendsCombination(currentResult, op, t)) {
+                        term = t;
+                        validTermFound = true;
+                        break;
                     }
 
                     termAttempts++;
+                    if (termAttempts >= 20) break;
                 }
 
-                // If no valid term found after attempts, try to find ANY valid term
-                // that doesn't use Small Friends or Big Friends combinations
-                if (!validTermFound && isDirectCalculationLevel(complexity)) {
-                    const currentResult = calculateResult(termsArray, operations.slice(0, -1));
-                    const termLimit = getTermLimit(complexity);
+                // If no valid term found with current operation, try switching operation
+                if (!validTermFound) {
+                    const altOp = op === '+' ? '-' : '+';
 
-                    // Try all possible terms within the term limit to find one that works
-                    // For direct-to-9 subtractions from 6-9, prioritize large numbers (descending order)
-                    // to increase exposure to challenging combinations
-                    let termsToTry = [];
-                    if (op === '-' && (complexity === 'direct-to-9' || complexity === 'direct-counting') &&
-                        currentResult >= 6 && currentResult <= 9) {
-                        // Try terms in descending order: 9, 8, 7, 6, 5, 4, 3, 2, 1
-                        for (let t = termLimit; t >= 1; t--) {
-                            termsToTry.push(t);
-                        }
-                    } else {
-                        // Try terms in ascending order for all other cases
-                        for (let t = 1; t <= termLimit; t++) {
-                            termsToTry.push(t);
-                        }
-                    }
+                    // Try all terms with the alternative operation
+                    for (let t = 1; t <= termLimit; t++) {
+                        const testResult = altOp === '+' ? currentResult + t : currentResult - t;
 
-                    for (const t of termsToTry) {
-                        const testResult = op === '+' ? currentResult + t : currentResult - t;
-
-                        // Check if this term is valid for direct calculation
                         if (testResult >= 1 && testResult <= maxLimit &&
+                            isAllowedOperation(currentResult, altOp, t, complexity) &&
                             !shouldAvoidTermRepetition(termsArray, t, terms) &&
-                            !isSmallFriendsCombination(currentResult, op, t) &&
-                            !isBigFriendsCombination(currentResult, op, t) &&
-                            isAllowedOperation(currentResult, op, t, complexity)) { // R1 (replaces canPerformDirectly)
-                            // canPerformDirectly(currentResult, op, t, maxLimit, isLastOperation)) { // R1 DISABLED
+                            !isSmallFriendsCombination(currentResult, altOp, t) &&
+                            !isBigFriendsCombination(currentResult, altOp, t)) {
                             term = t;
+                            op = altOp;
+                            operations[operations.length - 1] = altOp;
                             validTermFound = true;
                             break;
                         }
                     }
+                }
 
-                    // If still no valid term found, regenerate the entire exercise
-                    if (!validTermFound) {
-                        console.log('[generateExerciseTerms] No valid term found, regenerating exercise');
-                        termsArray = [];
-                        operations = [];
-                        break;
-                    }
+                // If still no valid term found, regenerate the entire exercise
+                if (!validTermFound) {
+                    console.log('[generateExerciseTerms] No valid term found for', complexity, 'at currentResult=', currentResult, ', regenerating exercise');
+                    termsArray = [];
+                    operations = [];
+                    break;
                 } else if (!validTermFound) {
                     // For non-direct calculation levels, use standard generation
                     term = generateNumber(settings, false);
