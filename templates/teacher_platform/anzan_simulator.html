@@ -2891,8 +2891,8 @@ function generateExerciseTerms(settings) {
                         result = calculateResult(termsArray, operations);
                         console.log('[generateExerciseTerms] New result after forcing 5:', result);
 
-                        // CRITICAL: Validate that all intermediate results stay >= 1
-                        // Otherwise we could generate invalid exercises like: 6 - 5 + 3 - 5 + 1 (where 4 - 5 = -1)
+                        // CRITICAL: Validate that all intermediate results stay >= 0
+                        // Otherwise we could generate invalid exercises with negative intermediate results
                         if (!validateIntermediateResults(termsArray, operations)) {
                             console.warn('[generateExerciseTerms] Forcing 5 created invalid intermediate results. Continuing regeneration.');
                             attempt++;
@@ -3210,18 +3210,18 @@ function calculateResult(terms, operations) {
 }
 
 /**
- * Validates that all intermediate results in an exercise stay >= 1
+ * Validates that all intermediate results in an exercise stay >= 0
  * This is critical for direct calculation modes to ensure valid soroban operations
  * @param {Array} terms - Array of numbers in the exercise
  * @param {Array} operations - Array of operations ('+' or '-')
- * @returns {boolean} - True if all intermediate results are >= 1, false otherwise
+ * @returns {boolean} - True if all intermediate results are >= 0, false otherwise
  */
 function validateIntermediateResults(terms, operations) {
     let result = terms[0];
 
-    // First term must be >= 1
-    if (result < 1) {
-        console.log('[validateIntermediateResults] First term is < 1:', result);
+    // First term must be >= 0
+    if (result < 0) {
+        console.log('[validateIntermediateResults] First term is < 0:', result);
         return false;
     }
 
@@ -3236,8 +3236,9 @@ function validateIntermediateResults(terms, operations) {
         // RELAXED: Allow intermediate results > 9 (removed upper bound restriction)
         // Only check that intermediate result doesn't go negative
         // This allows more variety in exercises, especially more subtractions
-        if (result < 1) {
-            console.log('[validateIntermediateResults] Intermediate result < 1 at step', i + 1, ':', result);
+        // FURTHER RELAXED: Allow passing through 0 (e.g., 5-5=0, then 0+3=3)
+        if (result < 0) {
+            console.log('[validateIntermediateResults] Intermediate result < 0 at step', i + 1, ':', result);
             console.log('[validateIntermediateResults] Terms so far:', terms.slice(0, i + 2), 'Operations:', operations.slice(0, i + 1));
             return false;
         }

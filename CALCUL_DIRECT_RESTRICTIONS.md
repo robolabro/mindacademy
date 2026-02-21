@@ -97,22 +97,26 @@ Rezultatul final trebuie să fie între 1 și 9 (inclusiv) pentru toate niveluri
 **Versiune anterioară (❌ Prea restrictivă):**
 - Toate rezultatele intermediare trebuiau să fie între 1 și 9
 
-**Versiune nouă (✅ Actualizată 2026-02-20):**
-- ✅ Rezultate intermediare `>= 1` (previne negative)
+**Versiune nouă (✅ Actualizată 2026-02-21):**
+- ✅ Rezultate intermediare `>= 0` (permite treceri prin 0)
 - ✅ Rezultate intermediare **pot fi > 9** (permite mai multă varietate)
 
-**Exemplu:**
+**Exemple:**
 ```
-Exercițiu: 8 + 6 - 7 - 5 + 6 = 8
-
+Exercițiu 1: 8 + 6 - 7 - 5 + 6 = 8
 Pași intermediari:
-8 + 6 = 14  ← Acum permis (anterior blocat)
+8 + 6 = 14  ← Permis (> 9)
 14 - 7 = 7  ✓
 7 - 5 = 2   ✓
 2 + 6 = 8   ✓ (rezultat final valid)
+
+Exercițiu 2: 5 - 5 + 3 = 3
+Pași intermediari:
+5 - 5 = 0   ← Acum permis (trecere prin 0)
+0 + 3 = 3   ✓ (rezultat final valid)
 ```
 
-**Impact:** Mai multe exerciții cu scăderi, mai multă varietate!
+**Impact:** Mai multe exerciții cu scăderi, mai multă varietate, permite treceri prin 0!
 
 ---
 
@@ -212,10 +216,10 @@ const MAX_CONSECUTIVE_REPETITIONS = 1;
 
 ✅ **Operații permise:** Verifică `isAllowedOperation()` pentru fiecare pas
 ✅ **Rezultat final:** `1 ≤ result ≤ 9`
-✅ **Rezultate intermediare:** `result >= 1` (fără negativă)
+✅ **Rezultate intermediare:** `result >= 0` (permite treceri prin 0)
 ✅ **Repetări consecutive:** MAX 1 consecutiv
 ✅ **Numere mari (6-9):** Minim 30-50% pentru direct-to-9
-✅ **Cifra 5:** Minim 30-60% pentru Small Friends
+✅ **Cifra 5:** Minim 30-60% pentru Small Friends (NU se aplică la direct-to-9)
 
 ### 6.2 Verificări Eliminate
 
@@ -297,7 +301,7 @@ const MAX_CONSECUTIVE_REPETITIONS = 1;
 - Returnează `true` dacă operația este permisă
 
 **`validateIntermediateResults(terms, operations)`**
-- Verifică că toate rezultatele intermediare >= 1
+- Verifică că toate rezultatele intermediare >= 0 (permite treceri prin 0)
 - ✅ NU mai verifică <= 9 (RELAXAT!)
 
 **`shouldAvoidTermRepetition(termsArray, candidateTerm, totalTermCount)`**
@@ -329,6 +333,11 @@ const FIVE_PERCENTAGE = {
 ---
 
 ## Changelog
+
+**2026-02-21 - Permite treceri prin 0**
+- ✅ Modificat restricția rezultate intermediare: `>= 0` (în loc de `>= 1`)
+- ✅ Permite exerciții cu treceri prin 0 (ex: 5-5+3=3)
+- ✅ Clarificat că regula cifrelor 5 se aplică DOAR la Small Friends și direct-to-5, NU la direct-to-9
 
 **2026-02-20 - Versiunea Actualizată**
 - ✅ Eliminat restricția rezultate intermediare <= 9
