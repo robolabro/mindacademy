@@ -3041,20 +3041,36 @@
         const numbers = [];
         const operators = [];
 
+        // Helper: pick a number different from prevNum (max 10 attempts)
+        const pickNonConsecutive = (min, max, prevNum) => {
+            if (min > max) return min;
+            let num = getRandomNumber(min, max);
+            if (max > min) {
+                let attempts = 0;
+                while (num === prevNum && attempts < 10) {
+                    num = getRandomNumber(min, max);
+                    attempts++;
+                }
+            }
+            return num;
+        };
+
         if (formula === 'addition') {
             // For addition, ensure sum doesn't exceed maxUnits
             // This ensures we can use direct counting without formulas
             let remaining = maxUnits;
 
             for (let i = 0; i < addends; i++) {
+                const prevNum = numbers.length > 0 ? numbers[numbers.length - 1] : -1;
                 if (i === addends - 1) {
-                    // Last number: use whatever is left (at least 0, at most maxUnits)
-                    numbers.push(Math.max(0, Math.min(remaining, maxUnits)));
+                    // Last number: use whatever is left (at least 1, at most maxUnits)
+                    const lastNum = Math.max(1, Math.min(remaining, maxUnits));
+                    numbers.push(lastNum);
                 } else {
                     // Generate a number that leaves room for remaining addends
                     const minForRemaining = addends - i - 1; // At least 1 for each remaining
                     const maxAllowed = Math.max(1, remaining - minForRemaining);
-                    const num = getRandomNumber(1, Math.min(maxAllowed, maxUnits));
+                    const num = pickNonConsecutive(1, Math.min(maxAllowed, maxUnits), prevNum);
                     numbers.push(num);
                     remaining -= num;
                 }
@@ -3069,15 +3085,16 @@
 
             let remaining = firstNum;
             for (let i = 1; i < addends; i++) {
+                const prevNum = numbers[numbers.length - 1];
                 if (i === addends - 1) {
                     // Last number: random between 1 and remaining (result can be 0 or positive)
                     // This allows variants like 9-6=3, 9-7=2, 9-8=1, 9-9=0
-                    numbers.push(getRandomNumber(1, remaining));
+                    numbers.push(pickNonConsecutive(1, remaining, prevNum));
                 } else {
                     // Generate a number that leaves room for remaining subtractions
                     const minForRemaining = addends - i - 1;
                     const maxAllowed = Math.max(1, remaining - minForRemaining);
-                    const num = getRandomNumber(1, Math.min(maxAllowed, maxUnits));
+                    const num = pickNonConsecutive(1, Math.min(maxAllowed, maxUnits), prevNum);
                     numbers.push(num);
                     remaining -= num;
                 }
@@ -3093,11 +3110,12 @@
             for (let i = 1; i < addends; i++) {
                 // Randomly choose operator
                 const useAddition = Math.random() < 0.5;
+                const prevNum = numbers[numbers.length - 1];
 
                 if (useAddition) {
                     // Addition: can add 1-maxUnits (e.g., 1-5 for direct-to-5)
                     // Allow intermediate results to go beyond maxUnits (up to 10 for single digit)
-                    const num = getRandomNumber(1, maxUnits);
+                    const num = pickNonConsecutive(1, maxUnits, prevNum);
                     numbers.push(num);
                     operators.push('+');
                     currentValue += num;
@@ -3105,13 +3123,13 @@
                     // Subtraction: can subtract 1-maxUnits, but ensure we don't go negative
                     const maxSubtract = Math.min(maxUnits, currentValue);
                     if (maxSubtract >= 1) {
-                        const num = getRandomNumber(1, maxSubtract);
+                        const num = pickNonConsecutive(1, maxSubtract, prevNum);
                         numbers.push(num);
                         operators.push('-');
                         currentValue -= num;
                     } else {
                         // If we can't subtract, do addition instead
-                        const num = getRandomNumber(1, maxUnits);
+                        const num = pickNonConsecutive(1, maxUnits, prevNum);
                         numbers.push(num);
                         operators.push('+');
                         currentValue += num;
