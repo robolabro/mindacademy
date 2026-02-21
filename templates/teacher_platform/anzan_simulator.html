@@ -2552,7 +2552,23 @@ function generateExerciseTerms(settings) {
                         }
 
                         if (maxDirectSubtraction >= 1) {
-                            term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
+                            // For direct-to-9, when subtracting from 6-9, favor large numbers (6-9) to increase
+                            // exposure to challenging combinations like 8-6, 9-7, 9-8, etc.
+                            // 70% chance for large numbers (6-9), 30% for small (1-5)
+                            if ((complexity === 'direct-to-9' || complexity === 'direct-counting') &&
+                                currentResult >= 6 && currentResult <= 9 && maxDirectSubtraction >= 6) {
+                                if (Math.random() < 0.7) {
+                                    // 70% - Generate large numbers (6-9)
+                                    term = Math.floor(Math.random() * 4) + 6; // 6-9
+                                } else {
+                                    // 30% - Generate smaller numbers (1-5)
+                                    term = Math.floor(Math.random() * 5) + 1; // 1-5
+                                }
+                            } else {
+                                // For other cases, use uniform distribution
+                                term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
+                            }
+
                             if (isAllowedOperation(currentResult, op, term, complexity) && // R1 (replaces canPerformDirectly)
                                 // canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) && // R1 DISABLED
                                 !shouldAvoidTermRepetition(termsArray, term, terms) &&
@@ -2577,7 +2593,23 @@ function generateExerciseTerms(settings) {
                     const termLimit = getTermLimit(complexity);
 
                     // Try all possible terms within the term limit to find one that works
-                    for (let t = 1; t <= termLimit; t++) {
+                    // For direct-to-9 subtractions from 6-9, prioritize large numbers (descending order)
+                    // to increase exposure to challenging combinations
+                    let termsToTry = [];
+                    if (op === '-' && (complexity === 'direct-to-9' || complexity === 'direct-counting') &&
+                        currentResult >= 6 && currentResult <= 9) {
+                        // Try terms in descending order: 9, 8, 7, 6, 5, 4, 3, 2, 1
+                        for (let t = termLimit; t >= 1; t--) {
+                            termsToTry.push(t);
+                        }
+                    } else {
+                        // Try terms in ascending order for all other cases
+                        for (let t = 1; t <= termLimit; t++) {
+                            termsToTry.push(t);
+                        }
+                    }
+
+                    for (const t of termsToTry) {
                         const testResult = op === '+' ? currentResult + t : currentResult - t;
 
                         // Check if this term is valid for direct calculation
