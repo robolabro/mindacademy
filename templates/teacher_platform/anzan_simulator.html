@@ -2290,8 +2290,8 @@ function shouldAvoidTermRepetition(termsArray, candidateTerm, totalTermCount = 3
 
     // Configuration: Max consecutive repetitions only
     // REMOVED: Max total occurrences check (was limiting variety too much)
-    // RELAXED: Allow up to 2 consecutive same terms (was 1, too restrictive)
-    const MAX_CONSECUTIVE_REPETITIONS = 2;
+    // STRICT: Prevent any consecutive repetitions (no two identical terms in a row)
+    const MAX_CONSECUTIVE_REPETITIONS = 1;
 
     // Count consecutive repetitions at the end of the array
     let consecutiveCount = 0;
