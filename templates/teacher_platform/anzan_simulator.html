@@ -2970,13 +2970,32 @@ function generateExerciseTerms(settings) {
                         }
 
                         if (directOptions.length > 0) {
-                            term = directOptions[Math.floor(Math.random() * directOptions.length)];
+                            // Try to find a direct option that doesn't violate repetition constraints
+                            // Shuffle options to maintain variety
+                            const shuffledOptions = directOptions.slice();
+                            for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                                const j = Math.floor(Math.random() * (i + 1));
+                                [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+                            }
 
-                            // Check for excessive repetition
-                            if (!shouldAvoidTermRepetition(termsArray, term, terms)) {
+                            for (const option of shuffledOptions) {
+                                if (!shouldAvoidTermRepetition(termsArray, option, terms)) {
+                                    term = option;
+                                    validTermFound = true;
+                                    console.log('[generateExerciseTerms] Found direct calculation term:', {
+                                        currentResult, op, term, result: op === '+' ? currentResult + term : currentResult - term
+                                    });
+                                    break;
+                                }
+                            }
+
+                            // If all options blocked by repetition, use first option anyway
+                            if (!validTermFound) {
+                                term = shuffledOptions[0];
                                 validTermFound = true;
-                                console.log('[generateExerciseTerms] Found direct calculation term:', {
-                                    currentResult, op, term, result: op === '+' ? currentResult + term : currentResult - term
+                                console.log('[generateExerciseTerms] Using direct term with relaxed repetition:', {
+                                    currentResult, op, term,
+                                    reason: 'All direct options blocked by repetition'
                                 });
                             }
                         } else {
@@ -2992,84 +3011,67 @@ function generateExerciseTerms(settings) {
                         // Generate a formula term (current or previous)
                         // Operation is already set correctly to match targetFormulaType
 
-                        // First check: Can we generate a valid formula term with the target formula number?
-                        if (termAttempts === 0 && targetFormulaNumber && !canGenerateFormulaFromState(currentResult, op, targetFormulaNumber)) {
-                            console.log('[generateExerciseTerms] Cannot generate target formula from current state:', {
-                                currentResult, op, targetFormulaNumber
-                            });
+                        // Improved adaptive formula selection:
+                        // 1. Collect all valid formula numbers from current state
+                        // 2. Prefer target formula number if valid
+                        // 3. Use any valid alternative formula to maintain type guarantee
+                        // 4. Only fall back to direct calculation if no formulas work
 
-                            // For specific formula levels (not "all"), try alternatives instead of regenerating
-                            // This prevents infinite regeneration loops that result in partial exercises
-                            if (formulaNumber !== null) {
-                                // This is a specific formula level (e.g., +1, +2, etc.)
-                                // Try to find ANY formula number (1-4) that would work first
-                                let foundAlternative = false;
-                                for (let altNum = 1; altNum <= 4; altNum++) {
-                                    if (canGenerateFormulaFromState(currentResult, op, altNum) &&
-                                        !shouldAvoidTermRepetition(termsArray, altNum, terms)) {
-                                        term = altNum;
-                                        validTermFound = true;
-                                        foundAlternative = true;
-                                        console.log('[generateExerciseTerms] Using alternative formula number for specific level:', {
-                                            currentResult, op, term, original: targetFormulaNumber
-                                        });
-                                        break;
-                                    }
-                                }
-
-                                // If no formula works, fallback to direct calculation
-                                if (!foundAlternative) {
-                                    console.log('[generateExerciseTerms] No formula possible for specific level, using direct calculation fallback');
-                                    targetType = 'direct';
-                                    // Will try direct calculation in next iteration
-                                    continue;
+                        // Collect all valid formula numbers for the current state
+                        const validFormulaNumbers = [];
+                        for (let fNum = 1; fNum <= 4; fNum++) {
+                            if (canGenerateFormulaFromState(currentResult, op, fNum)) {
+                                const isAllowed = isAllowedOperation(currentResult, op, fNum, complexity);
+                                if (isAllowed) {
+                                    validFormulaNumbers.push(fNum);
                                 }
                             }
+                        }
 
-                            // For "all formulas" level, try to find ANY formula number (1-4) that would work
-                            if (!validTermFound) {
-                                let foundAlternative = false;
-                                for (let altNum = 1; altNum <= 4; altNum++) {
-                                    if (canGenerateFormulaFromState(currentResult, op, altNum) &&
-                                        !shouldAvoidTermRepetition(termsArray, altNum, terms)) {
-                                        term = altNum;
-                                    validTermFound = true;
-                                    foundAlternative = true;
-                                    console.log('[generateExerciseTerms] Using alternative formula number:', {
-                                        currentResult, op, term, original: targetFormulaNumber
-                                    });
-                                    break;
-                                }
+                        console.log('[generateExerciseTerms] Valid formula numbers from current state:', {
+                            currentResult, op, validFormulaNumbers, targetFormulaNumber
+                        });
+
+                        // If no valid formula numbers exist, fall back to direct calculation
+                        if (validFormulaNumbers.length === 0) {
+                            console.log('[generateExerciseTerms] No formulas possible from state, switching to direct calculation');
+                            targetType = 'direct';
+                            continue;
+                        }
+
+                        // Select formula number: prefer target, but accept any valid option
+                        let candidateNumbers = validFormulaNumbers.slice();
+
+                        // Prioritize target formula number if it's in the valid list
+                        if (targetFormulaNumber && validFormulaNumbers.includes(targetFormulaNumber)) {
+                            candidateNumbers = [targetFormulaNumber, ...validFormulaNumbers.filter(n => n !== targetFormulaNumber)];
+                        }
+
+                        // Try candidates in order, checking repetition constraints
+                        for (const fNum of candidateNumbers) {
+                            if (!shouldAvoidTermRepetition(termsArray, fNum, terms)) {
+                                term = fNum;
+                                const result = op === '+' ? currentResult + term : currentResult - term;
+                                validTermFound = true;
+                                console.log('[generateExerciseTerms] Found formula term:', {
+                                    currentResult, op, term, result,
+                                    targetType, targetFormulaNumber,
+                                    wasTargetUsed: term === targetFormulaNumber
+                                });
+                                break;
                             }
+                        }
 
-                            // If no formula works from this state, try direct calculation
-                            if (!foundAlternative) {
-                                console.log('[generateExerciseTerms] No formula possible, trying direct calculation');
-                                targetType = 'direct';
-                                // Will try direct calculation in next iteration
-                                continue;
-                            }
-                        } else {
-                            // Generate term based on target formula number
-                            term = targetFormulaNumber || (Math.floor(Math.random() * 4) + 1);
-
+                        // If all valid formulas are blocked by repetition, relax constraint slightly
+                        if (!validTermFound && validFormulaNumbers.length > 0) {
+                            // Use the first valid formula even if it repeats (better than regenerating)
+                            term = candidateNumbers[0];
                             const result = op === '+' ? currentResult + term : currentResult - term;
-
-                            // Check if result is valid (1-9)
-                            if (result >= 1 && result <= 9) {
-                                const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
-                                const isAllowed = isAllowedOperation(currentResult, op, term, complexity);
-
-                                // For formula types, we want to ensure it requires a formula
-                                // AND that it's allowed for the current complexity level
-                                // Also check for excessive repetition
-                                if (requiresFormula && isAllowed && !shouldAvoidTermRepetition(termsArray, term, terms)) {
-                                    validTermFound = true;
-                                    console.log('[generateExerciseTerms] Found formula term:', {
-                                        currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula, isAllowed
-                                    });
-                                }
-                            }
+                            validTermFound = true;
+                            console.log('[generateExerciseTerms] Using formula with relaxed repetition constraint:', {
+                                currentResult, op, term, result,
+                                reason: 'All valid formulas blocked by repetition'
+                            });
                         }
                     }
 
@@ -3080,21 +3082,37 @@ function generateExerciseTerms(settings) {
                 if (!validTermFound) {
                     console.log('[generateExerciseTerms] Attempting direct calculation as final fallback');
 
-                    // Try to find a direct calculation term
+                    // Collect valid direct calculation options
+                    const fallbackOptions = [];
                     for (let t = 1; t <= 9; t++) {
                         const testResult = op === '+' ? currentResult + t : currentResult - t;
                         const isAllowed = isAllowedOperation(currentResult, op, t, complexity);
                         if (testResult >= 1 && testResult <= 9 &&
                             !requiresSmallFriendsFormula(currentResult, op, t) &&
-                            isAllowed &&
-                            !shouldAvoidTermRepetition(termsArray, t, terms)) {
+                            isAllowed) {
+                            fallbackOptions.push(t);
+                        }
+                    }
+
+                    // Try options without repetition first, then with relaxed constraint
+                    for (const t of fallbackOptions) {
+                        if (!shouldAvoidTermRepetition(termsArray, t, terms)) {
                             term = t;
                             validTermFound = true;
                             console.log('[generateExerciseTerms] Using direct calculation fallback:', {
-                                currentResult, op, term, result: testResult, isAllowed
+                                currentResult, op, term, result: op === '+' ? currentResult + t : currentResult - t
                             });
                             break;
                         }
+                    }
+
+                    // If all blocked by repetition, use first valid option
+                    if (!validTermFound && fallbackOptions.length > 0) {
+                        term = fallbackOptions[0];
+                        validTermFound = true;
+                        console.log('[generateExerciseTerms] Using direct fallback with relaxed repetition:', {
+                            currentResult, op, term
+                        });
                     }
                 }
 
@@ -3108,20 +3126,35 @@ function generateExerciseTerms(settings) {
                         currentResult, originalOp, newOp: op
                     });
 
-                    // Try to find any valid term with the switched operation
+                    // Collect valid options with switched operation
+                    const switchedOptions = [];
                     for (let t = 1; t <= 9; t++) {
                         const testResult = op === '+' ? currentResult + t : currentResult - t;
                         const isAllowed = isAllowedOperation(currentResult, op, t, complexity);
-                        if (testResult >= 1 && testResult <= 9 &&
-                            isAllowed &&
-                            !shouldAvoidTermRepetition(termsArray, t, terms)) {
+                        if (testResult >= 1 && testResult <= 9 && isAllowed) {
+                            switchedOptions.push(t);
+                        }
+                    }
+
+                    // Try options without repetition first
+                    for (const t of switchedOptions) {
+                        if (!shouldAvoidTermRepetition(termsArray, t, terms)) {
                             term = t;
                             validTermFound = true;
                             console.log('[generateExerciseTerms] Found valid term with switched operation:', {
-                                currentResult, op, term, result: testResult
+                                currentResult, op, term, result: op === '+' ? currentResult + t : currentResult - t
                             });
                             break;
                         }
+                    }
+
+                    // If all blocked by repetition, use first valid option
+                    if (!validTermFound && switchedOptions.length > 0) {
+                        term = switchedOptions[0];
+                        validTermFound = true;
+                        console.log('[generateExerciseTerms] Using switched operation with relaxed repetition:', {
+                            currentResult, op, term
+                        });
                     }
                 }
 
