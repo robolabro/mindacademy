@@ -2998,25 +2998,41 @@ function generateExerciseTerms(settings) {
                                 currentResult, op, targetFormulaNumber
                             });
 
-                            // For specific formula levels (not "all"), be strict and regenerate
-                            // if we cannot use the target formula
+                            // For specific formula levels (not "all"), try alternatives instead of regenerating
+                            // This prevents infinite regeneration loops that result in partial exercises
                             if (formulaNumber !== null) {
                                 // This is a specific formula level (e.g., +1, +2, etc.)
-                                // Don't use alternatives - regenerate the entire exercise instead
-                                console.log('[generateExerciseTerms] Cannot generate specific formula, regenerating exercise:', {
-                                    currentResult, op, targetFormulaNumber, complexity
-                                });
-                                termsArray = [];
-                                operations = [];
-                                break;
+                                // Try to find ANY formula number (1-4) that would work first
+                                let foundAlternative = false;
+                                for (let altNum = 1; altNum <= 4; altNum++) {
+                                    if (canGenerateFormulaFromState(currentResult, op, altNum) &&
+                                        !shouldAvoidTermRepetition(termsArray, altNum, terms)) {
+                                        term = altNum;
+                                        validTermFound = true;
+                                        foundAlternative = true;
+                                        console.log('[generateExerciseTerms] Using alternative formula number for specific level:', {
+                                            currentResult, op, term, original: targetFormulaNumber
+                                        });
+                                        break;
+                                    }
+                                }
+
+                                // If no formula works, fallback to direct calculation
+                                if (!foundAlternative) {
+                                    console.log('[generateExerciseTerms] No formula possible for specific level, using direct calculation fallback');
+                                    targetType = 'direct';
+                                    // Will try direct calculation in next iteration
+                                    continue;
+                                }
                             }
 
                             // For "all formulas" level, try to find ANY formula number (1-4) that would work
-                            let foundAlternative = false;
-                            for (let altNum = 1; altNum <= 4; altNum++) {
-                                if (canGenerateFormulaFromState(currentResult, op, altNum) &&
-                                    !shouldAvoidTermRepetition(termsArray, altNum, terms)) {
-                                    term = altNum;
+                            if (!validTermFound) {
+                                let foundAlternative = false;
+                                for (let altNum = 1; altNum <= 4; altNum++) {
+                                    if (canGenerateFormulaFromState(currentResult, op, altNum) &&
+                                        !shouldAvoidTermRepetition(termsArray, altNum, terms)) {
+                                        term = altNum;
                                     validTermFound = true;
                                     foundAlternative = true;
                                     console.log('[generateExerciseTerms] Using alternative formula number:', {
