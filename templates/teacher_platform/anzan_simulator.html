@@ -3253,6 +3253,21 @@ function generateExerciseTerms(settings) {
                             attempt++;
                             continue;
                         }
+
+                        // CRITICAL: Validate that ALL operations are allowed for the current complexity level
+                        let allOpsValid = true;
+                        for (let i = 0; i < operations.length; i++) {
+                            const prevResult = calculateResult(termsArray.slice(0, i + 1), operations.slice(0, i));
+                            if (!isAllowedOperation(prevResult, operations[i], termsArray[i + 1], complexity)) {
+                                allOpsValid = false;
+                                break;
+                            }
+                        }
+                        if (!allOpsValid) {
+                            console.warn('[generateExerciseTerms] Forcing 5 created invalid operations for complexity level. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
                     }
                     break;
                 }
@@ -3487,7 +3502,20 @@ function generateExerciseTerms(settings) {
                             // Validate no consecutive Big Friends formulas
                             const noConsecutiveBigFriends = validateNoConsecutiveBigFriends(testTerms, operations);
 
-                            if (intermediateValid && finalResultValid && allIntermediatesValid && noConsecutiveBigFriends) {
+                            // NEW: Validate that ALL operations are allowed for the current complexity level
+                            // This is critical for Small Friends levels to prevent invalid operations
+                            let allOperationsAllowed = true;
+                            for (let i = 0; i < operations.length; i++) {
+                                const prevResult = calculateResult(testTerms.slice(0, i + 1), operations.slice(0, i));
+                                const operand = testTerms[i + 1];
+                                const operation = operations[i];
+                                if (!isAllowedOperation(prevResult, operation, operand, complexity)) {
+                                    allOperationsAllowed = false;
+                                    break;
+                                }
+                            }
+
+                            if (intermediateValid && finalResultValid && allIntermediatesValid && noConsecutiveBigFriends && allOperationsAllowed) {
                                 // This replacement is valid!
                                 const oldTerm = termsArray[randomIndex];
                                 termsArray[randomIndex] = 5;
