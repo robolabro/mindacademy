@@ -2960,12 +2960,14 @@ function generateExerciseTerms(settings) {
                         // For direct calculations, we can use any number that can be performed directly
                         const directOptions = [];
 
-                        // Can we add/subtract 1-4 without formulas?
+                        // Can we add/subtract 1-9 without formulas?
                         for (let t = 1; t <= 9; t++) {
                             const testResult = op === '+' ? currentResult + t : currentResult - t;
                             if (testResult >= 1 && testResult <= 9) {
                                 // Check if this can be done directly (without formulas)
-                                if (!requiresSmallFriendsFormula(currentResult, op, t)) {
+                                // AND that it's allowed for the current complexity level
+                                const isAllowed = isAllowedOperation(currentResult, op, t, complexity);
+                                if (!requiresSmallFriendsFormula(currentResult, op, t) && isAllowed) {
                                     directOptions.push(t);
                                 }
                             }
@@ -3044,13 +3046,15 @@ function generateExerciseTerms(settings) {
                             // Check if result is valid (1-9)
                             if (result >= 1 && result <= 9) {
                                 const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
+                                const isAllowed = isAllowedOperation(currentResult, op, term, complexity);
 
                                 // For formula types, we want to ensure it requires a formula
+                                // AND that it's allowed for the current complexity level
                                 // Also check for excessive repetition
-                                if (requiresFormula && !shouldAvoidTermRepetition(termsArray, term, terms)) {
+                                if (requiresFormula && isAllowed && !shouldAvoidTermRepetition(termsArray, term, terms)) {
                                     validTermFound = true;
                                     console.log('[generateExerciseTerms] Found formula term:', {
-                                        currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula
+                                        currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula, isAllowed
                                     });
                                 }
                             }
@@ -3067,13 +3071,15 @@ function generateExerciseTerms(settings) {
                     // Try to find a direct calculation term
                     for (let t = 1; t <= 9; t++) {
                         const testResult = op === '+' ? currentResult + t : currentResult - t;
+                        const isAllowed = isAllowedOperation(currentResult, op, t, complexity);
                         if (testResult >= 1 && testResult <= 9 &&
                             !requiresSmallFriendsFormula(currentResult, op, t) &&
+                            isAllowed &&
                             !shouldAvoidTermRepetition(termsArray, t, terms)) {
                             term = t;
                             validTermFound = true;
                             console.log('[generateExerciseTerms] Using direct calculation fallback:', {
-                                currentResult, op, term, result: testResult
+                                currentResult, op, term, result: testResult, isAllowed
                             });
                             break;
                         }
@@ -3093,7 +3099,9 @@ function generateExerciseTerms(settings) {
                     // Try to find any valid term with the switched operation
                     for (let t = 1; t <= 9; t++) {
                         const testResult = op === '+' ? currentResult + t : currentResult - t;
+                        const isAllowed = isAllowedOperation(currentResult, op, t, complexity);
                         if (testResult >= 1 && testResult <= 9 &&
+                            isAllowed &&
                             !shouldAvoidTermRepetition(termsArray, t, terms)) {
                             term = t;
                             validTermFound = true;
