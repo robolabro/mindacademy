@@ -98,7 +98,11 @@ class Exercise:
         else:  # operation == '-'
             current_ones = current % 10
             if 1 <= number <= 4:
-                return number > current_ones and current_ones >= 5
+                # Small Friends Minus is used when:
+                # - current has heaven bead (current_ones >= 5)
+                # - result won't have heaven bead (current_ones - number < 5)
+                # Example: 7-3=4 (current_ones=7 >= 5, result=4 < 5, so 3 > 7-5=2)
+                return current_ones >= 5 and number > (current_ones - 5)
         return False
 
     def _requires_big_friends(self, current: int, number: int, operation: str) -> bool:
@@ -220,16 +224,19 @@ class AnzanFormulaTest:
 
         if operation == '+':
             # For Small Friends Plus, we need:
-            # - current_ones < 5 (heaven bead not used)
-            # - current_ones + number > 9 (direct calculation not possible)
-            if current_ones >= 5 or current_ones + number <= 9:
+            # - current_ones in range 1-4 (heaven bead not used)
+            # - current_ones + number in range 5-9 (transition to heaven bead)
+            # Example: 4+1=5, 3+2=5, 2+3=5, 1+4=5
+            result_ones = current_ones + number
+            if current_ones < 1 or current_ones > 4 or result_ones < 5 or result_ones > 9:
                 return None
             return number
         else:  # operation == '-'
             # For Small Friends Minus, we need:
-            # - current_ones >= 5 (heaven bead is used)
-            # - number > current_ones (would need to borrow)
-            if current_ones < 5 or number <= current_ones:
+            # - current_ones >= 5 (heaven bead is present)
+            # - number > (current_ones - 5) (result < 5, no heaven bead)
+            # Example: 5-1=4, 6-2=4, 7-3=4, 8-4=4
+            if current_ones < 5 or number <= (current_ones - 5):
                 return None
             return number
 
@@ -253,27 +260,27 @@ class AnzanFormulaTest:
     def generate_starting_position(self, formula: Formula, operation: str) -> int:
         """Generate appropriate starting position for formula"""
         if formula.type == FormulaType.SMALL_FRIENDS_PLUS:
-            # Need ones place < 5 and + number would exceed 9
-            # For +1: ones must be 9 (9+1=10, needs +5-4)
-            # For +2: ones must be 8 or 9
-            # For +3: ones must be 7, 8, or 9
-            # For +4: ones must be 6, 7, 8, or 9
-            min_ones = max(1, 10 - formula.number - 4)  # Ensure < 5
-            max_ones = min(4, 9 - formula.number)  # Ensure < 5
-            if max_ones < min_ones:
-                max_ones = 4
+            # Need ones place in 1-4 and + number gives result in 5-9
+            # For +1: ones can be 4 (4+1=5)
+            # For +2: ones can be 3 or 4 (3+2=5, 4+2=6)
+            # For +3: ones can be 2, 3, or 4 (2+3=5, 3+3=6, 4+3=7)
+            # For +4: ones can be 1, 2, 3, or 4 (1+4=5, 2+4=6, 3+4=7, 4+4=8)
+            # So: min_ones = max(1, 5 - formula.number)
+            #     max_ones = min(4, 9 - formula.number)
+            min_ones = max(1, 5 - formula.number)
+            max_ones = min(4, 9 - formula.number)
             ones = random.randint(min_ones, max_ones)
             tens = random.randint(0, 8)
             return tens * 10 + ones
 
         elif formula.type == FormulaType.SMALL_FRIENDS_MINUS:
-            # Need ones place >= 5 and - number would go below 0 in ones
-            # For -1: ones must be 5 (5-1=4, but conceptually uses -5+4)
-            # For -2: ones must be 5 or 6
-            # For -3: ones must be 5, 6, or 7
-            # For -4: ones must be 5, 6, 7, or 8
+            # Need ones place >= 5 and - number requires Small Friends
+            # For -1: ones must be 5 (5-1=4, uses -5+4)
+            # For -2: ones must be 5 or 6 (5-2=3, 6-2=4)
+            # For -3: ones must be 5, 6, or 7 (5-3=2, 6-3=3, 7-3=4)
+            # For -4: ones must be 5, 6, 7, or 8 (5-4=1, 6-4=2, 7-4=3, 8-4=4)
             min_ones = 5
-            max_ones = min(9, 5 + formula.number - 1)
+            max_ones = min(9, 4 + formula.number)
             ones = random.randint(min_ones, max_ones)
             tens = random.randint(1, 9)  # At least 10 to allow subtraction
             return tens * 10 + ones
