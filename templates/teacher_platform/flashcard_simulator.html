@@ -1478,6 +1478,9 @@
                 <div class="setting-controls">
                     <select id="levelSelect" class="level-select" onchange="updateLevel()">
                         <option value="direct-counting" selected>Calcul direct</option>
+                        <option value="direct-to-4">Calcul direct cu 4</option>
+                        <option value="direct-to-5">Calcul direct cu 5</option>
+                        <option value="direct-to-9">Calcul direct cu 9</option>
                         <option value="small-friends-all">Prietenii Mici</option>
                         <option value="big-friends-all">Prietenii Mari</option>
                         <option value="family">Familia</option>
@@ -2831,16 +2834,17 @@
 
             case 'direct-counting':
                 // Direct counting for multi-digit numbers
-                for (let i = 0; i < addends; i++) {
-                    numbers.push(getRandomNumber(1, maxNum));
-                }
-                // Generate operators based on formula
-                for (let i = 1; i < addends; i++) {
-                    if (formula === 'mixed') {
-                        operators.push(Math.random() < 0.5 ? '+' : '-');
-                    } else {
-                        operators.push(formula === 'addition' ? '+' : '-');
-                    }
+                if (section === 1) {
+                    // For 1-digit: use direct-to-9 logic
+                    const resultDirect = generateDirectTo(9, addends, formula);
+                    numbers = resultDirect.numbers;
+                    operators = resultDirect.operators || [];
+                } else {
+                    // For 2-digit and 3-digit: use multi-digit direct calculation
+                    // Each digit position (hundreds, tens, units) follows direct-to-9 rules independently
+                    const resultMultiDigit = generateMultiDigitDirectCalculation(section, addends, formula);
+                    numbers = resultMultiDigit.numbers;
+                    operators = resultMultiDigit.operators || [];
                 }
                 break;
 
@@ -3137,6 +3141,42 @@
                     }
                 }
             }
+        }
+
+        return { numbers, operators };
+    }
+
+    // Helper: Generate multi-digit direct calculation
+    // Each digit position (hundreds, tens, units) follows direct-to-9 rules independently
+    function generateMultiDigitDirectCalculation(section, addends, formula) {
+        const numbers = [];
+        const operators = [];
+
+        // Determine number of digit positions based on section
+        const numDigits = section; // section 2 = 2 digits, section 3 = 3 digits
+
+        // Generate digit sequences for each position (hundreds, tens, units)
+        const digitSequences = [];
+        for (let digitPos = 0; digitPos < numDigits; digitPos++) {
+            // For each digit position, generate a valid direct-to-9 sequence
+            const digitResult = generateDirectTo(9, addends, formula);
+            digitSequences.push(digitResult.numbers);
+
+            // Use operators from the first digit position (all positions use same operators)
+            if (digitPos === 0) {
+                operators.push(...digitResult.operators);
+            }
+        }
+
+        // Combine digit sequences into full multi-digit numbers
+        for (let i = 0; i < addends; i++) {
+            let number = 0;
+            for (let digitPos = 0; digitPos < numDigits; digitPos++) {
+                const digitValue = digitSequences[digitPos][i];
+                const placeValue = Math.pow(10, numDigits - 1 - digitPos);
+                number += digitValue * placeValue;
+            }
+            numbers.push(number);
         }
 
         return { numbers, operators };
