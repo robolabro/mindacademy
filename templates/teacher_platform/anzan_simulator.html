@@ -3238,9 +3238,9 @@ function generateExerciseTerms(settings) {
                         result = calculateResult(termsArray, operations);
                         console.log('[generateExerciseTerms] New result after forcing 5:', result);
 
-                        // CRITICAL: Validate that all intermediate results stay >= 0
-                        // Otherwise we could generate invalid exercises with negative intermediate results
-                        if (!validateIntermediateResults(termsArray, operations)) {
+                        // CRITICAL: Validate that all intermediate results stay >= 0 (and <= 9 for Small Friends)
+                        // Otherwise we could generate invalid exercises with invalid intermediate results
+                        if (!validateIntermediateResults(termsArray, operations, complexity)) {
                             console.warn('[generateExerciseTerms] Forcing 5 created invalid intermediate results. Continuing regeneration.');
                             attempt++;
                             continue;
@@ -3343,7 +3343,7 @@ function generateExerciseTerms(settings) {
                             const finalResultValid = testResult >= 1 && testResult <= 9;
 
                             // Validate all intermediate results would still be valid
-                            const allIntermediatesValid = validateIntermediateResults(testTerms, operations);
+                            const allIntermediatesValid = validateIntermediateResults(testTerms, operations, complexity);
 
                             // Validate no consecutive Big Friends formulas
                             const noConsecutiveBigFriends = validateNoConsecutiveBigFriends(testTerms, operations);
@@ -3475,14 +3475,14 @@ function generateExerciseTerms(settings) {
                             // For Small Friends, we want to ensure that using 5 is VALID at this position
                             // Check if this would require a Small Friends formula (which is GOOD for Small Friends levels)
                             const intermediateResult = op === '+' ? currentResult + 5 : currentResult - 5;
-                            const intermediateValid = intermediateResult >= 1; // RELAXED: removed <= 9 restriction
+                            const intermediateValid = intermediateResult >= 1 && intermediateResult <= 9; // Must stay within single-digit range
 
                             // Calculate final result with this replacement
                             const testResult = calculateResult(testTerms, operations);
                             const finalResultValid = testResult >= 1 && testResult <= 9;
 
                             // Validate all intermediate results would still be valid
-                            const allIntermediatesValid = validateIntermediateResults(testTerms, operations);
+                            const allIntermediatesValid = validateIntermediateResults(testTerms, operations, complexity);
 
                             // Validate no consecutive Big Friends formulas
                             const noConsecutiveBigFriends = validateNoConsecutiveBigFriends(testTerms, operations);
@@ -3563,12 +3563,18 @@ function calculateResult(terms, operations) {
  * @param {Array} operations - Array of operations ('+' or '-')
  * @returns {boolean} - True if all intermediate results are >= 0, false otherwise
  */
-function validateIntermediateResults(terms, operations) {
+function validateIntermediateResults(terms, operations, complexity = null) {
     let result = terms[0];
 
     // First term must be >= 0
     if (result < 0) {
         console.log('[validateIntermediateResults] First term is < 0:', result);
+        return false;
+    }
+
+    // For Small Friends levels, first term must also be <= 9 (single digit)
+    if (complexity && isSmallFriendsLevel(complexity) && result > 9) {
+        console.log('[validateIntermediateResults] First term exceeds 9 for Small Friends:', result);
         return false;
     }
 
@@ -3580,12 +3586,18 @@ function validateIntermediateResults(terms, operations) {
             result -= terms[i + 1];
         }
 
-        // RELAXED: Allow intermediate results > 9 (removed upper bound restriction)
-        // Only check that intermediate result doesn't go negative
-        // This allows more variety in exercises, especially more subtractions
+        // Check that intermediate result doesn't go negative
         // FURTHER RELAXED: Allow passing through 0 (e.g., 5-5=0, then 0+3=3)
         if (result < 0) {
             console.log('[validateIntermediateResults] Intermediate result < 0 at step', i + 1, ':', result);
+            console.log('[validateIntermediateResults] Terms so far:', terms.slice(0, i + 2), 'Operations:', operations.slice(0, i + 1));
+            return false;
+        }
+
+        // For Small Friends levels, enforce upper bound of 9 (single digit limit)
+        // This prevents invalid operations like 5+5=10 which exceed single-digit capacity
+        if (complexity && isSmallFriendsLevel(complexity) && result > 9) {
+            console.log('[validateIntermediateResults] Intermediate result exceeds 9 for Small Friends at step', i + 1, ':', result);
             console.log('[validateIntermediateResults] Terms so far:', terms.slice(0, i + 2), 'Operations:', operations.slice(0, i + 1));
             return false;
         }
