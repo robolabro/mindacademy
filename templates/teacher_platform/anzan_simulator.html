@@ -1591,6 +1591,13 @@ function generateNumber(settings, isFirstTerm = false) {
                 }
             } else {
                 num = Math.floor(Math.random() * (max - min + 1)) + min;
+                // For multi-digit numbers, ensure last digit is NOT 0 (1-9 only)
+                if (digits > 1) {
+                    const lastDigit = num % 10;
+                    if (lastDigit === 0) {
+                        num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+                    }
+                }
             }
             break;
 
@@ -1764,7 +1771,7 @@ function generateMixNumber(digits) {
 }
 
 // Helper: Get complexity limit for direct calculation levels (result limit)
-function getComplexityLimit(complexity) {
+function getComplexityLimit(complexity, digits = 1) {
     switch(complexity) {
         case 'direct-to-4':
             return 4;
@@ -1773,6 +1780,10 @@ function getComplexityLimit(complexity) {
         case 'direct-to-9':
             return 9;
         case 'direct-counting':
+            // For multi-digit direct counting, the limit is based on number of digits
+            if (digits > 1) {
+                return parseInt('9'.repeat(digits)); // For 2 digits: 99, for 3 digits: 999, etc.
+            }
             return 9; // For single-digit direct counting
         case 'small-plus-1':
         case 'small-plus-2':
@@ -2124,28 +2135,95 @@ function isAllowedOperation(currentValue, operation, operand, complexity) {
         ]
     };
 
-    const ops4 = directTo4[operation] || [];
-    const inDirect4 = ops4.some(([v, o]) => v === currentValue && o === operand);
+    // Helper function to check if a single-digit operation is allowed
+    function isSingleDigitAllowed(currentDigit, operandDigit, operation, complexity) {
+        // Special case: Starting from 0
+        // On soroban, starting from 0 (no beads), you can add any digit 1-9 directly
+        if (currentDigit === 0 && operation === '+') {
+            // For direct-to-4: can only add 1-4
+            if (complexity === 'direct-to-4') {
+                return operandDigit >= 1 && operandDigit <= 4;
+            }
+            // For direct-to-5: can add 1-5
+            if (complexity === 'direct-to-5') {
+                return operandDigit >= 1 && operandDigit <= 5;
+            }
+            // For direct-to-9 and direct-counting: can add 1-9
+            if (complexity === 'direct-to-9' || complexity === 'direct-counting') {
+                return operandDigit >= 1 && operandDigit <= 9;
+            }
+        }
+        // Cannot subtract from 0 (would be negative)
+        if (currentDigit === 0 && operation === '-') {
+            return false;
+        }
 
-    if (complexity === 'direct-to-4') {
-        return inDirect4;
+        const ops4 = directTo4[operation] || [];
+        const inDirect4 = ops4.some(([v, o]) => v === currentDigit && o === operandDigit);
+
+        if (complexity === 'direct-to-4') {
+            return inDirect4;
+        }
+
+        const ops5 = directTo5New[operation] || [];
+        const inDirect5 = ops5.some(([v, o]) => v === currentDigit && o === operandDigit);
+
+        if (complexity === 'direct-to-5') {
+            return inDirect4 || inDirect5;
+        }
+
+        if (complexity === 'direct-to-9' || complexity === 'direct-counting') {
+            const ops9 = directTo9New[operation] || [];
+            const inDirect9 = ops9.some(([v, o]) => v === currentDigit && o === operandDigit);
+            return inDirect4 || inDirect5 || inDirect9;
+        }
+
+        return true;
     }
 
-    const ops5 = directTo5New[operation] || [];
-    const inDirect5 = ops5.some(([v, o]) => v === currentValue && o === operand);
+    // For multi-digit numbers, check each digit independently
+    if (currentValue > 9 || operand > 9) {
+        // Check for carry/borrow between digits
+        const currentUnitsDigit = currentValue % 10;
+        const operandUnitsDigit = operand % 10;
 
-    if (complexity === 'direct-to-5') {
-        return inDirect4 || inDirect5;
+        if (operation === '+') {
+            // Check if there's a carry from units to tens
+            if (currentUnitsDigit + operandUnitsDigit >= 10) {
+                return false; // Carry between digits - not allowed
+            }
+        } else {
+            // Check if there's a borrow from tens to units
+            if (currentUnitsDigit < operandUnitsDigit) {
+                return false; // Borrow between digits - not allowed
+            }
+        }
+
+        // Check units digit operation
+        if (!isSingleDigitAllowed(currentUnitsDigit, operandUnitsDigit, operation, complexity)) {
+            return false;
+        }
+
+        // Check tens digit operation (if both numbers have tens digits)
+        if (currentValue >= 10 && operand >= 10) {
+            const currentTensDigit = Math.floor(currentValue / 10) % 10;
+            const operandTensDigit = Math.floor(operand / 10) % 10;
+
+            // Tens digit must also follow direct-to-9 rules
+            if (!isSingleDigitAllowed(currentTensDigit, operandTensDigit, operation, complexity)) {
+                return false;
+            }
+        } else if (currentValue >= 10 && operand < 10) {
+            // Special case: currentValue has tens, operand is single digit
+            // In this case, only the units digit changes, so we already checked it above
+            // The tens digit stays the same, so it's allowed
+        }
+
+        return true;
     }
 
-    if (complexity === 'direct-to-9' || complexity === 'direct-counting') {
-        const ops9 = directTo9New[operation] || [];
-        const inDirect9 = ops9.some(([v, o]) => v === currentValue && o === operand);
-        return inDirect4 || inDirect5 || inDirect9;
-    }
-
-    // For non-direct complexity levels this function is not applicable
-    return true;
+    // Single-digit case: use the original logic
+    return isSingleDigitAllowed(currentValue, operand, operation, complexity);
 }
 
 /**
@@ -2381,14 +2459,17 @@ function isImmediateReverseOperation(operations, termsArray, currentOp, currentT
  * @param {number} totalTerms - Total number of terms in the exercise
  * @returns {Array} - Array of valid operations in format [{op: '+', term: 5}, ...]
  */
-function getValidOperations(currentResult, complexity, termsArray, operations, totalTerms) {
+function getValidOperations(currentResult, complexity, termsArray, operations, totalTerms, digits = 1) {
     const validOps = [];
     const termLimit = getTermLimit(complexity);
-    const maxLimit = getComplexityLimit(complexity);
+    const maxLimit = getComplexityLimit(complexity, digits);
 
-    console.log('[getValidOperations] Finding valid operations for currentResult=', currentResult, 'complexity=', complexity);
+    console.log('[getValidOperations] Finding valid operations for currentResult=', currentResult, 'complexity=', complexity, 'digits=', digits, 'maxLimit=', maxLimit);
 
-    // Try all possible term values
+    // For multi-digit direct counting, also try multi-digit terms
+    const shouldTryMultiDigitTerms = digits > 1 && (complexity === 'direct-counting' || complexity === 'direct-to-9');
+
+    // Try single-digit term values (1-9)
     for (let term = 1; term <= termLimit; term++) {
         // Try addition
         const addResult = currentResult + term;
@@ -2413,6 +2494,36 @@ function getValidOperations(currentResult, complexity, termsArray, operations, t
         }
     }
 
+    // For multi-digit terms, iterate through 11-99 (skip 10, 20, ..., 90 as they end with 0)
+    if (shouldTryMultiDigitTerms) {
+        for (let term = 11; term <= 99; term++) {
+            // Skip terms that end with 0
+            if (term % 10 === 0) continue;
+
+            // Try addition
+            const addResult = currentResult + term;
+            if (addResult >= 1 && addResult <= maxLimit &&
+                isAllowedOperation(currentResult, '+', term, complexity) &&
+                !shouldAvoidTermRepetition(termsArray, term, totalTerms) &&
+                !isSmallFriendsCombination(currentResult, '+', term) &&
+                !isBigFriendsCombination(currentResult, '+', term, complexity) &&
+                !isImmediateReverseOperation(operations, termsArray, '+', term)) {
+                validOps.push({ op: '+', term: term });
+            }
+
+            // Try subtraction
+            const subResult = currentResult - term;
+            if (subResult >= 0 && subResult <= maxLimit &&
+                isAllowedOperation(currentResult, '-', term, complexity) &&
+                !shouldAvoidTermRepetition(termsArray, term, totalTerms) &&
+                !isSmallFriendsCombination(currentResult, '-', term) &&
+                !isBigFriendsCombination(currentResult, '-', term, complexity) &&
+                !isImmediateReverseOperation(operations, termsArray, '-', term)) {
+                validOps.push({ op: '-', term: term });
+            }
+        }
+    }
+
     console.log('[getValidOperations] Found', validOps.length, 'valid operations:',
         validOps.map(o => o.op + o.term).join(', '));
 
@@ -2420,10 +2531,10 @@ function getValidOperations(currentResult, complexity, termsArray, operations, t
 }
 
 function generateExerciseTerms(settings) {
-    const { terms, operation, negative, complexity } = settings;
-    const maxLimit = getComplexityLimit(complexity);
+    const { terms, operation, negative, complexity, digits = 1 } = settings;
+    const maxLimit = getComplexityLimit(complexity, digits);
 
-    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, maxLimit });
+    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, digits, maxLimit });
 
     // For direct calculation levels, regenerate if result is 0 or invalid
     // Dynamic attempts and timeout based on term count (more terms = more attempts needed)
@@ -2595,7 +2706,7 @@ function generateExerciseTerms(settings) {
                 // This ensures we never get stuck - we only choose from operations we know will work
                 // Instead of trying all possible operations and checking validity during iteration,
                 // we first build a list of guaranteed-valid operations, then randomly pick one
-                const validOperations = getValidOperations(currentResult, complexity, termsArray, operations, terms);
+                const validOperations = getValidOperations(currentResult, complexity, termsArray, operations, terms, digits);
 
                 // If no valid operations exist, regenerate the entire exercise
                 if (validOperations.length === 0) {
