@@ -3182,17 +3182,115 @@
         return { numbers, operators };
     }
 
-    // Helper: Generate Small Friends with Direct Counting (for specific small friends levels)
-    // Progressive logic: 50% direct counting + 50% specific small friend
-    function generateSmallFriendsWithDirect(target, addends, formula, section) {
-        const rand = Math.random();
-        if (rand < 0.5) {
-            // 50% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
-        } else {
-            // 50% - Generate specific small friend exercise
-            return generateSmallFriendsExercise(target, addends, formula);
+    // Helper: Get allowed Small Friends operations for a given intermediate state
+    // Returns list of {op, term, isFormula} objects
+    // maxPlusFormula:  max allowed Small Friends addition formula number (0 = none)
+    // maxMinusFormula: max allowed Small Friends subtraction formula number (0 = none)
+    // formulaType: 'addition', 'subtraction', or 'mixed'
+    function getSmallFriendsAllowedOps(currentValue, maxPlusFormula, maxMinusFormula, formulaType) {
+        const allowed = [];
+
+        // Check additions (unless subtraction-only mode)
+        if (formulaType !== 'subtraction') {
+            for (let n = 1; n <= 9; n++) {
+                const result = currentValue + n;
+                if (result > 9) break; // Cannot exceed single digit
+
+                // Small Friends addition formula +n is needed when:
+                // currentValue < 5 AND result >= 5 AND n in [1,4]
+                if (currentValue < 5 && result >= 5 && n <= 4) {
+                    // Formula +n required — only allow if it is within the learned level
+                    if (n <= maxPlusFormula) {
+                        allowed.push({ op: '+', term: n, isFormula: true });
+                    }
+                    // else: formula not yet learned — skip this operation
+                } else {
+                    // Direct operation (no Small Friends formula needed)
+                    allowed.push({ op: '+', term: n, isFormula: false });
+                }
+            }
         }
+
+        // Check subtractions (unless addition-only mode)
+        if (formulaType !== 'addition') {
+            for (let n = 1; n <= currentValue; n++) {
+                const result = currentValue - n;
+
+                // Small Friends subtraction formula -n is needed when:
+                // currentValue >= 5 AND result < 5 AND n in [1,4]
+                if (currentValue >= 5 && result < 5 && n <= 4) {
+                    // Formula -n required — only allow if it is within the learned level
+                    if (n <= maxMinusFormula) {
+                        allowed.push({ op: '-', term: n, isFormula: true });
+                    }
+                    // else: formula not yet learned — skip this operation
+                } else {
+                    // Direct operation (no Small Friends formula needed)
+                    allowed.push({ op: '-', term: n, isFormula: false });
+                }
+            }
+        }
+
+        return allowed;
+    }
+
+    // Helper: Generate Small Friends with Direct Counting (for specific small friends levels)
+    // Step-by-step approach: for each intermediate result, only operations allowed at the
+    // current level are considered, preventing higher-level formulas from appearing in
+    // lower-level exercises (e.g. formula +2 cannot appear in a small-plus-1 exercise).
+    function generateSmallFriendsWithDirect(target, addends, formula, section) {
+        const absTarget = Math.abs(target);
+        const isPlus = target > 0;
+        // For small-plus-N:  addition formulas +1..+N allowed, no subtraction formulas
+        // For small-minus-N: subtraction formulas -1..-N allowed, no addition formulas
+        const maxPlusFormula  = isPlus  ? absTarget : 0;
+        const maxMinusFormula = !isPlus ? absTarget : 0;
+
+        const maxAttempts = 100;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const numbers   = [];
+            const operators = [];
+            let hasFormulaUse = false;
+
+            // Pick a starting value that leaves room for subsequent operations
+            let firstNum;
+            if (formula === 'subtraction') {
+                firstNum = getRandomNumber(Math.max(addends, 1), 9);
+            } else {
+                firstNum = getRandomNumber(1, 8);
+            }
+            numbers.push(firstNum);
+            let currentValue = firstNum;
+
+            let valid = true;
+            for (let i = 1; i < addends; i++) {
+                // Build the list of allowed (op, term) pairs from the current state
+                const allowed = getSmallFriendsAllowedOps(
+                    currentValue, maxPlusFormula, maxMinusFormula, formula
+                );
+
+                if (allowed.length === 0) {
+                    valid = false;
+                    break;
+                }
+
+                // Pick a random allowed operation
+                const choice = allowed[getRandomNumber(0, allowed.length - 1)];
+                numbers.push(choice.term);
+                operators.push(choice.op);
+
+                if (choice.isFormula) hasFormulaUse = true;
+                currentValue = choice.op === '+' ? currentValue + choice.term : currentValue - choice.term;
+            }
+
+            if (valid && hasFormulaUse) {
+                return { numbers, operators };
+            }
+        }
+
+        // Fallback after exhausting attempts: return a plain direct exercise
+        console.warn('[generateSmallFriendsWithDirect] Could not generate formula exercise, using direct fallback');
+        return generateDirectTo(9, addends, formula);
     }
 
     // Helper: Get allowed Big Friends formulas for progressive learning
