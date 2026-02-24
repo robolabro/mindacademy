@@ -2970,12 +2970,93 @@ function generateExerciseTerms(settings) {
                         }
 
                         if (directOptions.length > 0) {
-                            // Try to find a direct option that doesn't violate repetition constraints
+                            // STRATEGIC GENERATION: Check if the next term should be the current formula
+                            // If so, try to generate a term that leads to a favorable state for that formula
+                            let preferredOptions = [];
+                            const nextIndex = termIndex + 1;
+                            if (nextIndex < termTypesDistribution.length &&
+                                termTypesDistribution[nextIndex].type === 'current' &&
+                                termTypesDistribution[nextIndex].formulaNumber === formulaNumber) {
+                                // Next term should be the current formula, try to reach favorable state
+                                const nextOp = termTypesDistribution[nextIndex].formulaType === 'plus' ? '+' : '-';
+
+                                // Calculate which result we need for the formula to be applicable
+                                // For formula +N: we need currentResult in range [1, min(4, 9-N)]
+                                // For formula -N: we need currentResult to be 5 or in range [6, min(9, 5+N)]
+                                for (const option of directOptions) {
+                                    const intermediateResult = op === '+' ? currentResult + option : currentResult - option;
+
+                                    if (nextOp === '+') {
+                                        // For plus formula: need intermediateResult + formulaNumber to require Small Friends
+                                        // This happens when intermediateResult is 1-4 and result would be 5-9
+                                        const wouldRequireFormula = intermediateResult >= 1 &&
+                                                                    intermediateResult <= 4 &&
+                                                                    intermediateResult + formulaNumber >= 5 &&
+                                                                    intermediateResult + formulaNumber <= 9;
+                                        if (wouldRequireFormula &&
+                                            isAllowedOperation(intermediateResult, nextOp, formulaNumber, complexity)) {
+                                            preferredOptions.push(option);
+                                        }
+                                    } else {
+                                        // For minus formula: need intermediateResult - formulaNumber to require Small Friends
+                                        const wouldRequireFormula = ((intermediateResult === 5 && formulaNumber >= 1 && formulaNumber <= 4) ||
+                                                                    (intermediateResult >= 6 && intermediateResult <= 9 &&
+                                                                     intermediateResult - formulaNumber >= 1 &&
+                                                                     intermediateResult - formulaNumber <= 4 &&
+                                                                     formulaNumber > (intermediateResult - 5)));
+                                        if (wouldRequireFormula &&
+                                            isAllowedOperation(intermediateResult, nextOp, formulaNumber, complexity)) {
+                                            preferredOptions.push(option);
+                                        }
+                                    }
+                                }
+
+                                if (preferredOptions.length > 0) {
+                                    console.log('[generateExerciseTerms] Found', preferredOptions.length, 'strategic options that lead to formula state:', {
+                                        currentResult, op, preferredOptions, nextFormula: formulaNumber
+                                    });
+                                }
+                            }
+
+                            // Use preferred options if available, otherwise use all direct options
+                            let optionsToUse = preferredOptions.length > 0 ? preferredOptions : directOptions;
+
+                            // BOOST digit 5 usage: Prioritize 5 if available to meet Small Friends digit 5 requirement
+                            // Check how many 5s we have in current terms
+                            const currentFivesCount = termsArray.filter(t => Math.abs(t) === 5).length;
+                            const currentFivesPercentage = termsArray.length > 0 ? currentFivesCount / termsArray.length : 0;
+                            const targetPercentage = terms <= 3 ? 0.6 : terms === 4 ? 0.5 : terms === 5 ? 0.4 : 0.3;
+
+                            // BOOST digit 5 usage: If we need more 5s and 5 is available, prioritize it
+                            let prioritizeFive = false;
+                            if (currentFivesPercentage < targetPercentage && optionsToUse.includes(5)) {
+                                // 70% chance to use 5 when below target
+                                if (Math.random() < 0.7) {
+                                    prioritizeFive = true;
+                                    console.log('[generateExerciseTerms] Prioritizing digit 5 to meet target percentage:', {
+                                        currentPercentage: (currentFivesPercentage * 100).toFixed(0) + '%',
+                                        targetPercentage: (targetPercentage * 100).toFixed(0) + '%'
+                                    });
+                                }
+                            }
+
                             // Shuffle options to maintain variety
-                            const shuffledOptions = directOptions.slice();
-                            for (let i = shuffledOptions.length - 1; i > 0; i--) {
-                                const j = Math.floor(Math.random() * (i + 1));
-                                [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+                            let shuffledOptions;
+                            if (prioritizeFive) {
+                                // Keep 5 at front, shuffle the rest
+                                const withoutFive = optionsToUse.filter(opt => opt !== 5);
+                                for (let i = withoutFive.length - 1; i > 0; i--) {
+                                    const j = Math.floor(Math.random() * (i + 1));
+                                    [withoutFive[i], withoutFive[j]] = [withoutFive[j], withoutFive[i]];
+                                }
+                                shuffledOptions = [5, ...withoutFive];
+                            } else {
+                                // Regular shuffle
+                                shuffledOptions = optionsToUse.slice();
+                                for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                                    const j = Math.floor(Math.random() * (i + 1));
+                                    [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+                                }
                             }
 
                             for (const option of shuffledOptions) {
@@ -3032,11 +3113,21 @@ function generateExerciseTerms(settings) {
                             currentResult, op, validFormulaNumbers, targetFormulaNumber
                         });
 
-                        // If no valid formula numbers exist, fall back to direct calculation
+                        // If no valid formula numbers exist and we're trying to generate the current formula,
+                        // regenerate the entire exercise instead of falling back to direct calculation
+                        // This ensures the selected formula is actually used
                         if (validFormulaNumbers.length === 0) {
-                            console.log('[generateExerciseTerms] No formulas possible from state, switching to direct calculation');
-                            targetType = 'direct';
-                            continue;
+                            if (targetType === 'current' && targetFormulaNumber === formulaNumber) {
+                                console.log('[generateExerciseTerms] No formulas possible for current formula from state, regenerating exercise');
+                                // Break out of the inner loop to trigger regeneration
+                                validTermFound = false;
+                                break; // Exit the term attempts loop
+                            } else {
+                                // For previous formulas, we can fall back to direct calculation
+                                console.log('[generateExerciseTerms] No formulas possible from state, switching to direct calculation');
+                                targetType = 'direct';
+                                continue;
+                            }
                         }
 
                         // Select formula number: prefer target, but accept any valid option
