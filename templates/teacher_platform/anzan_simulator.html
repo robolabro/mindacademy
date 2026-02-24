@@ -1853,8 +1853,10 @@ function requiresSmallFriendsFormula(currentValue, operation, operand) {
         // Adding from 1-4 to get 5-9 requires Small Friends formula
         // Formula is needed when transitioning from lower beads (1-4) to heaven bead region (5-9)
         // Example: 4+1=5 requires +1 = +5-4 (move heaven up, remove all 4 lower beads)
-        if (currentLastDigit >= 1 && currentLastDigit <= 4 && result >= 5 && result <= 9) {
-            return result >= 5;
+        // CRITICAL: Must check that OPERAND is also 1-4, not just the current value
+        // Otherwise operations like 1+5=6, 1+6=7 are incorrectly considered as requiring formula
+        if (currentLastDigit >= 1 && currentLastDigit <= 4 && operandLastDigit >= 1 && operandLastDigit <= 4 && result >= 5 && result <= 9) {
+            return true;
         }
     } else if (operation === '-') {
         // Subtracting from 5 to get 1-4 requires Small Friends
@@ -1864,8 +1866,15 @@ function requiresSmallFriendsFormula(currentValue, operation, operand) {
         // Subtracting from 6-9 where we need to remove the heaven bead
         if (currentLastDigit >= 6 && currentLastDigit <= 9 && result >= 1 && result <= 4) {
             const lowerBeadsUsed = currentLastDigit - 5;
-            // If we need to subtract more than the lower beads we have
-            return operandLastDigit > lowerBeadsUsed;
+            // CRITICAL: Subtracting 5 from 6-9 is DIRECT (just remove heaven bead)
+            // Only operations subtracting 1-4 where we need more than available lower beads require formula
+            // Example: 6-2=4 requires formula (6=5+1, can't subtract 2 from 1 lower bead)
+            // Example: 6-5=1 is DIRECT (just remove heaven bead, 1 lower bead remains)
+            if (operandLastDigit === 5) {
+                return false; // Subtracting 5 is always direct
+            }
+            // If we need to subtract more than the lower beads we have (and operand is 1-4)
+            return operandLastDigit >= 1 && operandLastDigit <= 4 && operandLastDigit > lowerBeadsUsed;
         }
     }
 
