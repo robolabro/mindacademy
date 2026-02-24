@@ -2958,6 +2958,9 @@ function generateExerciseTerms(settings) {
                     distributionPosition: `${termIndex + 1}/${termTypesDistribution.length}`
                 });
 
+                // Flag to track if we need to regenerate the entire exercise
+                let shouldRegenerateExercise = false;
+
                 // Generate term based on target type
                 while (!validTermFound && termAttempts < 30) {
                     if (targetType === 'direct') {
@@ -3128,7 +3131,8 @@ function generateExerciseTerms(settings) {
                         if (validFormulaNumbers.length === 0) {
                             if (targetType === 'current' && targetFormulaNumber === formulaNumber) {
                                 console.log('[generateExerciseTerms] No formulas possible for current formula from state, regenerating exercise');
-                                // Break out of the inner loop to trigger regeneration
+                                // Set flag to skip fallback and trigger full regeneration
+                                shouldRegenerateExercise = true;
                                 validTermFound = false;
                                 break; // Exit the term attempts loop
                             } else {
@@ -3176,6 +3180,15 @@ function generateExerciseTerms(settings) {
                     }
 
                     termAttempts++;
+                }
+
+                // If we need to regenerate the entire exercise (formula couldn't be generated),
+                // skip fallback and break out to trigger regeneration
+                if (shouldRegenerateExercise) {
+                    console.log('[generateExerciseTerms] Skipping fallback, will regenerate entire exercise');
+                    termsArray = [];
+                    operations = [];
+                    break; // Exit the terms generation loop
                 }
 
                 // If no valid term found after all attempts, try direct calculation as final fallback
