@@ -3338,16 +3338,68 @@
     function generateSmallFriendsWithDirect(target, addends, formula, section) {
         const absTarget = Math.abs(target);
         const isPlus = target > 0;
+
+        // Learning order for small friends formulas
+        const smallLearningOrder = [1, 2, 3, 4, -1, -2, -3, -4];
+        const levelIndex = smallLearningOrder.indexOf(target);
+        const idx = levelIndex >= 0 ? levelIndex : 0;
+
+        // Progressive split (50% selected formula always):
+        // Remaining 50% splits between direct (decreasing) and prev small friends (increasing):
+        // idx=0 (+1): 50% formula, 50% direct,  0% prev small
+        // idx=1 (+2): 50% formula, 45% direct,  5% prev small
+        // idx=2 (+3): 50% formula, 40% direct, 10% prev small
+        // idx=3 (+4): 50% formula, 35% direct, 15% prev small
+        // idx=4 (-1): 50% formula, 30% direct, 20% prev small
+        // idx=5 (-2): 50% formula, 25% direct, 25% prev small
+        // idx=6 (-3): 50% formula, 20% direct, 30% prev small
+        // idx=7 (-4): 50% formula, 15% direct, 35% prev small
+        const directProportion   = Math.max(0.15, 0.50 - idx * 0.05);
+        const prevSmallProportion = 0.50 - directProportion;
+
+        const rand = Math.random();
+
+        if (rand >= 0.50) {
+            // 50% non-formula exercises
+            const nonFormulaRand = rand - 0.50; // 0..0.50
+
+            if (nonFormulaRand < directProportion || prevSmallProportion <= 0) {
+                // Direct exercise
+                return generateDirectTo(9, addends, formula);
+            } else {
+                // Previous small friends exercise
+                const previousFormulas = levelIndex > 0 ? smallLearningOrder.slice(0, levelIndex) : [];
+                const eligiblePrevious = formula === 'addition'
+                    ? previousFormulas.filter(f => f > 0)
+                    : formula === 'subtraction'
+                    ? previousFormulas.filter(f => f < 0)
+                    : previousFormulas;
+
+                if (eligiblePrevious.length === 0) {
+                    return generateDirectTo(9, addends, formula);
+                }
+
+                const randomPrev = eligiblePrevious[getRandomNumber(0, eligiblePrevious.length - 1)];
+                return generateSmallFriendsExercise(randomPrev, addends, formula);
+            }
+        }
+
+        // 50% path: Generate exercise that MUST use the SPECIFIC selected formula
         // For small-plus-N:  addition formulas +1..+N allowed, no subtraction formulas
         // For small-minus-N: subtraction formulas -1..-N allowed, no addition formulas
         const maxPlusFormula  = isPlus  ? absTarget : 0;
         const maxMinusFormula = !isPlus ? absTarget : 0;
 
+        // Lookup table for the specific target formula (to verify its use)
+        const targetFormulaTable = isPlus
+            ? (absTarget === 1 ? smallPlus1  : absTarget === 2 ? smallPlus2  : absTarget === 3 ? smallPlus3  : smallPlus4)
+            : (absTarget === 1 ? smallMinus1 : absTarget === 2 ? smallMinus2 : absTarget === 3 ? smallMinus3 : smallMinus4);
+
         const maxAttempts = 100;
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             const numbers   = [];
             const operators = [];
-            let hasFormulaUse = false;
+            let hasSpecificFormulaUse = false;
 
             // Pick a starting value that leaves room for subsequent operations
             let firstNum;
@@ -3376,11 +3428,14 @@
                 numbers.push(choice.term);
                 operators.push(choice.op);
 
-                if (choice.isFormula) hasFormulaUse = true;
+                // Check if this operation is specifically from the target formula table
+                if (choice.isFormula && isInTable(targetFormulaTable, choice.op, currentValue, choice.term)) {
+                    hasSpecificFormulaUse = true;
+                }
                 currentValue = choice.op === '+' ? currentValue + choice.term : currentValue - choice.term;
             }
 
-            if (valid && hasFormulaUse) {
+            if (valid && hasSpecificFormulaUse) {
                 return { numbers, operators };
             }
         }
@@ -3421,47 +3476,62 @@
     }
 
     // Helper: Generate Big Friends with Progressive levels (for specific big friends levels)
-    // Progressive logic: Direct (4,5,9) + Small Friends (all) + Previously learned Big Friends
+    // Progressive logic: 50% selected formula always.
+    // Remaining 50%: direct decreases, small friends stays ~20%, prev big friends increases.
     function generateBigFriendsWithProgressive(target, addends, formula, section) {
         const allowedBigFriends = getAllowedBigFriendsFormulas(target);
-
-        // Calculate probability distribution
-        // If no previous Big Friends, split between Direct and Small Friends
-        // Otherwise: 30% Direct, 30% Small Friends, 40% Previous Big Friends
         const hasPreviousBigFriends = allowedBigFriends.length > 0;
+
+        // Learning order index (used for progressive split)
+        const bigLearningOrder = [1, 2, 3, 4, 5, -1, -2, -3, -4, -5, 6, 7, 8, 9, -6, -7, -8, -9];
+        const levelIndex = bigLearningOrder.indexOf(target);
+        const idx = levelIndex >= 0 ? levelIndex : 0;
+
+        // Helper: pick a random small friends formula according to operation type
+        const getRandomSmall = () => {
+            const smallFormulas = formula === 'addition'
+                ? [1, 2, 3, 4]
+                : formula === 'subtraction'
+                ? [-1, -2, -3, -4]
+                : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+            return smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+        };
+
         const rand = Math.random();
 
+        if (rand < 0.50) {
+            // 50% - Generate exercise using the selected big friends formula
+            return generateBigFriendsExercise(target, addends, formula, section);
+        }
+
+        // Remaining 50%: progressive split between direct, small friends, prev big friends.
+        // Progressive proportions (of the total 100%):
+        //   idx=0  (big+1, no prev): 30% direct, 20% small,  0% prev big
+        //   idx=1  (big+2):          20% direct, 20% small, 10% prev big
+        //   idx=5  (big-1):          16% direct, 20% small, 14% prev big
+        //   idx=10 (big+6):          11% direct, 20% small, 19% prev big
+        //   idx=17 (big-9):           5% direct, 20% small, 25% prev big
+        const remainingRand = rand - 0.50; // 0..0.50
+
         if (!hasPreviousBigFriends) {
-            // First Big Friends formula (+1): only Direct and Small Friends available
-            if (rand < 0.5) {
-                // 50% - Generate direct counting
+            // First big friends formula: split remaining 50% between direct (30%) and small (20%)
+            if (remainingRand < 0.30) {
                 return generateDirectTo(9, addends, formula);
             } else {
-                // 50% - Generate small friends
-                const smallFormulas = formula === 'addition'
-                    ? [1, 2, 3, 4]
-                    : formula === 'subtraction'
-                    ? [-1, -2, -3, -4]
-                    : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
-                const randomSmall = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
-                return generateSmallFriendsExercise(randomSmall, addends, formula);
+                return generateSmallFriendsExercise(getRandomSmall(), addends, formula);
             }
         } else {
-            // Has previous Big Friends: use progressive distribution
-            if (rand < 0.3) {
-                // 30% - Generate direct counting
+            // Direct decreases from 20% to 5% as level advances
+            const directProp  = Math.max(0.05, 0.20 - (idx - 1) * 0.01);
+            const smallProp   = 0.20;
+            const prevBigProp = 0.50 - directProp - smallProp; // fills the rest
+
+            if (remainingRand < directProp) {
                 return generateDirectTo(9, addends, formula);
-            } else if (rand < 0.6) {
-                // 30% - Generate small friends
-                const smallFormulas = formula === 'addition'
-                    ? [1, 2, 3, 4]
-                    : formula === 'subtraction'
-                    ? [-1, -2, -3, -4]
-                    : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
-                const randomSmall = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
-                return generateSmallFriendsExercise(randomSmall, addends, formula);
+            } else if (remainingRand < directProp + smallProp) {
+                return generateSmallFriendsExercise(getRandomSmall(), addends, formula);
             } else {
-                // 40% - Generate previously learned Big Friends
+                // Previously learned big friends
                 const randomBigFriend = allowedBigFriends[getRandomNumber(0, allowedBigFriends.length - 1)];
                 return generateBigFriendsExercise(randomBigFriend, addends, formula, section);
             }
