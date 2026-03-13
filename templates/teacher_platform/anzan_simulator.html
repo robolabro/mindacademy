@@ -1602,6 +1602,7 @@ function generateNumber(settings, isFirstTerm = false) {
             break;
 
         // Small Friends levels - Progressive logic: 50% direct + 50% small friends
+        // UPDATED: Pass isFirstTerm to enable strategic first term generation
         case 'small-plus-1':
         case 'small-plus-2':
         case 'small-plus-3':
@@ -1611,7 +1612,7 @@ function generateNumber(settings, isFirstTerm = false) {
         case 'small-minus-3':
         case 'small-minus-4':
         case 'small-friends-all':
-            num = generateSmallFriendsNumber(complexity, digits);
+            num = generateSmallFriendsNumber(complexity, digits, isFirstTerm);
             break;
 
         // Big Friends levels - Progressive logic: 33% direct + 33% small + 34% big
@@ -1665,8 +1666,39 @@ function generateNumber(settings, isFirstTerm = false) {
 }
 
 // Helper: Generate number for Small Friends levels (50% direct + 50% small friends)
-function generateSmallFriendsNumber(complexity, digits) {
-    // Generate numbers with the specified number of digits
+// UPDATED: Generate strategic first term based on formula type to enable formula application
+function generateSmallFriendsNumber(complexity, digits, isFirstTerm = false) {
+    // For first term in Small Friends PLUS formulas, favor 1-4 to enable formula application
+    // For Small Friends MINUS formulas, favor 5-9 to enable formula application
+    if (isFirstTerm && digits === 1) {
+        const match = complexity.match(/small-(plus|minus)-(\d)/);
+        if (match) {
+            const isPlusFormula = match[1] === 'plus';
+            const formulaNumber = parseInt(match[2]);
+
+            if (isPlusFormula) {
+                // For PLUS formulas (+1, +2, +3, +4): favor starting from 1-4
+                // This enables formula application: 4+1, 3+2, 2+3, 1+4, etc.
+                // 70% chance to start with 1-4, 30% with 5-9 for variety
+                if (Math.random() < 0.7) {
+                    return Math.floor(Math.random() * 4) + 1; // 1-4
+                } else {
+                    return Math.floor(Math.random() * 5) + 5; // 5-9
+                }
+            } else {
+                // For MINUS formulas (-1, -2, -3, -4): favor starting from 5-9
+                // This enables formula application: 5-1, 6-2, 7-3, 8-4, etc.
+                // 70% chance to start with 5-9, 30% with 1-4 for variety
+                if (Math.random() < 0.7) {
+                    return Math.floor(Math.random() * 5) + 5; // 5-9
+                } else {
+                    return Math.floor(Math.random() * 4) + 1; // 1-4
+                }
+            }
+        }
+    }
+
+    // For non-first terms or multi-digit numbers, generate normally
     if (digits === 1) {
         return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
     } else {
@@ -3120,62 +3152,126 @@ function generateExerciseTerms(settings) {
                             currentResult, op, validFormulaNumbers, targetFormulaNumber
                         });
 
-                        // If no valid formula numbers exist, fall back to other options
-                        // UPDATED: More flexible fallback - try previous formulas first, then direct
+                        // If no valid formula numbers exist, try to navigate back to favorable state
+                        // UPDATED: Smart navigation - try to get back to favorable range for formula application
                         if (validFormulaNumbers.length === 0) {
-                            // Try to use previous formulas if available
-                            if (availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0 &&
-                                targetType !== 'previous') {
+                            // For current formula type, try to navigate to favorable state by switching operation
+                            if (targetType === 'current') {
+                                const currentDigit = currentResult % 10;
+
+                                // For PLUS formulas: need currentResult 1-4 to apply formula
+                                if (availableFormulas.isPlus && currentDigit > 4) {
+                                    // Try switching to subtraction to get back to 1-4 range
+                                    console.log('[generateExerciseTerms] Current state unfavorable for PLUS formula, trying subtraction to navigate back');
+                                    op = '-';
+                                    operations[operations.length - 1] = op;
+
+                                    // Find a subtraction that brings us to 1-4
+                                    const navigateOptions = [];
+                                    for (let t = 1; t <= 9; t++) {
+                                        const resultDigit = (currentDigit - t + 10) % 10;
+                                        if (resultDigit >= 1 && resultDigit <= 4 && currentResult - t >= 1) {
+                                            const isAllowed = isAllowedOperation(currentResult, '-', t, complexity);
+                                            if (isAllowed && !requiresSmallFriendsFormula(currentResult, '-', t)) {
+                                                navigateOptions.push(t);
+                                            }
+                                        }
+                                    }
+
+                                    if (navigateOptions.length > 0) {
+                                        term = navigateOptions[Math.floor(Math.random() * navigateOptions.length)];
+                                        validTermFound = true;
+                                        console.log('[generateExerciseTerms] Navigating to favorable state with subtraction:', {
+                                            currentResult, term, newResult: currentResult - term
+                                        });
+                                    }
+                                }
+                                // For MINUS formulas: need currentResult 5-9 to apply formula
+                                else if (!availableFormulas.isPlus && currentDigit < 5) {
+                                    // Try switching to addition to get to 5-9 range
+                                    console.log('[generateExerciseTerms] Current state unfavorable for MINUS formula, trying addition to navigate back');
+                                    op = '+';
+                                    operations[operations.length - 1] = op;
+
+                                    // Find an addition that brings us to 5-9
+                                    const navigateOptions = [];
+                                    for (let t = 1; t <= 9; t++) {
+                                        const resultDigit = (currentDigit + t) % 10;
+                                        if (resultDigit >= 5 && resultDigit <= 9 && currentResult + t <= 9) {
+                                            const isAllowed = isAllowedOperation(currentResult, '+', t, complexity);
+                                            if (isAllowed && !requiresSmallFriendsFormula(currentResult, '+', t)) {
+                                                navigateOptions.push(t);
+                                            }
+                                        }
+                                    }
+
+                                    if (navigateOptions.length > 0) {
+                                        term = navigateOptions[Math.floor(Math.random() * navigateOptions.length)];
+                                        validTermFound = true;
+                                        console.log('[generateExerciseTerms] Navigating to favorable state with addition:', {
+                                            currentResult, term, newResult: currentResult + term
+                                        });
+                                    }
+                                }
+                            }
+
+                            // If navigation didn't work, try previous formulas
+                            if (!validTermFound && availableFormulas.previousFormulas &&
+                                availableFormulas.previousFormulas.length > 0 && targetType !== 'previous') {
                                 console.log('[generateExerciseTerms] No current formula possible, trying previous formulas');
                                 targetType = 'previous';
-                                // Pick a random previous formula
                                 const randomPrevious = availableFormulas.previousFormulas[
                                     Math.floor(Math.random() * availableFormulas.previousFormulas.length)
                                 ];
                                 targetFormulaNumber = randomPrevious.number;
                                 targetFormulaType = randomPrevious.type;
                                 continue;
-                            } else {
-                                // Fall back to direct calculation
+                            }
+
+                            // Last resort: fall back to direct calculation
+                            if (!validTermFound) {
                                 console.log('[generateExerciseTerms] No formulas possible from state, switching to direct calculation');
                                 targetType = 'direct';
                                 continue;
                             }
                         }
 
-                        // Select formula number: prefer target, but accept any valid option
-                        let candidateNumbers = validFormulaNumbers.slice();
+                        // Only proceed with formula selection if we haven't found a term yet (via navigation)
+                        if (!validTermFound) {
+                            // Select formula number: prefer target, but accept any valid option
+                            let candidateNumbers = validFormulaNumbers.slice();
 
-                        // Prioritize target formula number if it's in the valid list
-                        if (targetFormulaNumber && validFormulaNumbers.includes(targetFormulaNumber)) {
-                            candidateNumbers = [targetFormulaNumber, ...validFormulaNumbers.filter(n => n !== targetFormulaNumber)];
-                        }
+                            // Prioritize target formula number if it's in the valid list
+                            if (targetFormulaNumber && validFormulaNumbers.includes(targetFormulaNumber)) {
+                                candidateNumbers = [targetFormulaNumber, ...validFormulaNumbers.filter(n => n !== targetFormulaNumber)];
+                            }
 
-                        // Try candidates in order, checking repetition constraints
-                        for (const fNum of candidateNumbers) {
-                            if (!shouldAvoidTermRepetition(termsArray, fNum, terms)) {
-                                term = fNum;
+                            // Try candidates in order, checking repetition constraints
+                            for (const fNum of candidateNumbers) {
+                                if (!shouldAvoidTermRepetition(termsArray, fNum, terms)) {
+                                    term = fNum;
+                                    const result = op === '+' ? currentResult + term : currentResult - term;
+                                    validTermFound = true;
+                                    console.log('[generateExerciseTerms] Found formula term:', {
+                                        currentResult, op, term, result,
+                                        targetType, targetFormulaNumber,
+                                        wasTargetUsed: term === targetFormulaNumber
+                                    });
+                                    break;
+                                }
+                            }
+
+                            // If all valid formulas are blocked by repetition, relax constraint slightly
+                            if (!validTermFound && validFormulaNumbers.length > 0) {
+                                // Use the first valid formula even if it repeats (better than regenerating)
+                                term = candidateNumbers[0];
                                 const result = op === '+' ? currentResult + term : currentResult - term;
                                 validTermFound = true;
-                                console.log('[generateExerciseTerms] Found formula term:', {
+                                console.log('[generateExerciseTerms] Using formula with relaxed repetition constraint:', {
                                     currentResult, op, term, result,
-                                    targetType, targetFormulaNumber,
-                                    wasTargetUsed: term === targetFormulaNumber
+                                    reason: 'All valid formulas blocked by repetition'
                                 });
-                                break;
                             }
-                        }
-
-                        // If all valid formulas are blocked by repetition, relax constraint slightly
-                        if (!validTermFound && validFormulaNumbers.length > 0) {
-                            // Use the first valid formula even if it repeats (better than regenerating)
-                            term = candidateNumbers[0];
-                            const result = op === '+' ? currentResult + term : currentResult - term;
-                            validTermFound = true;
-                            console.log('[generateExerciseTerms] Using formula with relaxed repetition constraint:', {
-                                currentResult, op, term, result,
-                                reason: 'All valid formulas blocked by repetition'
-                            });
                         }
                     }
 
