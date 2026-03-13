@@ -2150,20 +2150,21 @@ function isAllowedOperation(currentValue, operation, operand, complexity) {
 
     // Small Friends - Cumulative allowed operations (in addition to direct-to-9)
     // Each formula includes all operations from previous formulas PLUS direct-to-9
+    // UPDATED: Allow both commutative forms (4+1 and 1+4) to enable easier exercise generation
     const smallPlus1 = {
-        '+': [[4,1]]  // Only 4+1, NOT 1+4
+        '+': [[4,1],[1,4]]  // Both 4+1 and 1+4 (commutative)
     };
     const smallPlus2 = {
-        '+': [[3,2],[4,2]]  // Only 3+2, 4+2, NOT 2+3, 2+4
+        '+': [[3,2],[4,2],[2,3],[2,4]]  // Both forms: 3+2, 4+2, 2+3, 2+4
     };
     const smallPlus3 = {
-        '+': [[2,3],[3,3],[4,3]]  // Only 2+3, 3+3, 4+3, NOT 3+4
+        '+': [[2,3],[3,3],[4,3],[3,2],[3,4]]  // Both forms: 2+3, 3+3, 4+3, 3+2, 3+4
     };
     const smallPlus4 = {
-        '+': [[1,4],[2,4],[3,4],[4,4]]  // 1+4, 2+4, 3+4, 4+4
+        '+': [[1,4],[2,4],[3,4],[4,4],[4,1],[4,2],[4,3]]  // Both forms: 1+4, 2+4, 3+4, 4+4, 4+1, 4+2, 4+3
     };
     const smallMinus1 = {
-        '-': [[5,1]]  // Only 5-1
+        '-': [[5,1]]  // Only 5-1 (subtraction is not commutative)
     };
     const smallMinus2 = {
         '-': [[5,2],[6,2]]  // 5-2, 6-2
@@ -2707,7 +2708,8 @@ function generateExerciseTerms(settings) {
 
     // For direct calculation levels, regenerate if result is 0 or invalid
     // Dynamic attempts and timeout based on term count (more terms = more attempts needed)
-    let maxAttempts = terms <= 3 ? 50 : terms === 4 ? 75 : terms === 5 ? 200 : 150;
+    // UPDATED: Increased attempts for Small Friends formulas which are more restrictive
+    let maxAttempts = terms <= 3 ? 100 : terms === 4 ? 150 : terms === 5 ? 300 : 200;
     let attempt = 0;
     let result;
     let termsArray = [];
@@ -2715,8 +2717,9 @@ function generateExerciseTerms(settings) {
 
     // Safety timeout: prevent infinite loops by tracking generation time
     // More terms = longer timeout (combinatorial explosion)
+    // UPDATED: Increased timeout for Small Friends levels
     const startTime = Date.now();
-    const maxGenerationTime = terms <= 3 ? 5000 : terms === 4 ? 8000 : terms === 5 ? 20000 : 15000;
+    const maxGenerationTime = terms <= 3 ? 8000 : terms === 4 ? 12000 : terms === 5 ? 30000 : 20000;
 
     do {
         // Safety check: if generation takes more than max time, break out
@@ -2732,40 +2735,32 @@ function generateExerciseTerms(settings) {
         termsArray.push(generateNumber(settings, true));
 
         // Pre-calculate term types distribution for Small Friends levels
-        // This ensures EVERY exercise has a GUARANTEED mix of formulas
-        // 100% guarantee: current formula + previous formulas/direct both appear
+        // This ensures exercises have a BALANCED mix of formulas
+        // UPDATED: More flexible distribution - aim for current formula but allow fallback
         let termTypesDistribution = [];
         if (isSmallFriendsLevel(complexity)) {
             const formulaNumber = getSmallFriendsFormulaNumber(complexity);
             const availableFormulas = getAvailableFormulasForLevel(complexity);
             const remainingTerms = terms - 1; // Exclude first term
 
-            // GUARANTEE: Always include at least 1 current formula term
-            // GUARANTEE: Always include at least 1 previous/direct term (if available)
-            // Then distribute the rest with 60-70% current, 30-40% other
-
+            // UPDATED: More balanced distribution to avoid generation failures
+            // Try to include current formula, but allow more flexibility
             let currentFormulaCount, otherTermsCount;
 
             if (remainingTerms === 1) {
-                // Only 1 term available, use current formula
+                // Only 1 term available, prefer current formula but allow fallback
                 currentFormulaCount = 1;
                 otherTermsCount = 0;
             } else if (remainingTerms === 2) {
-                // 2 terms: 1 current + 1 other (50/50)
+                // 2 terms: 1 current + 1 other (50/50) - more balanced
                 currentFormulaCount = 1;
                 otherTermsCount = 1;
             } else {
-                // 3+ terms: guarantee at least 1 of each, then distribute rest at 65/35
-                const minCurrent = 1;
-                const minOther = 1;
-                const flexibleTerms = remainingTerms - minCurrent - minOther;
-
-                // Distribute flexible terms: 65% current, 35% other
-                const additionalCurrent = Math.floor(flexibleTerms * 0.65);
-                const additionalOther = flexibleTerms - additionalCurrent;
-
-                currentFormulaCount = minCurrent + additionalCurrent;
-                otherTermsCount = minOther + additionalOther;
+                // 3+ terms: more balanced distribution (50/50 instead of 65/35)
+                // This makes generation easier while still practicing the current formula
+                const currentRatio = 0.5; // More balanced: 50% instead of 65%
+                currentFormulaCount = Math.max(1, Math.floor(remainingTerms * currentRatio));
+                otherTermsCount = remainingTerms - currentFormulaCount;
             }
 
             // Build distribution array with current formula terms
@@ -3125,18 +3120,23 @@ function generateExerciseTerms(settings) {
                             currentResult, op, validFormulaNumbers, targetFormulaNumber
                         });
 
-                        // If no valid formula numbers exist and we're trying to generate the current formula,
-                        // regenerate the entire exercise instead of falling back to direct calculation
-                        // This ensures the selected formula is actually used
+                        // If no valid formula numbers exist, fall back to other options
+                        // UPDATED: More flexible fallback - try previous formulas first, then direct
                         if (validFormulaNumbers.length === 0) {
-                            if (targetType === 'current' && targetFormulaNumber === formulaNumber) {
-                                console.log('[generateExerciseTerms] No formulas possible for current formula from state, regenerating exercise');
-                                // Set flag to skip fallback and trigger full regeneration
-                                shouldRegenerateExercise = true;
-                                validTermFound = false;
-                                break; // Exit the term attempts loop
+                            // Try to use previous formulas if available
+                            if (availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0 &&
+                                targetType !== 'previous') {
+                                console.log('[generateExerciseTerms] No current formula possible, trying previous formulas');
+                                targetType = 'previous';
+                                // Pick a random previous formula
+                                const randomPrevious = availableFormulas.previousFormulas[
+                                    Math.floor(Math.random() * availableFormulas.previousFormulas.length)
+                                ];
+                                targetFormulaNumber = randomPrevious.number;
+                                targetFormulaType = randomPrevious.type;
+                                continue;
                             } else {
-                                // For previous formulas, we can fall back to direct calculation
+                                // Fall back to direct calculation
                                 console.log('[generateExerciseTerms] No formulas possible from state, switching to direct calculation');
                                 targetType = 'direct';
                                 continue;
