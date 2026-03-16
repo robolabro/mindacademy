@@ -46,10 +46,10 @@ SMALL_FRIENDS_PLUS = [
 ]
 
 SMALL_FRIENDS_MINUS = [
-    Formula(FormulaType.SMALL_FRIENDS_MINUS, 1, "-1 = -5 + 4"),
-    Formula(FormulaType.SMALL_FRIENDS_MINUS, 2, "-2 = -5 + 3"),
-    Formula(FormulaType.SMALL_FRIENDS_MINUS, 3, "-3 = -5 + 2"),
-    Formula(FormulaType.SMALL_FRIENDS_MINUS, 4, "-4 = -5 + 1"),
+    Formula(FormulaType.SMALL_FRIENDS_MINUS, 1, "-1 = +4 - 5"),
+    Formula(FormulaType.SMALL_FRIENDS_MINUS, 2, "-2 = +3 - 5"),
+    Formula(FormulaType.SMALL_FRIENDS_MINUS, 3, "-3 = +2 - 5"),
+    Formula(FormulaType.SMALL_FRIENDS_MINUS, 4, "-4 = +1 - 5"),
 ]
 
 BIG_FRIENDS_PLUS = [
@@ -275,7 +275,7 @@ class AnzanFormulaTest:
 
         elif formula.type == FormulaType.SMALL_FRIENDS_MINUS:
             # Need ones place >= 5 and - number requires Small Friends
-            # For -1: ones must be 5 (5-1=4, uses -5+4)
+            # For -1: ones must be 5 (5-1=4, uses +4-5)
             # For -2: ones must be 5 or 6 (5-2=3, 6-2=4)
             # For -3: ones must be 5, 6, or 7 (5-3=2, 6-3=3, 7-3=4)
             # For -4: ones must be 5, 6, 7, or 8 (5-4=1, 6-4=2, 7-4=3, 8-4=4)

@@ -2792,7 +2792,7 @@
      *    - Used when not enough beads available, but 5-bead (heavenly bead) is available
      *    - Pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
      *    - Addition: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
-     *    - Subtraction: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
+     *    - Subtraction: -4 = +1-5, -3 = +2-5, -2 = +3-5, -1 = +4-5
      *    - Example: 4 + 1 = Add 5, then subtract 4 (friend of 1)
      *
      * 3. BIG FRIENDS (10-Complements)
@@ -3541,7 +3541,7 @@
     // Helper: Generate Small Friends exercise for specific formula
     // Small Friends are pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
     // Addition formulas: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
-    // Subtraction formulas: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
+    // Subtraction formulas: -4 = +1-5, -3 = +2-5, -2 = +3-5, -1 = +4-5
     function generateSmallFriendsExercise(target, addends, formula) {
         const numbers = [];
         const operators = [];
@@ -3569,7 +3569,7 @@
             }
         } else if (formula === 'subtraction' && target < 0) {
             // For subtraction: need first number that when subtracting requires 5-complement
-            // Example: -1 = -5+4, so we need a number like 5, 6, 7, 8, or 9 (has 5-bead active)
+            // Example: -1 = +4-5, so we need a number like 5, 6, 7, 8, or 9 (has 5-bead active)
             // First number should be 5 to 9 to require the formula
             const validFirstNumbers = [5, 6, 7, 8, 9];
             numbers.push(validFirstNumbers[getRandomNumber(0, validFirstNumbers.length - 1)]);

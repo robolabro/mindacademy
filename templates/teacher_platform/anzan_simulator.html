@@ -1871,7 +1871,7 @@ function isSmallFriendsLevel(complexity) {
  *
  * Small Friends formulas:
  * +1 = +5-4, +2 = +5-3, +3 = +5-2, +4 = +5-1
- * -1 = -5+4, -2 = -5+3, -3 = -5+2, -4 = -5+1
+ * -1 = +4-5, -2 = +3-5, -3 = +2-5, -4 = +1-5
  *
  * For multi-digit numbers: checks only the last digit
  */
@@ -2551,7 +2551,7 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
                 return operand <= currentValue && result >= 0;
             } else if (currentValue === 5) {
                 // From 5 (heaven bead only): can ONLY subtract 5 directly to get 0
-                // Subtracting 1-4 from 5 requires Small Friends formulas: -1=-5+4, -2=-5+3, etc.
+                // Subtracting 1-4 from 5 requires Small Friends formulas: -1=+4-5, -2=+3-5, etc.
                 // But we don't allow result 0, so no direct subtraction from 5
                 return false;
             } else if (currentValue >= 6 && maxLimit === 9) {
