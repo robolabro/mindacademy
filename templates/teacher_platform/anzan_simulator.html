@@ -3757,6 +3757,55 @@ function generateExerciseTerms(settings) {
             }
         }
 
+        // NEW VALIDATION: For Small Friends levels, verify actual formula usage matches distribution
+        // This ensures exercises actually practice the target formula, not just use digit 5
+        if (isSmallFriendsLevel(complexity) && termTypesDistribution && termTypesDistribution.length > 0) {
+            // Count how many terms were allocated as 'current' formula in the distribution
+            const intendedFormulaCount = termTypesDistribution.filter(t => t.type === 'current').length;
+
+            // Count how many operations actually require the Small Friends formula
+            let actualFormulaCount = 0;
+            for (let i = 0; i < operations.length; i++) {
+                const currentResult = calculateResult(termsArray.slice(0, i + 1), operations.slice(0, i));
+                const term = termsArray[i + 1];
+                const op = operations[i];
+
+                if (requiresSmallFriendsFormula(currentResult, op, term)) {
+                    actualFormulaCount++;
+                }
+            }
+
+            // Calculate actual formula percentage vs intended
+            const actualFormulaPercentage = operations.length > 0 ? actualFormulaCount / operations.length : 0;
+            const intendedFormulaPercentage = termTypesDistribution.length > 0 ? intendedFormulaCount / termTypesDistribution.length : 0;
+
+            // CRITICAL: Require at least 80% of intended formulas to be actually used
+            // This prevents exercises where distribution says "use formula" but generation falls back to direct
+            const minRequiredFormulaPercentage = intendedFormulaPercentage * 0.8;
+
+            if (actualFormulaPercentage < minRequiredFormulaPercentage) {
+                console.log('[generateExerciseTerms] Small Friends: Insufficient formula usage. Intended:',
+                    intendedFormulaCount, '('+( intendedFormulaPercentage * 100).toFixed(0)+'%)',
+                    'Actual:', actualFormulaCount, '('+(actualFormulaPercentage * 100).toFixed(0)+'%)',
+                    'Required:', (minRequiredFormulaPercentage * 100).toFixed(0)+'%',
+                    'Attempt:', attempt + 1, '/', maxAttempts);
+                console.log('[generateExerciseTerms] Terms:', termsArray, 'Operations:', operations);
+                attempt++;
+                if (attempt >= maxAttempts) {
+                    console.warn('[generateExerciseTerms] Max attempts reached, returning exercise with insufficient formula usage');
+                    break;
+                }
+                continue; // Regenerate
+            }
+
+            console.log('[generateExerciseTerms] Formula usage validation passed:', {
+                intendedCount: intendedFormulaCount,
+                actualCount: actualFormulaCount,
+                percentage: (actualFormulaPercentage * 100).toFixed(0) + '%',
+                required: (minRequiredFormulaPercentage * 100).toFixed(0) + '%'
+            });
+        }
+
         // Final validation: Check for consecutive Big Friends formulas
         if (!validateNoConsecutiveBigFriends(termsArray, operations)) {
             console.warn('[generateExerciseTerms] Exercise has consecutive Big Friends formulas. Regenerating. Attempt:', attempt + 1, '/', maxAttempts);
