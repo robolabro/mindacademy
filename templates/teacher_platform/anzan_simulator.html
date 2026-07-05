@@ -2974,6 +2974,89 @@ function generateExerciseTerms(settings) {
             });
         }
 
+        // Pre-calculate term types distribution for Big Friends and Family levels
+        if (isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) {
+            const remainingTerms = terms - 1;
+
+            // Parse current formula from complexity string
+            const bigMatch = complexity.match(/^big-(plus|minus)-(\d+)$/);
+            const famMatch = complexity.match(/^family-(plus|minus)-(\d+)$/);
+            const isSpecificLevel = bigMatch || famMatch;
+            const currentFormulaType = bigMatch ? bigMatch[1] : famMatch ? famMatch[1] : null;
+            const currentFormulaN = bigMatch ? parseInt(bigMatch[2]) : famMatch ? parseInt(famMatch[2]) : null;
+            const isFamilyFormula = !!famMatch;
+
+            if (isSpecificLevel && currentFormulaN !== null) {
+                // 70% current formula, 30% other (previous big + small + direct)
+                let currentFormulaCount, otherTermsCount;
+                if (remainingTerms === 1) {
+                    currentFormulaCount = 1;
+                    otherTermsCount = 0;
+                } else if (remainingTerms === 2) {
+                    currentFormulaCount = 2;
+                    otherTermsCount = 0;
+                } else {
+                    currentFormulaCount = Math.max(1, Math.round(remainingTerms * 0.7));
+                    otherTermsCount = remainingTerms - currentFormulaCount;
+                }
+
+                // Current formula slots
+                for (let j = 0; j < currentFormulaCount; j++) {
+                    termTypesDistribution.push({
+                        type: 'big-current',
+                        formulaType: currentFormulaType,
+                        formulaN: currentFormulaN,
+                        isFamily: isFamilyFormula
+                    });
+                }
+
+                // Other slots
+                const allowed = getAllowedBigFriendsFormulas(complexity);
+                const previousBig = isFamilyFormula
+                    ? [...allowed.bigFriends, ...allowed.family.filter(f => !(f.type === currentFormulaType && f.N === currentFormulaN))]
+                    : allowed.bigFriends.filter(f => !(f.type === currentFormulaType && f.N === currentFormulaN));
+
+                for (let j = 0; j < otherTermsCount; j++) {
+                    // 50% previous big friends, 50% small/direct
+                    if (previousBig.length > 0 && Math.random() < 0.5) {
+                        const randPrev = previousBig[Math.floor(Math.random() * previousBig.length)];
+                        termTypesDistribution.push({
+                            type: 'big-previous',
+                            formulaType: randPrev.type,
+                            formulaN: randPrev.N,
+                            isFamily: isFamilyFormula && allowed.family.some(f => f.type === randPrev.type && f.N === randPrev.N)
+                        });
+                    } else {
+                        termTypesDistribution.push({
+                            type: 'small-or-direct',
+                            formulaType: null,
+                            formulaN: null
+                        });
+                    }
+                }
+            } else {
+                // big-friends-all or family-all: all slots are free choice
+                for (let j = 0; j < remainingTerms; j++) {
+                    termTypesDistribution.push({
+                        type: 'small-or-direct',
+                        formulaType: null,
+                        formulaN: null
+                    });
+                }
+            }
+
+            // Shuffle distribution
+            for (let j = termTypesDistribution.length - 1; j > 0; j--) {
+                const k = Math.floor(Math.random() * (j + 1));
+                [termTypesDistribution[j], termTypesDistribution[k]] = [termTypesDistribution[k], termTypesDistribution[j]];
+            }
+
+            console.log('[generateExerciseTerms] Big Friends distribution:', {
+                totalTerms: remainingTerms,
+                distribution: termTypesDistribution.map(t => t.type + (t.formulaN ? `(${t.formulaType[0]}${t.formulaN})` : ''))
+            });
+        }
+
         // Generate remaining terms
         for (let i = 1; i < terms; i++) {
             let op;
@@ -2989,6 +3072,21 @@ function generateExerciseTerms(settings) {
                     op = termTypeConfig.formulaType === 'plus' ? '+' : '-';
                 } else {
                     // For direct calculations, use normal logic
+                    if (operation === 'mixed') {
+                        op = Math.random() > 0.5 ? '+' : '-';
+                    } else {
+                        op = operation === 'addition' ? '+' : '-';
+                    }
+                }
+            // For Big Friends / Family levels with pre-allocated distribution
+            } else if ((isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) && termTypesDistribution.length > 0) {
+                const termIndex = i - 1;
+                const termTypeConfig = termTypesDistribution[termIndex];
+
+                if (termTypeConfig.type === 'big-current' || termTypeConfig.type === 'big-previous') {
+                    op = termTypeConfig.formulaType === 'plus' ? '+' : '-';
+                } else {
+                    // small-or-direct: random operation
                     if (operation === 'mixed') {
                         op = Math.random() > 0.5 ? '+' : '-';
                     } else {
@@ -3493,6 +3591,113 @@ function generateExerciseTerms(settings) {
                     operations = [];
                     break;
                 }
+            } else if ((isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) && termTypesDistribution.length > 0) {
+                const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+                const termIndex = i - 1;
+                const termTypeConfig = termTypesDistribution[termIndex];
+
+                if (termTypeConfig.type === 'big-current' || termTypeConfig.type === 'big-previous') {
+                    const N = termTypeConfig.formulaN;
+                    const formulaOp = termTypeConfig.formulaType === 'plus' ? '+' : '-';
+                    const needsFamily = termTypeConfig.isFamily;
+
+                    // Check if current state allows this formula
+                    let canApply = false;
+                    if (formulaOp === '+') {
+                        const bigFriendsOk = requiresBigFriendsFormula(currentResult, '+', N);
+                        const familyOk = requiresFamilyFormula(currentResult, '+', N);
+                        canApply = bigFriendsOk && (needsFamily ? familyOk : !familyOk);
+                    } else {
+                        const bigFriendsOk = requiresBigFriendsFormula(currentResult, '-', N);
+                        const familyOk = requiresFamilyFormula(currentResult, '-', N);
+                        canApply = bigFriendsOk && (needsFamily ? familyOk : !familyOk);
+                    }
+
+                    if (canApply && isAllowedOperation(currentResult, op, N, complexity)) {
+                        const newResult = op === '+' ? currentResult + N : currentResult - N;
+                        if (newResult >= 0 && newResult <= maxLimit) {
+                            term = N;
+                            validTermFound = true;
+                            console.log('[generateExerciseTerms] Big Friends formula term:', {
+                                currentResult, op, term: N, newResult, type: termTypeConfig.type
+                            });
+                        }
+                    }
+
+                    if (!validTermFound) {
+                        // Can't apply formula at current state - fallback to small-or-direct
+                        console.log('[generateExerciseTerms] Big Friends formula not applicable, falling back to direct');
+                        termTypeConfig.type = 'small-or-direct';
+                        // Reset op to random
+                        if (operation === 'mixed') {
+                            op = Math.random() > 0.5 ? '+' : '-';
+                        } else {
+                            op = operation === 'addition' ? '+' : '-';
+                        }
+                        operations[operations.length - 1] = op;
+                    }
+                }
+
+                if (!validTermFound && termTypeConfig.type === 'small-or-direct') {
+                    // Generate a term using small friends or direct rules
+                    const currentResult2 = calculateResult(termsArray, operations.slice(0, -1));
+
+                    // Check switching operation if needed
+                    if (op === '+' && currentResult2 >= maxLimit) {
+                        op = '-';
+                        operations[operations.length - 1] = op;
+                    } else if (op === '-' && currentResult2 <= 0) {
+                        op = '+';
+                        operations[operations.length - 1] = op;
+                    }
+
+                    // Find valid direct/small-friends terms (not Big Friends)
+                    const directOptions = [];
+                    for (let t = 1; t <= 9; t++) {
+                        const testResult = op === '+' ? currentResult2 + t : currentResult2 - t;
+                        if (testResult >= 0 && testResult <= maxLimit &&
+                            isAllowedOperation(currentResult2, op, t, complexity) &&
+                            !requiresBigFriendsFormula(currentResult2, op, t)) {
+                            directOptions.push(t);
+                        }
+                    }
+
+                    if (directOptions.length > 0) {
+                        const idx = Math.floor(Math.random() * directOptions.length);
+                        term = directOptions[idx];
+                        validTermFound = true;
+                    } else {
+                        // No direct options, allow any valid operation
+                        for (let t = 1; t <= 9; t++) {
+                            const testResult = op === '+' ? currentResult2 + t : currentResult2 - t;
+                            if (testResult >= 0 && testResult <= maxLimit &&
+                                isAllowedOperation(currentResult2, op, t, complexity)) {
+                                term = t;
+                                validTermFound = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (validTermFound) {
+                        console.log('[generateExerciseTerms] Big Friends small-or-direct term:', { currentResult2, op, term });
+                    }
+                }
+
+                // Final fallback: use standard generation if still no term found
+                if (!validTermFound) {
+                    let standardAttempts = 0;
+                    while (!validTermFound && standardAttempts < 20) {
+                        term = generateNumber(settings, false);
+                        if (!shouldAvoidTermRepetition(termsArray, term, terms)) {
+                            validTermFound = true;
+                        }
+                        standardAttempts++;
+                    }
+                    if (!validTermFound) {
+                        validTermFound = true; // use last generated term
+                    }
+                }
             } else {
                 // For other complexity levels, use standard generation
                 // Try to avoid excessive repetition
@@ -3942,6 +4147,35 @@ function generateExerciseTerms(settings) {
             });
         }
 
+        // VALIDATION: For Big Friends levels, verify actual Big Friends formula usage
+        if ((isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) && termTypesDistribution && termTypesDistribution.length > 0) {
+            const intendedBigCount = termTypesDistribution.filter(t => t.type === 'big-current').length;
+            if (intendedBigCount > 0) {
+                let actualBigCount = 0;
+                for (let i = 0; i < operations.length; i++) {
+                    const curResult = calculateResult(termsArray.slice(0, i + 1), operations.slice(0, i));
+                    const t = termsArray[i + 1];
+                    const o = operations[i];
+                    if (requiresBigFriendsFormula(curResult, o, t)) {
+                        actualBigCount++;
+                    }
+                }
+                const actualPct = operations.length > 0 ? actualBigCount / operations.length : 0;
+                const intendedPct = intendedBigCount / termTypesDistribution.length;
+                const minRequired = intendedPct * 0.7; // At least 70% of intended
+
+                if (actualPct < minRequired) {
+                    console.log('[generateExerciseTerms] Big Friends: Insufficient formula usage.',
+                        'Intended:', intendedBigCount, 'Actual:', actualBigCount,
+                        'Required:', (minRequired * 100).toFixed(0) + '%',
+                        'Attempt:', attempt + 1);
+                    attempt++;
+                    if (attempt >= maxAttempts) { break; }
+                    continue;
+                }
+            }
+        }
+
         // Final validation: Check for consecutive Big Friends formulas
         if (!validateNoConsecutiveBigFriends(termsArray, operations)) {
             console.warn('[generateExerciseTerms] Exercise has consecutive Big Friends formulas. Regenerating. Attempt:', attempt + 1, '/', maxAttempts);
@@ -3959,7 +4193,7 @@ function generateExerciseTerms(settings) {
         console.log('[generateExerciseTerms] Generated valid exercise:', { termsCount: termsArray.length, terms: termsArray, operations });
         return { terms: termsArray, operations: operations };
 
-    } while ((isDirectCalculationLevel(complexity) || isSmallFriendsLevel(complexity)) && attempt < maxAttempts);
+    } while ((isDirectCalculationLevel(complexity) || isSmallFriendsLevel(complexity) || isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) && attempt < maxAttempts);
 
     // Fallback: return last generated result even if not perfect
     console.log('[generateExerciseTerms] Returning fallback exercise:', { termsCount: termsArray.length, terms: termsArray, operations });
