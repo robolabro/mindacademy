@@ -800,15 +800,16 @@
                             <option value="direct-counting" selected>Calcul direct</option>
                         </optgroup>
                         <optgroup label="Prieteni Mici">
-                            <option value="small-plus-1">+1 = +5 - 4</option>
-                            <option value="small-plus-2">+2 = +5 - 3</option>
-                            <option value="small-plus-3">+3 = +5 - 2</option>
-                            <option value="small-plus-4">+4 = +5 - 1</option>
-                            <option value="small-minus-1">-1 = +4 - 5</option>
-                            <option value="small-minus-2">-2 = +3 - 5</option>
-                            <option value="small-minus-3">-3 = +2 - 5</option>
-                            <option value="small-minus-4">-4 = +1 - 5</option>
-                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                            <option value="small-plus-1">Prieteni mici: +1 = +5-4</option>
+                            <option value="small-minus-1">Prieteni mici: -1 = +4-5</option>
+                            <option value="small-plus-2">Prieteni mici: +2 = +5-3</option>
+                            <option value="small-minus-2">Prieteni mici: -2 = +3-5</option>
+                            <option value="small-plus-3">Prieteni mici: +3 = +5-2</option>
+                            <option value="small-minus-3">Prieteni mici: -3 = +2-5</option>
+                            <option value="small-plus-4">Prieteni mici: +4 = +5-1</option>
+                            <option value="small-minus-4">Prieteni mici: -4 = +1-5</option>
+                            <option value="small-friends-all">Prieteni mici: toate (1 cifră)</option>
+                            <option value="small-friends-all-multi">Prieteni mici: toate (multi-cifră)</option>
                         </optgroup>
                         <optgroup label="Prieteni Mari">
                             <option value="big-plus-1">+1 = +10 - 9</option>
@@ -963,15 +964,16 @@
                             <option value="direct-counting" selected>Calcul direct</option>
                         </optgroup>
                         <optgroup label="Prieteni Mici">
-                            <option value="small-plus-1">+1 = +5 - 4</option>
-                            <option value="small-plus-2">+2 = +5 - 3</option>
-                            <option value="small-plus-3">+3 = +5 - 2</option>
-                            <option value="small-plus-4">+4 = +5 - 1</option>
-                            <option value="small-minus-1">-1 = +4 - 5</option>
-                            <option value="small-minus-2">-2 = +3 - 5</option>
-                            <option value="small-minus-3">-3 = +2 - 5</option>
-                            <option value="small-minus-4">-4 = +1 - 5</option>
-                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                            <option value="small-plus-1">Prieteni mici: +1 = +5-4</option>
+                            <option value="small-minus-1">Prieteni mici: -1 = +4-5</option>
+                            <option value="small-plus-2">Prieteni mici: +2 = +5-3</option>
+                            <option value="small-minus-2">Prieteni mici: -2 = +3-5</option>
+                            <option value="small-plus-3">Prieteni mici: +3 = +5-2</option>
+                            <option value="small-minus-3">Prieteni mici: -3 = +2-5</option>
+                            <option value="small-plus-4">Prieteni mici: +4 = +5-1</option>
+                            <option value="small-minus-4">Prieteni mici: -4 = +1-5</option>
+                            <option value="small-friends-all">Prieteni mici: toate (1 cifră)</option>
+                            <option value="small-friends-all-multi">Prieteni mici: toate (multi-cifră)</option>
                         </optgroup>
                         <optgroup label="Prieteni Mari">
                             <option value="big-plus-1">+1 = +10 - 9</option>
@@ -1195,15 +1197,16 @@
                             <option value="direct-counting" selected>Calcul direct</option>
                         </optgroup>
                         <optgroup label="Prieteni Mici">
-                            <option value="small-plus-1">+1 = +5 - 4</option>
-                            <option value="small-plus-2">+2 = +5 - 3</option>
-                            <option value="small-plus-3">+3 = +5 - 2</option>
-                            <option value="small-plus-4">+4 = +5 - 1</option>
-                            <option value="small-minus-1">-1 = +4 - 5</option>
-                            <option value="small-minus-2">-2 = +3 - 5</option>
-                            <option value="small-minus-3">-3 = +2 - 5</option>
-                            <option value="small-minus-4">-4 = +1 - 5</option>
-                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                            <option value="small-plus-1">Prieteni mici: +1 = +5-4</option>
+                            <option value="small-minus-1">Prieteni mici: -1 = +4-5</option>
+                            <option value="small-plus-2">Prieteni mici: +2 = +5-3</option>
+                            <option value="small-minus-2">Prieteni mici: -2 = +3-5</option>
+                            <option value="small-plus-3">Prieteni mici: +3 = +5-2</option>
+                            <option value="small-minus-3">Prieteni mici: -3 = +2-5</option>
+                            <option value="small-plus-4">Prieteni mici: +4 = +5-1</option>
+                            <option value="small-minus-4">Prieteni mici: -4 = +1-5</option>
+                            <option value="small-friends-all">Prieteni mici: toate (1 cifră)</option>
+                            <option value="small-friends-all-multi">Prieteni mici: toate (multi-cifră)</option>
                         </optgroup>
                         <optgroup label="Prieteni Mari">
                             <option value="big-plus-1">+1 = +10 - 9</option>
@@ -1611,6 +1614,7 @@ function generateNumber(settings, isFirstTerm = false) {
         case 'small-minus-2':
         case 'small-minus-3':
         case 'small-minus-4':
+        case 'small-friends-all-multi':
         case 'small-friends-all':
             num = generateSmallFriendsNumber(complexity, digits, isFirstTerm);
             break;
@@ -1827,6 +1831,12 @@ function getComplexityLimit(complexity, digits = 1) {
         case 'small-minus-4':
         case 'small-friends-all':
             return 9; // Small Friends formulas can work with numbers 1-9
+        case 'small-friends-all-multi':
+            // Multi-digit Small Friends: support 2+ digit numbers like direct-counting
+            if (digits > 1) {
+                return parseInt('9'.repeat(digits)); // For 2 digits: 99, for 3 digits: 999, etc.
+            }
+            return 9;
         default:
             return null; // No limit for other complexity levels
     }
@@ -1860,7 +1870,7 @@ function isDirectCalculationLevel(complexity) {
  * Checks if the complexity level is a "Small Friends" formula level
  */
 function isSmallFriendsLevel(complexity) {
-    return complexity.startsWith('small-') || complexity === 'small-friends-all';
+    return complexity.startsWith('small-') || complexity === 'small-friends-all' || complexity === 'small-friends-all-multi';
 }
 
 /**
@@ -2074,49 +2084,36 @@ function canGenerateFormulaFromState(currentValue, operation, formulaNumber) {
  * - isPlus: whether it's a plus formula (true) or minus formula (false)
  */
 function getAvailableFormulasForLevel(complexity) {
-    const match = complexity.match(/small-(plus|minus)-(\d)/);
+    // Interleaved order: +1, -1, +2, -2, +3, -3, +4, -4
+    const interleavedOrder = [
+        {type:'plus', number:1}, {type:'minus', number:1},
+        {type:'plus', number:2}, {type:'minus', number:2},
+        {type:'plus', number:3}, {type:'minus', number:3},
+        {type:'plus', number:4}, {type:'minus', number:4}
+    ];
 
-    if (!match) {
-        // If it's small-friends-all, all small friends formulas are available
-        // Only Small Friends formulas - no direct counting or big friends
-        if (complexity === 'small-friends-all') {
-            return {
-                currentFormula: null, // No specific current formula
-                previousFormulas: [1, 2, 3, 4],
-                canUseDirect: false, // No direct counting for this level
-                isPlus: null
-            };
-        }
-        return null;
+    if (complexity === 'small-friends-all' || complexity === 'small-friends-all-multi') {
+        return {
+            currentFormula: null,
+            previousFormulas: interleavedOrder,
+            canUseDirect: true,
+            isPlus: null
+        };
     }
+
+    const match = complexity.match(/small-(plus|minus)-(\d)/);
+    if (!match) return null;
 
     const isPlus = match[1] === 'plus';
     const currentFormula = parseInt(match[2]);
+    const currentIdx = interleavedOrder.findIndex(f => f.type === match[1] && f.number === currentFormula);
 
-    // Build array of previous formulas based on the order:
-    // For plus: +1, +2, +3, +4
-    // For minus: -1, -2, -3, -4
-    const previousFormulas = [];
-
-    // Add all previous plus formulas (always available)
-    for (let i = 1; i < currentFormula; i++) {
-        previousFormulas.push({ type: 'plus', number: i });
-    }
-
-    // If this is a minus formula, also add +4 (last plus formula)
-    if (!isPlus) {
-        previousFormulas.push({ type: 'plus', number: 4 });
-
-        // Add previous minus formulas
-        for (let i = 1; i < currentFormula; i++) {
-            previousFormulas.push({ type: 'minus', number: i });
-        }
-    }
+    const previousFormulas = interleavedOrder.slice(0, currentIdx);
 
     return {
         currentFormula: currentFormula,
         previousFormulas: previousFormulas,
-        canUseDirect: true, // Direct calculations with 4, 5, 9 are always available
+        canUseDirect: true,
         isPlus: isPlus
     };
 }
@@ -2142,14 +2139,15 @@ function getAvailableFormulasForLevel(complexity) {
  * Prietenii mici (Small Friends) - CUMULATIVE logic:
  * ALL Small Friends formulas include ALL direct-to-9 operations PLUS:
  *
- * small-plus-1 (+1 = +5-4): adds 4+1 (NOT 1+4)
- * small-plus-2 (+2 = +5-3): adds 3+2, 4+2 (NOT 2+3, 2+4) + previous (4+1)
- * small-plus-3 (+3 = +5-2): adds 2+3, 3+3, 4+3 (NOT 3+4) + previous (4+1, 3+2, 4+2)
- * small-plus-4 (+4 = +5-1): adds 1+4, 2+4, 3+4, 4+4 + previous (all plus formulas)
- * small-minus-1 (-1 = +4-5): adds 5-1 + all plus formulas
- * small-minus-2 (-2 = +3-5): adds 5-2, 6-2 + previous (5-1) + all plus formulas
- * small-minus-3 (-3 = +2-5): adds 5-3, 6-3, 7-3 + previous (5-1, 5-2, 6-2) + all plus formulas
- * small-minus-4 (-4 = +1-5): adds 5-4, 6-4, 7-4, 8-4 + previous (all minus) + all plus formulas
+ * Interleaved order: +1, -1, +2, -2, +3, -3, +4, -4 (cumulative)
+ * small-plus-1 (+1=+5-4): adds 4+1
+ * small-minus-1 (-1=+4-5): adds 5-1 + knows [+1]
+ * small-plus-2 (+2=+5-3): adds 3+2, 4+2 + knows [+1, -1]
+ * small-minus-2 (-2=+3-5): adds 5-2, 6-2 + knows [+1, -1, +2]
+ * small-plus-3 (+3=+5-2): adds 2+3, 3+3, 4+3 + knows [+1, -1, +2, -2]
+ * small-minus-3 (-3=+2-5): adds 5-3, 6-3, 7-3 + knows [+1, -1, +2, -2, +3]
+ * small-plus-4 (+4=+5-1): adds 1+4, 2+4, 3+4, 4+4 + knows [+1,-1,+2,-2,+3,-3]
+ * small-minus-4 (-4=+1-5): adds 5-4, 6-4, 7-4, 8-4 + knows all previous
  */
 function isAllowedOperation(currentValue, operation, operand, complexity) {
     const directTo4 = {
@@ -2184,16 +2182,16 @@ function isAllowedOperation(currentValue, operation, operand, complexity) {
     // Each formula includes all operations from previous formulas PLUS direct-to-9
     // UPDATED: Allow both commutative forms (4+1 and 1+4) to enable easier exercise generation
     const smallPlus1 = {
-        '+': [[4,1],[1,4]]  // Both 4+1 and 1+4 (commutative)
+        '+': [[4,1]]  // Only 4+1 (formula +1 = +5-4)
     };
     const smallPlus2 = {
-        '+': [[3,2],[4,2],[2,3],[2,4]]  // Both forms: 3+2, 4+2, 2+3, 2+4
+        '+': [[3,2],[4,2]]  // Only 3+2, 4+2 (formula +2 = +5-3)
     };
     const smallPlus3 = {
-        '+': [[2,3],[3,3],[4,3],[3,2],[3,4]]  // Both forms: 2+3, 3+3, 4+3, 3+2, 3+4
+        '+': [[2,3],[3,3],[4,3]]  // Only 2+3, 3+3, 4+3 (formula +3 = +5-2)
     };
     const smallPlus4 = {
-        '+': [[1,4],[2,4],[3,4],[4,4],[4,1],[4,2],[4,3]]  // Both forms: 1+4, 2+4, 3+4, 4+4, 4+1, 4+2, 4+3
+        '+': [[1,4],[2,4],[3,4],[4,4]]  // Only 1+4, 2+4, 3+4, 4+4 (formula +4 = +5-1)
     };
     const smallMinus1 = {
         '-': [[5,1]]  // Only 5-1 (subtraction is not commutative)
@@ -2251,133 +2249,55 @@ function isAllowedOperation(currentValue, operation, operand, complexity) {
             return inDirect4 || inDirect5 || inDirect9;
         }
 
-        // Small Friends - Cumulative logic
-        // Each level includes ALL direct-to-9 operations PLUS cumulative formula operations
         if (complexity.startsWith('small-')) {
-            // First check if it's in direct-to-9 (all Small Friends include direct-to-9)
+            // Always include direct-to-9
             const ops9 = directTo9New[operation] || [];
             const inDirect9 = ops9.some(([v, o]) => v === currentDigit && o === operandDigit);
             if (inDirect9 || inDirect4 || inDirect5) {
-                return true;  // Allow all direct-to-9 operations
+                return true;
             }
 
-            // Now check formula-specific operations (cumulative)
-            if (complexity === 'small-plus-1') {
-                const ops = smallPlus1[operation] || [];
-                return ops.some(([v, o]) => v === currentDigit && o === operandDigit);
-            } else if (complexity === 'small-plus-2') {
-                // Cumulative: plus-1 + plus-2
-                const ops1 = smallPlus1[operation] || [];
-                const ops2 = smallPlus2[operation] || [];
-                return ops1.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops2.some(([v, o]) => v === currentDigit && o === operandDigit);
-            } else if (complexity === 'small-plus-3') {
-                // Cumulative: plus-1 + plus-2 + plus-3
-                const ops1 = smallPlus1[operation] || [];
-                const ops2 = smallPlus2[operation] || [];
-                const ops3 = smallPlus3[operation] || [];
-                return ops1.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops2.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops3.some(([v, o]) => v === currentDigit && o === operandDigit);
-            } else if (complexity === 'small-plus-4') {
-                // Cumulative: plus-1 + plus-2 + plus-3 + plus-4
-                const ops1 = smallPlus1[operation] || [];
-                const ops2 = smallPlus2[operation] || [];
-                const ops3 = smallPlus3[operation] || [];
-                const ops4 = smallPlus4[operation] || [];
-                return ops1.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops2.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops3.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops4.some(([v, o]) => v === currentDigit && o === operandDigit);
-            } else if (complexity === 'small-minus-1') {
-                // Cumulative: all plus formulas + minus-1
-                const ops1p = smallPlus1['+'] || [];
-                const ops2p = smallPlus2['+'] || [];
-                const ops3p = smallPlus3['+'] || [];
-                const ops4p = smallPlus4['+'] || [];
-                const ops1m = smallMinus1[operation] || [];
-                if (operation === '+') {
-                    return ops1p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops2p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops3p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops4p.some(([v, o]) => v === currentDigit && o === operandDigit);
+            // Map formula sets to their operations
+            const formulaOps = {
+                'plus-1': smallPlus1,
+                'plus-2': smallPlus2,
+                'plus-3': smallPlus3,
+                'plus-4': smallPlus4,
+                'minus-1': smallMinus1,
+                'minus-2': smallMinus2,
+                'minus-3': smallMinus3,
+                'minus-4': smallMinus4
+            };
+
+            // Interleaved order: +1, -1, +2, -2, +3, -3, +4, -4
+            const interleavedOrder = [
+                'plus-1', 'minus-1', 'plus-2', 'minus-2',
+                'plus-3', 'minus-3', 'plus-4', 'minus-4'
+            ];
+
+            // Determine which formulas are known at this level
+            let knownFormulas = [];
+            if (complexity === 'small-friends-all' || complexity === 'small-friends-all-multi') {
+                knownFormulas = interleavedOrder;
+            } else {
+                const m = complexity.match(/small-(plus|minus)-(\d)/);
+                if (m) {
+                    const currentKey = `${m[1]}-${m[2]}`;
+                    const currentIdx = interleavedOrder.indexOf(currentKey);
+                    // Include current level and all previous
+                    knownFormulas = interleavedOrder.slice(0, currentIdx + 1);
                 }
-                return ops1m.some(([v, o]) => v === currentDigit && o === operandDigit);
-            } else if (complexity === 'small-minus-2') {
-                // Cumulative: all plus formulas + minus-1 + minus-2
-                const ops1p = smallPlus1['+'] || [];
-                const ops2p = smallPlus2['+'] || [];
-                const ops3p = smallPlus3['+'] || [];
-                const ops4p = smallPlus4['+'] || [];
-                const ops1m = smallMinus1['-'] || [];
-                const ops2m = smallMinus2[operation] || [];
-                if (operation === '+') {
-                    return ops1p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops2p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops3p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops4p.some(([v, o]) => v === currentDigit && o === operandDigit);
-                }
-                return ops1m.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops2m.some(([v, o]) => v === currentDigit && o === operandDigit);
-            } else if (complexity === 'small-minus-3') {
-                // Cumulative: all plus formulas + minus-1 + minus-2 + minus-3
-                const ops1p = smallPlus1['+'] || [];
-                const ops2p = smallPlus2['+'] || [];
-                const ops3p = smallPlus3['+'] || [];
-                const ops4p = smallPlus4['+'] || [];
-                const ops1m = smallMinus1['-'] || [];
-                const ops2m = smallMinus2['-'] || [];
-                const ops3m = smallMinus3[operation] || [];
-                if (operation === '+') {
-                    return ops1p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops2p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops3p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops4p.some(([v, o]) => v === currentDigit && o === operandDigit);
-                }
-                return ops1m.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops2m.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops3m.some(([v, o]) => v === currentDigit && o === operandDigit);
-            } else if (complexity === 'small-minus-4') {
-                // Cumulative: all plus formulas + all minus formulas
-                const ops1p = smallPlus1['+'] || [];
-                const ops2p = smallPlus2['+'] || [];
-                const ops3p = smallPlus3['+'] || [];
-                const ops4p = smallPlus4['+'] || [];
-                const ops1m = smallMinus1['-'] || [];
-                const ops2m = smallMinus2['-'] || [];
-                const ops3m = smallMinus3['-'] || [];
-                const ops4m = smallMinus4[operation] || [];
-                if (operation === '+') {
-                    return ops1p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops2p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops3p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops4p.some(([v, o]) => v === currentDigit && o === operandDigit);
-                }
-                return ops1m.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops2m.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops3m.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops4m.some(([v, o]) => v === currentDigit && o === operandDigit);
-            } else if (complexity === 'small-friends-all') {
-                // All Small Friends operations (same as small-minus-4)
-                const ops1p = smallPlus1['+'] || [];
-                const ops2p = smallPlus2['+'] || [];
-                const ops3p = smallPlus3['+'] || [];
-                const ops4p = smallPlus4['+'] || [];
-                const ops1m = smallMinus1['-'] || [];
-                const ops2m = smallMinus2['-'] || [];
-                const ops3m = smallMinus3['-'] || [];
-                const ops4m = smallMinus4['-'] || [];
-                if (operation === '+') {
-                    return ops1p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops2p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops3p.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                           ops4p.some(([v, o]) => v === currentDigit && o === operandDigit);
-                }
-                return ops1m.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops2m.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops3m.some(([v, o]) => v === currentDigit && o === operandDigit) ||
-                       ops4m.some(([v, o]) => v === currentDigit && o === operandDigit);
             }
+
+            // Check if operation is in any known formula set
+            for (const key of knownFormulas) {
+                const ops = (formulaOps[key] || {})[operation] || [];
+                if (ops.some(([v, o]) => v === currentDigit && o === operandDigit)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         return true;
@@ -2784,14 +2704,12 @@ function generateExerciseTerms(settings) {
                 currentFormulaCount = 1;
                 otherTermsCount = 0;
             } else if (remainingTerms === 2) {
-                // 2 terms: 1 current + 1 other (50/50) - more balanced
-                currentFormulaCount = 1;
-                otherTermsCount = 1;
+                // 2 terms: target 70% → round(2*0.7)=1, but 1/2=50%, use ceil for better coverage
+                currentFormulaCount = 2;
+                otherTermsCount = 0;
             } else {
-                // 3+ terms: more balanced distribution (50/50 instead of 65/35)
-                // This makes generation easier while still practicing the current formula
-                const currentRatio = 0.5; // More balanced: 50% instead of 65%
-                currentFormulaCount = Math.max(1, Math.floor(remainingTerms * currentRatio));
+                const currentRatio = 0.7;
+                currentFormulaCount = Math.max(1, Math.round(remainingTerms * currentRatio));
                 otherTermsCount = remainingTerms - currentFormulaCount;
             }
 
@@ -3754,6 +3672,26 @@ function generateExerciseTerms(settings) {
                     break;
                 }
                 continue; // Regenerate
+            }
+        }
+
+        // X-X rule: subtracting the same number (result=0) cannot be first or last operation
+        if (operations.length > 0) {
+            // Check first operation: termsArray[0] - termsArray[1] = 0 is forbidden as first
+            if (operations[0] === '-' && termsArray[1] === termsArray[0]) {
+                attempt++;
+                if (attempt >= maxAttempts) { break; }
+                continue;
+            }
+            // Check last operation: if last op is '-' and last term equals intermediate result
+            const lastOpIdx = operations.length - 1;
+            if (operations[lastOpIdx] === '-') {
+                const secondToLastResult = calculateResult(termsArray.slice(0, -1), operations.slice(0, -1));
+                if (secondToLastResult === termsArray[termsArray.length - 1]) {
+                    attempt++;
+                    if (attempt >= maxAttempts) { break; }
+                    continue;
+                }
             }
         }
 
