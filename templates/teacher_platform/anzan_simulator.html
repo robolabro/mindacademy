@@ -295,15 +295,44 @@
     }
 
     .number-display-area {
-        font-size: 5rem;
+        font-size: 8rem;
         font-weight: bold;
         color: var(--primary-color);
-        min-height: 150px;
+        min-height: 200px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 2rem;
         animation: fadeInScale 0.3s ease;
+    }
+
+    .countdown-circle {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 6rem;
+        font-weight: bold;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
     }
 
     @keyframes fadeInScale {
@@ -318,7 +347,7 @@
     }
 
     .operation-sign {
-        font-size: 4rem;
+        font-size: 6rem;
         color: var(--text-secondary);
         margin-right: 1rem;
     }
@@ -645,6 +674,47 @@
         margin-bottom: 0.5rem;
     }
 
+    /* Fullscreen styles */
+    :fullscreen .mode-screen,
+    :-webkit-full-screen .mode-screen,
+    :-moz-full-screen .mode-screen {
+        width: 100%;
+        max-width: none;
+        height: 100vh;
+        border-radius: 0;
+        padding: 0.5rem;
+        margin: 0;
+    }
+
+    /* Fullscreen classwork - no lateral padding */
+    :fullscreen #classroomMode,
+    :-webkit-full-screen #classroomMode,
+    :-moz-full-screen #classroomMode {
+        padding: 0;
+        background: white;
+    }
+
+    /* Hide mode header in fullscreen for Classwork */
+    :fullscreen #classroomMode .mode-header,
+    :-webkit-full-screen #classroomMode .mode-header,
+    :-moz-full-screen #classroomMode .mode-header {
+        display: none;
+    }
+
+    :fullscreen .student-panel,
+    :-webkit-full-screen .student-panel,
+    :-moz-full-screen .student-panel {
+        padding: 0.5rem;
+        min-height: 320px;
+    }
+
+    :fullscreen .students-grid,
+    :-webkit-full-screen .students-grid,
+    :-moz-full-screen .students-grid {
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .anzan-container {
@@ -677,6 +747,7 @@
     <!-- Mode Selection -->
     <div id="modeSelection" class="mode-selection">
         <h1 class="mode-title">🧠 Anzan - Calcul Mental</h1>
+        <button class="back-btn" onclick="window.history.back()" style="margin-bottom: 2rem;">← Înapoi</button>
 
         <div class="mode-grid">
             <div class="mode-card" onclick="selectMode('training')">
@@ -709,7 +780,7 @@
     <div id="trainingMode" class="mode-screen">
         <div class="mode-header">
             <h2>Mod Antrenament</h2>
-            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+            <button class="back-btn" onclick="backFromTraining()">← Înapoi</button>
         </div>
 
         <div class="instructions-panel">
@@ -729,15 +800,16 @@
                             <option value="direct-counting" selected>Calcul direct</option>
                         </optgroup>
                         <optgroup label="Prieteni Mici">
-                            <option value="small-plus-1">+1 = +5 - 4</option>
-                            <option value="small-plus-2">+2 = +5 - 3</option>
-                            <option value="small-plus-3">+3 = +5 - 2</option>
-                            <option value="small-plus-4">+4 = +5 - 1</option>
-                            <option value="small-minus-1">-1 = +4 - 5</option>
-                            <option value="small-minus-2">-2 = +3 - 5</option>
-                            <option value="small-minus-3">-3 = +2 - 5</option>
-                            <option value="small-minus-4">-4 = +1 - 5</option>
-                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                            <option value="small-plus-1">Prieteni mici: +1 = +5-4</option>
+                            <option value="small-minus-1">Prieteni mici: -1 = +4-5</option>
+                            <option value="small-plus-2">Prieteni mici: +2 = +5-3</option>
+                            <option value="small-minus-2">Prieteni mici: -2 = +3-5</option>
+                            <option value="small-plus-3">Prieteni mici: +3 = +5-2</option>
+                            <option value="small-minus-3">Prieteni mici: -3 = +2-5</option>
+                            <option value="small-plus-4">Prieteni mici: +4 = +5-1</option>
+                            <option value="small-minus-4">Prieteni mici: -4 = +1-5</option>
+                            <option value="small-friends-all">Prieteni mici: toate (1 cifră)</option>
+                            <option value="small-friends-all-multi">Prieteni mici: toate (multi-cifră)</option>
                         </optgroup>
                         <optgroup label="Prieteni Mari">
                             <option value="big-plus-1">+1 = +10 - 9</option>
@@ -794,9 +866,9 @@
                 <span class="setting-label">Fracții:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-fractions="none">Nu</button>
-                        <button class="toggle-btn" data-fractions="one">1 zecimală</button>
-                        <button class="toggle-btn" data-fractions="two">2 zecimale</button>
+                        <button class="toggle-btn active" data-fractions="none" disabled style="opacity: 0.5; cursor: not-allowed;">Nu</button>
+                        <button class="toggle-btn" data-fractions="one" disabled style="opacity: 0.5; cursor: not-allowed;">1 zecimală</button>
+                        <button class="toggle-btn" data-fractions="two" disabled style="opacity: 0.5; cursor: not-allowed;">2 zecimale</button>
                     </div>
                 </div>
             </div>
@@ -805,9 +877,9 @@
                 <span class="setting-label">Operație:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-operation="addition">Adunare</button>
+                        <button class="toggle-btn" data-operation="addition">Adunare</button>
                         <button class="toggle-btn" data-operation="subtraction">Scădere</button>
-                        <button class="toggle-btn" data-operation="mixed">Amestecat</button>
+                        <button class="toggle-btn active" data-operation="mixed">Amestecat</button>
                     </div>
                 </div>
             </div>
@@ -816,8 +888,8 @@
                 <span class="setting-label">Numere negative:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-negative="no">Nu</button>
-                        <button class="toggle-btn" data-negative="yes">Da</button>
+                        <button class="toggle-btn active" data-negative="no" disabled style="opacity: 0.5; cursor: not-allowed;">Nu</button>
+                        <button class="toggle-btn" data-negative="yes" disabled style="opacity: 0.5; cursor: not-allowed;">Da</button>
                     </div>
                 </div>
             </div>
@@ -871,7 +943,7 @@
     <div id="seriesMode" class="mode-screen">
         <div class="mode-header">
             <h2>Serii de Exerciții</h2>
-            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+            <button class="back-btn" onclick="backFromSeries()">← Înapoi</button>
         </div>
 
         <div class="instructions-panel">
@@ -892,15 +964,16 @@
                             <option value="direct-counting" selected>Calcul direct</option>
                         </optgroup>
                         <optgroup label="Prieteni Mici">
-                            <option value="small-plus-1">+1 = +5 - 4</option>
-                            <option value="small-plus-2">+2 = +5 - 3</option>
-                            <option value="small-plus-3">+3 = +5 - 2</option>
-                            <option value="small-plus-4">+4 = +5 - 1</option>
-                            <option value="small-minus-1">-1 = +4 - 5</option>
-                            <option value="small-minus-2">-2 = +3 - 5</option>
-                            <option value="small-minus-3">-3 = +2 - 5</option>
-                            <option value="small-minus-4">-4 = +1 - 5</option>
-                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                            <option value="small-plus-1">Prieteni mici: +1 = +5-4</option>
+                            <option value="small-minus-1">Prieteni mici: -1 = +4-5</option>
+                            <option value="small-plus-2">Prieteni mici: +2 = +5-3</option>
+                            <option value="small-minus-2">Prieteni mici: -2 = +3-5</option>
+                            <option value="small-plus-3">Prieteni mici: +3 = +5-2</option>
+                            <option value="small-minus-3">Prieteni mici: -3 = +2-5</option>
+                            <option value="small-plus-4">Prieteni mici: +4 = +5-1</option>
+                            <option value="small-minus-4">Prieteni mici: -4 = +1-5</option>
+                            <option value="small-friends-all">Prieteni mici: toate (1 cifră)</option>
+                            <option value="small-friends-all-multi">Prieteni mici: toate (multi-cifră)</option>
                         </optgroup>
                         <optgroup label="Prieteni Mari">
                             <option value="big-plus-1">+1 = +10 - 9</option>
@@ -971,9 +1044,9 @@
                 <span class="setting-label">Fracții:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-fractions="none">Nu</button>
-                        <button class="toggle-btn" data-fractions="one">1 zecimală</button>
-                        <button class="toggle-btn" data-fractions="two">2 zecimale</button>
+                        <button class="toggle-btn active" data-fractions="none" disabled style="opacity: 0.5; cursor: not-allowed;">Nu</button>
+                        <button class="toggle-btn" data-fractions="one" disabled style="opacity: 0.5; cursor: not-allowed;">1 zecimală</button>
+                        <button class="toggle-btn" data-fractions="two" disabled style="opacity: 0.5; cursor: not-allowed;">2 zecimale</button>
                     </div>
                 </div>
             </div>
@@ -982,9 +1055,9 @@
                 <span class="setting-label">Operație:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-operation="addition">Adunare</button>
+                        <button class="toggle-btn" data-operation="addition">Adunare</button>
                         <button class="toggle-btn" data-operation="subtraction">Scădere</button>
-                        <button class="toggle-btn" data-operation="mixed">Amestecat</button>
+                        <button class="toggle-btn active" data-operation="mixed">Amestecat</button>
                     </div>
                 </div>
             </div>
@@ -993,8 +1066,8 @@
                 <span class="setting-label">Numere negative:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
-                        <button class="toggle-btn active" data-negative="no">Nu</button>
-                        <button class="toggle-btn" data-negative="yes">Da</button>
+                        <button class="toggle-btn active" data-negative="no" disabled style="opacity: 0.5; cursor: not-allowed;">Nu</button>
+                        <button class="toggle-btn" data-negative="yes" disabled style="opacity: 0.5; cursor: not-allowed;">Da</button>
                     </div>
                 </div>
             </div>
@@ -1085,7 +1158,7 @@
     <div id="classroomMode" class="mode-screen">
         <div class="mode-header">
             <h2>Lucru în Clasă</h2>
-            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+            <button class="back-btn" onclick="backFromClassroom()">← Înapoi</button>
         </div>
 
         <div class="instructions-panel">
@@ -1124,15 +1197,16 @@
                             <option value="direct-counting" selected>Calcul direct</option>
                         </optgroup>
                         <optgroup label="Prieteni Mici">
-                            <option value="small-plus-1">+1 = +5 - 4</option>
-                            <option value="small-plus-2">+2 = +5 - 3</option>
-                            <option value="small-plus-3">+3 = +5 - 2</option>
-                            <option value="small-plus-4">+4 = +5 - 1</option>
-                            <option value="small-minus-1">-1 = +4 - 5</option>
-                            <option value="small-minus-2">-2 = +3 - 5</option>
-                            <option value="small-minus-3">-3 = +2 - 5</option>
-                            <option value="small-minus-4">-4 = +1 - 5</option>
-                            <option value="small-friends-all">Prieteni mici (toate)</option>
+                            <option value="small-plus-1">Prieteni mici: +1 = +5-4</option>
+                            <option value="small-minus-1">Prieteni mici: -1 = +4-5</option>
+                            <option value="small-plus-2">Prieteni mici: +2 = +5-3</option>
+                            <option value="small-minus-2">Prieteni mici: -2 = +3-5</option>
+                            <option value="small-plus-3">Prieteni mici: +3 = +5-2</option>
+                            <option value="small-minus-3">Prieteni mici: -3 = +2-5</option>
+                            <option value="small-plus-4">Prieteni mici: +4 = +5-1</option>
+                            <option value="small-minus-4">Prieteni mici: -4 = +1-5</option>
+                            <option value="small-friends-all">Prieteni mici: toate (1 cifră)</option>
+                            <option value="small-friends-all-multi">Prieteni mici: toate (multi-cifră)</option>
                         </optgroup>
                         <optgroup label="Prieteni Mari">
                             <option value="big-plus-1">+1 = +10 - 9</option>
@@ -1188,7 +1262,7 @@ let exerciseData = {
         speed: 1.5,
         digits: 1,
         fractions: 'none',
-        operation: 'addition',
+        operation: 'mixed',
         negative: 'no',
         terms: 3,
         dictation: 'no',
@@ -1204,7 +1278,7 @@ let exerciseData = {
         speed: 1.5,
         digits: 1,
         fractions: 'none',
-        operation: 'addition',
+        operation: 'mixed',
         negative: 'no',
         terms: 3,
         dictation: 'no',
@@ -1309,6 +1383,60 @@ function backToModes() {
     currentMode = null;
 }
 
+// Smart back button for Training Mode
+function backFromTraining() {
+    const exerciseArea = document.getElementById('trainingExercise');
+    const settingsPanel = document.getElementById('trainingSettings');
+    const startButton = document.querySelector('#trainingMode .start-btn');
+
+    // If we're in the exercise area, go back to settings
+    if (exerciseArea && exerciseArea.style.display === 'flex') {
+        exerciseArea.style.display = 'none';
+        settingsPanel.style.display = 'block';
+        startButton.style.display = 'block';
+    } else {
+        // If we're in settings, go back to mode selection
+        backToModes();
+    }
+}
+
+// Smart back button for Series Mode
+function backFromSeries() {
+    const exerciseArea = document.getElementById('seriesExercise');
+    const settingsPanel = document.getElementById('seriesSettings');
+    const startButton = document.querySelector('#seriesMode .start-btn');
+    const reportArea = document.getElementById('seriesReport');
+
+    // If we're in the report, go back to mode selection
+    if (reportArea && reportArea.style.display === 'block') {
+        backToModes();
+    }
+    // If we're in the exercise area, go back to settings
+    else if (exerciseArea && exerciseArea.style.display === 'flex') {
+        exerciseArea.style.display = 'none';
+        settingsPanel.style.display = 'block';
+        startButton.style.display = 'block';
+    } else {
+        // If we're in settings, go back to mode selection
+        backToModes();
+    }
+}
+
+// Smart back button for Classroom Mode
+function backFromClassroom() {
+    const reportArea = document.getElementById('classroomReport');
+    const setupArea = document.querySelector('#classroomMode .students-setup');
+
+    // If we're in the report, go back to classroom setup
+    if (reportArea && reportArea.style.display === 'block') {
+        reportArea.style.display = 'none';
+        if (setupArea) setupArea.style.display = 'block';
+    } else {
+        // If we're in setup, go back to mode selection
+        backToModes();
+    }
+}
+
 // Settings Controls
 function adjustNumber(id, delta) {
     const element = document.getElementById(id);
@@ -1391,16 +1519,64 @@ function generateNumber(settings, isFirstTerm = false) {
     // Generate base number based on complexity
     switch(complexity) {
         case 'direct-to-4':
-            // Direct calculation with 4: use only 1-4 (no 0, beads available on soroban)
-            num = Math.floor(Math.random() * 4) + 1; // 1-4
+            // Direct calculation with 4: use only 1-4 for the last digit
+            if (digits === 1) {
+                num = Math.floor(Math.random() * 4) + 1; // 1-4
+            } else {
+                // For multi-digit numbers, generate number with last digit 1-4
+                const max = parseInt('9'.repeat(digits));
+                const min = parseInt('1' + '0'.repeat(digits - 1));
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+                // Ensure last digit is 1-4
+                num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 4) + 1);
+            }
             break;
         case 'direct-to-5':
-            // Direct calculation with 5: use only 1-5 (can use heaven bead, no 0)
-            num = Math.floor(Math.random() * 5) + 1; // 1-5
+            // Direct calculation with 5: use only 1-5 for the last digit
+            // CRITICAL: For first term, use only 1-4 (not 5) to avoid getting stuck
+            // From 5, you cannot add (requires Big Friends) or subtract (requires Small Friends) directly
+            if (digits === 1) {
+                if (isFirstTerm) {
+                    num = Math.floor(Math.random() * 4) + 1; // 1-4 only for first term
+                } else {
+                    num = Math.floor(Math.random() * 5) + 1; // 1-5 for other terms
+                }
+            } else {
+                // For multi-digit numbers, generate number with last digit 1-5
+                const max = parseInt('9'.repeat(digits));
+                const min = parseInt('1' + '0'.repeat(digits - 1));
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+                // Ensure last digit is 1-5 (or 1-4 for first term)
+                if (isFirstTerm) {
+                    num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 4) + 1);
+                } else {
+                    num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 5) + 1);
+                }
+            }
             break;
         case 'direct-to-9':
-            // Direct calculation with 9: use only 1-9 (all beads available, no 0)
-            num = Math.floor(Math.random() * 9) + 1; // 1-9
+            // Direct calculation with 9: use 1-9 for the last digit
+            if (digits === 1) {
+                // Favor larger numbers (6-9) with 60% probability for increased difficulty
+                const rand = Math.random();
+                if (rand < 0.6) {
+                    // 60% - Generate large numbers (6-9) to challenge kids with heaven+earth bead combinations
+                    num = Math.floor(Math.random() * 4) + 6; // 6-9
+                } else {
+                    // 40% - Generate smaller numbers (1-5)
+                    num = Math.floor(Math.random() * 5) + 1; // 1-5
+                }
+            } else {
+                // For multi-digit numbers, generate number with last digit 1-9
+                const max = parseInt('9'.repeat(digits));
+                const min = parseInt('1' + '0'.repeat(digits - 1));
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+                // Ensure last digit is 1-9 (no 0)
+                const lastDigit = num % 10;
+                if (lastDigit === 0) {
+                    num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+                }
+            }
             break;
         case 'direct-counting':
             const max = parseInt('9'.repeat(digits));
@@ -1418,10 +1594,18 @@ function generateNumber(settings, isFirstTerm = false) {
                 }
             } else {
                 num = Math.floor(Math.random() * (max - min + 1)) + min;
+                // For multi-digit numbers, ensure last digit is NOT 0 (1-9 only)
+                if (digits > 1) {
+                    const lastDigit = num % 10;
+                    if (lastDigit === 0) {
+                        num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+                    }
+                }
             }
             break;
 
         // Small Friends levels - Progressive logic: 50% direct + 50% small friends
+        // UPDATED: Pass isFirstTerm to enable strategic first term generation
         case 'small-plus-1':
         case 'small-plus-2':
         case 'small-plus-3':
@@ -1430,8 +1614,9 @@ function generateNumber(settings, isFirstTerm = false) {
         case 'small-minus-2':
         case 'small-minus-3':
         case 'small-minus-4':
+        case 'small-friends-all-multi':
         case 'small-friends-all':
-            num = generateSmallFriendsNumber(complexity, digits);
+            num = generateSmallFriendsNumber(complexity, digits, isFirstTerm);
             break;
 
         // Big Friends levels - Progressive logic: 33% direct + 33% small + 34% big
@@ -1485,10 +1670,52 @@ function generateNumber(settings, isFirstTerm = false) {
 }
 
 // Helper: Generate number for Small Friends levels (50% direct + 50% small friends)
-function generateSmallFriendsNumber(complexity, digits) {
-    // Only generate numbers appropriate for Small Friends formulas
-    // No direct counting numbers - only numbers that require Small Friends formulas
-    return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+// UPDATED: Generate strategic first term based on formula type to enable formula application
+function generateSmallFriendsNumber(complexity, digits, isFirstTerm = false) {
+    // For first term in Small Friends PLUS formulas, favor 1-4 to enable formula application
+    // For Small Friends MINUS formulas, favor 5-9 to enable formula application
+    if (isFirstTerm && digits === 1) {
+        const match = complexity.match(/small-(plus|minus)-(\d)/);
+        if (match) {
+            const isPlusFormula = match[1] === 'plus';
+            const formulaNumber = parseInt(match[2]);
+
+            if (isPlusFormula) {
+                // For PLUS formulas (+1, +2, +3, +4): favor starting from 1-4
+                // This enables formula application: 4+1, 3+2, 2+3, 1+4, etc.
+                // 70% chance to start with 1-4, 30% with 5-9 for variety
+                if (Math.random() < 0.7) {
+                    return Math.floor(Math.random() * 4) + 1; // 1-4
+                } else {
+                    return Math.floor(Math.random() * 5) + 5; // 5-9
+                }
+            } else {
+                // For MINUS formulas (-1, -2, -3, -4): favor starting from 5-9
+                // This enables formula application: 5-1, 6-2, 7-3, 8-4, etc.
+                // 70% chance to start with 5-9, 30% with 1-4 for variety
+                if (Math.random() < 0.7) {
+                    return Math.floor(Math.random() * 5) + 5; // 5-9
+                } else {
+                    return Math.floor(Math.random() * 4) + 1; // 1-4
+                }
+            }
+        }
+    }
+
+    // For non-first terms or multi-digit numbers, generate normally
+    if (digits === 1) {
+        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+    } else {
+        const max = parseInt('9'.repeat(digits));
+        const min = parseInt('1' + '0'.repeat(digits - 1));
+        let num = Math.floor(Math.random() * (max - min + 1)) + min;
+        // Ensure last digit is not 0
+        const lastDigit = num % 10;
+        if (lastDigit === 0) {
+            num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+        }
+        return num;
+    }
 }
 
 // Helper: Generate number for Big Friends levels (33% direct + 33% small + 34% big)
@@ -1496,10 +1723,34 @@ function generateBigFriendsNumber(complexity, digits) {
     const rand = Math.random();
     if (rand < 0.33) {
         // 33% - Direct counting
-        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+        if (digits === 1) {
+            return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+        } else {
+            const max = parseInt('9'.repeat(digits));
+            const min = parseInt('1' + '0'.repeat(digits - 1));
+            let num = Math.floor(Math.random() * (max - min + 1)) + min;
+            // Ensure last digit is not 0
+            const lastDigit = num % 10;
+            if (lastDigit === 0) {
+                num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+            }
+            return num;
+        }
     } else if (rand < 0.66) {
         // 33% - Small friends
-        return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+        if (digits === 1) {
+            return Math.floor(Math.random() * 9) + 1; // 1-9 (no 0)
+        } else {
+            const max = parseInt('9'.repeat(digits));
+            const min = parseInt('1' + '0'.repeat(digits - 1));
+            let num = Math.floor(Math.random() * (max - min + 1)) + min;
+            // Ensure last digit is not 0
+            const lastDigit = num % 10;
+            if (lastDigit === 0) {
+                num = Math.floor(num / 10) * 10 + (Math.floor(Math.random() * 9) + 1);
+            }
+            return num;
+        }
     } else {
         // 34% - Big friends
         const max = parseInt('9'.repeat(digits));
@@ -1555,8 +1806,8 @@ function generateMixNumber(digits) {
     }
 }
 
-// Helper: Get complexity limit for direct calculation levels
-function getComplexityLimit(complexity) {
+// Helper: Get complexity limit for direct calculation levels (result limit)
+function getComplexityLimit(complexity, digits = 1) {
     switch(complexity) {
         case 'direct-to-4':
             return 4;
@@ -1564,6 +1815,12 @@ function getComplexityLimit(complexity) {
             return 9; // Allow results up to 9 to enable more exercise variety while using terms 1-5
         case 'direct-to-9':
             return 9;
+        case 'direct-counting':
+            // For multi-digit direct counting, the limit is based on number of digits
+            if (digits > 1) {
+                return parseInt('9'.repeat(digits)); // For 2 digits: 99, for 3 digits: 999, etc.
+            }
+            return 9; // For single-digit direct counting
         case 'small-plus-1':
         case 'small-plus-2':
         case 'small-plus-3':
@@ -1574,8 +1831,30 @@ function getComplexityLimit(complexity) {
         case 'small-minus-4':
         case 'small-friends-all':
             return 9; // Small Friends formulas can work with numbers 1-9
+        case 'small-friends-all-multi':
+            // Multi-digit Small Friends: support 2+ digit numbers like direct-counting
+            if (digits > 1) {
+                return parseInt('9'.repeat(digits)); // For 2 digits: 99, for 3 digits: 999, etc.
+            }
+            return 9;
         default:
             return null; // No limit for other complexity levels
+    }
+}
+
+// Helper: Get term limit for direct calculation levels (max value for operands/terms)
+function getTermLimit(complexity) {
+    switch(complexity) {
+        case 'direct-to-4':
+            return 4; // Terms can only be 1-4
+        case 'direct-to-5':
+            return 5; // Terms can only be 1-5
+        case 'direct-to-9':
+            return 9; // Terms can be 1-9
+        case 'direct-counting':
+            return 9; // Terms can be 1-9
+        default:
+            return null; // No term limit for other complexity levels
     }
 }
 
@@ -1591,7 +1870,7 @@ function isDirectCalculationLevel(complexity) {
  * Checks if the complexity level is a "Small Friends" formula level
  */
 function isSmallFriendsLevel(complexity) {
-    return complexity.startsWith('small-') || complexity === 'small-friends-all';
+    return complexity.startsWith('small-') || complexity === 'small-friends-all' || complexity === 'small-friends-all-multi';
 }
 
 /**
@@ -1602,27 +1881,42 @@ function isSmallFriendsLevel(complexity) {
  *
  * Small Friends formulas:
  * +1 = +5-4, +2 = +5-3, +3 = +5-2, +4 = +5-1
- * -1 = -5+4, -2 = -5+3, -3 = -5+2, -4 = -5+1
+ * -1 = +4-5, -2 = +3-5, -3 = +2-5, -4 = +1-5
+ *
+ * For multi-digit numbers: checks only the last digit
  */
 function requiresSmallFriendsFormula(currentValue, operation, operand) {
-    const result = operation === '+' ? currentValue + operand : currentValue - operand;
+    // For multi-digit numbers, work with last digits only
+    const currentLastDigit = currentValue % 10;
+    const operandLastDigit = operand % 10;
+    const result = operation === '+' ? currentLastDigit + operandLastDigit : currentLastDigit - operandLastDigit;
 
     if (operation === '+') {
-        // Adding from 1-4 to get 5-9 requires Small Friends (except reaching exactly 5)
-        if (currentValue >= 1 && currentValue <= 4 && result >= 5 && result <= 9) {
-            // Can reach 5 directly (just use heaven bead), but 6-9 need Small Friends
-            return result > 5;
+        // Adding from 1-4 to get 5-9 requires Small Friends formula
+        // Formula is needed when transitioning from lower beads (1-4) to heaven bead region (5-9)
+        // Example: 4+1=5 requires +1 = +5-4 (move heaven up, remove all 4 lower beads)
+        // CRITICAL: Must check that OPERAND is also 1-4, not just the current value
+        // Otherwise operations like 1+5=6, 1+6=7 are incorrectly considered as requiring formula
+        if (currentLastDigit >= 1 && currentLastDigit <= 4 && operandLastDigit >= 1 && operandLastDigit <= 4 && result >= 5 && result <= 9) {
+            return true;
         }
     } else if (operation === '-') {
         // Subtracting from 5 to get 1-4 requires Small Friends
-        if (currentValue === 5 && operand >= 1 && operand <= 4) {
+        if (currentLastDigit === 5 && operandLastDigit >= 1 && operandLastDigit <= 4) {
             return true;
         }
         // Subtracting from 6-9 where we need to remove the heaven bead
-        if (currentValue >= 6 && currentValue <= 9 && result >= 1 && result <= 4) {
-            const lowerBeadsUsed = currentValue - 5;
-            // If we need to subtract more than the lower beads we have
-            return operand > lowerBeadsUsed;
+        if (currentLastDigit >= 6 && currentLastDigit <= 9 && result >= 1 && result <= 4) {
+            const lowerBeadsUsed = currentLastDigit - 5;
+            // CRITICAL: Subtracting 5 from 6-9 is DIRECT (just remove heaven bead)
+            // Only operations subtracting 1-4 where we need more than available lower beads require formula
+            // Example: 6-2=4 requires formula (6=5+1, can't subtract 2 from 1 lower bead)
+            // Example: 6-5=1 is DIRECT (just remove heaven bead, 1 lower bead remains)
+            if (operandLastDigit === 5) {
+                return false; // Subtracting 5 is always direct
+            }
+            // If we need to subtract more than the lower beads we have (and operand is 1-4)
+            return operandLastDigit >= 1 && operandLastDigit <= 4 && operandLastDigit > lowerBeadsUsed;
         }
     }
 
@@ -1642,10 +1936,16 @@ function requiresSmallFriendsFormula(currentValue, operation, operand) {
  *
  * Subtraction formulas:
  *   -1, -2, -3, -4: starting numbers 5, 6, 7, 8, 9
+ *
+ * For multi-digit numbers: checks only the last digit
  */
 function isSmallFriendsCombination(currentValue, operation, operand) {
+    // For multi-digit numbers, work with last digits only
+    const currentLastDigit = currentValue % 10;
+    const operandLastDigit = operand % 10;
+
     // Only check for operands 1-4 (Small Friends formulas)
-    if (operand < 1 || operand > 4) {
+    if (operandLastDigit < 1 || operandLastDigit > 4) {
         return false;
     }
 
@@ -1655,12 +1955,93 @@ function isSmallFriendsCombination(currentValue, operation, operand) {
         // +2: starting from 3 or 4 (3+2, 4+2)
         // +3: starting from 2, 3, or 4 (2+3, 3+3, 4+3)
         // +4: starting from 1, 2, 3, or 4 (1+4, 2+4, 3+4, 4+4)
-        const minStartingNumber = 5 - operand; // For +1: 4, +2: 3, +3: 2, +4: 1
-        return currentValue >= minStartingNumber && currentValue <= 4;
+        const minStartingNumber = 5 - operandLastDigit; // For +1: 4, +2: 3, +3: 2, +4: 1
+        return currentLastDigit >= minStartingNumber && currentLastDigit <= 4;
     } else if (operation === '-') {
         // Check if this is one of the Small Friends subtraction combinations
-        // -1, -2, -3, -4: all starting from 5-9
-        return currentValue >= 5 && currentValue <= 9;
+        // Forbidden combinations (require Small Friends formula):
+        // 5-1, 5-2, 5-3, 5-4: subtracting from heaven bead only
+        // 6-2, 6-3, 6-4: need to cross heaven bead with formula
+        // 7-3, 7-4: need to cross heaven bead with formula
+        // 8-4: need to cross heaven bead with formula
+
+        if (currentLastDigit === 5) {
+            // From 5: cannot subtract 1-4 directly (all require formula)
+            return true;
+        } else if (currentLastDigit === 6) {
+            // From 6: can do 6-1 directly, but 6-2, 6-3, 6-4 require formula
+            return operandLastDigit >= 2;
+        } else if (currentLastDigit === 7) {
+            // From 7: can do 7-1, 7-2 directly, but 7-3, 7-4 require formula
+            return operandLastDigit >= 3;
+        } else if (currentLastDigit === 8) {
+            // From 8: can do 8-1, 8-2, 8-3 directly, but 8-4 requires formula
+            return operandLastDigit >= 4;
+        } else if (currentLastDigit === 9) {
+            // From 9: can do 9-1, 9-2, 9-3, 9-4 directly (all have enough lower beads)
+            return false;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Checks if a combination is a Big Friends exercise combination
+ * These combinations should be avoided in direct calculation mode to prevent confusion
+ *
+ * Big Friends exercise combinations:
+ * Addition formulas (+6 to +9 from values that can't accommodate them directly):
+ *   +6: from 5 (5+6 would require +10-4 formula)
+ *   +7: from 4-5 (4+7, 5+7 would require +10-3 formula)
+ *   +8: from 3-5 (3+8, 4+8, 5+8 would require +10-2 formula)
+ *   +9: from 2-5 (2+9, 3+9, 4+9, 5+9 would require +10-1 formula)
+ *
+ * Subtraction formulas (-6 to -9 from values that can't accommodate them directly):
+ *   -6: from 1-5 (need to borrow from next column)
+ *   -7: from 1-6 (need to borrow from next column)
+ *   -8: from 1-7 (need to borrow from next column)
+ *   -9: from 1-8 (need to borrow from next column)
+ *
+ * For multi-digit numbers: checks only the last digit
+ */
+function isBigFriendsCombination(currentValue, operation, operand, complexity = null) {
+    // For multi-digit numbers, work with last digits only
+    const currentLastDigit = currentValue % 10;
+    const operandLastDigit = operand % 10;
+
+    // Only check for operands 6-9 (Big Friends formulas)
+    if (operandLastDigit < 6 || operandLastDigit > 9) {
+        return false;
+    }
+
+    // If complexity is provided and operation is explicitly allowed, don't block it
+    if (complexity && isAllowedOperation(currentValue, operation, operand, complexity)) {
+        return false;
+    }
+
+    if (operation === '+') {
+        // For single-digit calculations (1-9), check if we can add directly
+        const result = currentLastDigit + operandLastDigit;
+        // If result > 9, it would require carrying/Big Friends formula
+        if (result > 9) {
+            return true;
+        }
+    } else if (operation === '-') {
+        // For subtraction, if operand > currentValue (last digit), it would require borrowing/Big Friends
+        if (operandLastDigit > currentLastDigit) {
+            return true;
+        }
+        // Also check if subtracting would require removing beads we don't have
+        // For values 6-9, we have heaven bead (5) + lower beads (currentLastDigit-5)
+        if (currentLastDigit >= 6 && currentLastDigit <= 9) {
+            const lowerBeadsUsed = currentLastDigit - 5;
+            // If we need to subtract more than what's available on lower beads
+            // and can't just remove heaven bead, it requires Big Friends
+            if (operandLastDigit > lowerBeadsUsed && operandLastDigit !== currentLastDigit - 4) {
+                return true;
+            }
+        }
     }
 
     return false;
@@ -1703,54 +2084,272 @@ function canGenerateFormulaFromState(currentValue, operation, formulaNumber) {
  * - isPlus: whether it's a plus formula (true) or minus formula (false)
  */
 function getAvailableFormulasForLevel(complexity) {
-    const match = complexity.match(/small-(plus|minus)-(\d)/);
+    // Interleaved order: +1, -1, +2, -2, +3, -3, +4, -4
+    const interleavedOrder = [
+        {type:'plus', number:1}, {type:'minus', number:1},
+        {type:'plus', number:2}, {type:'minus', number:2},
+        {type:'plus', number:3}, {type:'minus', number:3},
+        {type:'plus', number:4}, {type:'minus', number:4}
+    ];
 
-    if (!match) {
-        // If it's small-friends-all, all small friends formulas are available
-        // Only Small Friends formulas - no direct counting or big friends
-        if (complexity === 'small-friends-all') {
-            return {
-                currentFormula: null, // No specific current formula
-                previousFormulas: [1, 2, 3, 4],
-                canUseDirect: false, // No direct counting for this level
-                isPlus: null
-            };
-        }
-        return null;
+    if (complexity === 'small-friends-all' || complexity === 'small-friends-all-multi') {
+        return {
+            currentFormula: null,
+            previousFormulas: interleavedOrder,
+            canUseDirect: true,
+            isPlus: null
+        };
     }
+
+    const match = complexity.match(/small-(plus|minus)-(\d)/);
+    if (!match) return null;
 
     const isPlus = match[1] === 'plus';
     const currentFormula = parseInt(match[2]);
+    const currentIdx = interleavedOrder.findIndex(f => f.type === match[1] && f.number === currentFormula);
 
-    // Build array of previous formulas based on the order:
-    // For plus: +1, +2, +3, +4
-    // For minus: -1, -2, -3, -4
-    const previousFormulas = [];
-
-    // Add all previous plus formulas (always available)
-    for (let i = 1; i < currentFormula; i++) {
-        previousFormulas.push({ type: 'plus', number: i });
-    }
-
-    // If this is a minus formula, also add +4 (last plus formula)
-    if (!isPlus) {
-        previousFormulas.push({ type: 'plus', number: 4 });
-
-        // Add previous minus formulas
-        for (let i = 1; i < currentFormula; i++) {
-            previousFormulas.push({ type: 'minus', number: i });
-        }
-    }
+    const previousFormulas = interleavedOrder.slice(0, currentIdx);
 
     return {
         currentFormula: currentFormula,
         previousFormulas: previousFormulas,
-        canUseDirect: true, // Direct calculations with 4, 5, 9 are always available
+        canUseDirect: true,
         isPlus: isPlus
     };
 }
 
 /**
+ * RESTRICTION 1 (REPLACEMENT for canPerformDirectly - kept for reference below):
+ * Checks if an operation is in the explicitly allowed direct operations table.
+ *
+ * Allowed operations by level (cumulative - each level includes previous):
+ *
+ * Direct cu 4:
+ *   Add: 1+1, 1+2, 1+3, 2+1, 2+2, 3+1
+ *   Sub: 1-1, 2-1, 2-2, 3-1, 3-2, 3-3, 4-1, 4-2, 4-3, 4-4
+ *
+ * Direct cu 5 (adds to Direct cu 4):
+ *   Add: 1+5, 2+5, 3+5, 4+5, 5+1, 5+2, 5+3, 5+4
+ *   Sub: 5-5, 6-1, 6-5, 7-1, 7-2, 7-5, 8-1, 8-2, 8-3, 8-5, 9-1, 9-2, 9-3, 9-4, 9-5
+ *
+ * Direct cu 9 (adds to Direct cu 4 + Direct cu 5):
+ *   Add: 1+6, 1+7, 1+8, 2+6, 2+7, 3+6, 6+1, 6+2, 6+3, 7+1, 7+2, 8+1
+ *   Sub: 6-1, 6-2, 6-3, 6-4, 6-5, 6-6, 7-1, 7-2, 7-3, 7-4, 7-5, 7-6, 7-7, 8-1, 8-2, 8-3, 8-4, 8-5, 8-6, 8-7, 8-8, 9-1, 9-2, 9-3, 9-4, 9-5, 9-6, 9-7, 9-8, 9-9
+ *
+ * Prietenii mici (Small Friends) - CUMULATIVE logic:
+ * ALL Small Friends formulas include ALL direct-to-9 operations PLUS:
+ *
+ * Interleaved order: +1, -1, +2, -2, +3, -3, +4, -4 (cumulative)
+ * small-plus-1 (+1=+5-4): adds 4+1
+ * small-minus-1 (-1=+4-5): adds 5-1 + knows [+1]
+ * small-plus-2 (+2=+5-3): adds 3+2, 4+2 + knows [+1, -1]
+ * small-minus-2 (-2=+3-5): adds 5-2, 6-2 + knows [+1, -1, +2]
+ * small-plus-3 (+3=+5-2): adds 2+3, 3+3, 4+3 + knows [+1, -1, +2, -2]
+ * small-minus-3 (-3=+2-5): adds 5-3, 6-3, 7-3 + knows [+1, -1, +2, -2, +3]
+ * small-plus-4 (+4=+5-1): adds 1+4, 2+4, 3+4, 4+4 + knows [+1,-1,+2,-2,+3,-3]
+ * small-minus-4 (-4=+1-5): adds 5-4, 6-4, 7-4, 8-4 + knows all previous
+ */
+function isAllowedOperation(currentValue, operation, operand, complexity) {
+    const directTo4 = {
+        '+': [[1,1],[1,2],[1,3],[2,1],[2,2],[3,1]],
+        '-': [[1,1],[2,1],[2,2],[3,1],[3,2],[3,3],[4,1],[4,2],[4,3],[4,4]]
+    };
+    const directTo5New = {
+        '+': [[1,5],[2,5],[3,5],[4,5],[5,1],[5,2],[5,3],[5,4]],  // Include operațiile inverse cu 5
+        '-': [[5,5],[6,1],[6,5],[7,1],[7,2],[7,5],[8,1],[8,2],[8,3],[8,5],[9,1],[9,2],[9,3],[9,4],[9,5]]  // Include 5-5
+    };
+    const directTo9New = {
+        // Direct-to-9 additions: Include operațiile inverse (6+1, 6+2, etc.)
+        '+': [
+            [1,6],[1,7],[1,8],  // 1+6=7, 1+7=8, 1+8=9
+            [2,6],[2,7],        // 2+6=8, 2+7=9
+            [3,6],              // 3+6=9
+            [6,1],[6,2],[6,3],  // Operațiile inverse: 6+1=7, 6+2=8, 6+3=9
+            [7,1],[7,2],        // 7+1=8, 7+2=9
+            [8,1]               // 8+1=9
+        ],
+        // Direct-to-9 subtractions: Doar operațiile care pot fi făcute DIRECT pe soroban
+        // Exclud operațiile care necesită formule Small Friends
+        '-': [
+            [6,1],[6,5],[6,6],                              // 6-1, 6-5, 6-6 (DIRECT)
+            [7,1],[7,2],[7,5],[7,6],[7,7],                  // 7-1, 7-2, 7-5, 7-6, 7-7 (DIRECT)
+            [8,1],[8,2],[8,3],[8,5],[8,6],[8,7],[8,8],      // 8-1, 8-2, 8-3, 8-5, 8-6, 8-7, 8-8 (DIRECT)
+            [9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7],[9,8],[9,9]  // 9-1 to 9-9 (toate DIRECT)
+        ]
+    };
+
+    // Small Friends - Cumulative allowed operations (in addition to direct-to-9)
+    // Each formula includes all operations from previous formulas PLUS direct-to-9
+    // UPDATED: Allow both commutative forms (4+1 and 1+4) to enable easier exercise generation
+    const smallPlus1 = {
+        '+': [[4,1]]  // Only 4+1 (formula +1 = +5-4)
+    };
+    const smallPlus2 = {
+        '+': [[3,2],[4,2]]  // Only 3+2, 4+2 (formula +2 = +5-3)
+    };
+    const smallPlus3 = {
+        '+': [[2,3],[3,3],[4,3]]  // Only 2+3, 3+3, 4+3 (formula +3 = +5-2)
+    };
+    const smallPlus4 = {
+        '+': [[1,4],[2,4],[3,4],[4,4]]  // Only 1+4, 2+4, 3+4, 4+4 (formula +4 = +5-1)
+    };
+    const smallMinus1 = {
+        '-': [[5,1]]  // Only 5-1 (subtraction is not commutative)
+    };
+    const smallMinus2 = {
+        '-': [[5,2],[6,2]]  // 5-2, 6-2
+    };
+    const smallMinus3 = {
+        '-': [[5,3],[6,3],[7,3]]  // 5-3, 6-3, 7-3
+    };
+    const smallMinus4 = {
+        '-': [[5,4],[6,4],[7,4],[8,4]]  // 5-4, 6-4, 7-4, 8-4
+    };
+
+    // Helper function to check if a single-digit operation is allowed
+    function isSingleDigitAllowed(currentDigit, operandDigit, operation, complexity) {
+        // Special case: Starting from 0
+        // On soroban, starting from 0 (no beads), you can add any digit 1-9 directly
+        if (currentDigit === 0 && operation === '+') {
+            // For direct-to-4: can only add 1-4
+            if (complexity === 'direct-to-4') {
+                return operandDigit >= 1 && operandDigit <= 4;
+            }
+            // For direct-to-5: can add 1-5
+            if (complexity === 'direct-to-5') {
+                return operandDigit >= 1 && operandDigit <= 5;
+            }
+            // For direct-to-9 and direct-counting: can add 1-9
+            if (complexity === 'direct-to-9' || complexity === 'direct-counting') {
+                return operandDigit >= 1 && operandDigit <= 9;
+            }
+        }
+        // Cannot subtract from 0 (would be negative)
+        if (currentDigit === 0 && operation === '-') {
+            return false;
+        }
+
+        const ops4 = directTo4[operation] || [];
+        const inDirect4 = ops4.some(([v, o]) => v === currentDigit && o === operandDigit);
+
+        if (complexity === 'direct-to-4') {
+            return inDirect4;
+        }
+
+        const ops5 = directTo5New[operation] || [];
+        const inDirect5 = ops5.some(([v, o]) => v === currentDigit && o === operandDigit);
+
+        if (complexity === 'direct-to-5') {
+            return inDirect4 || inDirect5;
+        }
+
+        if (complexity === 'direct-to-9' || complexity === 'direct-counting') {
+            const ops9 = directTo9New[operation] || [];
+            const inDirect9 = ops9.some(([v, o]) => v === currentDigit && o === operandDigit);
+            return inDirect4 || inDirect5 || inDirect9;
+        }
+
+        if (complexity.startsWith('small-')) {
+            // Always include direct-to-9
+            const ops9 = directTo9New[operation] || [];
+            const inDirect9 = ops9.some(([v, o]) => v === currentDigit && o === operandDigit);
+            if (inDirect9 || inDirect4 || inDirect5) {
+                return true;
+            }
+
+            // Map formula sets to their operations
+            const formulaOps = {
+                'plus-1': smallPlus1,
+                'plus-2': smallPlus2,
+                'plus-3': smallPlus3,
+                'plus-4': smallPlus4,
+                'minus-1': smallMinus1,
+                'minus-2': smallMinus2,
+                'minus-3': smallMinus3,
+                'minus-4': smallMinus4
+            };
+
+            // Interleaved order: +1, -1, +2, -2, +3, -3, +4, -4
+            const interleavedOrder = [
+                'plus-1', 'minus-1', 'plus-2', 'minus-2',
+                'plus-3', 'minus-3', 'plus-4', 'minus-4'
+            ];
+
+            // Determine which formulas are known at this level
+            let knownFormulas = [];
+            if (complexity === 'small-friends-all' || complexity === 'small-friends-all-multi') {
+                knownFormulas = interleavedOrder;
+            } else {
+                const m = complexity.match(/small-(plus|minus)-(\d)/);
+                if (m) {
+                    const currentKey = `${m[1]}-${m[2]}`;
+                    const currentIdx = interleavedOrder.indexOf(currentKey);
+                    // Include current level and all previous
+                    knownFormulas = interleavedOrder.slice(0, currentIdx + 1);
+                }
+            }
+
+            // Check if operation is in any known formula set
+            for (const key of knownFormulas) {
+                const ops = (formulaOps[key] || {})[operation] || [];
+                if (ops.some(([v, o]) => v === currentDigit && o === operandDigit)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    // For multi-digit numbers, check each digit independently
+    if (currentValue > 9 || operand > 9) {
+        // Check for carry/borrow between digits
+        const currentUnitsDigit = currentValue % 10;
+        const operandUnitsDigit = operand % 10;
+
+        if (operation === '+') {
+            // Check if there's a carry from units to tens
+            if (currentUnitsDigit + operandUnitsDigit >= 10) {
+                return false; // Carry between digits - not allowed
+            }
+        } else {
+            // Check if there's a borrow from tens to units
+            if (currentUnitsDigit < operandUnitsDigit) {
+                return false; // Borrow between digits - not allowed
+            }
+        }
+
+        // Check units digit operation
+        if (!isSingleDigitAllowed(currentUnitsDigit, operandUnitsDigit, operation, complexity)) {
+            return false;
+        }
+
+        // Check tens digit operation (if both numbers have tens digits)
+        if (currentValue >= 10 && operand >= 10) {
+            const currentTensDigit = Math.floor(currentValue / 10) % 10;
+            const operandTensDigit = Math.floor(operand / 10) % 10;
+
+            // Tens digit must also follow direct-to-9 rules
+            if (!isSingleDigitAllowed(currentTensDigit, operandTensDigit, operation, complexity)) {
+                return false;
+            }
+        } else if (currentValue >= 10 && operand < 10) {
+            // Special case: currentValue has tens, operand is single digit
+            // In this case, only the units digit changes, so we already checked it above
+            // The tens digit stays the same, so it's allowed
+        }
+
+        return true;
+    }
+
+    // Single-digit case: use the original logic
+    return isSingleDigitAllowed(currentValue, operand, operation, complexity);
+}
+
+/**
+ * [RESTRICTION 1 - DISABLED TEMPORARILY - kept for reversal]
  * Checks if an operation can be performed directly on the soroban without using formulas
  * For "direct calculation", we need to ensure operations don't require Small Friends or Big Friends formulas
  *
@@ -1761,15 +2360,59 @@ function getAvailableFormulasForLevel(complexity) {
  * - From 1-4: can subtract Y directly if Y <= current value
  * - From 5: cannot subtract 1-4 directly (needs Small Friends formulas)
  * - From 5: cannot add 1-4 directly (would need Big Friends formulas for 6-9)
+ *
+ * For multi-digit numbers: applies the rules to the last digit only (units place)
+ * and ensures no carry/borrow between digits
  */
 function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOperation) {
     const result = operation === '+' ? currentValue + operand : currentValue - operand;
 
-    // Check bounds
-    if (result < 1 || result > maxLimit) return false;
+    // Check bounds - for multi-digit numbers, maxLimit applies to the entire number
+    // but for single-digit maxLimit (4, 5, 9), we need special handling
+    // Allow result = 0 for operations like 9-9, 8-8, 7-7, 6-6, etc.
+    if (result < 0) return false;
+
+    // For single-digit soroban logic (direct-to-4, direct-to-5, direct-to-9)
+    if (maxLimit !== null && maxLimit <= 9) {
+        // For multi-digit numbers, check digit-by-digit
+        if (currentValue > 9 || operand > 9 || result > 9) {
+            // Multi-digit case: extract last digits and check for carry/borrow
+            const currentLastDigit = currentValue % 10;
+            const operandLastDigit = operand % 10;
+
+            if (operation === '+') {
+                // Check if there's a carry from the last digit
+                if (currentLastDigit + operandLastDigit >= 10) {
+                    return false; // Carry between digits - not direct
+                }
+            } else {
+                // Check if there's a borrow from the last digit
+                if (currentLastDigit < operandLastDigit) {
+                    return false; // Borrow between digits - not direct
+                }
+            }
+
+            // Now validate the last digit operation using the single-digit rules below
+            // Replace currentValue and operand with their last digits for validation
+            currentValue = currentLastDigit;
+            operand = operandLastDigit;
+
+            // Recalculate result for last digit
+            const lastDigitResult = operation === '+' ? currentValue + operand : currentValue - operand;
+
+            // Last digit result should be within 0-9 (no carry/borrow)
+            if (lastDigitResult < 0 || lastDigitResult > 9) return false;
+        } else {
+            // Single-digit case: check maxLimit
+            if (result > maxLimit) return false;
+        }
+    } else if (maxLimit !== null) {
+        // Large maxLimit: just check bounds
+        if (result > maxLimit) return false;
+    }
 
     // For direct calculation with limits (direct-to-4, direct-to-5, direct-to-9)
-    if (maxLimit !== null) {
+    if (maxLimit !== null && maxLimit <= 9) {
         if (operation === '+') {
             // From 1-4: can only add if result stays <= 4 (direct within lower beads)
             // If result would be 5+, it requires Small Friends formula (not direct)
@@ -1785,13 +2428,32 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
                     }
                     return result <= 4;
                 } else if (maxLimit === 9) {
-                    // For direct-to-9 and direct-to-5 (maxLimit=9): can add directly if result <= 9
-                    // Direct-to-5 uses operands 1-5, so results 5-9 are all directly achievable
-                    // with the available beads (heaven bead + lower beads)
-                    return result <= 9;
+                    // For direct-to-9 and direct-counting with maxLimit=9
+                    // From 1-4, we can add directly in these cases:
+                    if (result <= 4) {
+                        // Staying in lower beads (1-4) - always direct
+                        return true;
+                    } else if (result === 5) {
+                        // Reaching exactly 5 - direct (just flip heaven bead)
+                        return true;
+                    } else if (result >= 6 && result <= 9) {
+                        // Reaching 6-9 from 1-4 is direct if operand >= 5:
+                        // - operand 5: flip heaven bead, lower beads stay (e.g., 1+5=6, 4+5=9)
+                        // - operand 6-9: push heaven bead + (operand-5) lower beads
+                        //   Heaven is always free (currentValue <= 4), and lower beads available
+                        //   since result <= 9 guarantees (operand-5) <= (4-currentValue)
+                        //   Examples: 1+6=7, 1+7=8, 1+8=9, 2+6=8, 2+7=9, 3+6=9
+                        // NOT direct: operand 1-4 requires Small Friends (e.g., 4+3=7 → +5-2+3)
+                        return operand >= 5;
+                    }
+                    return false;
                 }
             } else if (currentValue === 5) {
-                // From 5: cannot add 1-4 directly (would need Big Friends for 6-9)
+                // From 5: can add 1-4 directly to get 6-9
+                // (heaven bead already set, just add lower beads)
+                if (maxLimit === 9 && operand >= 1 && operand <= 4) {
+                    return true;
+                }
                 return false;
             } else if (currentValue >= 6) {
                 // From 6-9: can add if we stay <= maxLimit and have beads available
@@ -1805,20 +2467,32 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
             // Subtraction
             if (currentValue <= 4) {
                 // From 1-4: can subtract directly if we have enough lower beads
-                return operand <= currentValue;
+                // Allow result = 0 for operations like 1-1, 2-2, 3-3, 4-4
+                return operand <= currentValue && result >= 0;
             } else if (currentValue === 5) {
-                // From 5 (heaven bead only): CANNOT subtract 1-4 directly
-                // Would need Small Friends formulas: -1=-5+4, -2=-5+3, -3=-5+2, -4=-5+1
+                // From 5 (heaven bead only): can ONLY subtract 5 directly to get 0
+                // Subtracting 1-4 from 5 requires Small Friends formulas: -1=+4-5, -2=+3-5, etc.
+                // But we don't allow result 0, so no direct subtraction from 5
                 return false;
             } else if (currentValue >= 6 && maxLimit === 9) {
-                // From 6-9: can subtract from lower beads if available
+                // From 6-9: can subtract in these cases:
                 const lowerBeadsUsed = currentValue - 5;
                 if (operand <= lowerBeadsUsed) {
-                    // Can subtract from lower beads directly
+                    // Case 1: Subtract from lower beads only (e.g., 7-1=6, 9-3=6)
                     return true;
-                } else if (operand === currentValue - 4) {
-                    // Subtracting down to 4 or less (removing heaven bead)
-                    return result <= 4;
+                } else if (operand === 5) {
+                    // Case 2: Subtract exactly 5 (remove heaven bead, keep lower beads)
+                    // E.g., 6-5=1, 7-5=2, 8-5=3, 9-5=4
+                    return true;
+                } else if (operand === currentValue) {
+                    // Case 3: Subtract all (result = 0) - allowed for operations like 9-9, 8-8, 7-7, 6-6
+                    return true;
+                } else if (operand > lowerBeadsUsed && operand < currentValue) {
+                    // Case 4: Subtracting more than lower beads but less than total
+                    // Need to check if we can do this directly
+                    // E.g., 9-6=3 means removing heaven (5) and 1 lower bead
+                    // This can be done as: remove 5, then remove 1 more = direct if operand-5 <= lowerBeadsUsed
+                    return operand - 5 <= lowerBeadsUsed && operand - 5 >= 0;
                 }
                 return false;
             }
@@ -1834,25 +2508,15 @@ function canPerformDirectly(currentValue, operation, operand, maxLimit, isLastOp
  * @param {number} candidateTerm - The term being considered for addition
  * @returns {boolean} - True if the term should be avoided (too many repetitions)
  */
-function shouldAvoidTermRepetition(termsArray, candidateTerm) {
+function shouldAvoidTermRepetition(termsArray, candidateTerm, totalTermCount = 3) {
     if (termsArray.length === 0) return false;
 
-    // Configuration: Max consecutive repetitions and max total occurrences
+    // Configuration: Max consecutive repetitions only
+    // REMOVED: Max total occurrences check (was limiting variety too much)
+    // STRICT: Prevent any consecutive repetitions (no two identical terms in a row)
     const MAX_CONSECUTIVE_REPETITIONS = 1;
-    const MAX_TOTAL_OCCURRENCES = 2;
 
-    // Check 1: Count total occurrences of this term
-    const totalOccurrences = termsArray.filter(t => Math.abs(t) === Math.abs(candidateTerm)).length;
-    if (totalOccurrences >= MAX_TOTAL_OCCURRENCES) {
-        console.log('[shouldAvoidTermRepetition] Avoiding term due to max total occurrences:', {
-            term: candidateTerm,
-            totalOccurrences,
-            max: MAX_TOTAL_OCCURRENCES
-        });
-        return true;
-    }
-
-    // Check 2: Count consecutive repetitions at the end of the array
+    // Count consecutive repetitions at the end of the array
     let consecutiveCount = 0;
     for (let i = termsArray.length - 1; i >= 0; i--) {
         if (Math.abs(termsArray[i]) === Math.abs(candidateTerm)) {
@@ -1874,27 +2538,145 @@ function shouldAvoidTermRepetition(termsArray, candidateTerm) {
     return false;
 }
 
-function generateExerciseTerms(settings) {
-    const { terms, operation, negative, complexity } = settings;
-    const maxLimit = getComplexityLimit(complexity);
+/**
+ * Check if current operation would immediately reverse the previous operation
+ * Example: +5 followed by -5, or -6 followed by +6
+ * These patterns should be avoided as they're too simple/predictable
+ * @param {Array} operations - Array of operations (+, -)
+ * @param {Array} termsArray - Array of term values
+ * @param {string} currentOp - Current operation (+ or -)
+ * @param {number} currentTerm - Current term value
+ * @returns {boolean} - True if this would immediately reverse the last operation
+ */
+function isImmediateReverseOperation(operations, termsArray, currentOp, currentTerm) {
+    // Prevent simple patterns like +5-5, +6-6, -7+7, etc.
+    // Check if the last operation was the opposite of the current one with the same term
+    if (operations.length === 0 || termsArray.length === 0) {
+        return false;
+    }
 
-    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, maxLimit });
+    const lastOp = operations[operations.length - 1];
+    const lastTerm = termsArray[termsArray.length - 1];
+
+    // If last operation was + and current is -, or vice versa, with the same term
+    if ((lastOp === '+' && currentOp === '-' || lastOp === '-' && currentOp === '+') &&
+        lastTerm === currentTerm) {
+        console.log('[isImmediateReverseOperation] Avoiding immediate reverse operation:', {
+            last: lastOp + lastTerm,
+            current: currentOp + currentTerm
+        });
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Gets all valid operations for a given current result in direct calculation levels
+ * This function pre-calculates only the allowed operations, avoiding the need to retry
+ * @param {number} currentResult - The current intermediate result
+ * @param {string} complexity - The complexity level (direct-to-4, direct-to-5, direct-to-9)
+ * @param {Array} termsArray - Array of terms generated so far
+ * @param {Array} operations - Array of operations used so far
+ * @param {number} totalTerms - Total number of terms in the exercise
+ * @returns {Array} - Array of valid operations in format [{op: '+', term: 5}, ...]
+ */
+function getValidOperations(currentResult, complexity, termsArray, operations, totalTerms, digits = 1) {
+    const validOps = [];
+    const termLimit = getTermLimit(complexity);
+    const maxLimit = getComplexityLimit(complexity, digits);
+
+    console.log('[getValidOperations] Finding valid operations for currentResult=', currentResult, 'complexity=', complexity, 'digits=', digits, 'maxLimit=', maxLimit);
+
+    // For multi-digit direct counting, also try multi-digit terms
+    const shouldTryMultiDigitTerms = digits > 1 && (complexity === 'direct-counting' || complexity === 'direct-to-9');
+
+    // Try single-digit term values (1-9)
+    for (let term = 1; term <= termLimit; term++) {
+        // Try addition
+        const addResult = currentResult + term;
+        if (addResult >= 1 && addResult <= maxLimit &&
+            isAllowedOperation(currentResult, '+', term, complexity) &&
+            !shouldAvoidTermRepetition(termsArray, term, totalTerms) &&
+            !isSmallFriendsCombination(currentResult, '+', term) &&
+            !isBigFriendsCombination(currentResult, '+', term, complexity) &&
+            !isImmediateReverseOperation(operations, termsArray, '+', term)) {
+            validOps.push({ op: '+', term: term });
+        }
+
+        // Try subtraction
+        const subResult = currentResult - term;
+        if (subResult >= 0 && subResult <= maxLimit &&
+            isAllowedOperation(currentResult, '-', term, complexity) &&
+            !shouldAvoidTermRepetition(termsArray, term, totalTerms) &&
+            !isSmallFriendsCombination(currentResult, '-', term) &&
+            !isBigFriendsCombination(currentResult, '-', term, complexity) &&
+            !isImmediateReverseOperation(operations, termsArray, '-', term)) {
+            validOps.push({ op: '-', term: term });
+        }
+    }
+
+    // For multi-digit terms, iterate through 11-99 (skip 10, 20, ..., 90 as they end with 0)
+    if (shouldTryMultiDigitTerms) {
+        for (let term = 11; term <= 99; term++) {
+            // Skip terms that end with 0
+            if (term % 10 === 0) continue;
+
+            // Try addition
+            const addResult = currentResult + term;
+            if (addResult >= 1 && addResult <= maxLimit &&
+                isAllowedOperation(currentResult, '+', term, complexity) &&
+                !shouldAvoidTermRepetition(termsArray, term, totalTerms) &&
+                !isSmallFriendsCombination(currentResult, '+', term) &&
+                !isBigFriendsCombination(currentResult, '+', term, complexity) &&
+                !isImmediateReverseOperation(operations, termsArray, '+', term)) {
+                validOps.push({ op: '+', term: term });
+            }
+
+            // Try subtraction
+            const subResult = currentResult - term;
+            if (subResult >= 0 && subResult <= maxLimit &&
+                isAllowedOperation(currentResult, '-', term, complexity) &&
+                !shouldAvoidTermRepetition(termsArray, term, totalTerms) &&
+                !isSmallFriendsCombination(currentResult, '-', term) &&
+                !isBigFriendsCombination(currentResult, '-', term, complexity) &&
+                !isImmediateReverseOperation(operations, termsArray, '-', term)) {
+                validOps.push({ op: '-', term: term });
+            }
+        }
+    }
+
+    console.log('[getValidOperations] Found', validOps.length, 'valid operations:',
+        validOps.map(o => o.op + o.term).join(', '));
+
+    return validOps;
+}
+
+function generateExerciseTerms(settings) {
+    const { terms, operation, negative, complexity, digits = 1 } = settings;
+    const maxLimit = getComplexityLimit(complexity, digits);
+
+    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, digits, maxLimit });
 
     // For direct calculation levels, regenerate if result is 0 or invalid
-    let maxAttempts = 50; // Increased attempts for better results
+    // Dynamic attempts and timeout based on term count (more terms = more attempts needed)
+    // UPDATED: Increased attempts for Small Friends formulas which are more restrictive
+    let maxAttempts = terms <= 3 ? 100 : terms === 4 ? 150 : terms === 5 ? 300 : 200;
     let attempt = 0;
     let result;
     let termsArray = [];
     let operations = [];
 
     // Safety timeout: prevent infinite loops by tracking generation time
+    // More terms = longer timeout (combinatorial explosion)
+    // UPDATED: Increased timeout for Small Friends levels
     const startTime = Date.now();
-    const maxGenerationTime = 5000; // 5 seconds max
+    const maxGenerationTime = terms <= 3 ? 8000 : terms === 4 ? 12000 : terms === 5 ? 30000 : 20000;
 
     do {
-        // Safety check: if generation takes more than 5 seconds, break out
+        // Safety check: if generation takes more than max time, break out
         if (Date.now() - startTime > maxGenerationTime) {
-            console.error('[generateExerciseTerms] Generation timeout exceeded! Breaking out to prevent browser hang.');
+            console.error('[generateExerciseTerms] Generation timeout exceeded (' + (maxGenerationTime / 1000) + 's)! Breaking out to prevent browser hang.');
             alert('Eroare la generarea exercițiului. Vă rugăm încercați din nou sau schimbați setările.');
             break;
         }
@@ -1905,40 +2687,30 @@ function generateExerciseTerms(settings) {
         termsArray.push(generateNumber(settings, true));
 
         // Pre-calculate term types distribution for Small Friends levels
-        // This ensures EVERY exercise has a GUARANTEED mix of formulas
-        // 100% guarantee: current formula + previous formulas/direct both appear
+        // This ensures exercises have a BALANCED mix of formulas
+        // UPDATED: More flexible distribution - aim for current formula but allow fallback
         let termTypesDistribution = [];
         if (isSmallFriendsLevel(complexity)) {
             const formulaNumber = getSmallFriendsFormulaNumber(complexity);
             const availableFormulas = getAvailableFormulasForLevel(complexity);
             const remainingTerms = terms - 1; // Exclude first term
 
-            // GUARANTEE: Always include at least 1 current formula term
-            // GUARANTEE: Always include at least 1 previous/direct term (if available)
-            // Then distribute the rest with 60-70% current, 30-40% other
-
+            // UPDATED: More balanced distribution to avoid generation failures
+            // Try to include current formula, but allow more flexibility
             let currentFormulaCount, otherTermsCount;
 
             if (remainingTerms === 1) {
-                // Only 1 term available, use current formula
+                // Only 1 term available, prefer current formula but allow fallback
                 currentFormulaCount = 1;
                 otherTermsCount = 0;
             } else if (remainingTerms === 2) {
-                // 2 terms: 1 current + 1 other (50/50)
-                currentFormulaCount = 1;
-                otherTermsCount = 1;
+                // 2 terms: target 70% → round(2*0.7)=1, but 1/2=50%, use ceil for better coverage
+                currentFormulaCount = 2;
+                otherTermsCount = 0;
             } else {
-                // 3+ terms: guarantee at least 1 of each, then distribute rest at 65/35
-                const minCurrent = 1;
-                const minOther = 1;
-                const flexibleTerms = remainingTerms - minCurrent - minOther;
-
-                // Distribute flexible terms: 65% current, 35% other
-                const additionalCurrent = Math.floor(flexibleTerms * 0.65);
-                const additionalOther = flexibleTerms - additionalCurrent;
-
-                currentFormulaCount = minCurrent + additionalCurrent;
-                otherTermsCount = minOther + additionalOther;
+                const currentRatio = 0.7;
+                currentFormulaCount = Math.max(1, Math.round(remainingTerms * currentRatio));
+                otherTermsCount = remainingTerms - currentFormulaCount;
             }
 
             // Build distribution array with current formula terms
@@ -2043,108 +2815,34 @@ function generateExerciseTerms(settings) {
             // For direct calculation levels, ensure operations can be performed directly
             if (isDirectCalculationLevel(complexity)) {
                 const currentResult = calculateResult(termsArray, operations.slice(0, -1));
-                const isLastOperation = (i === terms - 1);
 
-                // Try to find a valid term that can be performed directly
-                while (!validTermFound && termAttempts < 20) {
-                    if (op === '+') {
-                        // For addition: determine max we can add directly
-                        let maxDirectAddition;
-                        if (currentResult <= 4) {
-                            if (maxLimit === 4) {
-                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult);
-                            } else if (maxLimit === 5) {
-                                // Can add up to 4-currentResult to stay in lower beads
-                                // Or can reach 5 if it's the last operation
-                                maxDirectAddition = isLastOperation ?
-                                    Math.min(5 - currentResult, maxLimit - currentResult) :
-                                    Math.min(4 - currentResult, maxLimit - currentResult);
-                            } else {
-                                maxDirectAddition = Math.min(4 - currentResult, maxLimit - currentResult);
-                            }
-                        } else {
-                            // From 5+, cannot add directly in our range
-                            maxDirectAddition = 0;
-                        }
+                // NEW APPROACH: Pre-calculate ONLY valid operations for current result
+                // This ensures we never get stuck - we only choose from operations we know will work
+                // Instead of trying all possible operations and checking validity during iteration,
+                // we first build a list of guaranteed-valid operations, then randomly pick one
+                const validOperations = getValidOperations(currentResult, complexity, termsArray, operations, terms, digits);
 
-                        if (maxDirectAddition >= 1) {
-                            term = Math.floor(Math.random() * maxDirectAddition) + 1;
-                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
-                                !shouldAvoidTermRepetition(termsArray, term) &&
-                                !isSmallFriendsCombination(currentResult, op, term)) {
-                                validTermFound = true;
-                            }
-                        } else {
-                            // Switch to subtraction
-                            op = '-';
-                            operations[operations.length - 1] = op;
-                        }
-                    }
-
-                    if (op === '-' && !validTermFound) {
-                        // For subtraction: can only subtract what we have
-                        let maxDirectSubtraction;
-                        if (currentResult <= 4) {
-                            // Can subtract up to currentResult (have that many lower beads)
-                            maxDirectSubtraction = currentResult - 1; // Keep result >= 1
-                        } else if (currentResult === 5) {
-                            // From 5, cannot subtract 1-4 directly
-                            maxDirectSubtraction = 0;
-                        } else if (currentResult >= 6 && currentResult <= 9) {
-                            // Can subtract from lower beads
-                            maxDirectSubtraction = Math.min(currentResult - 5, currentResult - 1);
-                        } else {
-                            maxDirectSubtraction = 0;
-                        }
-
-                        if (maxDirectSubtraction >= 1) {
-                            term = Math.floor(Math.random() * maxDirectSubtraction) + 1;
-                            if (canPerformDirectly(currentResult, op, term, maxLimit, isLastOperation) &&
-                                !shouldAvoidTermRepetition(termsArray, term) &&
-                                !isSmallFriendsCombination(currentResult, op, term)) {
-                                validTermFound = true;
-                            }
-                        } else {
-                            // Switch to addition
-                            op = '+';
-                            operations[operations.length - 1] = op;
-                        }
-                    }
-
-                    termAttempts++;
+                // If no valid operations exist, regenerate the entire exercise
+                if (validOperations.length === 0) {
+                    console.log('[generateExerciseTerms] No valid operations for', complexity, 'at currentResult=', currentResult, ', regenerating exercise');
+                    termsArray = [];
+                    operations = [];
+                    break;
                 }
 
-                // If no valid term found after attempts, try to find ANY valid term
-                // that doesn't use Small Friends combinations
-                if (!validTermFound && isDirectCalculationLevel(complexity)) {
-                    const currentResult = calculateResult(termsArray, operations.slice(0, -1));
+                // Choose randomly from the valid operations
+                const randomOp = validOperations[Math.floor(Math.random() * validOperations.length)];
+                term = randomOp.term;
+                op = randomOp.op;
+                operations[operations.length - 1] = op; // Update the operation we pushed earlier
+                validTermFound = true;
 
-                    // Try all possible terms 1-9 to find one that works
-                    for (let t = 1; t <= 9; t++) {
-                        const testResult = op === '+' ? currentResult + t : currentResult - t;
-
-                        // Check if this term is valid for direct calculation
-                        if (testResult >= 1 && testResult <= maxLimit &&
-                            !shouldAvoidTermRepetition(termsArray, t) &&
-                            !isSmallFriendsCombination(currentResult, op, t)) {
-                            term = t;
-                            validTermFound = true;
-                            break;
-                        }
-                    }
-
-                    // If still no valid term found, regenerate the entire exercise
-                    if (!validTermFound) {
-                        console.log('[generateExerciseTerms] No valid term found, regenerating exercise');
-                        termsArray = [];
-                        operations = [];
-                        break;
-                    }
-                } else if (!validTermFound) {
-                    // For non-direct calculation levels, use standard generation
-                    term = generateNumber(settings, false);
-                    validTermFound = true;
-                }
+                console.log('[generateExerciseTerms] Selected valid operation:', {
+                    currentResult,
+                    operation: op + term,
+                    newResult: op === '+' ? currentResult + term : currentResult - term,
+                    availableOptions: validOperations.length
+                });
             } else if (isSmallFriendsLevel(complexity)) {
                 // For Small Friends levels, use progressive learning with GUARANTEED mix:
                 // - 80% current formula (majority)
@@ -2165,12 +2863,27 @@ function generateExerciseTerms(settings) {
                 // Check if it's possible to generate a valid term for this operation
                 // For addition: need currentResult + 1 <= 9 (can add at least 1)
                 // For subtraction: need currentResult - 1 >= 1 (can subtract at least 1)
-                if ((op === '+' && currentResult >= 9) || (op === '-' && currentResult <= 1)) {
-                    console.log('[generateExerciseTerms] Impossible to generate valid Small Friends term, regenerating exercise:', { currentResult, op });
-                    // Break out and regenerate the entire exercise
-                    termsArray = [];
-                    operations = [];
-                    break;
+                // If not possible, switch operation instead of regenerating entire exercise
+                if (op === '+' && currentResult >= 9) {
+                    console.log('[generateExerciseTerms] Cannot add from currentResult=9, switching to subtraction:', { currentResult, op });
+                    op = '-';
+                    operations[operations.length - 1] = op;
+
+                    // Update the term type configuration to match the new operation
+                    const termIndex = i - 1;
+                    if (termTypesDistribution[termIndex].type !== 'direct') {
+                        termTypesDistribution[termIndex].formulaType = 'minus';
+                    }
+                } else if (op === '-' && currentResult <= 1) {
+                    console.log('[generateExerciseTerms] Cannot subtract from currentResult=1, switching to addition:', { currentResult, op });
+                    op = '+';
+                    operations[operations.length - 1] = op;
+
+                    // Update the term type configuration to match the new operation
+                    const termIndex = i - 1;
+                    if (termTypesDistribution[termIndex].type !== 'direct') {
+                        termTypesDistribution[termIndex].formulaType = 'plus';
+                    }
                 }
 
                 // Use pre-calculated term type from distribution instead of random selection
@@ -2190,6 +2903,9 @@ function generateExerciseTerms(settings) {
                     distributionPosition: `${termIndex + 1}/${termTypesDistribution.length}`
                 });
 
+                // Flag to track if we need to regenerate the entire exercise
+                let shouldRegenerateExercise = false;
+
                 // Generate term based on target type
                 while (!validTermFound && termAttempts < 30) {
                     if (targetType === 'direct') {
@@ -2197,25 +2913,127 @@ function generateExerciseTerms(settings) {
                         // For direct calculations, we can use any number that can be performed directly
                         const directOptions = [];
 
-                        // Can we add/subtract 1-4 without formulas?
+                        // Can we add/subtract 1-9 without formulas?
                         for (let t = 1; t <= 9; t++) {
                             const testResult = op === '+' ? currentResult + t : currentResult - t;
                             if (testResult >= 1 && testResult <= 9) {
                                 // Check if this can be done directly (without formulas)
-                                if (!requiresSmallFriendsFormula(currentResult, op, t)) {
+                                // AND that it's allowed for the current complexity level
+                                const isAllowed = isAllowedOperation(currentResult, op, t, complexity);
+                                if (!requiresSmallFriendsFormula(currentResult, op, t) && isAllowed) {
                                     directOptions.push(t);
                                 }
                             }
                         }
 
                         if (directOptions.length > 0) {
-                            term = directOptions[Math.floor(Math.random() * directOptions.length)];
+                            // STRATEGIC GENERATION: Check if the next term should be the current formula
+                            // If so, try to generate a term that leads to a favorable state for that formula
+                            let preferredOptions = [];
+                            const nextIndex = termIndex + 1;
+                            if (nextIndex < termTypesDistribution.length &&
+                                termTypesDistribution[nextIndex].type === 'current' &&
+                                termTypesDistribution[nextIndex].formulaNumber === formulaNumber) {
+                                // Next term should be the current formula, try to reach favorable state
+                                const nextOp = termTypesDistribution[nextIndex].formulaType === 'plus' ? '+' : '-';
 
-                            // Check for excessive repetition
-                            if (!shouldAvoidTermRepetition(termsArray, term)) {
+                                // Calculate which result we need for the formula to be applicable
+                                // For formula +N: we need currentResult in range [1, min(4, 9-N)]
+                                // For formula -N: we need currentResult to be 5 or in range [6, min(9, 5+N)]
+                                for (const option of directOptions) {
+                                    const intermediateResult = op === '+' ? currentResult + option : currentResult - option;
+
+                                    if (nextOp === '+') {
+                                        // For plus formula: need intermediateResult + formulaNumber to require Small Friends
+                                        // This happens when intermediateResult is 1-4 and result would be 5-9
+                                        const wouldRequireFormula = intermediateResult >= 1 &&
+                                                                    intermediateResult <= 4 &&
+                                                                    intermediateResult + formulaNumber >= 5 &&
+                                                                    intermediateResult + formulaNumber <= 9;
+                                        if (wouldRequireFormula &&
+                                            isAllowedOperation(intermediateResult, nextOp, formulaNumber, complexity)) {
+                                            preferredOptions.push(option);
+                                        }
+                                    } else {
+                                        // For minus formula: need intermediateResult - formulaNumber to require Small Friends
+                                        const wouldRequireFormula = ((intermediateResult === 5 && formulaNumber >= 1 && formulaNumber <= 4) ||
+                                                                    (intermediateResult >= 6 && intermediateResult <= 9 &&
+                                                                     intermediateResult - formulaNumber >= 1 &&
+                                                                     intermediateResult - formulaNumber <= 4 &&
+                                                                     formulaNumber > (intermediateResult - 5)));
+                                        if (wouldRequireFormula &&
+                                            isAllowedOperation(intermediateResult, nextOp, formulaNumber, complexity)) {
+                                            preferredOptions.push(option);
+                                        }
+                                    }
+                                }
+
+                                if (preferredOptions.length > 0) {
+                                    console.log('[generateExerciseTerms] Found', preferredOptions.length, 'strategic options that lead to formula state:', {
+                                        currentResult, op, preferredOptions, nextFormula: formulaNumber
+                                    });
+                                }
+                            }
+
+                            // Use preferred options if available, otherwise use all direct options
+                            let optionsToUse = preferredOptions.length > 0 ? preferredOptions : directOptions;
+
+                            // BOOST digit 5 usage: Prioritize 5 if available to meet Small Friends digit 5 requirement
+                            // Check how many 5s we have in current terms
+                            const currentFivesCount = termsArray.filter(t => Math.abs(t) === 5).length;
+                            const currentFivesPercentage = termsArray.length > 0 ? currentFivesCount / termsArray.length : 0;
+                            const targetPercentage = terms <= 3 ? 0.6 : terms === 4 ? 0.5 : terms === 5 ? 0.4 : 0.3;
+
+                            // BOOST digit 5 usage: If we need more 5s and 5 is available, prioritize it
+                            let prioritizeFive = false;
+                            if (currentFivesPercentage < targetPercentage && optionsToUse.includes(5)) {
+                                // 70% chance to use 5 when below target
+                                if (Math.random() < 0.7) {
+                                    prioritizeFive = true;
+                                    console.log('[generateExerciseTerms] Prioritizing digit 5 to meet target percentage:', {
+                                        currentPercentage: (currentFivesPercentage * 100).toFixed(0) + '%',
+                                        targetPercentage: (targetPercentage * 100).toFixed(0) + '%'
+                                    });
+                                }
+                            }
+
+                            // Shuffle options to maintain variety
+                            let shuffledOptions;
+                            if (prioritizeFive) {
+                                // Keep 5 at front, shuffle the rest
+                                const withoutFive = optionsToUse.filter(opt => opt !== 5);
+                                for (let i = withoutFive.length - 1; i > 0; i--) {
+                                    const j = Math.floor(Math.random() * (i + 1));
+                                    [withoutFive[i], withoutFive[j]] = [withoutFive[j], withoutFive[i]];
+                                }
+                                shuffledOptions = [5, ...withoutFive];
+                            } else {
+                                // Regular shuffle
+                                shuffledOptions = optionsToUse.slice();
+                                for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                                    const j = Math.floor(Math.random() * (i + 1));
+                                    [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+                                }
+                            }
+
+                            for (const option of shuffledOptions) {
+                                if (!shouldAvoidTermRepetition(termsArray, option, terms)) {
+                                    term = option;
+                                    validTermFound = true;
+                                    console.log('[generateExerciseTerms] Found direct calculation term:', {
+                                        currentResult, op, term, result: op === '+' ? currentResult + term : currentResult - term
+                                    });
+                                    break;
+                                }
+                            }
+
+                            // If all options blocked by repetition, use first option anyway
+                            if (!validTermFound) {
+                                term = shuffledOptions[0];
                                 validTermFound = true;
-                                console.log('[generateExerciseTerms] Found direct calculation term:', {
-                                    currentResult, op, term, result: op === '+' ? currentResult + term : currentResult - term
+                                console.log('[generateExerciseTerms] Using direct term with relaxed repetition:', {
+                                    currentResult, op, term,
+                                    reason: 'All direct options blocked by repetition'
                                 });
                             }
                         } else {
@@ -2231,52 +3049,146 @@ function generateExerciseTerms(settings) {
                         // Generate a formula term (current or previous)
                         // Operation is already set correctly to match targetFormulaType
 
-                        // First check: Can we generate a valid formula term with the target formula number?
-                        if (termAttempts === 0 && targetFormulaNumber && !canGenerateFormulaFromState(currentResult, op, targetFormulaNumber)) {
-                            console.log('[generateExerciseTerms] Cannot generate target formula from current state:', {
-                                currentResult, op, targetFormulaNumber
-                            });
+                        // Improved adaptive formula selection:
+                        // 1. Collect all valid formula numbers from current state
+                        // 2. Prefer target formula number if valid
+                        // 3. Use any valid alternative formula to maintain type guarantee
+                        // 4. Only fall back to direct calculation if no formulas work
 
-                            // Try to find ANY formula number (1-4) that would work
-                            let foundAlternative = false;
-                            for (let altNum = 1; altNum <= 4; altNum++) {
-                                if (canGenerateFormulaFromState(currentResult, op, altNum) &&
-                                    !shouldAvoidTermRepetition(termsArray, altNum)) {
-                                    term = altNum;
+                        // Collect all valid formula numbers for the current state
+                        const validFormulaNumbers = [];
+                        for (let fNum = 1; fNum <= 4; fNum++) {
+                            if (canGenerateFormulaFromState(currentResult, op, fNum)) {
+                                const isAllowed = isAllowedOperation(currentResult, op, fNum, complexity);
+                                if (isAllowed) {
+                                    validFormulaNumbers.push(fNum);
+                                }
+                            }
+                        }
+
+                        console.log('[generateExerciseTerms] Valid formula numbers from current state:', {
+                            currentResult, op, validFormulaNumbers, targetFormulaNumber
+                        });
+
+                        // If no valid formula numbers exist, try to navigate back to favorable state
+                        // UPDATED: Smart navigation - try to get back to favorable range for formula application
+                        if (validFormulaNumbers.length === 0) {
+                            // For current formula type, try to navigate to favorable state by switching operation
+                            if (targetType === 'current') {
+                                const currentDigit = currentResult % 10;
+
+                                // For PLUS formulas: need currentResult 1-4 to apply formula
+                                if (availableFormulas.isPlus && currentDigit > 4) {
+                                    // Try switching to subtraction to get back to 1-4 range
+                                    console.log('[generateExerciseTerms] Current state unfavorable for PLUS formula, trying subtraction to navigate back');
+                                    op = '-';
+                                    operations[operations.length - 1] = op;
+
+                                    // Find a subtraction that brings us to 1-4
+                                    const navigateOptions = [];
+                                    for (let t = 1; t <= 9; t++) {
+                                        const resultDigit = (currentDigit - t + 10) % 10;
+                                        if (resultDigit >= 1 && resultDigit <= 4 && currentResult - t >= 1) {
+                                            const isAllowed = isAllowedOperation(currentResult, '-', t, complexity);
+                                            if (isAllowed && !requiresSmallFriendsFormula(currentResult, '-', t)) {
+                                                navigateOptions.push(t);
+                                            }
+                                        }
+                                    }
+
+                                    if (navigateOptions.length > 0) {
+                                        term = navigateOptions[Math.floor(Math.random() * navigateOptions.length)];
+                                        validTermFound = true;
+                                        console.log('[generateExerciseTerms] Navigating to favorable state with subtraction:', {
+                                            currentResult, term, newResult: currentResult - term
+                                        });
+                                    }
+                                }
+                                // For MINUS formulas: need currentResult 5-9 to apply formula
+                                else if (!availableFormulas.isPlus && currentDigit < 5) {
+                                    // Try switching to addition to get to 5-9 range
+                                    console.log('[generateExerciseTerms] Current state unfavorable for MINUS formula, trying addition to navigate back');
+                                    op = '+';
+                                    operations[operations.length - 1] = op;
+
+                                    // Find an addition that brings us to 5-9
+                                    const navigateOptions = [];
+                                    for (let t = 1; t <= 9; t++) {
+                                        const resultDigit = (currentDigit + t) % 10;
+                                        if (resultDigit >= 5 && resultDigit <= 9 && currentResult + t <= 9) {
+                                            const isAllowed = isAllowedOperation(currentResult, '+', t, complexity);
+                                            if (isAllowed && !requiresSmallFriendsFormula(currentResult, '+', t)) {
+                                                navigateOptions.push(t);
+                                            }
+                                        }
+                                    }
+
+                                    if (navigateOptions.length > 0) {
+                                        term = navigateOptions[Math.floor(Math.random() * navigateOptions.length)];
+                                        validTermFound = true;
+                                        console.log('[generateExerciseTerms] Navigating to favorable state with addition:', {
+                                            currentResult, term, newResult: currentResult + term
+                                        });
+                                    }
+                                }
+                            }
+
+                            // If navigation didn't work, try previous formulas
+                            if (!validTermFound && availableFormulas.previousFormulas &&
+                                availableFormulas.previousFormulas.length > 0 && targetType !== 'previous') {
+                                console.log('[generateExerciseTerms] No current formula possible, trying previous formulas');
+                                targetType = 'previous';
+                                const randomPrevious = availableFormulas.previousFormulas[
+                                    Math.floor(Math.random() * availableFormulas.previousFormulas.length)
+                                ];
+                                targetFormulaNumber = randomPrevious.number;
+                                targetFormulaType = randomPrevious.type;
+                                continue;
+                            }
+
+                            // Last resort: fall back to direct calculation
+                            if (!validTermFound) {
+                                console.log('[generateExerciseTerms] No formulas possible from state, switching to direct calculation');
+                                targetType = 'direct';
+                                continue;
+                            }
+                        }
+
+                        // Only proceed with formula selection if we haven't found a term yet (via navigation)
+                        if (!validTermFound) {
+                            // Select formula number: prefer target, but accept any valid option
+                            let candidateNumbers = validFormulaNumbers.slice();
+
+                            // Prioritize target formula number if it's in the valid list
+                            if (targetFormulaNumber && validFormulaNumbers.includes(targetFormulaNumber)) {
+                                candidateNumbers = [targetFormulaNumber, ...validFormulaNumbers.filter(n => n !== targetFormulaNumber)];
+                            }
+
+                            // Try candidates in order, checking repetition constraints
+                            for (const fNum of candidateNumbers) {
+                                if (!shouldAvoidTermRepetition(termsArray, fNum, terms)) {
+                                    term = fNum;
+                                    const result = op === '+' ? currentResult + term : currentResult - term;
                                     validTermFound = true;
-                                    foundAlternative = true;
-                                    console.log('[generateExerciseTerms] Using alternative formula number:', {
-                                        currentResult, op, term, original: targetFormulaNumber
+                                    console.log('[generateExerciseTerms] Found formula term:', {
+                                        currentResult, op, term, result,
+                                        targetType, targetFormulaNumber,
+                                        wasTargetUsed: term === targetFormulaNumber
                                     });
                                     break;
                                 }
                             }
 
-                            // If no formula works from this state, try direct calculation
-                            if (!foundAlternative) {
-                                console.log('[generateExerciseTerms] No formula possible, trying direct calculation');
-                                targetType = 'direct';
-                                // Will try direct calculation in next iteration
-                                continue;
-                            }
-                        } else {
-                            // Generate term based on target formula number
-                            term = targetFormulaNumber || (Math.floor(Math.random() * 4) + 1);
-
-                            const result = op === '+' ? currentResult + term : currentResult - term;
-
-                            // Check if result is valid (1-9)
-                            if (result >= 1 && result <= 9) {
-                                const requiresFormula = requiresSmallFriendsFormula(currentResult, op, term);
-
-                                // For formula types, we want to ensure it requires a formula
-                                // Also check for excessive repetition
-                                if (requiresFormula && !shouldAvoidTermRepetition(termsArray, term)) {
-                                    validTermFound = true;
-                                    console.log('[generateExerciseTerms] Found formula term:', {
-                                        currentResult, op, term, result, targetType, targetFormulaNumber, requiresFormula
-                                    });
-                                }
+                            // If all valid formulas are blocked by repetition, relax constraint slightly
+                            if (!validTermFound && validFormulaNumbers.length > 0) {
+                                // Use the first valid formula even if it repeats (better than regenerating)
+                                term = candidateNumbers[0];
+                                const result = op === '+' ? currentResult + term : currentResult - term;
+                                validTermFound = true;
+                                console.log('[generateExerciseTerms] Using formula with relaxed repetition constraint:', {
+                                    currentResult, op, term, result,
+                                    reason: 'All valid formulas blocked by repetition'
+                                });
                             }
                         }
                     }
@@ -2284,30 +3196,99 @@ function generateExerciseTerms(settings) {
                     termAttempts++;
                 }
 
+                // If we need to regenerate the entire exercise (formula couldn't be generated),
+                // skip fallback and break out to trigger regeneration
+                if (shouldRegenerateExercise) {
+                    console.log('[generateExerciseTerms] Skipping fallback, will regenerate entire exercise');
+                    termsArray = [];
+                    operations = [];
+                    break; // Exit the terms generation loop
+                }
+
                 // If no valid term found after all attempts, try direct calculation as final fallback
                 if (!validTermFound) {
                     console.log('[generateExerciseTerms] Attempting direct calculation as final fallback');
 
-                    // Try to find a direct calculation term
+                    // Collect valid direct calculation options
+                    const fallbackOptions = [];
                     for (let t = 1; t <= 9; t++) {
                         const testResult = op === '+' ? currentResult + t : currentResult - t;
+                        const isAllowed = isAllowedOperation(currentResult, op, t, complexity);
                         if (testResult >= 1 && testResult <= 9 &&
                             !requiresSmallFriendsFormula(currentResult, op, t) &&
-                            !shouldAvoidTermRepetition(termsArray, t)) {
+                            isAllowed) {
+                            fallbackOptions.push(t);
+                        }
+                    }
+
+                    // Try options without repetition first, then with relaxed constraint
+                    for (const t of fallbackOptions) {
+                        if (!shouldAvoidTermRepetition(termsArray, t, terms)) {
                             term = t;
                             validTermFound = true;
                             console.log('[generateExerciseTerms] Using direct calculation fallback:', {
-                                currentResult, op, term, result: testResult
+                                currentResult, op, term, result: op === '+' ? currentResult + t : currentResult - t
                             });
                             break;
                         }
                     }
+
+                    // If all blocked by repetition, use first valid option
+                    if (!validTermFound && fallbackOptions.length > 0) {
+                        term = fallbackOptions[0];
+                        validTermFound = true;
+                        console.log('[generateExerciseTerms] Using direct fallback with relaxed repetition:', {
+                            currentResult, op, term
+                        });
+                    }
                 }
 
-                // If still no valid term, regenerate the entire exercise
+                // If still no valid term, try switching operation as last resort before regenerating
                 if (!validTermFound) {
-                    console.log('[generateExerciseTerms] No valid term possible, regenerating exercise:', {
-                        currentResult, op, targetFormulaNumber, targetType
+                    const originalOp = op;
+                    op = op === '+' ? '-' : '+';
+                    operations[operations.length - 1] = op;
+
+                    console.log('[generateExerciseTerms] Switching operation as last resort:', {
+                        currentResult, originalOp, newOp: op
+                    });
+
+                    // Collect valid options with switched operation
+                    const switchedOptions = [];
+                    for (let t = 1; t <= 9; t++) {
+                        const testResult = op === '+' ? currentResult + t : currentResult - t;
+                        const isAllowed = isAllowedOperation(currentResult, op, t, complexity);
+                        if (testResult >= 1 && testResult <= 9 && isAllowed) {
+                            switchedOptions.push(t);
+                        }
+                    }
+
+                    // Try options without repetition first
+                    for (const t of switchedOptions) {
+                        if (!shouldAvoidTermRepetition(termsArray, t, terms)) {
+                            term = t;
+                            validTermFound = true;
+                            console.log('[generateExerciseTerms] Found valid term with switched operation:', {
+                                currentResult, op, term, result: op === '+' ? currentResult + t : currentResult - t
+                            });
+                            break;
+                        }
+                    }
+
+                    // If all blocked by repetition, use first valid option
+                    if (!validTermFound && switchedOptions.length > 0) {
+                        term = switchedOptions[0];
+                        validTermFound = true;
+                        console.log('[generateExerciseTerms] Using switched operation with relaxed repetition:', {
+                            currentResult, op, term
+                        });
+                    }
+                }
+
+                // If still no valid term after trying both operations, regenerate the entire exercise
+                if (!validTermFound) {
+                    console.log('[generateExerciseTerms] No valid term possible with either operation, regenerating exercise:', {
+                        currentResult, targetFormulaNumber, targetType
                     });
                     // Break out and regenerate the entire exercise
                     termsArray = [];
@@ -2327,7 +3308,7 @@ function generateExerciseTerms(settings) {
                     }
 
                     // Check for excessive repetition
-                    if (!shouldAvoidTermRepetition(termsArray, term)) {
+                    if (!shouldAvoidTermRepetition(termsArray, term, terms)) {
                         validTermFound = true;
                     }
                     standardAttempts++;
@@ -2383,11 +3364,397 @@ function generateExerciseTerms(settings) {
                         // Recalculate result with the forced 5
                         result = calculateResult(termsArray, operations);
                         console.log('[generateExerciseTerms] New result after forcing 5:', result);
+
+                        // CRITICAL: Validate that all intermediate results stay >= 0 (and <= 9 for Small Friends)
+                        // Otherwise we could generate invalid exercises with invalid intermediate results
+                        if (!validateIntermediateResults(termsArray, operations, complexity)) {
+                            console.warn('[generateExerciseTerms] Forcing 5 created invalid intermediate results. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
+
+                        // CRITICAL: Validate no consecutive Big Friends formulas
+                        // This prevents confusing situations like 9 + 1 after already using Big Friends
+                        if (!validateNoConsecutiveBigFriends(termsArray, operations)) {
+                            console.warn('[generateExerciseTerms] Forcing 5 created consecutive Big Friends formulas. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
+
+                        // CRITICAL: Validate that ALL operations are allowed for the current complexity level
+                        let allOpsValid = true;
+                        for (let i = 0; i < operations.length; i++) {
+                            const prevResult = calculateResult(termsArray.slice(0, i + 1), operations.slice(0, i));
+                            if (!isAllowedOperation(prevResult, operations[i], termsArray[i + 1], complexity)) {
+                                allOpsValid = false;
+                                break;
+                            }
+                        }
+                        if (!allOpsValid) {
+                            console.warn('[generateExerciseTerms] Forcing 5 created invalid operations for complexity level. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
                     }
                     break;
                 }
                 continue; // Regenerate
             }
+        }
+
+        // For direct-to-9 complexity, ensure sufficient practice with large numbers (6-9)
+        // Goal: Dynamic percentage of non-first terms should be 6-9 based on term count
+        // 3 terms: 70%, 4 terms: 50%, 5+ terms: 40%
+        if (complexity === 'direct-to-9') {
+            // Check if at least one large number exists
+            const hasLargeNumber = termsArray.some(term => Math.abs(term) >= 6 && Math.abs(term) <= 9);
+
+            // MODIFIED: Count large numbers in ALL positions (including first term)
+            // Previous version excluded first term, limiting variety
+            const largeNumbersCount = termsArray.filter(term => Math.abs(term) >= 6 && Math.abs(term) <= 9).length;
+            const largeNumberPercentage = termsArray.length > 0 ? (largeNumbersCount / termsArray.length) : 0;
+
+            // Dynamic target percentage based on term count
+            // More terms = lower percentage requirement
+            // RELAXED: Further reduced percentages to allow more exercise variety
+            let targetPercentage;
+            if (terms <= 3) {
+                targetPercentage = 0.34; // 34% for 3 terms (~1 large number) (was 50%, too strict)
+            } else if (terms === 4) {
+                targetPercentage = 0.25; // 25% for 4 terms (~1 large number) (was 40%, too strict)
+            } else {
+                targetPercentage = 0.20; // 20% for 5+ terms (~1 large number) (was 30%, too strict)
+            }
+
+            // Require: at least 1 large number total AND meets dynamic percentage requirement
+            const meetsRequirement = hasLargeNumber && largeNumberPercentage >= targetPercentage;
+
+            if (!meetsRequirement) {
+                console.log('[generateExerciseTerms] direct-to-9: Insufficient large numbers (6-9). Current: ' +
+                    (largeNumberPercentage * 100).toFixed(0) + '% of all terms. Target: >' + (targetPercentage * 100).toFixed(0) + '%. Attempt:',
+                    attempt + 1, '/', maxAttempts);
+                console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
+                attempt++;
+                if (attempt >= maxAttempts) {
+                    // If max attempts reached, try to intelligently add large numbers without violating constraints
+                    console.warn('[generateExerciseTerms] Max attempts reached! Attempting to add large numbers (6-9) while respecting constraints.');
+                    if (termsArray.length > 1) {
+                        // Calculate how many terms we need to replace to reach target percentage
+                        const targetCount = Math.ceil(termsArray.length * targetPercentage);
+                        const needToAdd = targetCount - largeNumbersCount;
+
+                        console.log('[generateExerciseTerms] Need to add', needToAdd, 'more large numbers to reach', (targetPercentage * 100).toFixed(0) + '% target');
+
+                        // Try to replace terms with large numbers that don't violate constraints
+                        let successfulReplacements = 0;
+                        const maxReplacementAttempts = needToAdd * 10; // Try harder to find valid replacements
+                        let replacementAttempt = 0;
+
+                        while (successfulReplacements < needToAdd && replacementAttempt < maxReplacementAttempts) {
+                            replacementAttempt++;
+
+                            // MODIFIED: Pick a random term index (including first term)
+                            const randomIndex = Math.floor(Math.random() * termsArray.length);
+
+                            // Skip if this position already has a large number
+                            if (Math.abs(termsArray[randomIndex]) >= 6) {
+                                continue;
+                            }
+
+                            // Try a random large number (6-9)
+                            const randomLargeNum = Math.floor(Math.random() * 4) + 6;
+
+                            // Create a test copy to validate the replacement
+                            const testTerms = [...termsArray];
+                            testTerms[randomIndex] = randomLargeNum;
+
+                            // Calculate what the intermediate result would be at this position
+                            const precedingTerms = testTerms.slice(0, randomIndex);
+                            const precedingOps = operations.slice(0, randomIndex - 1);
+                            const currentResult = calculateResult(precedingTerms, precedingOps);
+                            const op = operations[randomIndex - 1];
+
+                            // Validate this replacement doesn't create formula requirements or invalid results
+                            const wouldRequireSmallFriends = isSmallFriendsCombination(currentResult, op, randomLargeNum);
+                            const wouldRequireBigFriends = isBigFriendsCombination(currentResult, op, randomLargeNum, complexity);
+                            const intermediateResult = op === '+' ? currentResult + randomLargeNum : currentResult - randomLargeNum;
+                            const intermediateValid = intermediateResult >= 1; // RELAXED: removed <= 9 restriction
+
+                            // Calculate final result with this replacement
+                            const testResult = calculateResult(testTerms, operations);
+                            const finalResultValid = testResult >= 1 && testResult <= 9;
+
+                            // Validate all intermediate results would still be valid
+                            const allIntermediatesValid = validateIntermediateResults(testTerms, operations, complexity);
+
+                            // Validate no consecutive Big Friends formulas
+                            const noConsecutiveBigFriends = validateNoConsecutiveBigFriends(testTerms, operations);
+
+                            // Validate that ALL operations in the exercise (not just the replaced one)
+                            // are still valid for direct calculation after the replacement.
+                            // Replacing a term changes the running total, which can make subsequent
+                            // operations require small/big friends formulas.
+                            let allOpsStillDirect = true;
+                            let runningVal = testTerms[0];
+                            for (let k = 0; k < operations.length; k++) {
+                                const stepOp = operations[k];
+                                const stepTerm = testTerms[k + 1];
+                                const isLastStep = (k === operations.length - 1);
+                                if (isSmallFriendsCombination(runningVal, stepOp, stepTerm) ||
+                                    isBigFriendsCombination(runningVal, stepOp, stepTerm, complexity) ||
+                                    !isAllowedOperation(runningVal, stepOp, stepTerm, complexity)) { // R1 (replaces canPerformDirectly)
+                                    // !canPerformDirectly(runningVal, stepOp, stepTerm, maxLimit, isLastStep)) { // R1 DISABLED
+                                    allOpsStillDirect = false;
+                                    break;
+                                }
+                                runningVal = stepOp === '+' ? runningVal + stepTerm : runningVal - stepTerm;
+                            }
+
+                            if (!wouldRequireSmallFriends && !wouldRequireBigFriends &&
+                                intermediateValid && finalResultValid && allIntermediatesValid && noConsecutiveBigFriends &&
+                                allOpsStillDirect) {
+                                // This replacement is valid!
+                                const oldTerm = termsArray[randomIndex];
+                                termsArray[randomIndex] = randomLargeNum;
+                                successfulReplacements++;
+                                console.log('[generateExerciseTerms] Replaced term at index', randomIndex, 'from', oldTerm, 'to', randomLargeNum);
+                            }
+                        }
+
+                        // Recalculate result with the replaced large numbers
+                        result = calculateResult(termsArray, operations);
+                        console.log('[generateExerciseTerms] After intelligent replacement: added', successfulReplacements, 'large numbers. New result:', result);
+
+                        // If we couldn't add enough large numbers while respecting constraints, continue regenerating
+                        if (successfulReplacements < needToAdd) {
+                            console.warn('[generateExerciseTerms] Could not add enough large numbers without violating constraints. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
+
+                        // Final validation: ensure result is within 1-9
+                        if (result < 1 || result > 9) {
+                            console.warn('[generateExerciseTerms] Final result', result, 'is outside valid range [1-9]. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
+                    }
+                    break;
+                }
+                continue; // Regenerate
+            }
+        }
+
+        // For Small Friends complexity, ensure sufficient practice with digit 5
+        // MODIFIED: Dynamic percentage of ALL terms should be 5 based on term count
+        // This promotes pedagogical exercises like: 4+5-2-5+1 or 3-2+5+2-5
+        // Including first term for more variety
+        if (isSmallFriendsLevel(complexity)) {
+            // Check if at least one term is 5
+            const hasFive = termsArray.some(term => Math.abs(term) === 5);
+
+            // MODIFIED: Count digit 5 in ALL positions (including first term)
+            const fivesCount = termsArray.filter(term => Math.abs(term) === 5).length;
+            const fivePercentage = termsArray.length > 0 ? (fivesCount / termsArray.length) : 0;
+
+            // Dynamic target percentage based on term count (adjusted for all terms)
+            let targetPercentage;
+            if (terms <= 3) {
+                targetPercentage = 0.6; // 60% for 3 terms (was 80% of non-first)
+            } else if (terms === 4) {
+                targetPercentage = 0.5; // 50% for 4 terms (was 70% of non-first)
+            } else if (terms === 5) {
+                targetPercentage = 0.4; // 40% for 5 terms (was 60% of non-first)
+            } else {
+                targetPercentage = 0.3; // 30% for 6+ terms (was 50% of non-first)
+            }
+
+            // Require: at least 1 digit 5 total AND meets dynamic percentage requirement
+            const meetsRequirement = hasFive && fivePercentage >= targetPercentage;
+
+            if (!meetsRequirement) {
+                console.log('[generateExerciseTerms] Small Friends: Insufficient digit 5 usage. Current: ' +
+                    (fivePercentage * 100).toFixed(0) + '% of all terms. Target: >=' + (targetPercentage * 100).toFixed(0) + '%. Attempt:',
+                    attempt + 1, '/', maxAttempts);
+                console.log('[generateExerciseTerms] Current terms:', termsArray, 'Result:', result);
+                attempt++;
+                if (attempt >= maxAttempts) {
+                    // If max attempts reached, try to intelligently add digit 5 without violating constraints
+                    console.warn('[generateExerciseTerms] Max attempts reached! Attempting to add digit 5 while respecting Small Friends constraints.');
+                    if (termsArray.length > 1) {
+                        // Calculate how many terms we need to replace to reach target percentage
+                        const targetCount = Math.ceil(termsArray.length * targetPercentage);
+                        const needToAdd = targetCount - fivesCount;
+
+                        console.log('[generateExerciseTerms] Need to add', needToAdd, 'more digit 5s to reach', (targetPercentage * 100).toFixed(0) + '% target');
+
+                        // Try to replace terms with 5 that don't violate constraints
+                        let successfulReplacements = 0;
+                        const maxReplacementAttempts = needToAdd * 10; // Try harder to find valid replacements
+                        let replacementAttempt = 0;
+
+                        while (successfulReplacements < needToAdd && replacementAttempt < maxReplacementAttempts) {
+                            replacementAttempt++;
+
+                            // MODIFIED: Pick a random term index (including first term)
+                            const randomIndex = Math.floor(Math.random() * termsArray.length);
+
+                            // Skip if this position already has a 5
+                            if (Math.abs(termsArray[randomIndex]) === 5) {
+                                continue;
+                            }
+
+                            // Create a test copy to validate the replacement
+                            const testTerms = [...termsArray];
+                            testTerms[randomIndex] = 5;
+
+                            // Calculate what the intermediate result would be at this position
+                            const precedingTerms = testTerms.slice(0, randomIndex);
+                            const precedingOps = operations.slice(0, randomIndex - 1);
+                            const currentResult = calculateResult(precedingTerms, precedingOps);
+                            const op = operations[randomIndex - 1];
+
+                            // For Small Friends, we want to ensure that using 5 is VALID at this position
+                            // Check if this would require a Small Friends formula (which is GOOD for Small Friends levels)
+                            const intermediateResult = op === '+' ? currentResult + 5 : currentResult - 5;
+                            const intermediateValid = intermediateResult >= 1 && intermediateResult <= 9; // Must stay within single-digit range
+
+                            // Calculate final result with this replacement
+                            const testResult = calculateResult(testTerms, operations);
+                            const finalResultValid = testResult >= 1 && testResult <= 9;
+
+                            // Validate all intermediate results would still be valid
+                            const allIntermediatesValid = validateIntermediateResults(testTerms, operations, complexity);
+
+                            // Validate no consecutive Big Friends formulas
+                            const noConsecutiveBigFriends = validateNoConsecutiveBigFriends(testTerms, operations);
+
+                            // NEW: Validate that ALL operations are allowed for the current complexity level
+                            // This is critical for Small Friends levels to prevent invalid operations
+                            let allOperationsAllowed = true;
+                            for (let i = 0; i < operations.length; i++) {
+                                const prevResult = calculateResult(testTerms.slice(0, i + 1), operations.slice(0, i));
+                                const operand = testTerms[i + 1];
+                                const operation = operations[i];
+                                if (!isAllowedOperation(prevResult, operation, operand, complexity)) {
+                                    allOperationsAllowed = false;
+                                    break;
+                                }
+                            }
+
+                            if (intermediateValid && finalResultValid && allIntermediatesValid && noConsecutiveBigFriends && allOperationsAllowed) {
+                                // This replacement is valid!
+                                const oldTerm = termsArray[randomIndex];
+                                termsArray[randomIndex] = 5;
+                                successfulReplacements++;
+                                console.log('[generateExerciseTerms] Replaced term at index', randomIndex, 'from', oldTerm, 'to 5');
+                            }
+                        }
+
+                        // Recalculate result with the replaced 5s
+                        result = calculateResult(termsArray, operations);
+                        console.log('[generateExerciseTerms] After intelligent replacement: added', successfulReplacements, 'digit 5s. New result:', result);
+
+                        // If we couldn't add enough 5s while respecting constraints, continue regenerating
+                        if (successfulReplacements < needToAdd) {
+                            console.warn('[generateExerciseTerms] Could not add enough digit 5s without violating constraints. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
+
+                        // Final validation: ensure result is within 1-9
+                        if (result < 1 || result > 9) {
+                            console.warn('[generateExerciseTerms] Final result', result, 'is outside valid range [1-9]. Continuing regeneration.');
+                            attempt++;
+                            continue;
+                        }
+                    }
+                    break;
+                }
+                continue; // Regenerate
+            }
+        }
+
+        // X-X rule: subtracting the same number (result=0) cannot be first or last operation
+        if (operations.length > 0) {
+            // Check first operation: termsArray[0] - termsArray[1] = 0 is forbidden as first
+            if (operations[0] === '-' && termsArray[1] === termsArray[0]) {
+                attempt++;
+                if (attempt >= maxAttempts) { break; }
+                continue;
+            }
+            // Check last operation: if last op is '-' and last term equals intermediate result
+            const lastOpIdx = operations.length - 1;
+            if (operations[lastOpIdx] === '-') {
+                const secondToLastResult = calculateResult(termsArray.slice(0, -1), operations.slice(0, -1));
+                if (secondToLastResult === termsArray[termsArray.length - 1]) {
+                    attempt++;
+                    if (attempt >= maxAttempts) { break; }
+                    continue;
+                }
+            }
+        }
+
+        // NEW VALIDATION: For Small Friends levels, verify actual formula usage matches distribution
+        // This ensures exercises actually practice the target formula, not just use digit 5
+        if (isSmallFriendsLevel(complexity) && termTypesDistribution && termTypesDistribution.length > 0) {
+            // Count how many terms were allocated as 'current' formula in the distribution
+            const intendedFormulaCount = termTypesDistribution.filter(t => t.type === 'current').length;
+
+            // Count how many operations actually require the Small Friends formula
+            let actualFormulaCount = 0;
+            for (let i = 0; i < operations.length; i++) {
+                const currentResult = calculateResult(termsArray.slice(0, i + 1), operations.slice(0, i));
+                const term = termsArray[i + 1];
+                const op = operations[i];
+
+                if (requiresSmallFriendsFormula(currentResult, op, term)) {
+                    actualFormulaCount++;
+                }
+            }
+
+            // Calculate actual formula percentage vs intended
+            const actualFormulaPercentage = operations.length > 0 ? actualFormulaCount / operations.length : 0;
+            const intendedFormulaPercentage = termTypesDistribution.length > 0 ? intendedFormulaCount / termTypesDistribution.length : 0;
+
+            // CRITICAL: Require at least 80% of intended formulas to be actually used
+            // This prevents exercises where distribution says "use formula" but generation falls back to direct
+            const minRequiredFormulaPercentage = intendedFormulaPercentage * 0.8;
+
+            if (actualFormulaPercentage < minRequiredFormulaPercentage) {
+                console.log('[generateExerciseTerms] Small Friends: Insufficient formula usage. Intended:',
+                    intendedFormulaCount, '('+( intendedFormulaPercentage * 100).toFixed(0)+'%)',
+                    'Actual:', actualFormulaCount, '('+(actualFormulaPercentage * 100).toFixed(0)+'%)',
+                    'Required:', (minRequiredFormulaPercentage * 100).toFixed(0)+'%',
+                    'Attempt:', attempt + 1, '/', maxAttempts);
+                console.log('[generateExerciseTerms] Terms:', termsArray, 'Operations:', operations);
+                attempt++;
+                if (attempt >= maxAttempts) {
+                    console.warn('[generateExerciseTerms] Max attempts reached, returning exercise with insufficient formula usage');
+                    break;
+                }
+                continue; // Regenerate
+            }
+
+            console.log('[generateExerciseTerms] Formula usage validation passed:', {
+                intendedCount: intendedFormulaCount,
+                actualCount: actualFormulaCount,
+                percentage: (actualFormulaPercentage * 100).toFixed(0) + '%',
+                required: (minRequiredFormulaPercentage * 100).toFixed(0) + '%'
+            });
+        }
+
+        // Final validation: Check for consecutive Big Friends formulas
+        if (!validateNoConsecutiveBigFriends(termsArray, operations)) {
+            console.warn('[generateExerciseTerms] Exercise has consecutive Big Friends formulas. Regenerating. Attempt:', attempt + 1, '/', maxAttempts);
+            console.log('[generateExerciseTerms] Current terms:', termsArray, 'Operations:', operations);
+            attempt++;
+            if (attempt >= maxAttempts) {
+                // If max attempts reached, continue to return the exercise anyway
+                console.warn('[generateExerciseTerms] Max attempts reached, returning exercise with consecutive Big Friends anyway');
+                break;
+            }
+            continue; // Regenerate
         }
 
         // Valid result found
@@ -2411,6 +3778,149 @@ function calculateResult(terms, operations) {
         }
     }
     return Math.round(result * 100) / 100; // Round to 2 decimals
+}
+
+/**
+ * Validates that all intermediate results in an exercise stay >= 0
+ * This is critical for direct calculation modes to ensure valid soroban operations
+ * @param {Array} terms - Array of numbers in the exercise
+ * @param {Array} operations - Array of operations ('+' or '-')
+ * @returns {boolean} - True if all intermediate results are >= 0, false otherwise
+ */
+function validateIntermediateResults(terms, operations, complexity = null) {
+    let result = terms[0];
+
+    // First term must be >= 0
+    if (result < 0) {
+        console.log('[validateIntermediateResults] First term is < 0:', result);
+        return false;
+    }
+
+    // For Small Friends levels, first term must also be <= 9 (single digit)
+    if (complexity && isSmallFriendsLevel(complexity) && result > 9) {
+        console.log('[validateIntermediateResults] First term exceeds 9 for Small Friends:', result);
+        return false;
+    }
+
+    // Check each intermediate step
+    for (let i = 0; i < operations.length; i++) {
+        if (operations[i] === '+') {
+            result += terms[i + 1];
+        } else {
+            result -= terms[i + 1];
+        }
+
+        // Check that intermediate result doesn't go negative
+        // FURTHER RELAXED: Allow passing through 0 (e.g., 5-5=0, then 0+3=3)
+        if (result < 0) {
+            console.log('[validateIntermediateResults] Intermediate result < 0 at step', i + 1, ':', result);
+            console.log('[validateIntermediateResults] Terms so far:', terms.slice(0, i + 2), 'Operations:', operations.slice(0, i + 1));
+            return false;
+        }
+
+        // For Small Friends levels, enforce upper bound of 9 (single digit limit)
+        // This prevents invalid operations like 5+5=10 which exceed single-digit capacity
+        if (complexity && isSmallFriendsLevel(complexity) && result > 9) {
+            console.log('[validateIntermediateResults] Intermediate result exceeds 9 for Small Friends at step', i + 1, ':', result);
+            console.log('[validateIntermediateResults] Terms so far:', terms.slice(0, i + 2), 'Operations:', operations.slice(0, i + 1));
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Checks if an operation requires a formula that involves carrying or complex bead manipulation
+ * This includes:
+ * - Big Friends formulas (operands 6-9) - these are always considered formula exercises in training
+ * - Any addition that results in >= 10 (carrying to next column) - uses formulas like +1=-9+10, +2=-8+10
+ * - Any subtraction that would require borrowing from next column
+ * @param {number} currentValue - The current value before the operation
+ * @param {string} operation - The operation ('+' or '-')
+ * @param {number} operand - The operand to add or subtract
+ * @returns {boolean} - True if a carrying/complex formula is required
+ */
+function requiresCarryingFormula(currentValue, operation, operand) {
+    if (operation === '+') {
+        const result = currentValue + operand;
+
+        // GOLDEN RULE: Any addition resulting in >= 10 requires a carrying formula
+        // Examples: 9+1 (formula: +1=-9+10), 8+2 (formula: +2=-8+10), 7+3, 6+4, etc.
+        if (result >= 10) {
+            return true;
+        }
+
+        // Big Friends operands (6-9): These are ALWAYS considered formula exercises in training context
+        // Even if they can technically be done directly (like 1+8=9), they are taught using formulas
+        // This is pedagogically important to maintain consistency in formula training
+        if (operand >= 6 && operand <= 9) {
+            // For Big Friends operands, check if formula would typically be used
+            // From the teaching perspective, +6,+7,+8,+9 are formula operations when:
+            // - The result would require using the +10-complement approach
+            // - Or when starting from values where direct manipulation is complex
+            return isBigFriendsCombination(currentValue, operation, operand);
+        }
+    } else if (operation === '-') {
+        // Check if subtraction would require borrowing from next column
+        if (operand > currentValue) {
+            return true;
+        }
+
+        // Big Friends operands (6-9): Check if formula is needed
+        if (operand >= 6 && operand <= 9) {
+            return isBigFriendsCombination(currentValue, operation, operand);
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Validates that we don't have consecutive formulas requiring carrying in an exercise
+ * This prevents pedagogically confusing situations where students need to apply
+ * complex formulas (Big Friends or carrying) multiple times in a row
+ * Golden rule: All carrying formulas with + give result >= 10
+ * Examples: 9+1 (formula: +1 = -9+10), 8+2 (formula: +2 = -8+10)
+ * @param {Array} terms - Array of numbers in the exercise
+ * @param {Array} operations - Array of operations ('+' or '-')
+ * @returns {boolean} - True if no consecutive carrying formulas found, false otherwise
+ */
+function validateNoConsecutiveBigFriends(terms, operations) {
+    let result = terms[0];
+    let previousRequiredCarrying = false;
+
+    // Check each step
+    for (let i = 0; i < operations.length; i++) {
+        const currentOp = operations[i];
+        const currentTerm = terms[i + 1];
+
+        // Check if current operation requires a carrying/complex formula
+        const currentRequiresCarrying = requiresCarryingFormula(result, currentOp, currentTerm);
+
+        // If both current and previous operations require carrying formulas, reject
+        if (currentRequiresCarrying && previousRequiredCarrying) {
+            console.log('[validateNoConsecutiveBigFriends] Consecutive carrying formulas detected at step', i + 1);
+            console.log('[validateNoConsecutiveBigFriends] Current value before operation:', result,
+                       'Operation:', currentOp, currentTerm, 'Result:',
+                       currentOp === '+' ? result + currentTerm : result - currentTerm);
+            console.log('[validateNoConsecutiveBigFriends] Terms so far:', terms.slice(0, i + 2),
+                       'Operations:', operations.slice(0, i + 1));
+            return false;
+        }
+
+        // Update result for next iteration
+        if (currentOp === '+') {
+            result += currentTerm;
+        } else {
+            result -= currentTerm;
+        }
+
+        // Update flag for next iteration
+        previousRequiredCarrying = currentRequiresCarrying;
+    }
+
+    return true;
 }
 
 // Text to Speech
@@ -2455,10 +3965,14 @@ function runTrainingExercise() {
         terms = generated.terms;
         operations = generated.operations;
 
-        // Safety check: if generation failed, show error and stop
+        // Safety check: if generation failed, show error and return to settings
         if (!terms || terms.length === 0) {
             console.error('[runTrainingExercise] Failed to generate valid exercise terms');
             alert('Nu s-a putut genera un exercițiu valid. Vă rugăm încercați din nou sau schimbați setările.');
+            // Return to training settings screen instead of leaving blank screen
+            document.getElementById('trainingExercise').style.display = 'none';
+            document.getElementById('trainingSettings').style.display = 'block';
+            document.querySelector('#trainingMode .start-btn').style.display = 'block';
             return;
         }
 
@@ -2517,12 +4031,12 @@ function runTrainingExercise() {
 
     // Show countdown 3, 2, 1
     let countdown = 3;
-    content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+    content.innerHTML = `<div class="number-display-area"><div class="countdown-circle">${countdown}</div></div>`;
 
     const countdownInterval = setInterval(() => {
         countdown--;
         if (countdown > 0) {
-            content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+            content.innerHTML = `<div class="number-display-area"><div class="countdown-circle">${countdown}</div></div>`;
         } else {
             clearInterval(countdownInterval);
             content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
@@ -2536,7 +4050,7 @@ function runTrainingExercise() {
 
                         content.innerHTML = `
                             <div class="number-display-area">
-                                ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                                ${operation && operation === '-' ? `<span class="operation-sign">${operation}</span>` : ''}
                                 ${Math.abs(term)}
                             </div>
                         `;
@@ -2556,7 +4070,15 @@ function runTrainingExercise() {
                                 <input type="number" step="any" class="answer-input" id="trainingAnswer" autofocus>
                                 <button class="submit-btn" onclick="checkTrainingAnswer()">Verifică</button>
                             `;
-                            document.getElementById('trainingAnswer').focus();
+                            const answerInput = document.getElementById('trainingAnswer');
+                            answerInput.focus();
+                            // Allow Enter key to submit
+                            currentTrainingInputListener = function(e) {
+                                if (e.key === 'Enter' && !e.repeat) {
+                                    checkTrainingAnswer();
+                                }
+                            };
+                            answerInput.addEventListener('keydown', currentTrainingInputListener);
                         } else {
                             content.innerHTML = `
                                 <div class="number-display-area">Calculul s-a terminat</div>
@@ -2572,8 +4094,20 @@ function runTrainingExercise() {
     }, 1000); // 1 second per countdown number
 }
 
+// Global variables to track the current Enter key listeners
+let currentTrainingEnterListener = null;
+let currentTrainingInputListener = null;
+
 function checkTrainingAnswer() {
-    const userAnswer = parseFloat(document.getElementById('trainingAnswer').value);
+    // Clear input and its listener to prevent multiple submissions
+    const answerInput = document.getElementById('trainingAnswer');
+    const userAnswer = parseFloat(answerInput.value);
+
+    if (answerInput && currentTrainingInputListener) {
+        answerInput.removeEventListener('keydown', currentTrainingInputListener);
+        currentTrainingInputListener = null;
+    }
+
     const correct = Math.abs(userAnswer - exerciseData.training.correctAnswer) < 0.01;
     const { generatedTerms: terms, generatedOperations: operations } = exerciseData.training;
 
@@ -2594,8 +4128,26 @@ function checkTrainingAnswer() {
             </div>
             ${!correct ? `<div style="margin-top: 0.3rem; font-size: 0.9rem;">Răspunsul tău: ${userAnswer}</div>` : ''}
         </div>
-        <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
+        <button class="submit-btn" id="nextTrainingBtn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
+
+    // Remove any existing Enter key listener
+    if (currentTrainingEnterListener) {
+        document.removeEventListener('keydown', currentTrainingEnterListener);
+        currentTrainingEnterListener = null;
+    }
+
+    // Add delay before allowing Enter key to go to next exercise
+    // This prevents immediate triggering if Enter is still pressed from submitting the answer
+    setTimeout(() => {
+        currentTrainingEnterListener = function handleEnter(e) {
+            // Ignore repeated keydown events while key is held down
+            if (e.key === 'Enter' && !e.repeat) {
+                nextTrainingExercise();
+            }
+        };
+        document.addEventListener('keydown', currentTrainingEnterListener);
+    }, 500);
 }
 
 function showTrainingAnswer() {
@@ -2616,9 +4168,33 @@ function showTrainingAnswer() {
         </div>
         <button class="submit-btn" style="margin-top: 2rem;" onclick="nextTrainingExercise()">Următorul Exercițiu</button>
     `;
+
+    // Remove any existing Enter key listener
+    if (currentTrainingEnterListener) {
+        document.removeEventListener('keydown', currentTrainingEnterListener);
+        currentTrainingEnterListener = null;
+    }
+
+    // Add delay before allowing Enter key to go to next exercise
+    // This prevents immediate triggering if Enter is still pressed
+    setTimeout(() => {
+        currentTrainingEnterListener = function handleEnter(e) {
+            // Ignore repeated keydown events while key is held down
+            if (e.key === 'Enter' && !e.repeat) {
+                nextTrainingExercise();
+            }
+        };
+        document.addEventListener('keydown', currentTrainingEnterListener);
+    }, 500);
 }
 
 function nextTrainingExercise() {
+    // Remove any existing Enter key listener before starting next exercise
+    if (currentTrainingEnterListener) {
+        document.removeEventListener('keydown', currentTrainingEnterListener);
+        currentTrainingEnterListener = null;
+    }
+
     exerciseData.training.current++;
     document.getElementById('trainingCurrent').textContent = exerciseData.training.current;
     runTrainingExercise();
@@ -2686,10 +4262,19 @@ function runSeriesExercise() {
         terms = generated.terms;
         operations = generated.operations;
 
-        // Safety check: if generation failed, show error and stop
+        // Safety check: if generation failed, show error and return to settings
         if (!terms || terms.length === 0) {
             console.error('[runSeriesExercise] Failed to generate valid exercise terms');
             alert('Nu s-a putut genera un exercițiu valid. Vă rugăm încercați din nou sau schimbați setările.');
+            // Return to series settings screen instead of leaving blank screen
+            document.getElementById('seriesExercise').style.display = 'none';
+            document.getElementById('seriesSettings').style.display = 'block';
+            document.querySelector('#seriesMode .start-btn').style.display = 'block';
+            // Clear timer if running
+            if (settings.timer) {
+                clearTimeout(settings.timer);
+                settings.timer = null;
+            }
             return;
         }
 
@@ -2745,12 +4330,12 @@ function runSeriesExercise() {
 
     // Show countdown 3, 2, 1
     let countdown = 3;
-    content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+    content.innerHTML = `<div class="number-display-area"><div class="countdown-circle">${countdown}</div></div>`;
 
     const countdownInterval = setInterval(() => {
         countdown--;
         if (countdown > 0) {
-            content.innerHTML = `<div class="number-display-area" style="color: var(--primary-color);">${countdown}</div>`;
+            content.innerHTML = `<div class="number-display-area"><div class="countdown-circle">${countdown}</div></div>`;
         } else {
             clearInterval(countdownInterval);
             content.innerHTML = '<div class="number-display-area">Pregătește-te...</div>';
@@ -2765,7 +4350,7 @@ function runSeriesExercise() {
 
                         content.innerHTML = `
                             <div class="number-display-area">
-                                ${operation ? `<span class="operation-sign">${operation}</span>` : ''}
+                                ${operation && operation === '-' ? `<span class="operation-sign">${operation}</span>` : ''}
                                 ${Math.abs(term)}
                             </div>
                         `;
@@ -3003,9 +4588,18 @@ function runStudentExercise(studentId) {
         terms = generated.terms;
         operations = generated.operations;
 
-        // Safety check: if generation failed, skip this student's exercise
+        // Safety check: if generation failed, stop this student's exercise
         if (!terms || terms.length === 0) {
             console.error('[runStudentExercise] Failed to generate valid exercise terms for student', studentId);
+            student.isRunning = false;
+            // Update student card to show error state
+            const studentCard = document.getElementById(`student${studentId}`);
+            if (studentCard) {
+                const cardContent = studentCard.querySelector('.student-card-content');
+                if (cardContent) {
+                    cardContent.innerHTML = '<div style="color: red; text-align: center;">Eroare la generare<br>Schimbați setările</div>';
+                }
+            }
             return;
         }
 

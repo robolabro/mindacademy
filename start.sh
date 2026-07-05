@@ -17,5 +17,5 @@ else
     echo "SUPERUSER_PASSWORD not set, skipping superuser creation"
 fi
 
-echo "Starting gunicorn..."
-exec gunicorn mathcourses.wsgi --log-file -
+echo "Starting gunicorn on port ${PORT:-8000}..."
+exec gunicorn mathcourses.wsgi --bind 0.0.0.0:${PORT:-8000} --workers 2 --log-file -
