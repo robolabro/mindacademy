@@ -2987,6 +2987,19 @@ function generateExerciseTerms(settings) {
             const isFamilyFormula = !!famMatch;
 
             if (isSpecificLevel && currentFormulaN !== null) {
+                // Override first term to be in a formula-applicable state
+                // For big-plus-N: need units ∈ [10-N, 9] so that adding N causes a carry
+                // For big-minus-N: need value >= 10 with units ∈ [0, N-1] for borrow
+                if (!isFamilyFormula) {
+                    if (currentFormulaType === 'plus') {
+                        const minUnits = Math.max(1, 10 - currentFormulaN);
+                        termsArray[0] = minUnits + Math.floor(Math.random() * (10 - minUnits));
+                    } else {
+                        const units = Math.floor(Math.random() * currentFormulaN);
+                        termsArray[0] = 10 + units;
+                    }
+                }
+
                 // 70% current formula, 30% other (previous big + small + direct)
                 let currentFormulaCount, otherTermsCount;
                 if (remainingTerms === 1) {
@@ -3657,8 +3670,28 @@ function generateExerciseTerms(settings) {
                     }
 
                     if (directOptions.length > 0) {
-                        const idx = Math.floor(Math.random() * directOptions.length);
-                        term = directOptions[idx];
+                        // Look-ahead: if next slot is a formula slot, prefer terms that
+                        // leave the running value in a state where the formula can be applied
+                        let chosenOptions = directOptions;
+                        const nextTermIdx = termIndex + 1;
+                        if (nextTermIdx < termTypesDistribution.length) {
+                            const nextSlot = termTypesDistribution[nextTermIdx];
+                            if (nextSlot && (nextSlot.type === 'big-current' || nextSlot.type === 'big-previous') && nextSlot.formulaN) {
+                                const nextN = nextSlot.formulaN;
+                                const nextFOp = nextSlot.formulaType === 'plus' ? '+' : '-';
+                                const preferred = directOptions.filter(t => {
+                                    const newResult = op === '+' ? currentResult2 + t : currentResult2 - t;
+                                    const newUnits = newResult % 10;
+                                    if (nextFOp === '+') {
+                                        return newUnits + nextN >= 10;
+                                    } else {
+                                        return newResult >= 10 && newUnits < nextN;
+                                    }
+                                });
+                                if (preferred.length > 0) chosenOptions = preferred;
+                            }
+                        }
+                        term = chosenOptions[Math.floor(Math.random() * chosenOptions.length)];
                         validTermFound = true;
                     } else {
                         // No direct options, allow any valid operation
