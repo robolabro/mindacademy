@@ -3035,14 +3035,8 @@ function generateExerciseTerms(settings) {
                     }
                 }
             } else {
-                // big-friends-all or family-all: all slots are free choice
-                for (let j = 0; j < remainingTerms; j++) {
-                    termTypesDistribution.push({
-                        type: 'small-or-direct',
-                        formulaType: null,
-                        formulaN: null
-                    });
-                }
+                // big-friends-all or family-all: no pre-distribution
+                // termTypesDistribution stays empty; term generation uses isAllowedOperation directly
             }
 
             // Shuffle distribution
@@ -3717,6 +3711,46 @@ function generateExerciseTerms(settings) {
                                 validTermFound = true;
                                 break;
                             }
+                        }
+                    }
+                }
+            } else if (isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) {
+                // For -all levels (termTypesDistribution empty): natural mix via isAllowedOperation
+                // This allows Big Friends formulas to appear naturally alongside small/direct ones
+                const currentResult2 = calculateResult(termsArray, operations.slice(0, -1));
+
+                // Switch op if at boundary
+                if (op === '+' && currentResult2 >= maxLimit) {
+                    op = '-';
+                    operations[operations.length - 1] = op;
+                } else if (op === '-' && currentResult2 <= 0) {
+                    op = '+';
+                    operations[operations.length - 1] = op;
+                }
+
+                // Collect all valid terms (Big Friends and non-Big-Friends mixed)
+                const allValidOptions = [];
+                for (let t = 1; t <= 9; t++) {
+                    const testResult = op === '+' ? currentResult2 + t : currentResult2 - t;
+                    if (testResult > 0 && testResult <= maxLimit && isAllowedOperation(currentResult2, op, t, complexity)) {
+                        allValidOptions.push(t);
+                    }
+                }
+
+                if (allValidOptions.length > 0) {
+                    term = allValidOptions[Math.floor(Math.random() * allValidOptions.length)];
+                    validTermFound = true;
+                } else {
+                    // Try opposite operation
+                    const altOp = op === '+' ? '-' : '+';
+                    for (let t = 1; t <= 9; t++) {
+                        const testResult = altOp === '+' ? currentResult2 + t : currentResult2 - t;
+                        if (testResult > 0 && testResult <= maxLimit && isAllowedOperation(currentResult2, altOp, t, complexity)) {
+                            op = altOp;
+                            operations[operations.length - 1] = op;
+                            term = t;
+                            validTermFound = true;
+                            break;
                         }
                     }
                 }
