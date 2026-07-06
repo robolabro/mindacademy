@@ -1903,10 +1903,11 @@ function getComplexityLimit(complexity, digits = 1) {
             }
             return 9;
         default:
-            // Big Friends and Family levels: support 2-digit numbers (up to 99)
+            // Big Friends and Family levels: the carry/borrow formulas cross the
+            // tens boundary BY DEFINITION (9+1=10), so the running result must be
+            // allowed up to 99 even when terms are single-digit
             if (isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) {
-                if (digits >= 2) return 99;
-                return 9;
+                return 99;
             }
             return null; // No limit for other complexity levels
     }
@@ -2249,6 +2250,26 @@ function requiresFamilyFormula(currentValue, operation, operand) {
     }
 }
 
+/**
+ * Returns the units digits (0-9) at which the formula (plus/minus N, big or family)
+ * is applicable. Used to place the running value in a state where the formula
+ * can actually be exercised.
+ * E.g. big plus-1 -> [9] (only 9+1 carries); family minus-6 -> [1,2,3,4] (11-6..14-6)
+ */
+function bigFormulaApplicableUnits(formulaType, N, isFamily) {
+    const result = [];
+    const op = formulaType === 'plus' ? '+' : '-';
+    for (let u = 0; u <= 9; u++) {
+        const testValue = 10 + u; // value >= 10 so minus (borrow) is testable too
+        const big = requiresBigFriendsFormula(testValue, op, N);
+        const fam = requiresFamilyFormula(testValue, op, N);
+        if (big && (isFamily ? fam : !fam)) {
+            result.push(u);
+        }
+    }
+    return result;
+}
+
 function isBigFriendsLevel(complexity) {
     return complexity.startsWith('big-') || complexity === 'big-friends-all';
 }
@@ -2371,6 +2392,11 @@ function isAllowedOperation(currentValue, operation, operand, complexity) {
             }
             // For direct-to-9 and direct-counting: can add 1-9
             if (complexity === 'direct-to-9' || complexity === 'direct-counting') {
+                return operandDigit >= 1 && operandDigit <= 9;
+            }
+            // For Small Friends and above: from an empty column any digit 1-9
+            // can be set directly (no formula needed)
+            if (complexity.startsWith('small-')) {
                 return operandDigit >= 1 && operandDigit <= 9;
             }
         }
@@ -2987,57 +3013,27 @@ function generateExerciseTerms(settings) {
             const isFamilyFormula = !!famMatch;
 
             if (isSpecificLevel && currentFormulaN !== null) {
-                // Override first term to be in a formula-applicable state
-                // For big-plus-N: need units ∈ [10-N, 9] so that adding N causes a carry
-                // For big-minus-N: need value >= 10 with units ∈ [0, N-1] for borrow
-                if (!isFamilyFormula) {
-                    if (currentFormulaType === 'plus') {
-                        const minUnits = Math.max(1, 10 - currentFormulaN);
-                        termsArray[0] = minUnits + Math.floor(Math.random() * (10 - minUnits));
-                    } else {
-                        const units = Math.floor(Math.random() * currentFormulaN);
-                        termsArray[0] = 10 + units;
-                    }
+                // Override first term so the target formula is IMMEDIATELY applicable.
+                // The applicable units are computed generically (works for big AND family):
+                const appUnits = bigFormulaApplicableUnits(currentFormulaType, currentFormulaN, isFamilyFormula);
+                if (appUnits.length > 0) {
+                    const u = appUnits[Math.floor(Math.random() * appUnits.length)];
+                    // For minus formulas the value must be >= 10 (borrow needs a tens bead)
+                    termsArray[0] = currentFormulaType === 'minus' ? 10 + u : (u === 0 ? 10 : u);
                 }
 
-                // 70% current formula, 30% other (previous big + small + direct)
-                let currentFormulaCount, otherTermsCount;
-                if (remainingTerms === 1) {
-                    currentFormulaCount = 1;
-                    otherTermsCount = 0;
-                } else if (remainingTerms === 2) {
-                    currentFormulaCount = 2;
-                    otherTermsCount = 0;
-                } else {
-                    currentFormulaCount = Math.max(1, Math.round(remainingTerms * 0.7));
-                    otherTermsCount = remainingTerms - currentFormulaCount;
-                }
-
-                // Current formula slots
-                for (let j = 0; j < currentFormulaCount; j++) {
-                    termTypesDistribution.push({
-                        type: 'big-current',
-                        formulaType: currentFormulaType,
-                        formulaN: currentFormulaN,
-                        isFamily: isFamilyFormula
-                    });
-                }
-
-                // Other slots
-                const allowed = getAllowedBigFriendsFormulas(complexity);
-                const previousBig = isFamilyFormula
-                    ? [...allowed.bigFriends, ...allowed.family.filter(f => !(f.type === currentFormulaType && f.N === currentFormulaN))]
-                    : allowed.bigFriends.filter(f => !(f.type === currentFormulaType && f.N === currentFormulaN));
-
-                for (let j = 0; j < otherTermsCount; j++) {
-                    // 50% previous big friends, 50% small/direct
-                    if (previousBig.length > 0 && Math.random() < 0.5) {
-                        const randPrev = previousBig[Math.floor(Math.random() * previousBig.length)];
+                // ALTERNATING distribution: formula, steer, formula, steer, ...
+                // A carry/borrow formula physically resets the units digit, so an
+                // intermediate "steering" operation is required before the formula
+                // can apply again. Alternating maximizes formula occurrences.
+                // NO shuffle - order matters (first term is already in applicable state).
+                for (let j = 0; j < remainingTerms; j++) {
+                    if (j % 2 === 0) {
                         termTypesDistribution.push({
-                            type: 'big-previous',
-                            formulaType: randPrev.type,
-                            formulaN: randPrev.N,
-                            isFamily: isFamilyFormula && allowed.family.some(f => f.type === randPrev.type && f.N === randPrev.N)
+                            type: 'big-current',
+                            formulaType: currentFormulaType,
+                            formulaN: currentFormulaN,
+                            isFamily: isFamilyFormula
                         });
                     } else {
                         termTypesDistribution.push({
@@ -3050,12 +3046,6 @@ function generateExerciseTerms(settings) {
             } else {
                 // big-friends-all or family-all: no pre-distribution
                 // termTypesDistribution stays empty; term generation uses isAllowedOperation directly
-            }
-
-            // Shuffle distribution
-            for (let j = termTypesDistribution.length - 1; j > 0; j--) {
-                const k = Math.floor(Math.random() * (j + 1));
-                [termTypesDistribution[j], termTypesDistribution[k]] = [termTypesDistribution[k], termTypesDistribution[j]];
             }
 
             console.log('[generateExerciseTerms] Big Friends distribution:', {
@@ -3632,120 +3622,72 @@ function generateExerciseTerms(settings) {
                     }
 
                     if (!validTermFound) {
-                        // Can't apply formula at current state - fallback to small-or-direct
-                        console.log('[generateExerciseTerms] Big Friends formula not applicable, falling back to direct');
-                        termTypeConfig.type = 'small-or-direct';
-                        // Reset op to random
-                        if (operation === 'mixed') {
-                            op = Math.random() > 0.5 ? '+' : '-';
-                        } else {
-                            op = operation === 'addition' ? '+' : '-';
-                        }
-                        operations[operations.length - 1] = op;
+                        console.log('[generateExerciseTerms] Big Friends formula not applicable at currentResult=' + currentResult + ', steering instead');
                     }
                 }
 
-                if (!validTermFound && termTypeConfig.type === 'small-or-direct') {
-                    // Generate a term using small friends or direct rules
-                    const currentResult2 = calculateResult(termsArray, operations.slice(0, -1));
-
-                    // Check switching operation if needed
-                    if (op === '+' && currentResult2 >= maxLimit) {
-                        op = '-';
-                        operations[operations.length - 1] = op;
-                    } else if (op === '-' && currentResult2 <= 0) {
-                        op = '+';
-                        operations[operations.length - 1] = op;
-                    }
-
-                    // Find valid direct/small-friends terms (not Big Friends)
-                    const directOptions = [];
-                    for (let t = 1; t <= 9; t++) {
-                        const testResult = op === '+' ? currentResult2 + t : currentResult2 - t;
-                        if (testResult >= 0 && testResult <= maxLimit &&
-                            isAllowedOperation(currentResult2, op, t, complexity) &&
-                            !requiresBigFriendsFormula(currentResult2, op, t)) {
-                            directOptions.push(t);
-                        }
-                    }
-
-                    if (directOptions.length > 0) {
-                        // Look-ahead: if next slot is a formula slot, prefer terms that
-                        // leave the running value in a state where the formula can be applied
-                        let chosenOptions = directOptions;
-                        const nextTermIdx = termIndex + 1;
-                        if (nextTermIdx < termTypesDistribution.length) {
-                            const nextSlot = termTypesDistribution[nextTermIdx];
-                            if (nextSlot && (nextSlot.type === 'big-current' || nextSlot.type === 'big-previous') && nextSlot.formulaN) {
-                                const nextN = nextSlot.formulaN;
-                                const nextFOp = nextSlot.formulaType === 'plus' ? '+' : '-';
-                                const preferred = directOptions.filter(t => {
-                                    const newResult = op === '+' ? currentResult2 + t : currentResult2 - t;
-                                    const newUnits = newResult % 10;
-                                    if (nextFOp === '+') {
-                                        return newUnits + nextN >= 10;
-                                    } else {
-                                        return newResult >= 10 && newUnits < nextN;
-                                    }
-                                });
-                                if (preferred.length > 0) chosenOptions = preferred;
-                            }
-                        }
-                        term = chosenOptions[Math.floor(Math.random() * chosenOptions.length)];
-                        validTermFound = true;
-                    } else {
-                        // No direct options, allow any valid operation
-                        for (let t = 1; t <= 9; t++) {
-                            const testResult = op === '+' ? currentResult2 + t : currentResult2 - t;
-                            if (testResult >= 0 && testResult <= maxLimit &&
-                                isAllowedOperation(currentResult2, op, t, complexity)) {
-                                term = t;
-                                validTermFound = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (validTermFound) {
-                        console.log('[generateExerciseTerms] Big Friends small-or-direct term:', { currentResult2, op, term });
-                    }
-                }
-
-                // Final fallback: use standard generation if still no term found
                 if (!validTermFound) {
-                    let standardAttempts = 0;
-                    while (!validTermFound && standardAttempts < 20) {
-                        term = generateNumber(settings, false);
-                        const fbResult = op === '+' ? currentResult + term : currentResult - term;
-                        if (fbResult >= 0 && fbResult <= maxLimit && !shouldAvoidTermRepetition(termsArray, term, terms)) {
-                            validTermFound = true;
-                        }
-                        standardAttempts++;
-                    }
-                    if (!validTermFound) {
-                        // Last resort: find smallest valid term
+                    // STEERING: pick a term that puts the running value in a state where
+                    // the NEXT formula slot is applicable. Consider BOTH operations.
+                    const opsToTry = operation === 'mixed' ? ['+', '-']
+                        : [operation === 'addition' ? '+' : '-'];
+
+                    // All valid candidates (op, term) at the current state
+                    const candidates = [];
+                    for (const o of opsToTry) {
                         for (let t = 1; t <= 9; t++) {
-                            const fbResult = op === '+' ? currentResult + t : currentResult - t;
-                            if (fbResult >= 0 && fbResult <= maxLimit) {
-                                term = t;
-                                validTermFound = true;
-                                break;
+                            const newResult = o === '+' ? currentResult + t : currentResult - t;
+                            if (newResult > 0 && newResult <= maxLimit &&
+                                isAllowedOperation(currentResult, o, t, complexity)) {
+                                candidates.push({ o, t, newResult });
                             }
                         }
                     }
-                    if (!validTermFound) {
-                        // Switch op and try again
-                        op = op === '+' ? '-' : '+';
+
+                    // Steering target: the next slot that needs a formula
+                    // (if THIS slot was a failed formula slot, steer toward retrying the SAME formula)
+                    let targetSlot = null;
+                    if (termTypeConfig.type === 'big-current' || termTypeConfig.type === 'big-previous') {
+                        targetSlot = termTypeConfig;
+                    } else if (termIndex + 1 < termTypesDistribution.length) {
+                        const next = termTypesDistribution[termIndex + 1];
+                        if (next && (next.type === 'big-current' || next.type === 'big-previous')) {
+                            targetSlot = next;
+                        }
+                    }
+
+                    let pool = candidates;
+                    if (targetSlot && targetSlot.formulaN) {
+                        const targetUnits = bigFormulaApplicableUnits(
+                            targetSlot.formulaType, targetSlot.formulaN, !!targetSlot.isFamily);
+                        const needsTens = targetSlot.formulaType === 'minus';
+                        const steering = candidates.filter(c =>
+                            targetUnits.includes(c.newResult % 10) &&
+                            (!needsTens || c.newResult >= 10)
+                        );
+                        if (steering.length > 0) pool = steering;
+                    }
+
+                    if (pool.length > 0) {
+                        const pick = pool[Math.floor(Math.random() * pool.length)];
+                        op = pick.o;
                         operations[operations.length - 1] = op;
-                        for (let t = 1; t <= 9; t++) {
-                            const fbResult = op === '+' ? currentResult + t : currentResult - t;
-                            if (fbResult >= 0 && fbResult <= maxLimit) {
-                                term = t;
-                                validTermFound = true;
-                                break;
-                            }
-                        }
+                        term = pick.t;
+                        validTermFound = true;
+                        console.log('[generateExerciseTerms] Big Friends steering term:', {
+                            currentResult, op, term, newResult: pick.newResult,
+                            steered: pool !== candidates
+                        });
                     }
+                }
+
+                // No valid candidate at all: regenerate the whole exercise
+                // (never push a term that breaks soroban rules)
+                if (!validTermFound) {
+                    console.log('[generateExerciseTerms] Big Friends: no valid term at currentResult=' + currentResult + ', regenerating exercise');
+                    termsArray = [];
+                    operations = [];
+                    break;
                 }
             } else if (isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) {
                 // For -all levels (termTypesDistribution empty): natural mix via isAllowedOperation
@@ -3761,17 +3703,23 @@ function generateExerciseTerms(settings) {
                     operations[operations.length - 1] = op;
                 }
 
-                // Collect all valid terms (Big Friends and non-Big-Friends mixed)
+                // Collect all valid terms, separating Big Friends/Family formula ops
                 const allValidOptions = [];
+                const bigOptions = [];
                 for (let t = 1; t <= 9; t++) {
                     const testResult = op === '+' ? currentResult2 + t : currentResult2 - t;
                     if (testResult > 0 && testResult <= maxLimit && isAllowedOperation(currentResult2, op, t, complexity)) {
                         allValidOptions.push(t);
+                        if (requiresBigFriendsFormula(currentResult2, op, t)) {
+                            bigOptions.push(t);
+                        }
                     }
                 }
 
                 if (allValidOptions.length > 0) {
-                    term = allValidOptions[Math.floor(Math.random() * allValidOptions.length)];
+                    // Prefer formula ops 70% of the time so -all levels actually exercise them
+                    const pickFrom = (bigOptions.length > 0 && Math.random() < 0.7) ? bigOptions : allValidOptions;
+                    term = pickFrom[Math.floor(Math.random() * pickFrom.length)];
                     validTermFound = true;
                 } else {
                     // Try opposite operation
@@ -4245,27 +4193,34 @@ function generateExerciseTerms(settings) {
             });
         }
 
-        // VALIDATION: For Big Friends levels, verify actual Big Friends formula usage
+        // VALIDATION: For Big Friends levels, verify the CURRENT formula is actually used
         if ((isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) && termTypesDistribution && termTypesDistribution.length > 0) {
-            const intendedBigCount = termTypesDistribution.filter(t => t.type === 'big-current').length;
+            const currentSlots = termTypesDistribution.filter(t => t.type === 'big-current');
+            const intendedBigCount = currentSlots.length;
             if (intendedBigCount > 0) {
-                let actualBigCount = 0;
+                const fN = currentSlots[0].formulaN;
+                const fOp = currentSlots[0].formulaType === 'plus' ? '+' : '-';
+                const fIsFamily = !!currentSlots[0].isFamily;
+
+                let actualCurrentCount = 0;
                 for (let i = 0; i < operations.length; i++) {
                     const curResult = calculateResult(termsArray.slice(0, i + 1), operations.slice(0, i));
                     const t = termsArray[i + 1];
                     const o = operations[i];
-                    if (requiresBigFriendsFormula(curResult, o, t)) {
-                        actualBigCount++;
+                    if (o === fOp && t === fN && requiresBigFriendsFormula(curResult, o, t)) {
+                        const isFam = requiresFamilyFormula(curResult, o, t);
+                        if (fIsFamily ? isFam : !isFam) {
+                            actualCurrentCount++;
+                        }
                     }
                 }
-                const actualPct = operations.length > 0 ? actualBigCount / operations.length : 0;
-                const intendedPct = intendedBigCount / termTypesDistribution.length;
-                const minRequired = intendedPct * 0.7; // At least 70% of intended
+                // Require at least 70% of the intended (alternating) formula slots
+                const minRequired = Math.max(1, Math.ceil(intendedBigCount * 0.7));
 
-                if (actualPct < minRequired) {
-                    console.log('[generateExerciseTerms] Big Friends: Insufficient formula usage.',
-                        'Intended:', intendedBigCount, 'Actual:', actualBigCount,
-                        'Required:', (minRequired * 100).toFixed(0) + '%',
+                if (actualCurrentCount < minRequired) {
+                    console.log('[generateExerciseTerms] Big Friends: Insufficient CURRENT formula usage.',
+                        'Intended:', intendedBigCount, 'Actual:', actualCurrentCount,
+                        'MinRequired:', minRequired,
                         'Attempt:', attempt + 1);
                     attempt++;
                     if (attempt >= maxAttempts) { break; }
@@ -4275,7 +4230,10 @@ function generateExerciseTerms(settings) {
         }
 
         // Final validation: Check for consecutive Big Friends formulas
-        if (!validateNoConsecutiveBigFriends(termsArray, operations)) {
+        // SKIPPED for Big Friends / Family levels: consecutive carry formulas ARE
+        // the training goal there (e.g. 8+2, 10-1, 9+4 back-to-back is correct)
+        if (!(isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) &&
+            !validateNoConsecutiveBigFriends(termsArray, operations)) {
             console.warn('[generateExerciseTerms] Exercise has consecutive Big Friends formulas. Regenerating. Attempt:', attempt + 1, '/', maxAttempts);
             console.log('[generateExerciseTerms] Current terms:', termsArray, 'Operations:', operations);
             attempt++;
