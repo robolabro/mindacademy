@@ -3689,13 +3689,35 @@ function generateExerciseTerms(settings) {
                     let standardAttempts = 0;
                     while (!validTermFound && standardAttempts < 20) {
                         term = generateNumber(settings, false);
-                        if (!shouldAvoidTermRepetition(termsArray, term, terms)) {
+                        const fbResult = op === '+' ? currentResult + term : currentResult - term;
+                        if (fbResult >= 0 && fbResult <= maxLimit && !shouldAvoidTermRepetition(termsArray, term, terms)) {
                             validTermFound = true;
                         }
                         standardAttempts++;
                     }
                     if (!validTermFound) {
-                        validTermFound = true; // use last generated term
+                        // Last resort: find smallest valid term
+                        for (let t = 1; t <= 9; t++) {
+                            const fbResult = op === '+' ? currentResult + t : currentResult - t;
+                            if (fbResult >= 0 && fbResult <= maxLimit) {
+                                term = t;
+                                validTermFound = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!validTermFound) {
+                        // Switch op and try again
+                        op = op === '+' ? '-' : '+';
+                        operations[operations.length - 1] = op;
+                        for (let t = 1; t <= 9; t++) {
+                            const fbResult = op === '+' ? currentResult + t : currentResult - t;
+                            if (fbResult >= 0 && fbResult <= maxLimit) {
+                                term = t;
+                                validTermFound = true;
+                                break;
+                            }
+                        }
                     }
                 }
             } else {
@@ -3735,8 +3757,8 @@ function generateExerciseTerms(settings) {
         // Calculate final result
         result = calculateResult(termsArray, operations);
 
-        // For direct calculation and Small Friends levels, ensure result is valid (not 0)
-        if (isDirectCalculationLevel(complexity) || isSmallFriendsLevel(complexity)) {
+        // Ensure result is valid (positive, within bounds) for all formula levels
+        if (isDirectCalculationLevel(complexity) || isSmallFriendsLevel(complexity) || isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) {
             if (result <= 0 || result > maxLimit) {
                 attempt++;
                 if (attempt >= maxAttempts) {
@@ -3744,6 +3766,15 @@ function generateExerciseTerms(settings) {
                     break;
                 }
                 continue; // Regenerate
+            }
+        }
+
+        // For Big Friends/Family levels, validate all intermediate results are in [0, maxLimit]
+        if (isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) {
+            if (!validateIntermediateResults(termsArray, operations, complexity)) {
+                attempt++;
+                if (attempt >= maxAttempts) { break; }
+                continue;
             }
         }
 
