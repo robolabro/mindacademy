@@ -3013,22 +3013,39 @@ function generateExerciseTerms(settings) {
             const isFamilyFormula = !!famMatch;
 
             if (isSpecificLevel && currentFormulaN !== null) {
-                // Override first term so the target formula is IMMEDIATELY applicable.
-                // The applicable units are computed generically (works for big AND family):
-                const appUnits = bigFormulaApplicableUnits(currentFormulaType, currentFormulaN, isFamilyFormula);
-                if (appUnits.length > 0) {
-                    const u = appUnits[Math.floor(Math.random() * appUnits.length)];
-                    // For minus formulas the value must be >= 10 (borrow needs a tens bead)
-                    termsArray[0] = currentFormulaType === 'minus' ? 10 + u : (u === 0 ? 10 : u);
+                // ONE formula application per exercise (two only for long exercises),
+                // at a RANDOM position. The free operations before it steer the
+                // running value organically toward the applicable state - this gives
+                // varied, natural exercises like 1+6+2+1+8 (7, 9, formula 9+1, 18)
+                // instead of rigid repeated patterns like 9+1+9+1.
+                const numFormulaSlots = remainingTerms >= 6 ? 2 : 1;
+                const formulaPositions = [];
+                let posGuard = 0;
+                while (formulaPositions.length < numFormulaSlots && posGuard++ < 50) {
+                    const pos = Math.floor(Math.random() * remainingTerms);
+                    // Keep a gap of at least 3 between formula slots so the exercise
+                    // has room to wander back to the applicable state naturally
+                    if (formulaPositions.every(q => Math.abs(q - pos) >= 3)) {
+                        formulaPositions.push(pos);
+                    }
+                }
+                formulaPositions.sort((a, b) => a - b);
+
+                if (formulaPositions[0] === 0) {
+                    // Formula comes first: the first term must be in an applicable state
+                    const appUnits = bigFormulaApplicableUnits(currentFormulaType, currentFormulaN, isFamilyFormula);
+                    if (appUnits.length > 0) {
+                        const u = appUnits[Math.floor(Math.random() * appUnits.length)];
+                        // For minus formulas the value must be >= 10 (borrow needs a tens bead)
+                        termsArray[0] = currentFormulaType === 'minus' ? 10 + u : (u === 0 ? 10 : u);
+                    }
+                } else if (termsArray[0] > 9) {
+                    // Otherwise start simple (single digit) and build up via free ops
+                    termsArray[0] = 1 + Math.floor(Math.random() * 9);
                 }
 
-                // ALTERNATING distribution: formula, steer, formula, steer, ...
-                // A carry/borrow formula physically resets the units digit, so an
-                // intermediate "steering" operation is required before the formula
-                // can apply again. Alternating maximizes formula occurrences.
-                // NO shuffle - order matters (first term is already in applicable state).
                 for (let j = 0; j < remainingTerms; j++) {
-                    if (j % 2 === 0) {
+                    if (formulaPositions.includes(j)) {
                         termTypesDistribution.push({
                             type: 'big-current',
                             formulaType: currentFormulaType,
@@ -3644,28 +3661,54 @@ function generateExerciseTerms(settings) {
                         }
                     }
 
-                    // Steering target: the next slot that needs a formula
-                    // (if THIS slot was a failed formula slot, steer toward retrying the SAME formula)
-                    let targetSlot = null;
-                    if (termTypeConfig.type === 'big-current' || termTypeConfig.type === 'big-previous') {
-                        targetSlot = termTypeConfig;
-                    } else if (termIndex + 1 < termTypesDistribution.length) {
-                        const next = termTypesDistribution[termIndex + 1];
-                        if (next && (next.type === 'big-current' || next.type === 'big-previous')) {
-                            targetSlot = next;
+                    // MULTI-STEP STEERING toward the next formula slot:
+                    // - the op right BEFORE the formula must land in the applicable state
+                    // - earlier free ops stay natural, but prefer values from which the
+                    //   applicable state remains reachable in one allowed step
+                    let nextFormulaIdx = -1;
+                    for (let k = termIndex; k < termTypesDistribution.length; k++) {
+                        const s = termTypesDistribution[k];
+                        if (s.type === 'big-current' || s.type === 'big-previous') {
+                            nextFormulaIdx = k;
+                            break;
                         }
                     }
 
                     let pool = candidates;
-                    if (targetSlot && targetSlot.formulaN) {
+                    if (nextFormulaIdx >= 0) {
+                        const slot = termTypesDistribution[nextFormulaIdx];
                         const targetUnits = bigFormulaApplicableUnits(
-                            targetSlot.formulaType, targetSlot.formulaN, !!targetSlot.isFamily);
-                        const needsTens = targetSlot.formulaType === 'minus';
-                        const steering = candidates.filter(c =>
-                            targetUnits.includes(c.newResult % 10) &&
-                            (!needsTens || c.newResult >= 10)
-                        );
-                        if (steering.length > 0) pool = steering;
+                            slot.formulaType, slot.formulaN, !!slot.isFamily);
+                        const needsTens = slot.formulaType === 'minus';
+                        const isApplicable = v => targetUnits.includes(v % 10) && (!needsTens || v >= 10);
+
+                        // Free ops remaining before the formula slot AFTER this one
+                        // (if THIS slot is the failed formula slot itself, treat as 0)
+                        const freeOpsAfterThis = Math.max(0, nextFormulaIdx - termIndex - 1);
+
+                        if (freeOpsAfterThis === 0) {
+                            // Last chance: this op must land in the applicable state
+                            const hard = candidates.filter(c => isApplicable(c.newResult));
+                            if (hard.length > 0) pool = hard;
+                        } else {
+                            // Natural op, but keep the applicable state reachable in one step
+                            // and don't consume it early (the pre-formula op should land it)
+                            const canReachInOneStep = v => {
+                                for (const o2 of ['+', '-']) {
+                                    for (let t2 = 1; t2 <= 9; t2++) {
+                                        const nv = o2 === '+' ? v + t2 : v - t2;
+                                        if (nv > 0 && nv <= maxLimit && isApplicable(nv) &&
+                                            isAllowedOperation(v, o2, t2, complexity)) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            };
+                            const soft = candidates.filter(c =>
+                                !isApplicable(c.newResult) && canReachInOneStep(c.newResult));
+                            if (soft.length > 0) pool = soft;
+                        }
                     }
 
                     if (pool.length > 0) {
