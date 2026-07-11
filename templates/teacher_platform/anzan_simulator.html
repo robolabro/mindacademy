@@ -726,13 +726,16 @@
         transform: translateY(-2px);
     }
 
-    /* Worksheet (printable) */
+    /* Worksheet (printable) - A4 page preview */
     #worksheetPrintArea {
         background: white;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 2rem;
-        margin-top: 1rem;
+        width: 210mm;
+        min-height: 297mm;
+        max-width: 100%;
+        margin: 1.5rem auto 0;
+        padding: 14mm 12mm;
+        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.18);
+        box-sizing: border-box;
     }
 
     #worksheetPrintArea:empty {
@@ -789,8 +792,8 @@
 
     .ws-grid {
         display: grid;
-        gap: 1.5rem 1rem;
-        justify-items: center;
+        gap: 1.1rem 0.55rem;
+        justify-content: center;
     }
 
     .ws-ex {
@@ -798,9 +801,9 @@
     }
 
     .ws-ex-num {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: #6b7280;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.2rem;
     }
 
     .ws-table {
@@ -809,13 +812,18 @@
 
     .ws-table td {
         border: 1.5px solid #23272f;
-        min-width: 84px;
-        height: 40px;
+        min-width: 60px;
+        height: 34px;
         text-align: center;
-        font-size: 1.35rem;
+        font-size: 1.2rem;
         font-weight: 600;
         color: #23272f;
-        padding: 0 8px;
+        padding: 0 6px;
+    }
+
+    /* Wider cells when 3-digit numbers are on the sheet */
+    #worksheetPrintArea.ws-digits-3 .ws-table td {
+        min-width: 74px;
     }
 
     .ws-answer {
@@ -840,10 +848,12 @@
             left: 0;
             top: 0;
             width: 100%;
+            min-height: 0;
             border: none;
             border-radius: 0;
             padding: 0;
             margin: 0;
+            box-shadow: none;
         }
         .ws-page-break {
             border: none;
@@ -1892,7 +1902,7 @@ function adjustNumber(id, delta) {
         max = 40;
     } else if (id.includes('Columns')) {
         min = 1;
-        max = 6;
+        max = 7;
     }
 
     value = Math.max(min, Math.min(max, value + delta));
@@ -5211,6 +5221,15 @@ function generateWorksheet() {
     const s = exerciseData.worksheet;
     s.complexity = document.getElementById('worksheetComplexity').value;
 
+    // Fit on an A4 page: max 7 columns for 1-2 digit numbers, 6 for 3-digit
+    const maxDigitsSel = Math.max(...(s.digitsAllowed || [1]));
+    const maxCols = maxDigitsSel >= 3 ? 6 : 7;
+    if (s.columns > maxCols) {
+        s.columns = maxCols;
+        const colEl = document.getElementById('worksheetColumns');
+        if (colEl) colEl.textContent = maxCols;
+    }
+
     const exercises = [];
     let guard = 0;
     while (exercises.length < s.count && guard++ < s.count * 3) {
@@ -5273,7 +5292,9 @@ function renderWorksheet() {
             <span><strong>${s.exercises.length}</strong> calcule × <strong>${s.terms}</strong> termeni</span>
         </div>`;
 
-    const gridStyle = `grid-template-columns: repeat(${s.columns}, 1fr);`;
+    // Compact columns, centered on the page (tables size to content)
+    const gridStyle = `grid-template-columns: repeat(${s.columns}, max-content);`;
+    area.classList.toggle('ws-digits-3', Math.max(...(s.digitsAllowed || [1])) >= 3);
     let html = headerHTML +
         `<div class="ws-grid" style="${gridStyle}">` +
         s.exercises.map((ex, i) => exTable(ex, i, false)).join('') +
