@@ -726,6 +726,132 @@
         transform: translateY(-2px);
     }
 
+    /* Worksheet (printable) */
+    #worksheetPrintArea {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 2rem;
+        margin-top: 1rem;
+    }
+
+    #worksheetPrintArea:empty {
+        display: none;
+    }
+
+    .ws-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid #23272f;
+        padding-bottom: 0.6rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .ws-brand {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #23272f;
+        letter-spacing: 0.02em;
+    }
+
+    .ws-brand span {
+        color: var(--primary-color);
+    }
+
+    .ws-meta {
+        text-align: right;
+        font-size: 0.95rem;
+        color: #23272f;
+        line-height: 1.7;
+    }
+
+    .ws-level {
+        font-size: 1rem;
+        color: #23272f;
+        margin-bottom: 1.2rem;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .ws-level strong {
+        font-weight: 700;
+    }
+
+    .ws-answers-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #d92b2b;
+        margin: 0 0 1rem 0;
+    }
+
+    .ws-grid {
+        display: grid;
+        gap: 1.5rem 1rem;
+        justify-items: center;
+    }
+
+    .ws-ex {
+        text-align: center;
+    }
+
+    .ws-ex-num {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+    }
+
+    .ws-table {
+        border-collapse: collapse;
+    }
+
+    .ws-table td {
+        border: 1.5px solid #23272f;
+        min-width: 84px;
+        height: 40px;
+        text-align: center;
+        font-size: 1.35rem;
+        font-weight: 600;
+        color: #23272f;
+        padding: 0 8px;
+    }
+
+    .ws-answer {
+        color: #d92b2b !important;
+        font-weight: 700;
+    }
+
+    .ws-page-break {
+        border-top: 1px dashed #c3c8d1;
+        margin: 2rem 0;
+    }
+
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #worksheetPrintArea, #worksheetPrintArea * {
+            visibility: visible;
+        }
+        #worksheetPrintArea {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            margin: 0;
+        }
+        .ws-page-break {
+            border: none;
+            margin: 0;
+            page-break-before: always;
+        }
+    }
+
     /* Fullscreen styles */
     :fullscreen .mode-screen,
     :-webkit-full-screen .mode-screen,
@@ -820,12 +946,106 @@
                 <div class="mode-card-desc">Exerciții simultane pentru mai mulți elevi</div>
             </div>
 
+            <div class="mode-card" onclick="selectMode('worksheet')">
+                <div class="mode-card-icon">🖨️</div>
+                <div class="mode-card-title">Fișe de Lucru</div>
+                <div class="mode-card-desc">Generează fișe printabile cu exerciții</div>
+            </div>
+
             <div class="mode-card disabled">
                 <div class="mode-card-icon">⚔️</div>
                 <div class="mode-card-title">Luptă</div>
                 <div class="mode-card-desc">În curând...</div>
             </div>
         </div>
+    </div>
+
+    <!-- Worksheet Generator Mode -->
+    <div id="worksheetMode" class="mode-screen">
+        <div class="mode-header">
+            <h2>Generator Fișe de Lucru</h2>
+            <button class="back-btn" onclick="backToModes()">← Înapoi</button>
+        </div>
+
+        <div class="settings-panel" id="worksheetSettings">
+            <div class="settings-row">
+                <span class="setting-label">Nivel:</span>
+                <div class="setting-controls">
+                    <select id="worksheetComplexity" class="level-select"></select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Cifre:</span>
+                <div class="setting-controls">
+                    <div class="digit-checkboxes" id="worksheetDigitChecks">
+                        <label class="digit-check"><input type="checkbox" data-digit="1" checked onchange="updateDigitsSelection('worksheet')"> 1 cifră</label>
+                        <label class="digit-check"><input type="checkbox" data-digit="2" onchange="updateDigitsSelection('worksheet')"> 2 cifre</label>
+                        <label class="digit-check"><input type="checkbox" data-digit="3" onchange="updateDigitsSelection('worksheet')"> 3 cifre</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Dificultate:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn" data-difficulty="easy">Ușor</button>
+                        <button class="toggle-btn active" data-difficulty="medium">Mediu</button>
+                        <button class="toggle-btn" data-difficulty="hard">Greu</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Termeni:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('worksheetTerms', -1)">−</button>
+                        <span class="number-display" id="worksheetTerms">3</span>
+                        <button class="number-btn" onclick="adjustNumber('worksheetTerms', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Număr calcule:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('worksheetCount', -1)">−</button>
+                        <span class="number-display" id="worksheetCount">12</span>
+                        <button class="number-btn" onclick="adjustNumber('worksheetCount', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Număr coloane:</span>
+                <div class="setting-controls">
+                    <div class="number-input">
+                        <button class="number-btn" onclick="adjustNumber('worksheetColumns', -1)">−</button>
+                        <span class="number-display" id="worksheetColumns">4</span>
+                        <button class="number-btn" onclick="adjustNumber('worksheetColumns', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Pagină cu rezultate:</span>
+                <div class="setting-controls">
+                    <label class="digit-check">
+                        <input type="checkbox" id="worksheetAnswersPage" checked> Printează și pagina cu rezultate (roșu)
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                <button class="start-btn" style="margin: 0;" onclick="generateWorksheet()">Generează Fișa</button>
+                <button class="submit-btn" id="worksheetPrintBtn" style="margin: 0; display: none;" onclick="window.print()">🖨️ Printează / PDF</button>
+            </div>
+        </div>
+
+        <div id="worksheetPrintArea"></div>
     </div>
 
     <!-- Training Mode -->
@@ -1390,6 +1610,18 @@ let exerciseData = {
         globalSettings: {
             complexity: 'direct-counting'
         }
+    },
+    worksheet: {
+        complexity: 'direct-counting',
+        digits: 1,
+        digitsAllowed: [1],
+        difficulty: 'medium',
+        operation: 'mixed',
+        negative: 'no',
+        terms: 3,
+        count: 12,
+        columns: 4,
+        exercises: []
     }
 };
 
@@ -1428,6 +1660,16 @@ function selectMode(mode) {
 
     if (mode === 'classroom') {
         initializeClassroom();
+    }
+
+    if (mode === 'worksheet') {
+        // Populate the level select from training (single source of truth)
+        const wsSelect = document.getElementById('worksheetComplexity');
+        if (wsSelect && wsSelect.options.length === 0) {
+            wsSelect.innerHTML = document.getElementById('trainingComplexity').innerHTML;
+            wsSelect.value = exerciseData.worksheet.complexity;
+        }
+        updateDigitsSelection('worksheet');
     }
 }
 
@@ -1645,6 +1887,12 @@ function adjustNumber(id, delta) {
     } else if (id.includes('Digits')) {
         min = 1;
         max = 9;
+    } else if (id.includes('Count')) {
+        min = 1;
+        max = 40;
+    } else if (id.includes('Columns')) {
+        min = 1;
+        max = 6;
     }
 
     value = Math.max(min, Math.min(max, value + delta));
@@ -1652,7 +1900,8 @@ function adjustNumber(id, delta) {
 
     // Update state
     const mode = id.includes('training') ? 'training' :
-                 id.includes('series') ? 'series' : 'classroom';
+                 id.includes('series') ? 'series' :
+                 id.includes('worksheet') ? 'worksheet' : 'classroom';
     // Extract setting name by removing the mode prefix (case-insensitive)
     const setting = id.replace(new RegExp('^' + mode, 'i'), '').toLowerCase();
     if (exerciseData[mode]) {
@@ -4955,6 +5204,91 @@ function validateNoConsecutiveBigFriends(terms, operations) {
     }
 
     return true;
+}
+
+// ===== Worksheet Generator =====
+function generateWorksheet() {
+    const s = exerciseData.worksheet;
+    s.complexity = document.getElementById('worksheetComplexity').value;
+
+    const exercises = [];
+    let guard = 0;
+    while (exercises.length < s.count && guard++ < s.count * 3) {
+        const ex = generateExerciseTerms({
+            terms: s.terms,
+            operation: 'mixed',
+            negative: 'no',
+            complexity: s.complexity,
+            digits: s.digits,
+            digitsAllowed: s.digitsAllowed,
+            difficulty: s.difficulty
+        });
+        if (ex.terms && ex.terms.length === s.terms) {
+            exercises.push(ex);
+        }
+    }
+    s.exercises = exercises;
+
+    renderWorksheet();
+    document.getElementById('worksheetPrintBtn').style.display = exercises.length ? 'inline-block' : 'none';
+}
+
+function renderWorksheet() {
+    const s = exerciseData.worksheet;
+    const area = document.getElementById('worksheetPrintArea');
+    const sel = document.getElementById('worksheetComplexity');
+    const levelLabel = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : s.complexity;
+    const difficultyLabel = s.difficulty === 'easy' ? 'Ușor' : s.difficulty === 'hard' ? 'Greu' : 'Mediu';
+    const digitsLabel = s.digitsAllowed.map(d => d + (d === 1 ? ' cifră' : ' cifre')).join(' și ');
+    const today = new Date().toLocaleDateString('ro-RO');
+    const withAnswers = document.getElementById('worksheetAnswersPage').checked;
+
+    const exTable = (ex, idx, showAnswer) => {
+        let result = ex.terms[0];
+        let rows = `<td>${ex.terms[0]}</td>`;
+        for (let i = 0; i < ex.operations.length; i++) {
+            const t = ex.terms[i + 1];
+            const o = ex.operations[i];
+            result = o === '+' ? result + t : result - t;
+            rows += `</tr><tr><td>${o === '-' ? '-' : ''}${t}</td>`;
+        }
+        const answerCell = showAnswer ? `<td class="ws-answer">${result}</td>` : '<td>&nbsp;</td>';
+        return `
+            <div class="ws-ex">
+                <div class="ws-ex-num">${idx + 1}</div>
+                <table class="ws-table"><tr>${rows}</tr><tr>${answerCell}</tr></table>
+            </div>`;
+    };
+
+    const headerHTML = `
+        <div class="ws-header">
+            <div class="ws-brand">Mind<span>.</span>Academy</div>
+            <div class="ws-meta">
+                Nume: ______________________<br>
+                Data: ${today}
+            </div>
+        </div>
+        <div class="ws-level">
+            <span><strong>Nivel:</strong> ${levelLabel} &nbsp;·&nbsp; ${digitsLabel} &nbsp;·&nbsp; ${difficultyLabel}</span>
+            <span><strong>${s.exercises.length}</strong> calcule × <strong>${s.terms}</strong> termeni</span>
+        </div>`;
+
+    const gridStyle = `grid-template-columns: repeat(${s.columns}, 1fr);`;
+    let html = headerHTML +
+        `<div class="ws-grid" style="${gridStyle}">` +
+        s.exercises.map((ex, i) => exTable(ex, i, false)).join('') +
+        '</div>';
+
+    if (withAnswers) {
+        html += '<div class="ws-page-break"></div>' +
+            headerHTML +
+            '<div class="ws-answers-title">Rezultate</div>' +
+            `<div class="ws-grid" style="${gridStyle}">` +
+            s.exercises.map((ex, i) => exTable(ex, i, true)).join('') +
+            '</div>';
+    }
+
+    area.innerHTML = html;
 }
 
 // Countdown UI: 3 = red, 2 = yellow, 1 = green, then "Start"
