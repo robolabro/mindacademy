@@ -812,18 +812,18 @@
 
     .ws-table td {
         border: 1.5px solid #23272f;
-        min-width: 60px;
-        height: 34px;
+        min-width: 48px;
+        height: 32px;
         text-align: center;
-        font-size: 1.2rem;
+        font-size: 1.15rem;
         font-weight: 600;
         color: #23272f;
-        padding: 0 6px;
+        padding: 0 5px;
     }
 
     /* Wider cells when 3-digit numbers are on the sheet */
     #worksheetPrintArea.ws-digits-3 .ws-table td {
-        min-width: 74px;
+        min-width: 70px;
     }
 
     .ws-answer {
@@ -837,23 +837,43 @@
     }
 
     @media print {
-        body * {
-            visibility: hidden;
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
         }
-        #worksheetPrintArea, #worksheetPrintArea * {
-            visibility: visible;
+        /* Keep only the ancestor chain of the print area; strip its styling */
+        html:has(#worksheetPrintArea), body:has(#worksheetPrintArea),
+        *:has(#worksheetPrintArea) {
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            background-image: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: auto !important;
+            min-height: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+        /* Hide everything that does not contain the worksheet */
+        body > *:not(:has(#worksheetPrintArea)) {
+            display: none !important;
+        }
+        .anzan-container > *:not(#worksheetMode) {
+            display: none !important;
+        }
+        #worksheetMode > *:not(#worksheetPrintArea) {
+            display: none !important;
         }
         #worksheetPrintArea {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            min-height: 0;
-            border: none;
-            border-radius: 0;
-            padding: 0;
-            margin: 0;
-            box-shadow: none;
+            display: block !important;
+            width: auto !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         .ws-page-break {
             border: none;
@@ -1902,7 +1922,7 @@ function adjustNumber(id, delta) {
         max = 40;
     } else if (id.includes('Columns')) {
         min = 1;
-        max = 7;
+        max = 10;
     }
 
     value = Math.max(min, Math.min(max, value + delta));
@@ -5221,9 +5241,9 @@ function generateWorksheet() {
     const s = exerciseData.worksheet;
     s.complexity = document.getElementById('worksheetComplexity').value;
 
-    // Fit on an A4 page: max 7 columns for 1-2 digit numbers, 6 for 3-digit
+    // Fit on an A4 page: max 10 columns for 1-2 digit numbers, 6 for 3-digit
     const maxDigitsSel = Math.max(...(s.digitsAllowed || [1]));
-    const maxCols = maxDigitsSel >= 3 ? 6 : 7;
+    const maxCols = maxDigitsSel >= 3 ? 6 : 10;
     if (s.columns > maxCols) {
         s.columns = maxCols;
         const colEl = document.getElementById('worksheetColumns');
