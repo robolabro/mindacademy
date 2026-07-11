@@ -236,6 +236,34 @@
         flex-wrap: wrap;
     }
 
+    .digit-checkboxes {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .digit-check {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        cursor: pointer;
+        user-select: none;
+        padding: 0.4rem 0.8rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: white;
+    }
+
+    .digit-check input {
+        accent-color: var(--primary-color);
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
     .toggle-btn {
         padding: 0.5rem 1.2rem;
         border: 1px solid var(--border-color);
@@ -883,10 +911,10 @@
             <div class="settings-row">
                 <span class="setting-label">Cifre:</span>
                 <div class="setting-controls">
-                    <div class="number-input">
-                        <button class="number-btn" onclick="adjustNumber('trainingDigits', -1)">−</button>
-                        <span class="number-display" id="trainingDigits">1</span>
-                        <button class="number-btn" onclick="adjustNumber('trainingDigits', 1)">+</button>
+                    <div class="digit-checkboxes" id="trainingDigitChecks">
+                        <label class="digit-check"><input type="checkbox" data-digit="1" checked onchange="updateDigitsSelection('training')"> 1 cifră</label>
+                        <label class="digit-check"><input type="checkbox" data-digit="2" onchange="updateDigitsSelection('training')"> 2 cifre</label>
+                        <label class="digit-check"><input type="checkbox" data-digit="3" onchange="updateDigitsSelection('training')"> 3 cifre</label>
                     </div>
                 </div>
             </div>
@@ -1066,10 +1094,10 @@
             <div class="settings-row">
                 <span class="setting-label">Cifre:</span>
                 <div class="setting-controls">
-                    <div class="number-input">
-                        <button class="number-btn" onclick="adjustNumber('seriesDigits', -1)">−</button>
-                        <span class="number-display" id="seriesDigits">1</span>
-                        <button class="number-btn" onclick="adjustNumber('seriesDigits', 1)">+</button>
+                    <div class="digit-checkboxes" id="seriesDigitChecks">
+                        <label class="digit-check"><input type="checkbox" data-digit="1" checked onchange="updateDigitsSelection('series')"> 1 cifră</label>
+                        <label class="digit-check"><input type="checkbox" data-digit="2" onchange="updateDigitsSelection('series')"> 2 cifre</label>
+                        <label class="digit-check"><input type="checkbox" data-digit="3" onchange="updateDigitsSelection('series')"> 3 cifre</label>
                     </div>
                 </div>
             </div>
@@ -1300,6 +1328,7 @@ let exerciseData = {
         complexity: 'direct-counting',
         speed: 1.5,
         digits: 1,
+        digitsAllowed: [1],
         fractions: 'none',
         operation: 'mixed',
         negative: 'no',
@@ -1316,6 +1345,7 @@ let exerciseData = {
         complexity: 'direct-counting',
         speed: 1.5,
         digits: 1,
+        digitsAllowed: [1],
         fractions: 'none',
         operation: 'mixed',
         negative: 'no',
@@ -1404,9 +1434,40 @@ function syncModeUI(mode) {
         complexityElement.value = data.complexity;
     }
 
+    // Sync digit checkboxes
+    const digitWrap = document.getElementById(mode + 'DigitChecks');
+    if (digitWrap && data.digitsAllowed) {
+        digitWrap.querySelectorAll('input[type="checkbox"]').forEach(b => {
+            b.checked = data.digitsAllowed.includes(parseInt(b.dataset.digit));
+        });
+    }
+
     console.log(`[syncModeUI] Synced ${mode} mode UI with exerciseData:`, data);
 
     updateOperationAvailability(mode);
+}
+
+/**
+ * Reads the digit checkboxes (1/2/3 cifre) into exerciseData[mode].digitsAllowed.
+ * If both 1 and 2 are checked the exercise mixes 1- and 2-digit numbers; if
+ * only 2 is checked, every number is strictly 2-digit and the running result
+ * never drops below 10. At least one box must stay checked.
+ */
+function updateDigitsSelection(mode) {
+    const wrap = document.getElementById(mode + 'DigitChecks');
+    if (!wrap || !exerciseData[mode]) return;
+    const boxes = Array.from(wrap.querySelectorAll('input[type="checkbox"]'));
+    let selected = boxes.filter(b => b.checked).map(b => parseInt(b.dataset.digit));
+    if (selected.length === 0) {
+        // Never allow an empty selection - re-check 1 digit
+        const first = boxes.find(b => b.dataset.digit === '1');
+        if (first) first.checked = true;
+        selected = [1];
+    }
+    selected.sort();
+    exerciseData[mode].digitsAllowed = selected;
+    exerciseData[mode].digits = Math.max(...selected);
+    console.log('[updateDigitsSelection]', mode, '->', selected);
 }
 
 /**
@@ -1613,7 +1674,11 @@ document.addEventListener('click', function(e) {
 
 // Number Generation Logic
 function generateNumber(settings, isFirstTerm = false) {
-    const { digits, fractions, complexity } = settings;
+    const { fractions, complexity } = settings;
+    // Pick this term's digit count from the allowed selection (mixed exercises
+    // sample per term; strict selections always produce that digit count)
+    const allowedCounts = resolveDigitsAllowed(settings);
+    const digits = allowedCounts[Math.floor(Math.random() * allowedCounts.length)];
 
     let num;
 
@@ -2337,6 +2402,50 @@ function smallFormulaApplicableUnits(formulaType, N) {
     return result;
 }
 
+/**
+ * Digit-count selection helpers. digitsAllowed is an array like [2] (strictly
+ * 2-digit numbers) or [1,2] (mixed 1- and 2-digit). Falls back to the legacy
+ * `digits` number, interpreted as "1 up to N digits" (mixed).
+ */
+function resolveDigitsAllowed(settings) {
+    if (settings.digitsAllowed && settings.digitsAllowed.length > 0) {
+        return [...settings.digitsAllowed].sort();
+    }
+    const d = settings.digits || 1;
+    return Array.from({ length: d }, (_, k) => k + 1);
+}
+
+function digitCountOf(n) {
+    return String(Math.abs(n)).length;
+}
+
+/** Minimum running value so numbers keep the smallest selected digit count */
+function minResultForDigits(digitsAllowed) {
+    const minD = Math.min(...digitsAllowed);
+    return minD > 1 ? Math.pow(10, minD - 1) : 0;
+}
+
+/** Builds a number with the given digit count whose units digit is `u` */
+function buildNumberWithUnits(u, count) {
+    if (count <= 1) return u;
+    let lead = 0;
+    for (let d = 0; d < count - 1; d++) {
+        lead = lead * 10 + (1 + Math.floor(Math.random() * 9));
+    }
+    return lead * 10 + u;
+}
+
+/** Iterates every term value whose digit count is in digitsAllowed (within cap) */
+function forEachAllowedTerm(digitsAllowed, cap, fn) {
+    for (const c of digitsAllowed) {
+        const start = c === 1 ? 1 : Math.pow(10, c - 1);
+        const end = Math.min(cap, Math.pow(10, c) - 1);
+        for (let t = start; t <= end; t++) {
+            fn(t);
+        }
+    }
+}
+
 function isBigFriendsLevel(complexity) {
     return complexity.startsWith('big-') || complexity === 'big-friends-all';
 }
@@ -2573,27 +2682,52 @@ function isAllowedOperation(currentValue, operation, operand, complexity) {
 
     // For multi-digit numbers, check each digit independently
     if (currentValue > 9 || operand > 9) {
-        // For big friends and family levels, carry/borrow IS allowed (that's the formula)
+        // For big friends and family levels, carry/borrow on the UNITS column IS
+        // allowed (that's the formula), but every higher column must also be a
+        // valid operation (direct/small friends, with the carry factored in)
         if (isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) {
             const opDigit = operand % 10;
             // Pass currentValue (not units digit) so requiresBigFriendsFormula can check >= 10 for subtraction
             const isBig = requiresBigFriendsFormula(currentValue, operation, opDigit);
             const isFam = isBig && requiresFamilyFormula(currentValue, operation, opDigit);
 
+            // 1. Validate the units column
             if (isBig) {
                 const allowed = getAllowedBigFriendsFormulas(complexity);
-                if (isFam) {
-                    return allowed.family.some(f =>
-                        f.type === (operation === '+' ? 'plus' : 'minus') && f.N === opDigit
-                    );
-                } else {
-                    return allowed.bigFriends.some(f =>
-                        f.type === (operation === '+' ? 'plus' : 'minus') && f.N === opDigit
-                    );
+                const unitsOk = isFam
+                    ? allowed.family.some(f => f.type === (operation === '+' ? 'plus' : 'minus') && f.N === opDigit)
+                    : allowed.bigFriends.some(f => f.type === (operation === '+' ? 'plus' : 'minus') && f.N === opDigit);
+                if (!unitsOk) return false;
+            } else if (opDigit !== 0) {
+                if (!isSingleDigitAllowed(currentValue % 10, opDigit, operation, 'small-friends-all')) {
+                    return false;
                 }
             }
-            // Non-Big-Friends multi-digit op: check units with small-friends rules
-            return isSingleDigitAllowed(currentValue % 10, opDigit, operation, 'small-friends-all');
+
+            // 2. Validate every higher column, folding in the units carry/borrow.
+            //    Cascading carries (tens overflowing into hundreds) are rejected
+            //    to keep exercises within the taught formulas.
+            let cv = Math.floor(currentValue / 10);
+            let ov = Math.floor(operand / 10);
+            let adjust = isBig ? 1 : 0; // +1 carry for addition, +1 extra borrow for subtraction
+            while (cv > 0 || ov > 0 || adjust > 0) {
+                const cd = cv % 10;
+                const od = (ov % 10) + adjust;
+                adjust = 0;
+                if (od !== 0) {
+                    if (operation === '+') {
+                        if (cd + od >= 10) return false; // cascading carry - rejected
+                    } else {
+                        if (cd < od) return false; // cascading borrow - rejected
+                    }
+                    if (!isSingleDigitAllowed(cd, od, operation, 'small-friends-all')) {
+                        return false;
+                    }
+                }
+                cv = Math.floor(cv / 10);
+                ov = Math.floor(ov / 10);
+            }
+            return true;
         }
 
         // For non-big-friends levels: check EVERY column independently.
@@ -2859,25 +2993,25 @@ function isImmediateReverseOperation(operations, termsArray, currentOp, currentT
  * @param {number} totalTerms - Total number of terms in the exercise
  * @returns {Array} - Array of valid operations in format [{op: '+', term: 5}, ...]
  */
-function getValidOperations(currentResult, complexity, termsArray, operations, totalTerms, digits = 1, operationSetting = 'mixed') {
+function getValidOperations(currentResult, complexity, termsArray, operations, totalTerms, digitsAllowed = [1], operationSetting = 'mixed') {
     const validOps = [];
     const termLimit = getTermLimit(complexity);
-    const maxLimit = getComplexityLimit(complexity, digits);
+    const maxDigits = Math.max(...digitsAllowed);
+    const maxLimit = getComplexityLimit(complexity, maxDigits);
+    // Strict multi-digit: intermediates must keep the minimum digit count
+    const minInter = minResultForDigits(digitsAllowed);
 
-    console.log('[getValidOperations] Finding valid operations for currentResult=', currentResult, 'complexity=', complexity, 'digits=', digits, 'maxLimit=', maxLimit, 'operation=', operationSetting);
+    console.log('[getValidOperations] Finding valid operations for currentResult=', currentResult, 'complexity=', complexity, 'digitsAllowed=', digitsAllowed, 'maxLimit=', maxLimit, 'operation=', operationSetting);
 
     // Respect the teacher's operation setting (addition-only / subtraction-only / mixed)
     const allowAdd = operationSetting !== 'subtraction';
     const allowSub = operationSetting !== 'addition';
 
-    // For ALL multi-digit direct levels, also try multi-digit terms
-    const shouldTryMultiDigitTerms = digits > 1 && isDirectCalculationLevel(complexity);
-
     const tryTerm = (term) => {
         // Try addition
         if (allowAdd) {
             const addResult = currentResult + term;
-            if (addResult >= 1 && addResult <= maxLimit &&
+            if (addResult >= Math.max(1, minInter) && addResult <= maxLimit &&
                 isAllowedOperation(currentResult, '+', term, complexity) &&
                 !shouldAvoidTermRepetition(termsArray, term, totalTerms) &&
                 !isSmallFriendsCombination(currentResult, '+', term) &&
@@ -2890,7 +3024,7 @@ function getValidOperations(currentResult, complexity, termsArray, operations, t
         // Try subtraction
         if (allowSub) {
             const subResult = currentResult - term;
-            if (subResult >= 0 && subResult <= maxLimit &&
+            if (subResult >= minInter && subResult <= maxLimit &&
                 isAllowedOperation(currentResult, '-', term, complexity) &&
                 !shouldAvoidTermRepetition(termsArray, term, totalTerms) &&
                 !isSmallFriendsCombination(currentResult, '-', term) &&
@@ -2901,19 +3035,14 @@ function getValidOperations(currentResult, complexity, termsArray, operations, t
         }
     };
 
-    // Try single-digit term values (1-termLimit)
-    for (let term = 1; term <= termLimit; term++) {
-        tryTerm(term);
-    }
-
-    // Multi-digit terms: 10 up to the level limit (44/99/444/999...).
-    // Terms ending in 0 ARE allowed (e.g. 24+10 - the units column stays put);
-    // per-column validity is enforced by isAllowedOperation.
-    if (shouldTryMultiDigitTerms && maxLimit !== null) {
-        for (let term = 10; term <= maxLimit; term++) {
-            tryTerm(term);
-        }
-    }
+    // Only terms whose digit count is selected (e.g. [2] -> 2-digit terms only).
+    // Terms ending in 0 ARE allowed for multi-digit (e.g. 24+10 - the units
+    // column stays put); per-column validity is enforced by isAllowedOperation.
+    const cap = maxLimit !== null ? maxLimit : parseInt('9'.repeat(maxDigits));
+    forEachAllowedTerm(digitsAllowed, cap, (t) => {
+        if (t <= 9 && t > termLimit) return; // respect single-digit term limit (1-4 / 1-5)
+        tryTerm(t);
+    });
 
     console.log('[getValidOperations] Found', validOps.length, 'valid operations:',
         validOps.map(o => o.op + o.term).join(', '));
@@ -2922,10 +3051,16 @@ function getValidOperations(currentResult, complexity, termsArray, operations, t
 }
 
 function generateExerciseTerms(settings) {
-    const { terms, operation, negative, complexity, digits = 1 } = settings;
+    const { terms, operation, negative, complexity } = settings;
+    // digitsAllowed: e.g. [2] = strictly 2-digit numbers, [1,2] = mixed
+    const digitsAllowed = resolveDigitsAllowed(settings);
+    const digits = Math.max(...digitsAllowed);
+    // Strict multi-digit: the running value must never drop below the
+    // smallest selected digit count (e.g. [2] -> intermediates stay >= 10)
+    const minInter = minResultForDigits(digitsAllowed);
     const maxLimit = getComplexityLimit(complexity, digits);
 
-    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, digits, maxLimit });
+    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, digitsAllowed, minInter, maxLimit });
 
     // For direct calculation levels, regenerate if result is 0 or invalid
     // Dynamic attempts and timeout based on term count (more terms = more attempts needed)
@@ -2996,11 +3131,9 @@ function generateExerciseTerms(settings) {
                     const appUnits = smallFormulaApplicableUnits(fType, fN);
                     if (appUnits.length > 0) {
                         const u = appUnits[Math.floor(Math.random() * appUnits.length)];
-                        let ft = 0;
-                        for (let d = 0; d < digits - 1; d++) {
-                            ft = ft * 10 + (1 + Math.floor(Math.random() * 9));
-                        }
-                        termsArray[0] = ft * 10 + u;
+                        // Small friends applicable units are never 0, so any count works
+                        const count = digitsAllowed[Math.floor(Math.random() * digitsAllowed.length)];
+                        termsArray[0] = buildNumberWithUnits(u, count);
                     }
                 }
 
@@ -3127,12 +3260,14 @@ function generateExerciseTerms(settings) {
                     const appUnits = bigFormulaApplicableUnits(currentFormulaType, currentFormulaN, isFamilyFormula);
                     if (appUnits.length > 0) {
                         const u = appUnits[Math.floor(Math.random() * appUnits.length)];
-                        // For minus formulas the value must be >= 10 (borrow needs a tens bead)
-                        termsArray[0] = currentFormulaType === 'minus' ? 10 + u : (u === 0 ? 10 : u);
+                        const count = digitsAllowed[Math.floor(Math.random() * digitsAllowed.length)];
+                        if (currentFormulaType === 'minus' || u === 0) {
+                            // Minus formulas need a tens bead to borrow from (value >= 10)
+                            termsArray[0] = count >= 2 ? buildNumberWithUnits(u, count) : 10 + u;
+                        } else {
+                            termsArray[0] = count >= 2 ? buildNumberWithUnits(u, count) : u;
+                        }
                     }
-                } else if (termsArray[0] > 9) {
-                    // Otherwise start simple (single digit) and build up via free ops
-                    termsArray[0] = 1 + Math.floor(Math.random() * 9);
                 }
 
                 for (let j = 0; j < remainingTerms; j++) {
@@ -3221,7 +3356,7 @@ function generateExerciseTerms(settings) {
                 // This ensures we never get stuck - we only choose from operations we know will work
                 // Instead of trying all possible operations and checking validity during iteration,
                 // we first build a list of guaranteed-valid operations, then randomly pick one
-                let validOperations = getValidOperations(currentResult, complexity, termsArray, operations, terms, digits, operation);
+                let validOperations = getValidOperations(currentResult, complexity, termsArray, operations, terms, digitsAllowed, operation);
 
                 // Addition-only: keep budget for the remaining operations
                 // (each remaining op adds at least 1, so leave enough headroom)
@@ -3263,15 +3398,24 @@ function generateExerciseTerms(settings) {
                 if (slot && slot.type === 'small-current') {
                     const N = slot.formulaN;
                     const fOp = slot.formulaType === 'plus' ? '+' : '-';
-                    if (requiresSmallFriendsFormula(currentResult, fOp, N) &&
-                        isAllowedOperation(currentResult, fOp, N, complexity)) {
-                        const nr = fOp === '+' ? currentResult + N : currentResult - N;
-                        if (nr > 0 && nr <= maxLimit) {
+                    if (requiresSmallFriendsFormula(currentResult, fOp, N)) {
+                        // Formula term: single-digit N, or multi-digit with units N
+                        // (e.g. 45-21 exercises formula -1 on the units column)
+                        const formulaOptions = [];
+                        forEachAllowedTerm(digitsAllowed, maxLimit !== null ? maxLimit : 999, (tf) => {
+                            if (tf % 10 !== N) return;
+                            const nr = fOp === '+' ? currentResult + tf : currentResult - tf;
+                            if (nr >= Math.max(1, minInter) && nr <= maxLimit &&
+                                isAllowedOperation(currentResult, fOp, tf, complexity)) {
+                                formulaOptions.push(tf);
+                            }
+                        });
+                        if (formulaOptions.length > 0) {
                             op = fOp;
                             operations[operations.length - 1] = op;
-                            term = N;
+                            term = formulaOptions[Math.floor(Math.random() * formulaOptions.length)];
                             validTermFound = true;
-                            console.log('[generateExerciseTerms] Small Friends multi-digit formula term:', { currentResult, op, term, newResult: nr });
+                            console.log('[generateExerciseTerms] Small Friends multi-digit formula term:', { currentResult, op, term });
                         }
                     }
 
@@ -3285,18 +3429,18 @@ function generateExerciseTerms(settings) {
                 }
 
                 if (!validTermFound) {
-                    // Free / steering op: any valid term (single or multi-digit)
+                    // Free / steering op: any valid term with an allowed digit count
                     const opsToTry = operation === 'mixed' ? ['+', '-']
                         : [operation === 'addition' ? '+' : '-'];
                     const candidates = [];
                     const termCap = Math.min(maxLimit || 99, 999);
                     for (const o of opsToTry) {
-                        for (let t = 1; t <= termCap; t++) {
+                        forEachAllowedTerm(digitsAllowed, termCap, (t) => {
                             const nr = o === '+' ? currentResult + t : currentResult - t;
-                            if (nr > 0 && nr <= maxLimit && isAllowedOperation(currentResult, o, t, complexity)) {
+                            if (nr >= Math.max(1, minInter) && nr <= maxLimit && isAllowedOperation(currentResult, o, t, complexity)) {
                                 candidates.push({ o, t, newResult: nr });
                             }
-                        }
+                        });
                     }
 
                     // Steer toward the next formula slot's applicable units
@@ -3318,16 +3462,19 @@ function generateExerciseTerms(settings) {
                             if (hard.length > 0) pool = hard;
                         } else {
                             const canReachInOneStep = v => {
+                                let found = false;
                                 for (const o2 of ['+', '-']) {
-                                    for (let t2 = 1; t2 <= 9; t2++) {
+                                    if (found) break;
+                                    forEachAllowedTerm(digitsAllowed, maxLimit !== null ? maxLimit : 999, (t2) => {
+                                        if (found) return;
                                         const nv = o2 === '+' ? v + t2 : v - t2;
-                                        if (nv > 0 && nv <= maxLimit && isApplicable(nv) &&
+                                        if (nv >= Math.max(1, minInter) && nv <= maxLimit && isApplicable(nv) &&
                                             isAllowedOperation(v, o2, t2, complexity)) {
-                                            return true;
+                                            found = true;
                                         }
-                                    }
+                                    });
                                 }
-                                return false;
+                                return found;
                             };
                             const soft = candidates.filter(c => !isApplicable(c.newResult) && canReachInOneStep(c.newResult));
                             if (soft.length > 0) pool = soft;
@@ -3823,13 +3970,24 @@ function generateExerciseTerms(settings) {
                         canApply = bigFriendsOk && (needsFamily ? familyOk : !familyOk);
                     }
 
-                    if (canApply && isAllowedOperation(currentResult, op, N, complexity)) {
-                        const newResult = op === '+' ? currentResult + N : currentResult - N;
-                        if (newResult >= 0 && newResult <= maxLimit) {
-                            term = N;
+                    if (canApply) {
+                        // The formula term can be single-digit (just N) or multi-digit
+                        // with units digit N (e.g. 21 for formula +1 in 2-digit mode);
+                        // higher columns are validated per column by isAllowedOperation
+                        const formulaOptions = [];
+                        forEachAllowedTerm(digitsAllowed, maxLimit !== null ? maxLimit : 999, (tf) => {
+                            if (tf % 10 !== N) return;
+                            const nr = op === '+' ? currentResult + tf : currentResult - tf;
+                            if (nr >= Math.max(1, minInter) && nr <= maxLimit &&
+                                isAllowedOperation(currentResult, op, tf, complexity)) {
+                                formulaOptions.push(tf);
+                            }
+                        });
+                        if (formulaOptions.length > 0) {
+                            term = formulaOptions[Math.floor(Math.random() * formulaOptions.length)];
                             validTermFound = true;
                             console.log('[generateExerciseTerms] Big Friends formula term:', {
-                                currentResult, op, term: N, newResult, type: termTypeConfig.type
+                                currentResult, op, term, type: termTypeConfig.type
                             });
                         }
                     }
@@ -3845,16 +4003,17 @@ function generateExerciseTerms(settings) {
                     const opsToTry = operation === 'mixed' ? ['+', '-']
                         : [operation === 'addition' ? '+' : '-'];
 
-                    // All valid candidates (op, term) at the current state
+                    // All valid candidates (op, term) at the current state,
+                    // restricted to the selected digit counts
                     const candidates = [];
                     for (const o of opsToTry) {
-                        for (let t = 1; t <= 9; t++) {
+                        forEachAllowedTerm(digitsAllowed, maxLimit !== null ? maxLimit : 999, (t) => {
                             const newResult = o === '+' ? currentResult + t : currentResult - t;
-                            if (newResult > 0 && newResult <= maxLimit &&
+                            if (newResult >= Math.max(1, minInter) && newResult <= maxLimit &&
                                 isAllowedOperation(currentResult, o, t, complexity)) {
                                 candidates.push({ o, t, newResult });
                             }
-                        }
+                        });
                     }
 
                     // MULTI-STEP STEERING toward the next formula slot:
@@ -3890,16 +4049,19 @@ function generateExerciseTerms(settings) {
                             // Natural op, but keep the applicable state reachable in one step
                             // and don't consume it early (the pre-formula op should land it)
                             const canReachInOneStep = v => {
+                                let found = false;
                                 for (const o2 of ['+', '-']) {
-                                    for (let t2 = 1; t2 <= 9; t2++) {
+                                    if (found) break;
+                                    forEachAllowedTerm(digitsAllowed, maxLimit !== null ? maxLimit : 999, (t2) => {
+                                        if (found) return;
                                         const nv = o2 === '+' ? v + t2 : v - t2;
-                                        if (nv > 0 && nv <= maxLimit && isApplicable(nv) &&
+                                        if (nv >= Math.max(1, minInter) && nv <= maxLimit && isApplicable(nv) &&
                                             isAllowedOperation(v, o2, t2, complexity)) {
-                                            return true;
+                                            found = true;
                                         }
-                                    }
+                                    });
                                 }
-                                return false;
+                                return found;
                             };
                             const soft = candidates.filter(c =>
                                 !isApplicable(c.newResult) && canReachInOneStep(c.newResult));
@@ -3942,18 +4104,18 @@ function generateExerciseTerms(settings) {
                     operations[operations.length - 1] = op;
                 }
 
-                // Collect all valid terms, separating Big Friends/Family formula ops
+                // Collect all valid terms (allowed digit counts), separating formula ops
                 const allValidOptions = [];
                 const bigOptions = [];
-                for (let t = 1; t <= 9; t++) {
+                forEachAllowedTerm(digitsAllowed, maxLimit !== null ? maxLimit : 999, (t) => {
                     const testResult = op === '+' ? currentResult2 + t : currentResult2 - t;
-                    if (testResult > 0 && testResult <= maxLimit && isAllowedOperation(currentResult2, op, t, complexity)) {
+                    if (testResult >= Math.max(1, minInter) && testResult <= maxLimit && isAllowedOperation(currentResult2, op, t, complexity)) {
                         allValidOptions.push(t);
-                        if (requiresBigFriendsFormula(currentResult2, op, t)) {
+                        if (requiresBigFriendsFormula(currentResult2, op, t % 10)) {
                             bigOptions.push(t);
                         }
                     }
-                }
+                });
 
                 if (allValidOptions.length > 0) {
                     // Prefer formula ops 70% of the time so -all levels actually exercise them
@@ -3963,16 +4125,16 @@ function generateExerciseTerms(settings) {
                 } else {
                     // Try opposite operation
                     const altOp = op === '+' ? '-' : '+';
-                    for (let t = 1; t <= 9; t++) {
+                    forEachAllowedTerm(digitsAllowed, maxLimit !== null ? maxLimit : 999, (t) => {
+                        if (validTermFound) return;
                         const testResult = altOp === '+' ? currentResult2 + t : currentResult2 - t;
-                        if (testResult > 0 && testResult <= maxLimit && isAllowedOperation(currentResult2, altOp, t, complexity)) {
+                        if (testResult >= Math.max(1, minInter) && testResult <= maxLimit && isAllowedOperation(currentResult2, altOp, t, complexity)) {
                             op = altOp;
                             operations[operations.length - 1] = op;
                             term = t;
                             validTermFound = true;
-                            break;
                         }
-                    }
+                    });
                 }
             } else {
                 // For other complexity levels, use standard generation
@@ -4011,9 +4173,9 @@ function generateExerciseTerms(settings) {
         // Calculate final result
         result = calculateResult(termsArray, operations);
 
-        // Ensure result is valid (positive, within bounds) for all formula levels
+        // Ensure result is valid (positive, keeps the minimum digit count, within bounds)
         if (isDirectCalculationLevel(complexity) || isSmallFriendsLevel(complexity) || isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) {
-            if (result <= 0 || result > maxLimit) {
+            if (result < Math.max(1, minInter) || result > maxLimit) {
                 attempt++;
                 if (attempt >= maxAttempts) {
                     // If max attempts reached, return what we have
@@ -4026,6 +4188,24 @@ function generateExerciseTerms(settings) {
         // For Big Friends/Family levels, validate all intermediate results are in [0, maxLimit]
         if (isBigFriendsLevel(complexity) || isFamilyLevel(complexity)) {
             if (!validateIntermediateResults(termsArray, operations, complexity)) {
+                attempt++;
+                if (attempt >= maxAttempts) { break; }
+                continue;
+            }
+        }
+
+        // Strict multi-digit mode: every intermediate result (and the first term)
+        // must keep the minimum selected digit count (e.g. [2] -> never below 10,
+        // so 79-72=7 is rejected: the tens column must not collapse)
+        if (minInter > 0) {
+            let running = termsArray[0];
+            let strictOk = running >= minInter;
+            for (let k = 0; strictOk && k < operations.length; k++) {
+                running = operations[k] === '+' ? running + termsArray[k + 1] : running - termsArray[k + 1];
+                if (running < minInter) strictOk = false;
+            }
+            if (!strictOk) {
+                console.log('[generateExerciseTerms] Strict digit mode: intermediate below', minInter, '- regenerating');
                 attempt++;
                 if (attempt >= maxAttempts) { break; }
                 continue;
@@ -4476,8 +4656,11 @@ function generateExerciseTerms(settings) {
                     const curResult = calculateResult(termsArray.slice(0, i + 1), operations.slice(0, i));
                     const t = termsArray[i + 1];
                     const o = operations[i];
-                    if (o === fOp && t === fN && requiresBigFriendsFormula(curResult, o, t)) {
-                        const isFam = requiresFamilyFormula(curResult, o, t);
+                    // Multi-digit terms count if their UNITS digit applies the formula
+                    // (e.g. +51 at units 9 exercises formula +1 on the units column)
+                    const tUnits = Math.abs(t) % 10;
+                    if (o === fOp && tUnits === fN && requiresBigFriendsFormula(curResult, o, tUnits)) {
+                        const isFam = requiresFamilyFormula(curResult, o, tUnits);
                         if (fIsFamily ? isFam : !isFam) {
                             actualCurrentCount++;
                         }
@@ -5611,6 +5794,7 @@ document.addEventListener('DOMContentLoaded', function() {
             select.addEventListener('change', () => updateOperationAvailability(mode));
         }
         updateOperationAvailability(mode);
+        updateDigitsSelection(mode);
     });
 });
 </script>
