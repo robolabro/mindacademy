@@ -942,6 +942,17 @@
             </div>
 
             <div class="settings-row">
+                <span class="setting-label">Dificultate:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn" data-difficulty="easy">Ușor</button>
+                        <button class="toggle-btn active" data-difficulty="medium">Mediu</button>
+                        <button class="toggle-btn" data-difficulty="hard">Greu</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
                 <span class="setting-label">Numere negative:</span>
                 <div class="setting-controls">
                     <div class="toggle-group">
@@ -1120,6 +1131,17 @@
                         <button class="toggle-btn" data-operation="addition">Adunare</button>
                         <button class="toggle-btn" data-operation="subtraction">Scădere</button>
                         <button class="toggle-btn active" data-operation="mixed">Amestecat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <span class="setting-label">Dificultate:</span>
+                <div class="setting-controls">
+                    <div class="toggle-group">
+                        <button class="toggle-btn" data-difficulty="easy">Ușor</button>
+                        <button class="toggle-btn active" data-difficulty="medium">Mediu</button>
+                        <button class="toggle-btn" data-difficulty="hard">Greu</button>
                     </div>
                 </div>
             </div>
@@ -1331,6 +1353,7 @@ let exerciseData = {
         digitsAllowed: [1],
         fractions: 'none',
         operation: 'mixed',
+        difficulty: 'medium',
         negative: 'no',
         terms: 3,
         dictation: 'no',
@@ -1348,6 +1371,7 @@ let exerciseData = {
         digitsAllowed: [1],
         fractions: 'none',
         operation: 'mixed',
+        difficulty: 'medium',
         negative: 'no',
         terms: 3,
         dictation: 'no',
@@ -1439,6 +1463,15 @@ function syncModeUI(mode) {
     if (digitWrap && data.digitsAllowed) {
         digitWrap.querySelectorAll('input[type="checkbox"]').forEach(b => {
             b.checked = data.digitsAllowed.includes(parseInt(b.dataset.digit));
+        });
+    }
+
+    // Sync difficulty toggle
+    const modeScreen = document.getElementById(mode + 'Mode');
+    if (modeScreen) {
+        const diff = data.difficulty || 'medium';
+        modeScreen.querySelectorAll('.toggle-btn[data-difficulty]').forEach(b => {
+            b.classList.toggle('active', b.dataset.difficulty === diff);
         });
     }
 
@@ -1660,6 +1693,8 @@ document.addEventListener('click', function(e) {
             exerciseData[mode].fractions = e.target.dataset.fractions;
         } else if (e.target.dataset.operation) {
             exerciseData[mode].operation = e.target.dataset.operation;
+        } else if (e.target.dataset.difficulty) {
+            exerciseData[mode].difficulty = e.target.dataset.difficulty;
         } else if (e.target.dataset.negative) {
             exerciseData[mode].negative = e.target.dataset.negative;
         } else if (e.target.dataset.dictation) {
@@ -2993,9 +3028,12 @@ function isImmediateReverseOperation(operations, termsArray, currentOp, currentT
  * @param {number} totalTerms - Total number of terms in the exercise
  * @returns {Array} - Array of valid operations in format [{op: '+', term: 5}, ...]
  */
-function getValidOperations(currentResult, complexity, termsArray, operations, totalTerms, digitsAllowed = [1], operationSetting = 'mixed') {
+function getValidOperations(currentResult, complexity, termsArray, operations, totalTerms, digitsAllowed = [1], operationSetting = 'mixed', difficulty = 'medium') {
     const validOps = [];
     const termLimit = getTermLimit(complexity);
+    // Easy difficulty at direct-to-9: no operands containing digits 6-9
+    const easyDirect9 = difficulty === 'easy' && complexity === 'direct-to-9';
+    const hasLargeDigit = n => String(Math.abs(n)).split('').some(d => parseInt(d) >= 6);
     const maxDigits = Math.max(...digitsAllowed);
     const maxLimit = getComplexityLimit(complexity, maxDigits);
     // Strict multi-digit: intermediates must keep the minimum digit count
@@ -3041,6 +3079,7 @@ function getValidOperations(currentResult, complexity, termsArray, operations, t
     const cap = maxLimit !== null ? maxLimit : parseInt('9'.repeat(maxDigits));
     forEachAllowedTerm(digitsAllowed, cap, (t) => {
         if (t <= 9 && t > termLimit) return; // respect single-digit term limit (1-4 / 1-5)
+        if (easyDirect9 && hasLargeDigit(t)) return; // easy: skip 6-9 operands
         tryTerm(t);
     });
 
@@ -3052,6 +3091,10 @@ function getValidOperations(currentResult, complexity, termsArray, operations, t
 
 function generateExerciseTerms(settings) {
     const { terms, operation, negative, complexity } = settings;
+    // Difficulty: easy = ~1 formula per 4 ops / no 6-9 operands at direct-to-9;
+    // medium = balanced (default); hard = ~3 formulas per 4 ops (current +
+    // previous formulas combined) / 6-9 operands required at direct-to-9
+    const difficulty = settings.difficulty || 'medium';
     // digitsAllowed: e.g. [2] = strictly 2-digit numbers, [1,2] = mixed
     const digitsAllowed = resolveDigitsAllowed(settings);
     const digits = Math.max(...digitsAllowed);
@@ -3060,7 +3103,16 @@ function generateExerciseTerms(settings) {
     const minInter = minResultForDigits(digitsAllowed);
     const maxLimit = getComplexityLimit(complexity, digits);
 
-    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, digitsAllowed, minInter, maxLimit });
+    // Formula-slot count per difficulty (ops = terms - 1)
+    const formulaSlotCount = (ops, mediumCount) => {
+        if (difficulty === 'easy') return Math.max(1, Math.round(ops * 0.25));
+        if (difficulty === 'hard') return Math.max(1, Math.ceil(ops / 2));
+        return mediumCount;
+    };
+    // Minimum gap between formula slots (hard packs them closer)
+    const slotGap = difficulty === 'hard' ? 2 : 3;
+
+    console.log('[generateExerciseTerms] Generating exercise with:', { terms, operation, negative, complexity, difficulty, digitsAllowed, minInter, maxLimit });
 
     // For direct calculation levels, regenerate if result is 0 or invalid
     // Dynamic attempts and timeout based on term count (more terms = more attempts needed)
@@ -3115,7 +3167,7 @@ function generateExerciseTerms(settings) {
                 const fType = m[1];
                 const fN = parseInt(m[2]);
                 const remainingTerms = terms - 1;
-                const numSlots = remainingTerms >= 5 ? 2 : 1;
+                const numSlots = formulaSlotCount(remainingTerms, remainingTerms >= 5 ? 2 : 1);
                 const positions = [];
                 let posGuard = 0;
                 // Avoid the last position (steering into the applicable state
@@ -3123,7 +3175,7 @@ function generateExerciseTerms(settings) {
                 const posRange = Math.max(1, remainingTerms - 1);
                 while (positions.length < numSlots && posGuard++ < 50) {
                     const pos = Math.floor(Math.random() * posRange);
-                    if (positions.every(q => Math.abs(q - pos) >= 3)) positions.push(pos);
+                    if (positions.every(q => Math.abs(q - pos) >= slotGap)) positions.push(pos);
                 }
 
                 if (positions.includes(0)) {
@@ -3151,12 +3203,11 @@ function generateExerciseTerms(settings) {
             const availableFormulas = getAvailableFormulasForLevel(complexity);
             const remainingTerms = terms - 1; // Exclude first term
 
-            // The current formula appears ONCE per exercise (twice for long ones),
-            // the rest integrates previous formulas + direct calc. This gives
-            // varied, natural exercises (2+5-2-1+5) instead of repetitive
-            // patterns (5-1+1-1+5) where the formula is forced back-to-back.
+            // The current formula count scales with difficulty; the rest
+            // integrates previous formulas + direct calc for varied, natural
+            // exercises (2+5-2-1+5) instead of repetitive patterns (5-1+1-1+5)
             let currentFormulaCount, otherTermsCount;
-            currentFormulaCount = remainingTerms >= 5 ? 2 : 1;
+            currentFormulaCount = formulaSlotCount(remainingTerms, remainingTerms >= 5 ? 2 : 1);
             otherTermsCount = remainingTerms - currentFormulaCount;
 
             // Build distribution array with current formula terms
@@ -3171,10 +3222,11 @@ function generateExerciseTerms(settings) {
             // Distribute "other" terms between previous formulas and direct calculations
             if (otherTermsCount > 0) {
                 if (availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0) {
-                    // Split other terms ~50/50 between previous formulas and direct calc.
-                    // (with few previous formulas available, an all-previous split makes
-                    // every exercise identical, e.g. 5-1+1-1 at small-minus-1)
-                    const directCount = Math.ceil(otherTermsCount * 0.5);
+                    // Split remaining slots between previous formulas and direct calc:
+                    // easy = all direct (simple filler ops), medium = ~50/50,
+                    // hard = previous-formula heavy (total ~3 formulas per 4 ops)
+                    const directRatio = difficulty === 'easy' ? 1 : difficulty === 'hard' ? 0.25 : 0.5;
+                    const directCount = Math.ceil(otherTermsCount * directRatio);
                     const previousCount = otherTermsCount - directCount;
 
                     // Add previous formula terms
@@ -3237,19 +3289,19 @@ function generateExerciseTerms(settings) {
             const isFamilyFormula = !!famMatch;
 
             if (isSpecificLevel && currentFormulaN !== null) {
-                // ONE formula application per exercise (two only for long exercises),
-                // at a RANDOM position. The free operations before it steer the
-                // running value organically toward the applicable state - this gives
-                // varied, natural exercises like 1+6+2+1+8 (7, 9, formula 9+1, 18)
+                // Formula applications at RANDOM positions (count per difficulty).
+                // The free operations before each steer the running value
+                // organically toward the applicable state - this gives varied,
+                // natural exercises like 1+6+2+1+8 (7, 9, formula 9+1, 18)
                 // instead of rigid repeated patterns like 9+1+9+1.
-                const numFormulaSlots = remainingTerms >= 6 ? 2 : 1;
+                const numFormulaSlots = formulaSlotCount(remainingTerms, remainingTerms >= 6 ? 2 : 1);
                 const formulaPositions = [];
                 let posGuard = 0;
                 while (formulaPositions.length < numFormulaSlots && posGuard++ < 50) {
                     const pos = Math.floor(Math.random() * remainingTerms);
-                    // Keep a gap of at least 3 between formula slots so the exercise
-                    // has room to wander back to the applicable state naturally
-                    if (formulaPositions.every(q => Math.abs(q - pos) >= 3)) {
+                    // Keep a gap between formula slots so the exercise has room
+                    // to wander back to the applicable state naturally
+                    if (formulaPositions.every(q => Math.abs(q - pos) >= slotGap)) {
                         formulaPositions.push(pos);
                     }
                 }
@@ -3356,7 +3408,7 @@ function generateExerciseTerms(settings) {
                 // This ensures we never get stuck - we only choose from operations we know will work
                 // Instead of trying all possible operations and checking validity during iteration,
                 // we first build a list of guaranteed-valid operations, then randomly pick one
-                let validOperations = getValidOperations(currentResult, complexity, termsArray, operations, terms, digitsAllowed, operation);
+                let validOperations = getValidOperations(currentResult, complexity, termsArray, operations, terms, digitsAllowed, operation, difficulty);
 
                 // Addition-only: keep budget for the remaining operations
                 // (each remaining op adds at least 1, so leave enough headroom)
@@ -3479,6 +3531,16 @@ function generateExerciseTerms(settings) {
                             const soft = candidates.filter(c => !isApplicable(c.newResult) && canReachInOneStep(c.newResult));
                             if (soft.length > 0) pool = soft;
                         }
+                    }
+
+                    // Difficulty flavor for filler ops: hard prefers formula ops,
+                    // easy prefers plain direct ops
+                    if (difficulty === 'hard') {
+                        const f = pool.filter(c => requiresSmallFriendsFormula(currentResult, c.o, c.t));
+                        if (f.length > 0) pool = f;
+                    } else if (difficulty === 'easy') {
+                        const nf = pool.filter(c => !requiresSmallFriendsFormula(currentResult, c.o, c.t));
+                        if (nf.length > 0) pool = nf;
                     }
 
                     if (pool.length > 0) {
@@ -4069,6 +4131,20 @@ function generateExerciseTerms(settings) {
                         }
                     }
 
+                    // Difficulty flavor for filler ops: hard prefers formula ops
+                    // (previous big/small formulas), easy prefers plain direct ops
+                    if (difficulty === 'hard') {
+                        const f = pool.filter(c =>
+                            requiresBigFriendsFormula(currentResult, c.o, c.t % 10) ||
+                            requiresSmallFriendsFormula(currentResult, c.o, c.t));
+                        if (f.length > 0) pool = f;
+                    } else if (difficulty === 'easy') {
+                        const nf = pool.filter(c =>
+                            !requiresBigFriendsFormula(currentResult, c.o, c.t % 10) &&
+                            !requiresSmallFriendsFormula(currentResult, c.o, c.t));
+                        if (nf.length > 0) pool = nf;
+                    }
+
                     if (pool.length > 0) {
                         const pick = pool[Math.floor(Math.random() * pool.length)];
                         op = pick.o;
@@ -4118,8 +4194,9 @@ function generateExerciseTerms(settings) {
                 });
 
                 if (allValidOptions.length > 0) {
-                    // Prefer formula ops 70% of the time so -all levels actually exercise them
-                    const pickFrom = (bigOptions.length > 0 && Math.random() < 0.7) ? bigOptions : allValidOptions;
+                    // Formula-op preference scales with difficulty
+                    const formulaBias = difficulty === 'hard' ? 0.9 : difficulty === 'easy' ? 0.3 : 0.7;
+                    const pickFrom = (bigOptions.length > 0 && Math.random() < formulaBias) ? bigOptions : allValidOptions;
                     term = pickFrom[Math.floor(Math.random() * pickFrom.length)];
                     validTermFound = true;
                 } else {
@@ -4277,7 +4354,8 @@ function generateExerciseTerms(settings) {
         // Large-numbers requirement: single-digit mixed mode only.
         // In addition-only mode the running result is capped at 9, so large
         // terms are rarely possible; multi-digit exercises use per-column rules.
-        if (complexity === 'direct-to-9' && digits === 1 && operation !== 'addition') {
+        // Easy difficulty skips this entirely (6-9 operands are filtered out).
+        if (complexity === 'direct-to-9' && digits === 1 && operation !== 'addition' && difficulty !== 'easy') {
             // Check if at least one large number exists
             const hasLargeNumber = termsArray.some(term => Math.abs(term) >= 6 && Math.abs(term) <= 9);
 
@@ -4288,14 +4366,16 @@ function generateExerciseTerms(settings) {
 
             // Dynamic target percentage based on term count
             // More terms = lower percentage requirement
-            // RELAXED: Further reduced percentages to allow more exercise variety
+            // Hard difficulty demands substantially more 6-9 operands
             let targetPercentage;
-            if (terms <= 3) {
-                targetPercentage = 0.34; // 34% for 3 terms (~1 large number) (was 50%, too strict)
+            if (difficulty === 'hard') {
+                targetPercentage = terms <= 3 ? 0.67 : terms === 4 ? 0.5 : 0.4;
+            } else if (terms <= 3) {
+                targetPercentage = 0.34; // 34% for 3 terms (~1 large number)
             } else if (terms === 4) {
-                targetPercentage = 0.25; // 25% for 4 terms (~1 large number) (was 40%, too strict)
+                targetPercentage = 0.25; // 25% for 4 terms (~1 large number)
             } else {
-                targetPercentage = 0.20; // 20% for 5+ terms (~1 large number) (was 30%, too strict)
+                targetPercentage = 0.20; // 20% for 5+ terms (~1 large number)
             }
 
             // Require: at least 1 large number total AND meets dynamic percentage requirement
