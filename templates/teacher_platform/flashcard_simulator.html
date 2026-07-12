@@ -1,4 +1,5 @@
 {% extends 'teacher_platform/base_teacher.html' %}
+{% load static %}
 
 {% block title %}Simulator Cartonașe Flash{% endblock %}
 {% block page_title %}Cartonașe Flash{% endblock %}
@@ -429,6 +430,37 @@
         animation: pulse 0.5s ease;
     }
 
+    /* Colored countdown circle: 3 = red, 2 = yellow, 1 = green (like Anzan) */
+    .countdown-circle-fc {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 5rem;
+        font-weight: 700;
+        margin: 1.5rem auto;
+        animation: pulse 0.5s ease;
+    }
+
+    .countdown-circle-fc.count-3 { background: #ef4444; }
+    .countdown-circle-fc.count-2 { background: #f59e0b; }
+    .countdown-circle-fc.count-1 { background: #10b981; }
+
+    /* Clean number inputs: no spinner arrows */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
     @keyframes pulse {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.1); }
@@ -551,32 +583,41 @@
     }
 
     .answer-input {
-        width: 400px;
-        padding: 1.2rem;
-        font-size: 2.5rem;
+        width: 320px;
+        max-width: 90%;
+        padding: 0.9rem;
+        font-size: 2rem;
         text-align: center;
-        border: 3px solid #e0e0e0;
+        border: 1px solid #e5e7eb;
         border-radius: 10px;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s ease;
+        margin-bottom: 1.25rem;
+        background: white;
+        transition: border-color 0.15s ease;
     }
 
     .answer-input:focus {
         outline: none;
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Training mode: larger abacus capture */
+    #trainingContent .mini-abacus {
+        transform: scale(1.25);
+        transform-origin: top center;
+        margin-bottom: 4.5rem;
+        margin-top: 1rem;
     }
 
     .submit-btn {
-        padding: 1rem 3rem;
-        background: var(--primary-color);
+        padding: 0.9rem 3rem;
+        background: #E91E63;
         color: white;
         border: none;
-        border-radius: 10px;
+        border-radius: 999px;
         cursor: pointer;
-        font-size: 1.3rem;
+        font-size: 1.15rem;
         font-weight: 600;
-        transition: all 0.3s ease;
+        transition: filter 0.15s ease;
         display: block;
         margin: 0 auto;
     }
@@ -1120,20 +1161,19 @@
     }
 
     .answer-btn {
-        padding: 0.8rem 2rem;
+        padding: 0.8rem 2.5rem;
         background: #E91E63;
         color: white;
         border: none;
-        border-radius: 10px;
+        border-radius: 999px;
         cursor: pointer;
-        font-size: 1.2rem;
+        font-size: 1.15rem;
         font-weight: 600;
-        transition: all 0.3s ease;
+        transition: filter 0.15s ease;
     }
 
     .answer-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+        filter: brightness(1.08);
     }
 
     .your-answer-label {
@@ -2277,6 +2317,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/anzan_engine.js' %}"></script>
 <script>
     // Global state
     let currentMode = null;
@@ -4016,14 +4057,9 @@
         const content = document.getElementById('flashContent');
         content.innerHTML = '';
 
-        // Show countdown 3, 2, 1
+        // Colored countdown: 3 red, 2 yellow, 1 green
         const countdown = document.createElement('div');
-        countdown.className = 'countdown';
-        countdown.style.fontSize = '5rem';
-        countdown.style.fontWeight = 'bold';
-        countdown.style.color = '#2196F3';
-        countdown.style.textAlign = 'center';
-        countdown.style.padding = '2rem';
+        countdown.className = 'countdown-circle-fc count-3';
         content.appendChild(countdown);
 
         let count = 3;
@@ -4033,6 +4069,7 @@
             count--;
             if (count > 0) {
                 countdown.textContent = count;
+                countdown.className = 'countdown-circle-fc count-' + count;
             } else {
                 clearInterval(countdownInterval);
                 countdown.remove();
@@ -4309,32 +4346,37 @@
         // Randomly select a formula from the available formulas
         const formula = formulas[getRandomNumber(0, formulas.length - 1)];
 
-        // Generate exercise based on level
+        // Generate the exercise with the SAME rules engine as the Anzan
+        // simulator (anzan_engine.js) so every level follows the pedagogy
+        const complexityMap = { 'family': 'family-all' };
+        const engineComplexity = complexityMap[level] || level;
+        const digitCount = parseInt(section) || 1;
+
         let numbers = [];
         let operators = [];
         let correctAnswer = 0;
 
-        // Regenerate exercise until we get a valid result (>0 and <100) and different from last exercise
         let attempts = 0;
-        const maxAttempts = 100;
+        const maxAttempts = 30;
         let isDuplicate = false;
         do {
-            const exerciseData = generateExerciseForLevel(level, formula, section, addends);
-            numbers = exerciseData.numbers;
-            operators = exerciseData.operators || [];
+            const ex = generateExerciseTerms({
+                terms: Math.max(2, addends),
+                operation: formula === 'addition' ? 'addition' : formula === 'subtraction' ? 'subtraction' : 'mixed',
+                negative: 'no',
+                complexity: engineComplexity,
+                digits: digitCount,
+                digitsAllowed: [digitCount]
+            });
+            if (!ex.terms || ex.terms.length < 2) { attempts++; continue; }
+            numbers = ex.terms;
+            operators = ex.operations;
 
-            // Calculate correct answer using individual operators
             correctAnswer = numbers[0];
             for (let i = 1; i < numbers.length; i++) {
-                const operator = operators[i - 1] || (formula === 'addition' ? '+' : '-');
-                if (operator === '+') {
-                    correctAnswer += numbers[i];
-                } else {
-                    correctAnswer -= numbers[i];
-                }
+                correctAnswer = operators[i - 1] === '+' ? correctAnswer + numbers[i] : correctAnswer - numbers[i];
             }
 
-            // Check if this exercise is a duplicate of any in the history
             isDuplicate = exerciseHistory.some(prevExercise =>
                 exercisesAreEqual({ numbers, operators }, prevExercise)
             );
@@ -4344,7 +4386,7 @@
                 console.warn('Could not generate valid exercise after', maxAttempts, 'attempts');
                 break;
             }
-        } while (correctAnswer <= 0 || correctAnswer >= 100 || isDuplicate);
+        } while (correctAnswer <= 0 || isDuplicate);
 
         // Add this exercise to history
         exerciseHistory.push({ numbers: [...numbers], operators: [...operators] });
@@ -4377,8 +4419,10 @@
             if (index < numbers.length - 1) {
                 const operator = document.createElement('span');
                 operator.textContent = operators[index] || (formula === 'addition' ? '+' : '-');
-                operator.style.fontSize = '1.5rem';
-                operator.style.fontWeight = 'bold';
+                operator.style.fontSize = '2.5rem';
+                operator.style.fontWeight = '700';
+                operator.style.color = '#4b4f8a';
+                operator.style.margin = '0 0.5rem';
                 problemDiv.appendChild(operator);
             }
         });
