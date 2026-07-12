@@ -445,6 +445,13 @@
         animation: pulse 0.5s ease;
     }
 
+    .student-panel .countdown-circle-fc {
+        width: 100px;
+        height: 100px;
+        font-size: 3.5rem;
+        margin: 2rem auto;
+    }
+
     .countdown-circle-fc.count-3 { background: #ef4444; }
     .countdown-circle-fc.count-2 { background: #f59e0b; }
     .countdown-circle-fc.count-1 { background: #10b981; }
@@ -678,23 +685,25 @@
 
     /* Student individual Start button */
     .student-start-btn {
-        padding: 0.8rem 1.5rem;
-        background: #10b981;
-        color: white;
-        border: none;
-        border-radius: 10px;
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: white;
+        color: #8a8f98;
+        border: 4px solid #17b8cc;
         cursor: pointer;
-        font-size: 1.1rem;
+        font-size: 1.35rem;
         font-weight: 600;
-        transition: all 0.3s ease;
-        margin: 1rem auto;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: all 0.2s ease;
+        margin: auto;
         display: block;
-        box-shadow: 0 4px 12px rgba(0, 176, 155, 0.3);
     }
 
     .student-start-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 176, 155, 0.4);
+        background: #e9fbfd;
+        color: #17b8cc;
     }
 
     /* Classwork Mode */
@@ -702,60 +711,53 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.35rem;
-        padding: 0.35rem 0.5rem;
+        margin-bottom: 0;
+        padding: 0.5rem 0.9rem;
+        background: #aeb3bb;
+        border-radius: 8px 8px 0 0;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .classwork-header h2 {
+        color: white;
+        font-size: 1.15rem;
     }
 
     .classwork-controls {
         display: flex;
-        gap: 1rem;
+        gap: 0.6rem;
+        flex-wrap: wrap;
     }
 
     .control-btn {
-        padding: 0.7rem 1.5rem;
+        padding: 0.5rem 1.3rem;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    .settings-btn {
-        background: #6c757d;
+        transition: filter 0.15s ease;
+        background: #9187f2;
         color: white;
     }
 
-    .settings-btn:hover {
-        background: #5a6268;
+    .control-btn:hover {
+        filter: brightness(1.08);
     }
 
-    .start-all-btn {
-        background: #10b981;
+    .settings-btn, .start-all-btn, .results-btn {
+        background: #9187f2;
         color: white;
-    }
-
-    .start-all-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
-    }
-
-    .results-btn {
-        background: var(--primary-color);
-        color: white;
-    }
-
-    .results-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
     }
 
     .students-grid {
         display: grid;
-        gap: 0.4rem;
+        gap: 0;
         height: calc(96vh - 60px);
         overflow-y: auto;
-        padding: 0.2rem;
+        padding: 0;
+        border: 1px solid #d9dce3;
     }
 
     /* Fixed grid layout based on number of students */
@@ -784,14 +786,13 @@
     }
 
     .student-panel {
-        background: #f8f9fa;
-        border: 2px solid #dee2e6;
-        border-radius: 8px;
-        padding: 0.35rem;
+        background: #f6f7fb;
+        border: 1px solid #d9dce3;
+        border-radius: 0;
+        padding: 0.5rem;
         display: flex;
         flex-direction: column;
-        /* min-height: 340px; */
-        /* max-height: 480px; */
+        position: relative;
         overflow-y: auto;
     }
 
@@ -809,27 +810,27 @@
 
     .student-panel .rod-line-mini {
         width: 4px;
-        height: 170px;
+        height: 190px;
     }
 
     .student-panel .bead-mini {
-        width: 30px;
-        height: 16px;
+        width: 38px;
+        height: 20px;
         margin: 1px 0;
     }
 
     .student-panel .divider-mini {
-        top: 56px;
-        width: 36px;
+        top: 62px;
+        width: 44px;
         height: 2px;
     }
 
     .student-panel .bead-mini.top.active {
-        transform: translateY(30px);
+        transform: translateY(32px);
     }
 
     .student-panel .bead-mini.bottom.active {
-        transform: translateY(-31px);
+        transform: translateY(-30px);
     }
 
     /* Compact elements in student panel */
@@ -954,21 +955,35 @@
 
     .student-header {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
         margin-bottom: 0.4rem;
-        padding-bottom: 0.3rem;
-        border-bottom: 1px solid #dee2e6;
+        padding: 0.3rem 4.5rem 0.3rem 0.3rem;
         gap: 0.3rem;
+        position: relative;
     }
 
     .student-name-input {
         padding: 0.3rem 0.4rem;
-        font-size: 0.9rem;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        flex: 1;
-        max-width: 120px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #5b54c9;
+        border: none;
+        border-bottom: 1.5px solid #5b54c9;
+        border-radius: 0;
+        background: transparent;
+        text-align: center;
+        max-width: 180px;
+    }
+
+    .student-name-input:focus {
+        outline: none;
+    }
+
+    .student-header-buttons {
+        position: absolute;
+        right: 0.4rem;
+        top: 0.25rem;
     }
 
     .student-header-buttons {
@@ -1002,18 +1017,18 @@
     }
 
     .student-settings-btn {
-        background: #6c757d;
+        background: #F2860D;
         color: white;
         border: none;
-        border-radius: 4px;
-        padding: 0.3rem 0.5rem;
+        border-radius: 8px;
+        padding: 0.35rem 0.55rem;
         cursor: pointer;
-        font-size: 0.8rem;
-        transition: all 0.2s ease;
+        font-size: 0.95rem;
+        transition: filter 0.15s ease;
     }
 
     .student-settings-btn:hover {
-        background: #5a6268;
+        filter: brightness(1.1);
     }
 
     .delete-student-btn {
@@ -4628,16 +4643,20 @@
 
         // Show countdown 3, 2, 1
         const countdown = panel.querySelector('.countdown');
-        countdown.style.display = 'block';
+        countdown.style.display = 'flex';
 
         let count = 3;
+        countdown.textContent = count;
+        countdown.className = 'countdown countdown-circle-fc count-3';
         const countdownInterval = setInterval(() => {
-            countdown.textContent = count;
             count--;
-
-            if (count < 0) {
+            if (count > 0) {
+                countdown.textContent = count;
+                countdown.className = 'countdown countdown-circle-fc count-' + count;
+            } else {
                 clearInterval(countdownInterval);
                 countdown.style.display = 'none';
+                countdown.className = 'countdown';
                 showSingleStudentExercise(studentId);
             }
         }, 1000);

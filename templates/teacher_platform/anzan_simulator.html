@@ -506,96 +506,164 @@
         font-size: 1.3rem;
     }
 
-    /* Classroom Mode */
+    /* Classroom Mode - gray bar with purple pill controls (like the model) */
     .classwork-controls {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
+        gap: 0.6rem;
+        align-items: center;
         flex-wrap: wrap;
+        background: #aeb3bb;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+        margin-bottom: 0;
     }
 
     .control-btn {
-        padding: 0.7rem 1.5rem;
+        padding: 0.5rem 1.3rem;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    .settings-btn {
-        background: #6c757d;
+        transition: filter 0.15s ease;
+        background: #9187f2;
         color: white;
     }
 
-    .settings-btn:hover {
-        background: #5a6268;
+    .control-btn:hover {
+        filter: brightness(1.08);
     }
 
-    .start-all-btn {
-        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+    .settings-btn, .start-all-btn, .results-btn, .fullscreen-btn {
+        background: #9187f2;
         color: white;
-    }
-
-    .start-all-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
-    }
-
-    .results-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .results-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
     }
 
     .students-setup {
-        margin-bottom: 2rem;
+        margin: 0;
+        background: #aeb3bb;
+        padding: 0 0.9rem 0.5rem;
+        border-radius: 0 0 8px 8px;
     }
 
     .students-count {
         display: flex;
         align-items: center;
         gap: 1rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 0;
+    }
+
+    .students-count .setting-label {
+        color: white;
+        font-weight: 600;
     }
 
     .students-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0;
+        margin: 0.75rem 0 1.5rem;
+        border: 1px solid #d9dce3;
     }
 
     .student-panel {
-        background: #f8f9fa;
-        border: 2px solid #dee2e6;
-        border-radius: 15px;
-        padding: 1.5rem;
+        background: #f6f7fb;
+        border: 1px solid #d9dce3;
+        border-radius: 0;
+        padding: 0.75rem;
         display: flex;
         flex-direction: column;
+        min-height: 300px;
+        position: relative;
     }
 
     .student-header {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #dee2e6;
+        margin-bottom: 0.5rem;
+        padding: 0.3rem 3rem 0.3rem 0.3rem;
         gap: 0.5rem;
+        position: relative;
     }
 
     .student-name-input {
-        padding: 0.5rem;
-        font-size: 1rem;
-        border: 1px solid #ced4da;
-        border-radius: 5px;
-        flex: 1;
+        padding: 0.3rem 0.4rem;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #5b54c9;
+        border: none;
+        border-bottom: 1.5px solid #5b54c9;
+        background: transparent;
+        text-align: center;
+        max-width: 180px;
+    }
+
+    .student-name-input:focus {
+        outline: none;
+    }
+
+    .student-header .settings-btn {
+        position: absolute;
+        right: 0.3rem;
+        top: 0.15rem;
+        background: #F2860D;
+        padding: 0.35rem 0.55rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+    }
+
+    /* Big teal outlined START circle per student */
+    .student-start-circle {
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        background: white;
+        color: #8a8f98;
+        border: 4px solid #17b8cc;
+        cursor: pointer;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: all 0.2s ease;
+        margin: auto;
+        display: block;
+    }
+
+    .student-start-circle:hover {
+        background: #e9fbfd;
+        color: #17b8cc;
+    }
+
+    /* Individual student settings modal */
+    .ss-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ss-modal-overlay.active {
+        display: flex;
+    }
+
+    .ss-modal {
+        background: white;
+        border-radius: 14px;
+        padding: 1.5rem;
+        width: min(560px, 94vw);
+        max-height: 88vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .ss-modal h3 {
+        margin-bottom: 1rem;
+        color: var(--text-primary);
     }
 
     .student-exercise-area {
@@ -710,20 +778,19 @@
 
     /* Fullscreen */
     .fullscreen-btn {
-        padding: 0.7rem 1.5rem;
-        background: #34d399;
+        padding: 0.5rem 1.3rem;
+        background: #9187f2;
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        transition: all 0.3s ease;
+        transition: filter 0.15s ease;
     }
 
     .fullscreen-btn:hover {
-        background: #10b981;
-        transform: translateY(-2px);
+        filter: brightness(1.08);
     }
 
     /* Worksheet PDF preview */
@@ -1374,7 +1441,7 @@
             <div class="settings-row">
                 <span class="setting-label">Complexitate:</span>
                 <div class="setting-controls">
-                    <select id="classroomComplexity" class="level-select">
+                    <select id="classroomComplexity" class="level-select" onchange="applyClassroomComplexity(this.value)">
                         <optgroup label="Calcul Direct">
                             <option value="direct-to-4">Calcul direct cu 4</option>
                             <option value="direct-to-5">Calcul direct cu 5</option>
@@ -1435,6 +1502,66 @@
 
         <div id="studentsContainer" class="students-grid">
             <!-- Student panels will be dynamically generated -->
+        </div>
+
+        <!-- Individual student settings modal -->
+        <div class="ss-modal-overlay" id="studentSettingsOverlay">
+            <div class="ss-modal">
+                <h3 id="ssTitle">Setări elev</h3>
+
+                <div class="settings-row">
+                    <span class="setting-label">Nivel:</span>
+                    <div class="setting-controls">
+                        <select id="ssComplexity" class="level-select" onchange="ssSetComplexity(this.value)"></select>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Cifre:</span>
+                    <div class="setting-controls">
+                        <div class="digit-checkboxes">
+                            <label class="digit-check"><input type="checkbox" data-ss-digit="1" checked onchange="ssToggleDigit()"> 1 cifră</label>
+                            <label class="digit-check"><input type="checkbox" data-ss-digit="2" onchange="ssToggleDigit()"> 2 cifre</label>
+                            <label class="digit-check"><input type="checkbox" data-ss-digit="3" onchange="ssToggleDigit()"> 3 cifre</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Dificultate:</span>
+                    <div class="setting-controls">
+                        <div class="toggle-group">
+                            <button class="toggle-btn" data-ss-difficulty="easy" onclick="ssSetDifficulty(this)">Ușor</button>
+                            <button class="toggle-btn active" data-ss-difficulty="medium" onclick="ssSetDifficulty(this)">Mediu</button>
+                            <button class="toggle-btn" data-ss-difficulty="hard" onclick="ssSetDifficulty(this)">Greu</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Termeni:</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="ssAdjust('terms', -1)">−</button>
+                            <span class="number-display" id="ssTerms">3</span>
+                            <button class="number-btn" onclick="ssAdjust('terms', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <span class="setting-label">Viteză (sec):</span>
+                    <div class="setting-controls">
+                        <div class="number-input">
+                            <button class="number-btn" onclick="ssAdjust('speed', -0.1)">−</button>
+                            <span class="number-display" id="ssSpeed">1.5</span>
+                            <button class="number-btn" onclick="ssAdjust('speed', 0.1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="submit-btn" style="margin-top: 1rem;" onclick="closeStudentSettings()">Salvează</button>
+            </div>
         </div>
 
         <div id="classroomReport" style="display: none;">
@@ -5885,8 +6012,10 @@ function initializeClassroom() {
                 complexity: 'direct-counting',
                 speed: 1.5,
                 digits: 1,
+                digitsAllowed: [1],
+                difficulty: 'medium',
                 fractions: 'none',
-                operation: 'addition',
+                operation: 'mixed',
                 negative: 'no',
                 terms: 3,
                 answerMode: 'input'
@@ -5904,12 +6033,10 @@ function initializeClassroom() {
                 <div class="student-header">
                     <input type="text" class="student-name-input" value="${studentData.name}"
                            onchange="updateStudentName(${i}, this.value)">
-                    <button class="control-btn settings-btn" onclick="showStudentSettings(${i})">⚙️</button>
+                    <button class="control-btn settings-btn" onclick="showStudentSettings(${i})">⚙</button>
                 </div>
-                <div class="student-exercise-area" id="student-area-${i}">
-                    <div style="color: var(--text-secondary); text-align: center;">
-                        Așteaptă să înceapă...
-                    </div>
+                <div class="student-exercise-area" id="student-area-${i}" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                    <button class="student-start-circle" onclick="startSingleStudentAnzan(${i})">Start</button>
                 </div>
             </div>
         `;
@@ -5921,8 +6048,104 @@ function updateStudentName(id, name) {
 }
 
 function showStudentSettings(id) {
-    // TODO: Implement individual student settings modal
-    alert('Setări individuale pentru ' + exerciseData.classroom.students[id].name + ' (în dezvoltare)');
+    const st = exerciseData.classroom.students[id];
+    const modal = document.getElementById('studentSettingsOverlay');
+    modal.dataset.studentId = id;
+    document.getElementById('ssTitle').textContent = 'Setări - ' + st.name;
+
+    // Level select (single source of truth: the training select)
+    const sel = document.getElementById('ssComplexity');
+    if (sel.options.length === 0) {
+        sel.innerHTML = document.getElementById('trainingComplexity').innerHTML;
+    }
+    sel.value = st.settings.complexity;
+
+    // Digit checkboxes
+    modal.querySelectorAll('input[data-ss-digit]').forEach(b => {
+        b.checked = (st.settings.digitsAllowed || [1]).includes(parseInt(b.dataset.ssDigit));
+    });
+
+    // Difficulty buttons
+    modal.querySelectorAll('.toggle-btn[data-ss-difficulty]').forEach(b => {
+        b.classList.toggle('active', b.dataset.ssDifficulty === (st.settings.difficulty || 'medium'));
+    });
+
+    document.getElementById('ssTerms').textContent = st.settings.terms;
+    document.getElementById('ssSpeed').textContent = st.settings.speed.toFixed(1);
+    modal.classList.add('active');
+}
+
+function ssStudent() {
+    const modal = document.getElementById('studentSettingsOverlay');
+    return exerciseData.classroom.students[parseInt(modal.dataset.studentId)];
+}
+
+function ssSetComplexity(value) {
+    ssStudent().settings.complexity = value;
+}
+
+function ssSetDifficulty(btn) {
+    const modal = document.getElementById('studentSettingsOverlay');
+    modal.querySelectorAll('.toggle-btn[data-ss-difficulty]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ssStudent().settings.difficulty = btn.dataset.ssDifficulty;
+}
+
+function ssToggleDigit() {
+    const modal = document.getElementById('studentSettingsOverlay');
+    const boxes = Array.from(modal.querySelectorAll('input[data-ss-digit]'));
+    let selected = boxes.filter(b => b.checked).map(b => parseInt(b.dataset.ssDigit));
+    if (selected.length === 0) {
+        boxes[0].checked = true;
+        selected = [1];
+    }
+    selected.sort();
+    const st = ssStudent();
+    st.settings.digitsAllowed = selected;
+    st.settings.digits = Math.max(...selected);
+}
+
+function ssAdjust(field, delta) {
+    const st = ssStudent();
+    if (field === 'terms') {
+        st.settings.terms = Math.max(2, Math.min(20, st.settings.terms + delta));
+        document.getElementById('ssTerms').textContent = st.settings.terms;
+    } else if (field === 'speed') {
+        st.settings.speed = Math.max(0.1, Math.min(5, Math.round((st.settings.speed + delta) * 10) / 10));
+        document.getElementById('ssSpeed').textContent = st.settings.speed.toFixed(1);
+    }
+}
+
+function closeStudentSettings() {
+    document.getElementById('studentSettingsOverlay').classList.remove('active');
+}
+
+// Per-student start: colored 3-2-1 countdown, then the exercise
+function startSingleStudentAnzan(id) {
+    const student = exerciseData.classroom.students[id];
+    if (student.isRunning) return;
+    student.isRunning = true;
+    student.lastCalculations = [];
+
+    const area = document.getElementById(`student-area-${id}`);
+    let count = 3;
+    area.innerHTML = `<div class="countdown-circle count-3" style="width:100px;height:100px;font-size:3.5rem;margin:auto;">${count}</div>`;
+    const iv = setInterval(() => {
+        count--;
+        if (count > 0) {
+            area.innerHTML = `<div class="countdown-circle count-${count}" style="width:100px;height:100px;font-size:3.5rem;margin:auto;">${count}</div>`;
+        } else {
+            clearInterval(iv);
+            runStudentExercise(id);
+        }
+    }, 1000);
+}
+
+// Global level applies to every student
+function applyClassroomComplexity(value) {
+    exerciseData.classroom.students.forEach(st => {
+        st.settings.complexity = value;
+    });
 }
 
 function toggleClassroomSettings() {
@@ -5933,9 +6156,7 @@ function toggleClassroomSettings() {
 function startClassroom() {
     exerciseData.classroom.students.forEach((student, index) => {
         if (!student.isRunning) {
-            student.isRunning = true;
-            student.lastCalculations = []; // Reset calculation history
-            runStudentExercise(index);
+            startSingleStudentAnzan(index);
         }
     });
 }
