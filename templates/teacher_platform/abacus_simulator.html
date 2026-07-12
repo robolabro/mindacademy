@@ -600,8 +600,9 @@ function initializeAbacusSimulator() {
             topSection.appendChild(topBead);
             rod.appendChild(topSection);
 
-            // Marker dot on the separator for units (0), thousands (3), millions (6)
-            if (placeValue === 0 || placeValue === 3 || placeValue === 6) {
+            // Marker dot on the separator every 3rd column, symmetric around
+            // the units column (…, -6, -3, 0, 3, 6, …)
+            if (placeValue % 3 === 0) {
                 rod.classList.add('has-marker');
             }
 
