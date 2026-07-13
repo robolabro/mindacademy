@@ -140,7 +140,7 @@ AUTH_USER_MODEL = 'accounts.User'
 
 # ==================== AUTHENTICATION ====================
 LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/teacher/'  # Redirect la teacher dashboard după login
+LOGIN_REDIRECT_URL = '/dupa-login/'  # Redirect după login, în funcție de rol (profesor/elev)
 LOGOUT_REDIRECT_URL = 'home'
 
 # ==================== EMAIL CONFIGURATION ====================

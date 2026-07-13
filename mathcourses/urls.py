@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from accounts import views as accounts_views
 
 urlpatterns = [
     # Admin
@@ -32,7 +33,10 @@ urlpatterns = [
     path('teacher/', include('teacher_platform.urls')),  # Dashboard pentru profesori
 
     # Platforma elevi
-    # path('student/', include('student_platform.urls')),  # ← Vom crea mai târziu
+    path('student/', include('student_platform.urls')),
+
+    # Redirect după login, în funcție de rol
+    path('dupa-login/', accounts_views.post_login_redirect, name='post_login_redirect'),
 
     # Simulator Soroban
     # path('soroban/', include('soroban.urls')),

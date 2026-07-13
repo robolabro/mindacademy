@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Platforma Elevului{% endblock %} - MindAcademy</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f6f8;
+            color: #1f2430;
+            min-height: 100vh;
+        }
+        .st-topbar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0.7rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .st-logo { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: #1f2430; }
+        .st-logo-seal {
+            width: 36px; height: 36px; border-radius: 9px;
+            background: #2563eb; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.15rem; font-weight: 700;
+        }
+        .st-logo-text { font-weight: 700; font-size: 1.05rem; }
+        .st-topbar-title { font-size: 1.05rem; font-weight: 600; color: #374151; }
+        .st-user { display: flex; align-items: center; gap: 0.85rem; }
+        .st-user-name { font-weight: 600; font-size: 0.92rem; }
+        .st-user-role {
+            background: #e0edff; color: #1e40af;
+            font-size: 0.75rem; font-weight: 600;
+            padding: 0.15rem 0.6rem; border-radius: 999px;
+        }
+        .st-logout {
+            background: white; color: #b91c1c;
+            border: 1px solid #fecaca; border-radius: 8px;
+            padding: 0.4rem 0.85rem; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: background 0.15s ease;
+        }
+        .st-logout:hover { background: #fef2f2; }
+        .st-main { max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+        .st-messages { max-width: 1080px; margin: 1rem auto 0; padding: 0 1.25rem; }
+        .st-alert {
+            padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 0.6rem;
+            font-size: 0.92rem; font-weight: 500;
+        }
+        .st-alert-success { background: #dcfce7; color: #166534; }
+        .st-alert-error { background: #fee2e2; color: #b91c1c; }
+        .st-alert-info, .st-alert-warning { background: #e0edff; color: #1e40af; }
+        @media (max-width: 640px) {
+            .st-topbar-title { display: none; }
+            .st-user-name { display: none; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="st-topbar">
+        <a href="{% url 'student_platform:my_assignments' %}" class="st-logo">
+            <span class="st-logo-seal">心</span>
+            <span class="st-logo-text">Mind.Academy</span>
+        </a>
+        <div class="st-topbar-title">{% block page_title %}Temele mele{% endblock %}</div>
+        <div class="st-user">
+            <span class="st-user-name">{{ user.get_full_name|default:user.username }}</span>
+            <span class="st-user-role">Elev</span>
+            <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="st-logout">Ieșire</button>
+            </form>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="st-messages">
+        {% for message in messages %}
+        <div class="st-alert st-alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="st-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
