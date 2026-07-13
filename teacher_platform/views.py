@@ -942,6 +942,13 @@ def simulators_list(request):
             'url': 'teacher_platform:anzan_simulator',
             'color': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
         },
+        {
+            'name': 'Exerciții Abac',
+            'description': 'Exerciții pe ecran cu răspuns direct în platformă și verificare imediată',
+            'icon': '✏️',
+            'url': 'teacher_platform:abacus_exercises',
+            'color': 'linear-gradient(135deg, #10b981 0%, #34d399 100%)'
+        },
         # Aici se vor adăuga alte simulatoare în viitor
     ]
 
@@ -958,6 +965,16 @@ def abacus_simulator(request):
     Simulator interactiv de abac
     """
     return render(request, 'teacher_platform/abacus_simulator.html')
+
+
+@login_required
+@teacher_required
+def abacus_exercises(request):
+    """
+    Exerciții Abac - exerciții tip fișă de lucru rezolvate pe ecran,
+    cu răspuns tastat direct și verificare imediată sau la final de set
+    """
+    return render(request, 'teacher_platform/abacus_exercises.html')
 
 
 @login_required

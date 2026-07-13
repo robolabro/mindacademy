@@ -43,6 +43,7 @@ urlpatterns = [
     path('simulatoare/abac/', views.abacus_simulator, name='abacus_simulator'),
     path('simulatoare/cartonase-flash/', views.flashcard_simulator, name='flashcard_simulator'),
     path('simulatoare/anzan/', views.anzan_simulator, name='anzan_simulator'),
+    path('simulatoare/exercitii-abac/', views.abacus_exercises, name='abacus_exercises'),
 
     # API
     path('api/get-modules/', views.get_modules_for_course, name='get_modules_for_course'),

@@ -1,0 +1,596 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+{% load static %}
+
+{% block title %}Exerciții Abac{% endblock %}
+{% block page_title %}Exerciții Abac{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-blue: #2563eb;
+        --accent-pink: #E91E63;
+        --ok-green: #10b981;
+        --err-red: #ef4444;
+        --border-color: #e5e7eb;
+        --text-dark: #1f2430;
+    }
+
+    .exab-container {
+        padding: 0.75rem;
+        background: #f4f5f8;
+        min-height: calc(100vh - 120px);
+    }
+
+    .exab-panel {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 1.5rem;
+        max-width: 1000px;
+        margin: 0 auto 1rem;
+    }
+
+    .exab-panel h2 {
+        margin-bottom: 1.25rem;
+        color: var(--text-dark);
+        font-size: 1.4rem;
+    }
+
+    .settings-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.1rem;
+    }
+
+    .setting-label {
+        font-weight: 500;
+        color: var(--text-dark);
+        min-width: 150px;
+    }
+
+    .setting-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .level-select {
+        padding: 0.6rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: white;
+        font-size: 1rem;
+        min-width: 260px;
+        cursor: pointer;
+    }
+
+    .toggle-btn {
+        padding: 0.5rem 1.2rem;
+        border: 1px solid var(--border-color);
+        background: white;
+        color: var(--text-dark);
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.15s ease;
+    }
+
+    .toggle-btn:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
+    .toggle-btn.active { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+
+    .digit-check {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.8rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        user-select: none;
+        font-size: 0.95rem;
+    }
+
+    .digit-check input { accent-color: var(--primary-blue); width: 16px; height: 16px; }
+
+    .number-input { display: flex; align-items: center; gap: 0.5rem; }
+
+    .number-btn {
+        width: 34px; height: 34px;
+        border: none; border-radius: 50%;
+        background: var(--primary-blue); color: white;
+        font-size: 1.15rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    .number-display { min-width: 46px; text-align: center; font-size: 1.15rem; font-weight: 600; }
+
+    .start-btn {
+        padding: 0.9rem 3rem;
+        background: var(--accent-pink);
+        color: white; border: none; border-radius: 999px;
+        font-size: 1.15rem; font-weight: 700; cursor: pointer;
+        display: block; margin: 1rem auto 0;
+        transition: filter 0.15s ease;
+    }
+    .start-btn:hover { filter: brightness(1.08); }
+
+    /* ===== Exercises area ===== */
+    .exab-header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .exab-score {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .score-chip {
+        border-radius: 10px;
+        padding: 0.45rem 1rem;
+        font-weight: 700;
+        font-size: 1rem;
+        border: 1px solid var(--border-color);
+        background: white;
+    }
+
+    .score-chip.ok { color: var(--ok-green); }
+    .score-chip.err { color: var(--err-red); }
+
+    .exab-grid {
+        display: grid;
+        gap: 1.4rem 0.9rem;
+        justify-content: center;
+        grid-template-columns: repeat(auto-fit, 96px);
+    }
+
+    .exab-ex { text-align: center; }
+
+    .exab-ex-num { font-size: 0.75rem; color: #6b7280; margin-bottom: 0.2rem; }
+
+    .exab-table { border-collapse: collapse; margin: 0 auto; }
+
+    .exab-table td {
+        border: 1.5px solid #23272f;
+        min-width: 60px;
+        height: 36px;
+        text-align: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #23272f;
+        padding: 0 6px;
+    }
+
+    .exab-answer-cell { padding: 0 !important; }
+
+    .exab-answer {
+        width: 100%;
+        height: 34px;
+        border: none;
+        text-align: center;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-blue);
+        background: #f6f8ff;
+        outline: none;
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+    .exab-answer::-webkit-inner-spin-button,
+    .exab-answer::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+    .exab-ex.correct .exab-answer { background: #d9f5e7; color: #067647; }
+    .exab-ex.incorrect .exab-answer { background: #fde3e3; color: #b42318; }
+
+    .exab-correct-value {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--err-red);
+        min-height: 1.2rem;
+        margin-top: 0.25rem;
+    }
+
+    .exab-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1.75rem;
+    }
+
+    .btn-check {
+        padding: 0.8rem 2.5rem;
+        background: var(--primary-blue);
+        color: white; border: none; border-radius: 999px;
+        font-size: 1.05rem; font-weight: 600; cursor: pointer;
+    }
+
+    .btn-new {
+        padding: 0.8rem 2.5rem;
+        background: white; color: var(--text-dark);
+        border: 1px solid var(--border-color); border-radius: 999px;
+        font-size: 1.05rem; font-weight: 600; cursor: pointer;
+    }
+
+    .btn-check:hover { filter: brightness(1.08); }
+    .btn-new:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
+
+    .exab-done-banner {
+        text-align: center;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-top: 1.25rem;
+    }
+
+    .back-btn {
+        padding: 0.6rem 1.5rem;
+        background: white;
+        border: 1px solid var(--border-color);
+        color: var(--text-dark);
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 0.95rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="exab-container">
+    <!-- Settings -->
+    <div class="exab-panel" id="exabSettings">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin: 0;">✏️ Exerciții Abac</h2>
+            <a href="{% url 'teacher_platform:simulators_list' %}" class="back-btn">← Înapoi</a>
+        </div>
+
+        <div class="settings-row">
+            <span class="setting-label">Nivel:</span>
+            <div class="setting-controls">
+                <select id="exabComplexity" class="level-select"></select>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <span class="setting-label">Cifre:</span>
+            <div class="setting-controls">
+                <label class="digit-check"><input type="checkbox" data-digit="1" checked> 1 cifră</label>
+                <label class="digit-check"><input type="checkbox" data-digit="2"> 2 cifre</label>
+                <label class="digit-check"><input type="checkbox" data-digit="3"> 3 cifre</label>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <span class="setting-label">Dificultate:</span>
+            <div class="setting-controls">
+                <button class="toggle-btn" data-difficulty="easy">Ușor</button>
+                <button class="toggle-btn active" data-difficulty="medium">Mediu</button>
+                <button class="toggle-btn" data-difficulty="hard">Greu</button>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <span class="setting-label">Termeni:</span>
+            <div class="setting-controls">
+                <div class="number-input">
+                    <button class="number-btn" onclick="exabAdjust('exabTerms', -1, 2, 10)">−</button>
+                    <span class="number-display" id="exabTerms">3</span>
+                    <button class="number-btn" onclick="exabAdjust('exabTerms', 1, 2, 10)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <span class="setting-label">Număr exerciții:</span>
+            <div class="setting-controls">
+                <div class="number-input">
+                    <button class="number-btn" onclick="exabAdjust('exabCount', -1, 1, 40)">−</button>
+                    <span class="number-display" id="exabCount">10</span>
+                    <button class="number-btn" onclick="exabAdjust('exabCount', 1, 1, 40)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <span class="setting-label">Verificare:</span>
+            <div class="setting-controls">
+                <button class="toggle-btn active" data-checkmode="instant">Imediată</button>
+                <button class="toggle-btn" data-checkmode="final">La finalul setului</button>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="exabStart()">Începe Exercițiile</button>
+    </div>
+
+    <!-- Exercises -->
+    <div class="exab-panel" id="exabArea" style="display: none;">
+        <div class="exab-header-bar">
+            <div class="exab-score">
+                <span class="score-chip ok">✓ <span id="exabCorrect">0</span></span>
+                <span class="score-chip err">✗ <span id="exabIncorrect">0</span></span>
+                <span class="score-chip"><span id="exabProgress">0</span>/<span id="exabTotal">0</span></span>
+            </div>
+            <button class="back-btn" onclick="exabBackToSettings()">⚙ Setări</button>
+        </div>
+
+        <div class="exab-grid" id="exabGrid"></div>
+
+        <div class="exab-actions">
+            <button class="btn-check" id="exabCheckAllBtn" style="display: none;" onclick="exabCheckAll()">Verifică tot</button>
+            <button class="btn-new" onclick="exabStart()">🔄 Set nou</button>
+        </div>
+
+        <div class="exab-done-banner" id="exabDone"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/anzan_engine.js' %}"></script>
+<script>
+// ==================== Exerciții Abac ====================
+const EXAB_LEVELS = [
+    ['Calcul Direct', [
+        ['direct-to-4', 'Calcul direct cu 4'], ['direct-to-5', 'Calcul direct cu 5'],
+        ['direct-to-9', 'Calcul direct cu 9'], ['direct-counting', 'Calcul direct']
+    ]],
+    ['Prietenii Mici', [
+        ['small-plus-1', '+1 = +5-4'], ['small-minus-1', '-1 = +4-5'],
+        ['small-plus-2', '+2 = +5-3'], ['small-minus-2', '-2 = +3-5'],
+        ['small-plus-3', '+3 = +5-2'], ['small-minus-3', '-3 = +2-5'],
+        ['small-plus-4', '+4 = +5-1'], ['small-minus-4', '-4 = +1-5'],
+        ['small-friends-all', 'Prietenii Mici (toate formulele)']
+    ]],
+    ['Prietenii Mari', [
+        ['big-plus-1', '+1 = -9+10'], ['big-plus-2', '+2 = -8+10'], ['big-plus-3', '+3 = -7+10'],
+        ['big-plus-4', '+4 = -6+10'], ['big-plus-5', '+5 = -5+10'],
+        ['big-minus-1', '-1 = -10+9'], ['big-minus-2', '-2 = -10+8'], ['big-minus-3', '-3 = -10+7'],
+        ['big-minus-4', '-4 = -10+6'], ['big-minus-5', '-5 = -10+5'],
+        ['big-plus-9', '+9 = -1+10'], ['big-minus-9', '-9 = -10+1'],
+        ['big-plus-8', '+8 = -2+10'], ['big-minus-8', '-8 = -10+2'],
+        ['big-plus-7', '+7 = -3+10'], ['big-minus-7', '-7 = -10+3'],
+        ['big-plus-6', '+6 = -4+10'], ['big-minus-6', '-6 = -10+4'],
+        ['big-friends-all', 'Prietenii Mari (toate formulele)']
+    ]],
+    ['Familia', [
+        ['family-plus-6', 'Familia +6'], ['family-minus-6', 'Familia -6'],
+        ['family-plus-7', 'Familia +7'], ['family-minus-7', 'Familia -7'],
+        ['family-plus-8', 'Familia +8'], ['family-minus-8', 'Familia -8'],
+        ['family-plus-9', 'Familia +9'], ['family-minus-9', 'Familia -9'],
+        ['family-all', 'Familia (toate formulele)']
+    ]],
+    ['Combinații', [
+        ['mix', 'Mix (toate variantele)']
+    ]]
+];
+
+const exabState = {
+    difficulty: 'medium',
+    checkMode: 'instant',
+    exercises: [],
+    answered: 0,
+    correct: 0,
+    incorrect: 0
+};
+
+// Populate level select with optgroups
+(function () {
+    const sel = document.getElementById('exabComplexity');
+    EXAB_LEVELS.forEach(([groupName, options]) => {
+        const og = document.createElement('optgroup');
+        og.label = groupName;
+        options.forEach(([value, label]) => {
+            const o = document.createElement('option');
+            o.value = value;
+            o.textContent = label;
+            og.appendChild(o);
+        });
+        sel.appendChild(og);
+    });
+    sel.value = 'direct-counting';
+})();
+
+// Toggle buttons (difficulty + check mode)
+document.querySelectorAll('.toggle-btn[data-difficulty]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.toggle-btn[data-difficulty]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        exabState.difficulty = btn.dataset.difficulty;
+    });
+});
+document.querySelectorAll('.toggle-btn[data-checkmode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.toggle-btn[data-checkmode]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        exabState.checkMode = btn.dataset.checkmode;
+    });
+});
+
+function exabAdjust(id, delta, min, max) {
+    const el = document.getElementById(id);
+    el.textContent = Math.max(min, Math.min(max, parseInt(el.textContent) + delta));
+}
+
+function exabDigits() {
+    const selected = Array.from(document.querySelectorAll('.digit-check input:checked'))
+        .map(b => parseInt(b.dataset.digit));
+    if (selected.length === 0) {
+        document.querySelector('.digit-check input[data-digit="1"]').checked = true;
+        return [1];
+    }
+    return selected.sort();
+}
+
+function exabStart() {
+    const complexity = document.getElementById('exabComplexity').value;
+    const terms = parseInt(document.getElementById('exabTerms').textContent);
+    const count = parseInt(document.getElementById('exabCount').textContent);
+    const digitsAllowed = exabDigits();
+
+    exabState.exercises = [];
+    exabState.answered = 0;
+    exabState.correct = 0;
+    exabState.incorrect = 0;
+
+    const seen = new Set();
+    let guard = 0;
+    while (exabState.exercises.length < count && guard++ < count * 6) {
+        const ex = generateExerciseTerms({
+            terms: terms,
+            operation: 'mixed',
+            negative: 'no',
+            complexity: complexity,
+            digits: Math.max(...digitsAllowed),
+            digitsAllowed: digitsAllowed,
+            difficulty: exabState.difficulty
+        });
+        if (ex.terms && ex.terms.length === terms) {
+            // avoid exact duplicates while possible (limited levels may still repeat)
+            const key = ex.terms.join(',') + '|' + ex.operations.join('');
+            if (seen.has(key) && guard < count * 5) continue;
+            seen.add(key);
+            let result = ex.terms[0];
+            ex.operations.forEach((o, i) => {
+                result = o === '+' ? result + ex.terms[i + 1] : result - ex.terms[i + 1];
+            });
+            exabState.exercises.push({ terms: ex.terms, operations: ex.operations, answer: result, checked: false });
+        }
+    }
+
+    exabRender();
+    document.getElementById('exabSettings').style.display = 'none';
+    document.getElementById('exabArea').style.display = 'block';
+}
+
+function exabRender() {
+    const grid = document.getElementById('exabGrid');
+    grid.innerHTML = exabState.exercises.map((ex, i) => {
+        let rows = `<td>${ex.terms[0]}</td>`;
+        for (let k = 0; k < ex.operations.length; k++) {
+            rows += `</tr><tr><td>${ex.operations[k] === '-' ? '-' : ''}${ex.terms[k + 1]}</td>`;
+        }
+        return `
+            <div class="exab-ex" id="exab-ex-${i}">
+                <div class="exab-ex-num">${i + 1}</div>
+                <table class="exab-table">
+                    <tr>${rows}</tr>
+                    <tr><td class="exab-answer-cell">
+                        <input type="number" class="exab-answer" id="exab-in-${i}"
+                               onkeydown="if(event.key==='Enter'){exabSubmit(${i});}"
+                               ${exabState.checkMode === 'instant' ? `onblur="exabSubmit(${i})"` : ''}>
+                    </td></tr>
+                </table>
+                <div class="exab-correct-value" id="exab-cv-${i}"></div>
+            </div>`;
+    }).join('');
+
+    document.getElementById('exabTotal').textContent = exabState.exercises.length;
+    document.getElementById('exabProgress').textContent = '0';
+    document.getElementById('exabCorrect').textContent = '0';
+    document.getElementById('exabIncorrect').textContent = '0';
+    document.getElementById('exabDone').textContent = '';
+    document.getElementById('exabCheckAllBtn').style.display =
+        exabState.checkMode === 'final' ? 'inline-block' : 'none';
+
+    const first = document.getElementById('exab-in-0');
+    if (first) setTimeout(() => first.focus(), 100);
+}
+
+function exabSubmit(i) {
+    if (exabState.checkMode !== 'instant') {
+        // final mode: Enter just moves to the next input
+        const next = document.getElementById(`exab-in-${i + 1}`);
+        if (next) next.focus();
+        return;
+    }
+    exabCheckOne(i, true);
+}
+
+function exabCheckOne(i, advance) {
+    const ex = exabState.exercises[i];
+    if (ex.checked) return;
+    const input = document.getElementById(`exab-in-${i}`);
+    if (input.value === '') { return; }
+
+    const value = parseInt(input.value);
+    ex.checked = true;
+    input.disabled = true;
+    exabState.answered++;
+
+    const wrap = document.getElementById(`exab-ex-${i}`);
+    if (value === ex.answer) {
+        exabState.correct++;
+        wrap.classList.add('correct');
+    } else {
+        exabState.incorrect++;
+        wrap.classList.add('incorrect');
+        document.getElementById(`exab-cv-${i}`).textContent = ex.answer;
+    }
+
+    document.getElementById('exabProgress').textContent = exabState.answered;
+    document.getElementById('exabCorrect').textContent = exabState.correct;
+    document.getElementById('exabIncorrect').textContent = exabState.incorrect;
+
+    if (exabState.answered === exabState.exercises.length) {
+        exabFinish();
+    } else if (advance) {
+        // focus the next unanswered input
+        for (let k = i + 1; k < exabState.exercises.length; k++) {
+            const next = document.getElementById(`exab-in-${k}`);
+            if (next && !next.disabled) { next.focus(); return; }
+        }
+        for (let k = 0; k < i; k++) {
+            const next = document.getElementById(`exab-in-${k}`);
+            if (next && !next.disabled) { next.focus(); return; }
+        }
+    }
+}
+
+function exabCheckAll() {
+    exabState.exercises.forEach((ex, i) => {
+        if (!ex.checked) {
+            const input = document.getElementById(`exab-in-${i}`);
+            if (input.value === '') {
+                // empty answer counts as incorrect at final check
+                ex.checked = true;
+                input.disabled = true;
+                exabState.answered++;
+                exabState.incorrect++;
+                document.getElementById(`exab-ex-${i}`).classList.add('incorrect');
+                document.getElementById(`exab-cv-${i}`).textContent = ex.answer;
+            } else {
+                exabCheckOne(i, false);
+            }
+        }
+    });
+    document.getElementById('exabProgress').textContent = exabState.answered;
+    document.getElementById('exabIncorrect').textContent = exabState.incorrect;
+    exabFinish();
+}
+
+function exabFinish() {
+    const total = exabState.exercises.length;
+    const pct = total ? Math.round((exabState.correct / total) * 100) : 0;
+    const banner = document.getElementById('exabDone');
+    banner.style.color = pct >= 80 ? '#067647' : pct >= 50 ? '#b45309' : '#b42318';
+    banner.textContent = `Set terminat: ${exabState.correct}/${total} corecte (${pct}%)`;
+    document.getElementById('exabCheckAllBtn').style.display = 'none';
+}
+
+function exabBackToSettings() {
+    document.getElementById('exabArea').style.display = 'none';
+    document.getElementById('exabSettings').style.display = 'block';
+}
+</script>
+{% endblock %}
