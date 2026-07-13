@@ -34,6 +34,8 @@ urlpatterns = [
 
     # Teme
     path('teme/', views.assignments_list, name='assignments_list'),
+    path('grupe/<int:group_id>/teme-simulatoare/adauga/', views.simulator_assignment_create, name='simulator_assignment_create'),
+    path('teme-simulatoare/<int:assignment_id>/sterge/', views.simulator_assignment_delete, name='simulator_assignment_delete'),
     path('teme/<int:assignment_id>/', views.assignment_detail, name='assignment_detail'),
 
     # Simulatoare

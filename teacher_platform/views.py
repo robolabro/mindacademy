@@ -5,7 +5,7 @@ from django.db.models import Count, Q, Avg
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
-from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote
+from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
 from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm, TeacherProfileForm
@@ -154,6 +154,11 @@ def group_detail(request, group_id):
         group=group
     ).prefetch_related('submissions').order_by('-due_date')[:10]
 
+    # Temele pe simulatoare (de grupă + personalizate)
+    simulator_assignments = SimulatorAssignment.objects.filter(
+        group=group
+    ).select_related('student').prefetch_related('tasks').order_by('-start_date', '-created_at')[:20]
+
     # Șabloane de lecții disponibile din modulul grupei
     lesson_templates = []
     if group.module:
@@ -168,6 +173,7 @@ def group_detail(request, group_id):
         'upcoming_lessons': upcoming_lessons,
         'past_lessons': past_lessons,
         'assignments': assignments,
+        'simulator_assignments': simulator_assignments,
         'lesson_templates': lesson_templates,
     }
 
@@ -970,3 +976,77 @@ def anzan_simulator(request):
     Simulator Anzan pentru calcul mental rapid cu soroban imaginar
     """
     return render(request, 'teacher_platform/anzan_simulator.html')
+
+
+# ==================== TEME SIMULATOARE ====================
+
+@login_required
+@teacher_required
+def simulator_assignment_create(request, group_id):
+    """
+    Creează o temă pe simulatoare pentru o grupă (sau personalizată
+    pentru un elev). Primește JSON:
+    { title, start_date, end_date, student_id (opțional),
+      tasks: [ { simulator, settings: {...}, target_type, target_value } ] }
+    """
+    import json
+
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({'error': 'JSON invalid'}, status=400)
+
+    tasks = data.get('tasks') or []
+    if not tasks:
+        return JsonResponse({'error': 'Tema trebuie să conțină cel puțin o sarcină'}, status=400)
+    if not data.get('start_date') or not data.get('end_date'):
+        return JsonResponse({'error': 'Perioada temei este obligatorie'}, status=400)
+
+    student = None
+    if data.get('student_id'):
+        membership = GroupStudent.objects.filter(
+            group=group, student_id=data['student_id'], is_active=True
+        ).select_related('student').first()
+        if not membership:
+            return JsonResponse({'error': 'Elevul nu face parte din această grupă'}, status=400)
+        student = membership.student
+
+    assignment = SimulatorAssignment.objects.create(
+        group=group,
+        student=student,
+        title=(data.get('title') or 'Temă de casă')[:200],
+        start_date=data['start_date'],
+        end_date=data['end_date'],
+    )
+
+    valid_simulators = dict(SimulatorTask.SIMULATOR_CHOICES)
+    for i, t in enumerate(tasks):
+        if t.get('simulator') not in valid_simulators:
+            continue
+        SimulatorTask.objects.create(
+            assignment=assignment,
+            order=i + 1,
+            simulator=t['simulator'],
+            settings=t.get('settings') or {},
+            target_type=t.get('target_type') if t.get('target_type') in ('count', 'minutes') else 'count',
+            target_value=max(1, min(999, int(t.get('target_value') or 5))),
+        )
+
+    return JsonResponse({'ok': True, 'assignment_id': assignment.id})
+
+
+@login_required
+@teacher_required
+def simulator_assignment_delete(request, assignment_id):
+    """Șterge o temă pe simulatoare (doar ale profesorului curent)"""
+    assignment = get_object_or_404(
+        SimulatorAssignment, id=assignment_id, group__teacher=request.user
+    )
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    assignment.delete()
+    return JsonResponse({'ok': True})

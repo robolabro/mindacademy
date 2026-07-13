@@ -167,3 +167,26 @@ class LessonNoteAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+from .models import SimulatorAssignment, SimulatorTask, SimulatorTaskResult
+
+
+class SimulatorTaskInline(admin.TabularInline):
+    model = SimulatorTask
+    extra = 1
+
+
+@admin.register(SimulatorAssignment)
+class SimulatorAssignmentAdmin(admin.ModelAdmin):
+    list_display = ['title', 'group', 'student', 'start_date', 'end_date', 'created_at']
+    list_filter = ['group', 'start_date']
+    search_fields = ['title', 'group__name', 'student__first_name', 'student__last_name']
+    inlines = [SimulatorTaskInline]
+
+
+@admin.register(SimulatorTaskResult)
+class SimulatorTaskResultAdmin(admin.ModelAdmin):
+    list_display = ['student', 'task', 'completed_exercises', 'correct', 'incorrect', 'completed', 'updated_at']
+    list_filter = ['completed', 'task__simulator']
+    search_fields = ['student__first_name', 'student__last_name']
