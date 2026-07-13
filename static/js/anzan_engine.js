@@ -1,5 +1,5 @@
 // Anzan exercise generation engine - pure logic extracted from anzan_simulator.html
-// Used by the flashcard exercises mode. No DOM access on load.
+// Used by the flashcard exercises mode and Exercitii Abac. No DOM access on load.
 
 const BIG_FRIENDS_ORDER = [
     {type:'plus',  N:1}, {type:'plus',  N:2}, {type:'plus',  N:3},
@@ -1475,13 +1475,27 @@ function generateExerciseTerms(settings) {
             currentFormulaCount = formulaSlotCount(remainingTerms, remainingTerms >= 5 ? 2 : 1);
             otherTermsCount = remainingTerms - currentFormulaCount;
 
-            // Build distribution array with current formula terms
+            // Build distribution array with current formula terms.
+            // For the "-all" levels (formulaNumber null) every slot picks a
+            // RANDOM formula from the full list - otherwise the generation is
+            // deterministic and every exercise comes out identical (e.g. 5-1+5)
             for (let j = 0; j < currentFormulaCount; j++) {
-                termTypesDistribution.push({
-                    type: 'current',
-                    formulaNumber: formulaNumber,
-                    formulaType: availableFormulas.isPlus ? 'plus' : 'minus'
-                });
+                if (formulaNumber === null && availableFormulas.previousFormulas && availableFormulas.previousFormulas.length > 0) {
+                    const rf = availableFormulas.previousFormulas[
+                        Math.floor(Math.random() * availableFormulas.previousFormulas.length)
+                    ];
+                    termTypesDistribution.push({
+                        type: 'current',
+                        formulaNumber: rf.number,
+                        formulaType: rf.type
+                    });
+                } else {
+                    termTypesDistribution.push({
+                        type: 'current',
+                        formulaNumber: formulaNumber,
+                        formulaType: availableFormulas.isPlus ? 'plus' : 'minus'
+                    });
+                }
             }
 
             // Distribute "other" terms between previous formulas and direct calculations
@@ -2767,8 +2781,10 @@ function generateExerciseTerms(settings) {
         // This promotes pedagogical exercises like: 4+5-2-5+1 or 3-2+5+2-5
         // Including first term for more variety
         // (single-digit only: multi-digit terms are 2-3 digit numbers, a literal
-        // term of 5 is rare and the requirement burns every generation attempt)
-        if (isSmallFriendsLevel(complexity) && digits === 1) {
+        // term of 5 is rare and the requirement burns every generation attempt.
+        // Also only from 4 terms up: with 3 terms, a literal 5 + a plus formula
+        // + a valid result are mutually exclusive and variety collapses)
+        if (isSmallFriendsLevel(complexity) && digits === 1 && terms >= 4) {
             // Check if at least one term is 5
             const hasFive = termsArray.some(term => Math.abs(term) === 5);
 
@@ -2777,15 +2793,16 @@ function generateExerciseTerms(settings) {
             const fivePercentage = termsArray.length > 0 ? (fivesCount / termsArray.length) : 0;
 
             // Dynamic target percentage based on term count (adjusted for all terms)
+            // RELAXED: ~1 five per exercise. The old 60%/50% targets demanded
+            // 2 fives out of 3 terms, which made plus-formula exercises
+            // impossible and collapsed "-all" levels onto 5-N+5 patterns
             let targetPercentage;
             if (terms <= 3) {
-                targetPercentage = 0.6; // 60% for 3 terms (was 80% of non-first)
+                targetPercentage = 0.34; // at least 1 of 3 terms
             } else if (terms === 4) {
-                targetPercentage = 0.5; // 50% for 4 terms (was 70% of non-first)
-            } else if (terms === 5) {
-                targetPercentage = 0.4; // 40% for 5 terms (was 60% of non-first)
+                targetPercentage = 0.25; // at least 1 of 4
             } else {
-                targetPercentage = 0.3; // 30% for 6+ terms (was 50% of non-first)
+                targetPercentage = 0.2;  // at least 1 of 5+
             }
 
             // Require: at least 1 digit 5 total AND meets dynamic percentage requirement
