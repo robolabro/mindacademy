@@ -38,6 +38,9 @@ urlpatterns = [
     # Redirect după login, în funcție de rol
     path('dupa-login/', accounts_views.post_login_redirect, name='post_login_redirect'),
 
+    # Schimbarea obligatorie a parolei temporare (prima autentificare)
+    path('accounts/schimba-parola/', accounts_views.force_password_change, name='force_password_change'),
+
     # Simulator Soroban
     # path('soroban/', include('soroban.urls')),
 ]

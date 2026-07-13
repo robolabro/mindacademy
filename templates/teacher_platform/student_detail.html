@@ -67,6 +67,33 @@
             {% endif %}
         </div>
 
+        <!-- Cont de elev (login pe platforma elevilor) -->
+        <div class="contact-info" style="margin-bottom: 1rem;">
+            <h3>🔑 Cont de Elev</h3>
+            <div class="contact-grid" style="align-items: center;">
+                <div><strong>Username:</strong> <code style="background:#f1f5f9; padding:0.15rem 0.5rem; border-radius:6px;">{{ student.username }}</code></div>
+                <div>
+                    <strong>Parolă:</strong>
+                    {% if student.must_change_password %}
+                        <span style="color:#b45309;">temporară — <code style="background:#fef3c7; padding:0.15rem 0.5rem; border-radius:6px;">{{ student.username }}</code> (o schimbă la prima logare)</span>
+                    {% else %}
+                        <span style="color:#067647;">setată de elev ✓</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <strong>Ultima logare:</strong>
+                    {% if student.last_login %}{{ student.last_login|date:"d M Y H:i" }}{% else %}<span style="color:#6b7280;">nu s-a logat încă</span>{% endif %}
+                </div>
+                <div>
+                    <form method="post" action="{% url 'teacher_platform:student_reset_password' student.id %}"
+                          onsubmit="return confirm('Resetezi parola elevului la valoarea temporară ({{ student.username }})?');" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-secondary">🔄 Resetează parola</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Contact Info -->
         {% if student.email or student.phone or student.parent_email or student.parent_phone %}
         <div class="contact-info">

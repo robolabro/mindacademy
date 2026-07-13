@@ -676,6 +676,40 @@ def student_edit(request, student_id):
 
 @login_required
 @teacher_required
+def student_reset_password(request, student_id):
+    """
+    Resetează parola unui elev la valoarea temporară (username-ul lui).
+    Elevul va fi obligat să-și aleagă o parolă nouă la următoarea logare.
+    """
+    if request.method != 'POST':
+        return redirect('teacher_platform:student_detail', student_id=student_id)
+
+    student = get_object_or_404(User, id=student_id, role='student')
+
+    has_access = GroupStudent.objects.filter(
+        student=student, group__teacher=request.user
+    ).exists() or (
+        hasattr(student, 'student_profile') and student.student_profile.teacher == request.user
+    )
+    if not has_access:
+        messages.error(request, 'Nu aveți acces la acest student.')
+        return redirect('teacher_platform:students_list')
+
+    student.set_password(student.username)
+    student.must_change_password = True
+    student.save(update_fields=['password', 'must_change_password'])
+
+    messages.success(
+        request,
+        f'Parola elevului {student.get_full_name()} a fost resetată. '
+        f'Username: {student.username}, Parolă temporară: {student.username} '
+        f'(va trebui schimbată la prima autentificare).'
+    )
+    return redirect('teacher_platform:student_detail', student_id=student.id)
+
+
+@login_required
+@teacher_required
 def get_modules_for_course(request):
     """
     API endpoint pentru a obține modulele unui curs (pentru AJAX)

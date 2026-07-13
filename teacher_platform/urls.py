@@ -24,6 +24,7 @@ urlpatterns = [
     path('studenti/adauga/', views.student_add, name='student_add'),
     path('studenti/<int:student_id>/', views.student_detail, name='student_detail'),
     path('studenti/<int:student_id>/editeaza/', views.student_edit, name='student_edit'),
+    path('studenti/<int:student_id>/reseteaza-parola/', views.student_reset_password, name='student_reset_password'),
 
     # Lecții
     path('lectii/<int:lesson_id>/', views.lesson_detail, name='lesson_detail'),
