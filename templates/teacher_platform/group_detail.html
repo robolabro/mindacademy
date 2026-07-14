@@ -260,6 +260,56 @@
                     </div>
                     {% endfor %}
                 </div>
+
+                <!-- Progres elevi -->
+                <div class="sim-progress-toggle-row">
+                    <button class="sim-progress-toggle" onclick="toggleSimProgress({{ sa.id }})">
+                        📊 Progres elevi <span class="sim-progress-summary">{{ sa.students_done }}/{{ sa.students_total }} au terminat</span>
+                        <span class="sim-progress-arrow" id="simProgArrow-{{ sa.id }}">▾</span>
+                    </button>
+                </div>
+                <div class="sim-progress" id="simProg-{{ sa.id }}" style="display:none;">
+                    {% if sa.progress_rows %}
+                    <div class="sim-progress-scroll">
+                        <table class="sim-progress-table">
+                            <thead>
+                                <tr>
+                                    <th>Elev</th>
+                                    {% for task in sa.tasks.all %}
+                                    <th>{{ task.order }}. {{ task.short_name }}<br><small>{{ task.get_target_display }}</small></th>
+                                    {% endfor %}
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in sa.progress_rows %}
+                                <tr>
+                                    <td class="sp-student">{{ row.student.get_full_name }}</td>
+                                    {% for cell in row.cells %}
+                                    <td class="sp-cell sp-{{ cell.status }}">
+                                        {% if cell.status == 'none' %}
+                                            <span class="sp-dash">—</span>
+                                        {% else %}
+                                            <div class="sp-main">
+                                                {% if cell.status == 'done' %}✓{% endif %}
+                                                {{ cell.progress_text }} / {{ cell.target_text }}
+                                            </div>
+                                            <div class="sp-sub">✓{{ cell.correct }} ✗{{ cell.incorrect }} · ⏱{{ cell.time_display }}</div>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                    <td class="sp-cell {% if row.all_done %}sp-done{% elif row.done_tasks %}sp-working{% endif %}">
+                                        <div class="sp-main">{{ row.done_tasks }}/{{ row.total_tasks }}</div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="sp-empty">Niciun elev în această temă.</p>
+                    {% endif %}
+                </div>
             </div>
             {% empty %}
             <div class="empty-state">
@@ -341,6 +391,38 @@
 .sim-task-editor { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.6rem 0.75rem; margin-bottom: 0.6rem; }
 .sim-task-editor .remove-task { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; width: 26px; height: 26px; cursor: pointer; margin-left: auto; }
 .sim-builder-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
+
+/* Progres elevi la teme simulatoare */
+.sim-progress-toggle-row { border-top: 1px solid #f1f2f4; margin-top: 0.6rem; padding-top: 0.6rem; }
+.sim-progress-toggle {
+    background: none; border: none; cursor: pointer; font-size: 0.9rem;
+    font-weight: 600; color: #2563eb; display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.2rem 0;
+}
+.sim-progress-summary {
+    background: #eef2ff; color: #4f46e5; font-size: 0.78rem; font-weight: 600;
+    padding: 0.15rem 0.6rem; border-radius: 999px;
+}
+.sim-progress-arrow { transition: transform 0.2s ease; }
+.sim-progress-arrow.open { transform: rotate(180deg); }
+.sim-progress { margin-top: 0.75rem; }
+.sim-progress-scroll { overflow-x: auto; }
+.sim-progress-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+.sim-progress-table th {
+    background: #f8f9fb; color: #6b7280; font-weight: 600; text-align: left;
+    padding: 0.5rem 0.7rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap;
+}
+.sim-progress-table th small { color: #9ca3af; font-weight: 500; }
+.sim-progress-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid #f1f2f4; vertical-align: middle; }
+.sp-student { font-weight: 600; white-space: nowrap; }
+.sp-cell .sp-main { font-weight: 700; white-space: nowrap; }
+.sp-cell .sp-sub { color: #6b7280; font-size: 0.76rem; white-space: nowrap; }
+.sp-cell.sp-done { background: #f0fdf4; }
+.sp-cell.sp-done .sp-main { color: #067647; }
+.sp-cell.sp-working { background: #eff6ff; }
+.sp-cell.sp-working .sp-main { color: #1d4ed8; }
+.sp-dash { color: #c3c8d0; }
+.sp-empty { color: #6b7280; font-size: 0.88rem; }
 </style>
 
 <script>
@@ -431,6 +513,14 @@ function collectSimTasks() {
         });
     });
     return tasks;
+}
+
+function toggleSimProgress(id) {
+    const panel = document.getElementById('simProg-' + id);
+    const arrow = document.getElementById('simProgArrow-' + id);
+    const open = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    arrow.classList.toggle('open', open);
 }
 
 function getCsrf() {

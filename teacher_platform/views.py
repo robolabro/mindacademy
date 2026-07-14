@@ -5,7 +5,7 @@ from django.db.models import Count, Q, Avg
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
-from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask
+from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
 from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm, TeacherProfileForm
@@ -158,6 +158,56 @@ def group_detail(request, group_id):
     simulator_assignments = SimulatorAssignment.objects.filter(
         group=group
     ).select_related('student').prefetch_related('tasks').order_by('-start_date', '-created_at')[:20]
+
+    # Progresul elevilor la temele pe simulatoare (elev × sarcină)
+    _results = SimulatorTaskResult.objects.filter(
+        task__assignment__in=simulator_assignments
+    ).select_related('task')
+    _res_map = {(r.task_id, r.student_id): r for r in _results}
+    _sim_short = {
+        'anzan': 'Anzan', 'flashcards': 'Cartonașe',
+        'flashcard-exercises': 'Exerciții', 'worksheet': 'Fișă',
+    }
+    for sa in simulator_assignments:
+        tasks = list(sa.tasks.all())
+        for t in tasks:
+            t.short_name = _sim_short.get(t.simulator, t.simulator)
+        roster = [sa.student] if sa.student else [gs.student for gs in students]
+        rows = []
+        for st in roster:
+            cells = []
+            done_tasks = 0
+            for t in tasks:
+                r = _res_map.get((t.id, st.id))
+                if r is None:
+                    cells.append({'status': 'none'})
+                    continue
+                if t.target_type == 'minutes':
+                    progress_text = '%d:%02d' % divmod(r.time_spent_seconds, 60)
+                    target_text = f'{t.target_value} min'
+                else:
+                    progress_text = str(r.completed_exercises)
+                    target_text = f'{t.target_value} ex.'
+                if r.completed:
+                    done_tasks += 1
+                cells.append({
+                    'status': 'done' if r.completed else 'working',
+                    'progress_text': progress_text,
+                    'target_text': target_text,
+                    'correct': r.correct,
+                    'incorrect': r.incorrect,
+                    'time_display': '%d:%02d' % divmod(r.time_spent_seconds, 60),
+                })
+            rows.append({
+                'student': st,
+                'cells': cells,
+                'done_tasks': done_tasks,
+                'total_tasks': len(tasks),
+                'all_done': len(tasks) > 0 and done_tasks == len(tasks),
+            })
+        sa.progress_rows = rows
+        sa.students_done = sum(1 for row in rows if row['all_done'])
+        sa.students_total = len(rows)
 
     # Șabloane de lecții disponibile din modulul grupei
     lesson_templates = []
