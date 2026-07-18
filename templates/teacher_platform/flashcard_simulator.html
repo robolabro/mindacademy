@@ -1,4 +1,4 @@
-{% extends 'teacher_platform/base_teacher.html' %}
+{% extends base_template|default:'teacher_platform/base_teacher.html' %}
 {% load static %}
 
 {% block title %}Simulator Cartonașe Flash{% endblock %}
@@ -3977,6 +3977,7 @@
             stats.incorrect++;
             document.getElementById('trainingIncorrect').textContent = stats.incorrect;
         }
+        if (window.MA_logPractice) MA_logPractice('flashcards', { exercises: 1, correct: answer === currentNumber ? 1 : 0, incorrect: answer === currentNumber ? 0 : 1 });
 
         content.innerHTML = ''; // Clear content including input
         content.appendChild(feedback);
@@ -4224,6 +4225,7 @@
             stats.incorrect++;
             document.getElementById('flashIncorrect').textContent = stats.incorrect;
         }
+        if (window.MA_logPractice) MA_logPractice('flashcards', { exercises: 1, correct: answer === currentNumber ? 1 : 0, incorrect: answer === currentNumber ? 0 : 1 });
 
         content.innerHTML = ''; // Clear content including input
         content.appendChild(feedback);
@@ -4274,6 +4276,7 @@
             stats.incorrect++;
             document.getElementById('flashIncorrect').textContent = stats.incorrect;
         }
+        if (window.MA_logPractice) MA_logPractice('flashcards', { exercises: 1, correct: abacusNumber === currentNumber ? 1 : 0, incorrect: abacusNumber === currentNumber ? 0 : 1 });
 
         content.appendChild(feedback);
 

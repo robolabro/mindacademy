@@ -1,93 +1,103 @@
 {% extends 'teacher_platform/base_teacher.html' %}
 
 {% block title %}Teme{% endblock %}
-{% block page_title %}📝 Temele Mele{% endblock %}
+{% block page_title %}📝 Teme pe Simulatoare{% endblock %}
 
 {% block content %}
 <div class="page-container">
-    <!-- Filters -->
-    <div class="filters-bar">
-        <div class="filter-group">
-            <label>Filtrează:</label>
-            <a href="?status=all{% if group_filter %}&group={{ group_filter }}{% endif %}"
-               class="filter-btn {% if status_filter == 'all' %}active{% endif %}">
-                Toate
-            </a>
-            <a href="?status=upcoming{% if group_filter %}&group={{ group_filter }}{% endif %}"
-               class="filter-btn {% if status_filter == 'upcoming' %}active{% endif %}">
-                Viitoare
-            </a>
-            <a href="?status=past{% if group_filter %}&group={{ group_filter }}{% endif %}"
-               class="filter-btn {% if status_filter == 'past' %}active{% endif %}">
-                Trecute
-            </a>
+    <div class="al-toolbar">
+        <form method="get" class="al-filter">
+            <select name="group" onchange="this.form.submit()">
+                <option value="">Toate grupele</option>
+                {% for g in groups %}
+                <option value="{{ g.id }}" {% if group_filter == g.id|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <span class="al-hint">Temele se creează din pagina grupei → tab „🎯 Teme Simulatoare”.</span>
+    </div>
+
+    <h3 class="al-section">📌 Active <span class="al-count">{{ active_entries|length }}</span></h3>
+    {% for e in active_entries %}
+    <a href="{% url 'teacher_platform:group_detail' e.assignment.group.id %}#sim-assignments" class="al-card active">
+        <div class="al-main">
+            <div class="al-title">{{ e.assignment.title }}</div>
+            <div class="al-meta">
+                <span>👥 {{ e.assignment.group.name }}</span>
+                {% if e.assignment.student %}<span>👤 {{ e.assignment.student.get_full_name }}</span>{% endif %}
+                <span>📅 {{ e.assignment.start_date|date:"d M" }} – {{ e.assignment.end_date|date:"d M Y" }}</span>
+                <span>🎯 {{ e.task_count }} sarcin{{ e.task_count|pluralize:"ă,i" }}/zi</span>
+            </div>
         </div>
-        <div class="filter-group">
-            <label>Grupă:</label>
-            <a href="?status={{ status_filter }}" class="filter-btn {% if not group_filter %}active{% endif %}">Toate</a>
-            {% for group in groups %}
-            <a href="?status={{ status_filter }}&group={{ group.id }}"
-               class="filter-btn {% if group_filter == group.id|stringformat:'s' %}active{% endif %}">
-                {{ group.name }}
-            </a>
-            {% endfor %}
+        <div class="al-right">
+            <span class="al-badge">ziua {{ e.elapsed_days }}/{{ e.total_days }}</span>
+            <span class="al-badge {% if e.students_ok == e.students_total and e.students_total %}ok{% endif %}">
+                {{ e.students_ok }}/{{ e.students_total }} elevi la zi
+            </span>
         </div>
-        <a href="/admin/teacher_platform/assignment/add/" class="btn-primary">➕ Creează Temă Nouă</a>
-    </div>
+    </a>
+    {% empty %}
+    <div class="empty-state"><p>Nu sunt teme active. Creează una din pagina unei grupe.</p></div>
+    {% endfor %}
 
-    <!-- Assignments List -->
-    {% if assignments %}
-    <div class="assignments-grid">
-        {% for assignment in assignments %}
-        <a href="{% url 'teacher_platform:assignment_detail' assignment.id %}" class="assignment-card-large">
-            <div class="assignment-header-large">
-                <h3>{{ assignment.title }}</h3>
-                <span class="due-date-badge {% if assignment.due_date < today %}overdue{% elif assignment.due_date == today %}today{% endif %}">
-                    📅 {{ assignment.due_date|date:"d M Y" }}
-                </span>
+    {% if upcoming_entries %}
+    <h3 class="al-section">🔜 Viitoare <span class="al-count">{{ upcoming_entries|length }}</span></h3>
+    {% for e in upcoming_entries %}
+    <a href="{% url 'teacher_platform:group_detail' e.assignment.group.id %}#sim-assignments" class="al-card">
+        <div class="al-main">
+            <div class="al-title">{{ e.assignment.title }}</div>
+            <div class="al-meta">
+                <span>👥 {{ e.assignment.group.name }}</span>
+                {% if e.assignment.student %}<span>👤 {{ e.assignment.student.get_full_name }}</span>{% endif %}
+                <span>📅 începe pe {{ e.assignment.start_date|date:"d M Y" }}</span>
+                <span>🎯 {{ e.task_count }} sarcin{{ e.task_count|pluralize:"ă,i" }}/zi</span>
             </div>
+        </div>
+    </a>
+    {% endfor %}
+    {% endif %}
 
-            <div class="assignment-group-info">
-                <span>👥 {{ assignment.group.name }}</span>
-                {% if assignment.group.module %}
-                <span class="module-badge-small" style="background-color: {{ assignment.group.module.color }}20; color: {{ assignment.group.module.color }};">
-                    {{ assignment.group.module.name }}
-                </span>
-                {% endif %}
+    {% if past_entries %}
+    <h3 class="al-section">🗂️ Încheiate</h3>
+    {% for e in past_entries %}
+    <a href="{% url 'teacher_platform:group_detail' e.assignment.group.id %}#sim-assignments" class="al-card past">
+        <div class="al-main">
+            <div class="al-title">{{ e.assignment.title }}</div>
+            <div class="al-meta">
+                <span>👥 {{ e.assignment.group.name }}</span>
+                {% if e.assignment.student %}<span>👤 {{ e.assignment.student.get_full_name }}</span>{% endif %}
+                <span>📅 {{ e.assignment.start_date|date:"d M" }} – {{ e.assignment.end_date|date:"d M Y" }}</span>
             </div>
-
-            <p class="assignment-description">{{ assignment.description|truncatewords:25 }}</p>
-
-            <div class="assignment-stats-bar">
-                <div class="stat-item">
-                    <span class="stat-icon">📝</span>
-                    <span class="stat-text">{{ assignment.submissions.count }} predări</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-icon">💯</span>
-                    <span class="stat-text">Max: {{ assignment.max_points }} pct</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-icon">📅</span>
-                    <span class="stat-text">Asignat: {{ assignment.assigned_date|date:"d M" }}</span>
-                </div>
-            </div>
-
-            {% if assignment.attachment %}
-            <div class="assignment-attachment">
-                <span>📎 Are fișier atașat</span>
-            </div>
-            {% endif %}
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-state-large">
-        <div class="empty-icon">📝</div>
-        <h2>Nu ai teme create</h2>
-        <p>Creează prima ta temă pentru a o asigna studenților.</p>
-        <a href="/admin/teacher_platform/assignment/add/" class="btn-primary">➕ Creează Prima Temă</a>
-    </div>
+        </div>
+        <div class="al-right">
+            <span class="al-badge {% if e.students_ok == e.students_total and e.students_total %}ok{% endif %}">
+                {{ e.students_ok }}/{{ e.students_total }} elevi au terminat tot
+            </span>
+        </div>
+    </a>
+    {% endfor %}
     {% endif %}
 </div>
+
+<style>
+.al-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.3rem; }
+.al-filter select { padding: 0.5rem 0.7rem; border: 1px solid #d6d9e0; border-radius: 8px; background: white; }
+.al-hint { color: #6b7280; font-size: 0.87rem; }
+.al-section { font-size: 1.05rem; margin: 1.5rem 0 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
+.al-count { background: #e0edff; color: #1e40af; font-size: 0.78rem; padding: 0.1rem 0.6rem; border-radius: 999px; font-weight: 600; }
+.al-card {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+    background: white; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 0.9rem 1.2rem; margin-bottom: 0.7rem; text-decoration: none; color: #1f2430;
+    transition: box-shadow 0.15s ease;
+}
+.al-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.07); }
+.al-card.active { border-left: 4px solid #2563eb; }
+.al-card.past { opacity: 0.72; }
+.al-title { font-weight: 700; }
+.al-meta { color: #6b7280; font-size: 0.86rem; display: flex; gap: 0.9rem; flex-wrap: wrap; margin-top: 0.25rem; }
+.al-right { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.al-badge { background: #eef2ff; color: #4f46e5; font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.7rem; border-radius: 999px; }
+.al-badge.ok { background: #dcfce7; color: #166534; }
+</style>
 {% endblock %}

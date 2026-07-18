@@ -1,7 +1,8 @@
 import json
+from datetime import timedelta
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.db.models import Q, Prefetch
 from django.http import JsonResponse, Http404
@@ -9,7 +10,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from teacher_platform.models import (
-    GroupStudent, SimulatorAssignment, SimulatorTask, SimulatorTaskResult
+    GroupStudent, Lesson, SimulatorAssignment, SimulatorTask,
+    SimulatorTaskResult, SimulatorPracticeLog
 )
 
 
@@ -17,12 +19,21 @@ def student_required(view_func):
     """Decorator pentru a verifica dacă utilizatorul este elev"""
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect('login')
+            return redirect('student_platform:login')
         if request.user.role != 'student':
             messages.error(request, 'Acces restricționat doar pentru elevi.')
             return redirect('home')
         return view_func(request, *args, **kwargs)
     return wrapper
+
+
+class StudentLoginView(LoginView):
+    """Pagina de login dedicată elevilor (mindacademy.ro/student/login/)."""
+    template_name = 'student_platform/login.html'
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        return '/dupa-login/'
 
 
 def _assignments_for_student(user):
@@ -60,8 +71,8 @@ def _task_for_student_or_404(user, task_id):
     return task
 
 
-def _task_progress_data(task, result):
-    """Progresul unui elev la o sarcină, ca dict pentru template/JS."""
+def _day_progress(task, result):
+    """Progresul unei zile la o sarcină, ca dict pentru template/JS."""
     if result is None:
         return {
             'exercises': 0, 'correct': 0, 'incorrect': 0,
@@ -83,17 +94,41 @@ def _task_progress_data(task, result):
     }
 
 
-@login_required
+def assignment_day_states(assignment, tasks, results, today):
+    """
+    Starea fiecărei zile din perioada temei, pentru un elev:
+    done (verde) / missed (roșu) / today (albastru) / upcoming (galben).
+    `results` = dict {(task_id, date): SimulatorTaskResult}.
+    """
+    days = []
+    day = assignment.start_date
+    while day <= assignment.end_date:
+        all_done = bool(tasks) and all(
+            (r := results.get((t.id, day))) is not None and r.completed for t in tasks
+        )
+        if all_done:
+            state = 'done'
+        elif day < today:
+            state = 'missed'
+        elif day == today:
+            state = 'today'
+        else:
+            state = 'upcoming'
+        days.append({'date': day, 'state': state})
+        day += timedelta(days=1)
+    return days
+
+
 @student_required
 def my_assignments(request):
-    """Pagina „Temele mele” — temele active, viitoare și expirate ale elevului."""
+    """Pagina „Temele mele” — teme zilnice: progresul de AZI + calendarul zilelor."""
     student = request.user
-    today = timezone.now().date()
+    today = timezone.localdate()
 
     assignments = _assignments_for_student(student)
 
     results = {
-        r.task_id: r
+        (r.task_id, r.date): r
         for r in SimulatorTaskResult.objects.filter(
             student=student, task__assignment__in=assignments
         )
@@ -101,20 +136,24 @@ def my_assignments(request):
 
     active, upcoming, past = [], [], []
     for assignment in assignments:
-        tasks = []
-        done_count = 0
-        for task in assignment.tasks.all():
-            progress = _task_progress_data(task, results.get(task.id))
+        tasks = list(assignment.tasks.all())
+        task_items = []
+        done_today = 0
+        for task in tasks:
+            progress = _day_progress(task, results.get((task.id, today)))
             if progress['completed']:
-                done_count += 1
-            tasks.append({'task': task, 'progress': progress})
+                done_today += 1
+            task_items.append({'task': task, 'progress': progress})
+
+        days = assignment_day_states(assignment, tasks, results, today)
 
         entry = {
             'assignment': assignment,
-            'tasks': tasks,
-            'done_count': done_count,
+            'tasks': task_items,
+            'days': days,
+            'done_count': done_today,
             'total_count': len(tasks),
-            'all_done': len(tasks) > 0 and done_count == len(tasks),
+            'all_done_today': len(tasks) > 0 and done_today == len(tasks),
         }
         if assignment.start_date > today:
             upcoming.append(entry)
@@ -132,28 +171,67 @@ def my_assignments(request):
         'upcoming_assignments': upcoming,
         'past_assignments': past[:10],
         'today': today,
+        'active_menu': 'teme',
     }
     return render(request, 'student_platform/my_assignments.html', context)
 
 
-@login_required
+@student_required
+def schedule(request):
+    """Orar: lecțiile viitoare + detalii despre grupă și nivelul elevului."""
+    student = request.user
+    today = timezone.localdate()
+
+    memberships = GroupStudent.objects.filter(
+        student=student, is_active=True
+    ).select_related('group', 'group__course', 'group__teacher', 'group__location')
+    group_ids = [m.group_id for m in memberships]
+
+    upcoming_lessons = Lesson.objects.filter(
+        group_id__in=group_ids, date__gte=today
+    ).select_related('group', 'lesson_template').order_by('date', 'start_time')[:12]
+
+    past_lessons = Lesson.objects.filter(
+        group_id__in=group_ids, date__lt=today
+    ).select_related('group', 'lesson_template').order_by('-date', '-start_time')[:6]
+
+    profile = getattr(student, 'student_profile', None)
+
+    context = {
+        'memberships': memberships,
+        'upcoming_lessons': upcoming_lessons,
+        'past_lessons': past_lessons,
+        'soroban_level': profile.soroban_level if profile else None,
+        'active_menu': 'orar',
+    }
+    return render(request, 'student_platform/schedule.html', context)
+
+
+@student_required
+def simulators(request):
+    """Simulatoare pentru antrenament liber (aceleași ca ale profesorului)."""
+    context = {'active_menu': 'simulatoare'}
+    return render(request, 'student_platform/simulators.html', context)
+
+
 @student_required
 def run_task(request, task_id):
     """
     Rulează o sarcină de simulator cu setările impuse de profesor.
     Elevul nu are acces la setări — primește doar exercițiile.
+    Progresul se contorizează pe ZIUA curentă (temele sunt zilnice).
     """
     student = request.user
     task = _task_for_student_or_404(student, task_id)
     assignment = task.assignment
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     if assignment.start_date > today:
         messages.info(request, 'Această temă nu a început încă.')
         return redirect('student_platform:my_assignments')
 
-    result = SimulatorTaskResult.objects.filter(task=task, student=student).first()
-    progress = _task_progress_data(task, result)
+    result = SimulatorTaskResult.objects.filter(task=task, student=student, date=today).first()
+    progress = _day_progress(task, result)
 
     context = {
         'task': task,
@@ -165,39 +243,51 @@ def run_task(request, task_id):
             'type': task.target_type,
             'value': task.target_value,
         }),
+        'active_menu': 'teme',
     }
     return render(request, 'student_platform/task_runner.html', context)
 
 
-@login_required
-@student_required
-@require_POST
-def task_progress(request, task_id):
-    """
-    Endpoint POST: acumulează progresul elevului la o sarcină.
-    Primește delte (exerciții/corecte/greșite/secunde) și le adaugă
-    la SimulatorTaskResult; marchează sarcina finalizată la atingerea țintei.
-    """
-    student = request.user
-    task = _task_for_student_or_404(student, task_id)
-
+def _read_deltas(request):
+    """Citește delte numerice pozitive din corpul JSON al cererii."""
     try:
         data = json.loads(request.body.decode('utf-8'))
     except (json.JSONDecodeError, UnicodeDecodeError):
-        return JsonResponse({'ok': False, 'error': 'JSON invalid'}, status=400)
+        return None
 
-    def _delta(key, cap=1000):
+    def delta(key, cap=1000):
         try:
             value = int(data.get(key, 0))
         except (TypeError, ValueError):
             return 0
         return max(0, min(value, cap))
 
-    result, _ = SimulatorTaskResult.objects.get_or_create(task=task, student=student)
-    result.completed_exercises += _delta('exercises')
-    result.correct += _delta('correct')
-    result.incorrect += _delta('incorrect')
-    result.time_spent_seconds += _delta('time_seconds', cap=3600)
+    return data, delta
+
+
+@student_required
+@require_POST
+def task_progress(request, task_id):
+    """
+    Endpoint POST: acumulează progresul elevului la o sarcină pe ziua curentă.
+    Marchează ziua finalizată la atingerea țintei (exerciții sau minute).
+    """
+    student = request.user
+    task = _task_for_student_or_404(student, task_id)
+
+    parsed = _read_deltas(request)
+    if parsed is None:
+        return JsonResponse({'ok': False, 'error': 'JSON invalid'}, status=400)
+    _, delta = parsed
+
+    today = timezone.localdate()
+    result, _created = SimulatorTaskResult.objects.get_or_create(
+        task=task, student=student, date=today
+    )
+    result.completed_exercises += delta('exercises')
+    result.correct += delta('correct')
+    result.incorrect += delta('incorrect')
+    result.time_spent_seconds += delta('time_seconds', cap=3600)
 
     if not result.completed:
         if task.target_type == 'minutes':
@@ -210,4 +300,34 @@ def task_progress(request, task_id):
 
     result.save()
 
-    return JsonResponse({'ok': True, 'progress': _task_progress_data(task, result)})
+    return JsonResponse({'ok': True, 'progress': _day_progress(task, result)})
+
+
+@student_required
+@require_POST
+def practice_log(request):
+    """
+    Endpoint POST: jurnalizează antrenamentul liber pe simulatoare
+    (în afara temelor) — un rând per elev × simulator × zi.
+    """
+    student = request.user
+    parsed = _read_deltas(request)
+    if parsed is None:
+        return JsonResponse({'ok': False, 'error': 'JSON invalid'}, status=400)
+    data, delta = parsed
+
+    simulator = data.get('simulator')
+    valid = {key for key, _ in SimulatorTask.SIMULATOR_CHOICES}
+    if simulator not in valid:
+        return JsonResponse({'ok': False, 'error': 'Simulator necunoscut'}, status=400)
+
+    log, _created = SimulatorPracticeLog.objects.get_or_create(
+        student=student, simulator=simulator, date=timezone.localdate()
+    )
+    log.exercises += delta('exercises')
+    log.correct += delta('correct')
+    log.incorrect += delta('incorrect')
+    log.time_spent_seconds += delta('time_seconds', cap=3600)
+    log.save()
+
+    return JsonResponse({'ok': True})

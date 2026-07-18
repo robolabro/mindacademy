@@ -457,8 +457,8 @@ class SimulatorTask(models.Model):
     SIMULATOR_CHOICES = [
         ('anzan', 'Calcul mental (Anzan)'),
         ('flashcards', 'Cartonașe flash'),
-        ('flashcard-exercises', 'Exerciții cu cartonașe'),
-        ('worksheet', 'Fișă de lucru (PDF printabil)'),
+        ('flashcard-exercises', 'Exerciții'),
+        ('worksheet', 'Fișă de lucru'),
     ]
     TARGET_CHOICES = [
         ('count', 'Număr de exerciții'),
@@ -492,8 +492,9 @@ class SimulatorTask(models.Model):
 
 class SimulatorTaskResult(models.Model):
     """
-    Rezultatul unui elev la o sarcină de simulator (folosit de platforma
-    elevilor; profesorul vede progresul per copil).
+    Rezultatul ZILNIC al unui elev la o sarcină de simulator.
+    Temele sunt zilnice: ținta sarcinii trebuie atinsă în fiecare zi
+    din perioada temei; fiecare zi are propriul rând de rezultat.
     """
     task = models.ForeignKey(SimulatorTask, on_delete=models.CASCADE,
                              related_name='results', verbose_name="Sarcină")
@@ -504,20 +505,52 @@ class SimulatorTaskResult(models.Model):
         limit_choices_to={'role': 'student'},
         verbose_name="Elev"
     )
+    date = models.DateField(default=timezone.localdate, verbose_name="Ziua")
 
     completed_exercises = models.PositiveIntegerField(default=0, verbose_name="Exerciții rezolvate")
     correct = models.PositiveIntegerField(default=0, verbose_name="Corecte")
     incorrect = models.PositiveIntegerField(default=0, verbose_name="Greșite")
     time_spent_seconds = models.PositiveIntegerField(default=0, verbose_name="Timp lucrat (sec)")
 
-    completed = models.BooleanField(default=False, verbose_name="Finalizată")
+    completed = models.BooleanField(default=False, verbose_name="Finalizată (ziua)")
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Finalizată la")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizat la")
 
     class Meta:
-        verbose_name = "Rezultat Sarcină"
-        verbose_name_plural = "Rezultate Sarcini"
-        unique_together = ['task', 'student']
+        verbose_name = "Rezultat Sarcină (zi)"
+        verbose_name_plural = "Rezultate Sarcini (zile)"
+        unique_together = ['task', 'student', 'date']
 
     def __str__(self):
-        return f"{self.student.get_full_name()} · {self.task} · {self.correct}/{self.completed_exercises}"
+        return f"{self.student.get_full_name()} · {self.task} · {self.date} · {self.correct}/{self.completed_exercises}"
+
+
+class SimulatorPracticeLog(models.Model):
+    """
+    Jurnal ZILNIC de antrenament liber pe simulatoare (în afara temelor).
+    Un rând per elev × simulator × zi; contoarele se acumulează.
+    """
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='practice_logs',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev"
+    )
+    simulator = models.CharField(max_length=30, choices=SimulatorTask.SIMULATOR_CHOICES,
+                                 verbose_name="Simulator")
+    date = models.DateField(default=timezone.localdate, verbose_name="Ziua")
+
+    exercises = models.PositiveIntegerField(default=0, verbose_name="Exerciții")
+    correct = models.PositiveIntegerField(default=0, verbose_name="Corecte")
+    incorrect = models.PositiveIntegerField(default=0, verbose_name="Greșite")
+    time_spent_seconds = models.PositiveIntegerField(default=0, verbose_name="Timp (sec)")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizat la")
+
+    class Meta:
+        verbose_name = "Antrenament Liber (zi)"
+        verbose_name_plural = "Antrenamente Libere (zile)"
+        unique_together = ['student', 'simulator', 'date']
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} · {self.get_simulator_display()} · {self.date}"

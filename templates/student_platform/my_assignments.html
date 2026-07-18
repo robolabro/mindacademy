@@ -14,6 +14,7 @@
         background: #e0edff; color: #1e40af; font-size: 0.8rem;
         padding: 0.1rem 0.6rem; border-radius: 999px; font-weight: 600;
     }
+    .hw-today-note { color: #6b7280; font-size: 0.9rem; font-weight: 400; margin-left: 0.3rem; }
     .hw-card {
         background: white; border: 1px solid #e5e7eb; border-radius: 14px;
         padding: 1.1rem 1.3rem; margin-bottom: 1rem;
@@ -32,12 +33,33 @@
         background: #eef2ff; color: #4f46e5; font-weight: 700;
         font-size: 0.82rem; padding: 0.25rem 0.75rem; border-radius: 999px;
     }
+
+    /* Banda cu zilele temei */
+    .hw-days { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 0.8rem; }
+    .hw-day {
+        width: 26px; height: 26px; border-radius: 7px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.68rem; font-weight: 700; color: white;
+    }
+    .hw-day.done { background: #10b981; }
+    .hw-day.missed { background: #ef4444; }
+    .hw-day.today { background: #2563eb; outline: 2px solid #93c5fd; outline-offset: 1px; }
+    .hw-day.upcoming { background: #fbbf24; }
+    .hw-days-legend { display: flex; gap: 0.9rem; flex-wrap: wrap; margin-top: 0.45rem; font-size: 0.75rem; color: #6b7280; }
+    .hw-days-legend span::before {
+        content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 3px;
+        margin-right: 4px;
+    }
+    .lg-done::before { background: #10b981; }
+    .lg-missed::before { background: #ef4444; }
+    .lg-today::before { background: #2563eb; }
+    .lg-upcoming::before { background: #fbbf24; }
+
     .hw-task {
         display: flex; align-items: center; gap: 0.8rem;
         padding: 0.7rem 0; border-top: 1px solid #f1f2f4; margin-top: 0.7rem;
         flex-wrap: wrap;
     }
-    .hw-task:first-of-type { margin-top: 0.9rem; }
     .hw-task-index {
         width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
         background: #eef2ff; color: #4f46e5; font-size: 0.82rem; font-weight: 700;
@@ -75,23 +97,38 @@
 {% endblock %}
 
 {% block content %}
-    <h2 class="hw-section-title">📌 Teme active <span class="hw-count">{{ active_assignments|length }}</span></h2>
+    <h2 class="hw-section-title">📌 Temele de azi
+        <span class="hw-count">{{ active_assignments|length }}</span>
+        <span class="hw-today-note">{{ today|date:"l, d F" }}</span>
+    </h2>
 
     {% for entry in active_assignments %}
-    <div class="hw-card {% if entry.all_done %}done-hw{% else %}active-hw{% endif %}">
+    <div class="hw-card {% if entry.all_done_today %}done-hw{% else %}active-hw{% endif %}">
         <div class="hw-head">
             <div>
                 <div class="hw-title">{{ entry.assignment.title }}</div>
                 <div class="hw-meta">
                     <span>👥 {{ entry.assignment.group.name }}</span>
-                    <span>📅 {{ entry.assignment.start_date|date:"d M" }} – {{ entry.assignment.end_date|date:"d M Y" }}</span>
+                    <span>📅 {{ entry.assignment.start_date|date:"d M" }} – {{ entry.assignment.end_date|date:"d M Y" }} · zilnic</span>
                 </div>
             </div>
-            {% if entry.all_done %}
-            <span class="hw-done-badge">✓ Temă finalizată</span>
+            {% if entry.all_done_today %}
+            <span class="hw-done-badge">✓ Tema de azi e gata!</span>
             {% else %}
-            <span class="hw-progress-badge">{{ entry.done_count }}/{{ entry.total_count }} sarcini</span>
+            <span class="hw-progress-badge">azi: {{ entry.done_count }}/{{ entry.total_count }} sarcini</span>
             {% endif %}
+        </div>
+
+        <div class="hw-days">
+            {% for d in entry.days %}
+            <span class="hw-day {{ d.state }}" title="{{ d.date|date:'d M' }}">{{ d.date|date:"j" }}</span>
+            {% endfor %}
+        </div>
+        <div class="hw-days-legend">
+            <span class="lg-done">finalizat</span>
+            <span class="lg-missed">nefinalizat</span>
+            <span class="lg-today">azi</span>
+            <span class="lg-upcoming">urmează</span>
         </div>
 
         {% for item in entry.tasks %}
@@ -102,11 +139,14 @@
             <div class="hw-task-info">
                 <div class="hw-task-name">{{ item.task.get_simulator_display }}</div>
                 <div class="hw-chips">
-                    {% if item.task.settings.complexity_label %}<span class="chip">{{ item.task.settings.complexity_label }}</span>{% endif %}
+                    {% if item.task.simulator != 'flashcards' %}
+                        {% if item.task.settings.complexity_label %}<span class="chip">{{ item.task.settings.complexity_label }}</span>{% endif %}
+                        {% if item.task.settings.difficulty_label %}<span class="chip">{{ item.task.settings.difficulty_label }}</span>{% endif %}
+                        {% if item.task.settings.terms %}<span class="chip">{{ item.task.settings.terms }} termeni</span>{% endif %}
+                    {% endif %}
                     {% if item.task.settings.digits_label %}<span class="chip">{{ item.task.settings.digits_label }}</span>{% endif %}
-                    {% if item.task.settings.difficulty_label %}<span class="chip">{{ item.task.settings.difficulty_label }}</span>{% endif %}
-                    {% if item.task.settings.terms %}<span class="chip">{{ item.task.settings.terms }} termeni</span>{% endif %}
-                    <span class="chip chip-target">Țintă: {{ item.task.get_target_display }}</span>
+                    {% if item.task.settings.speed %}<span class="chip">Viteză {{ item.task.settings.speed }}</span>{% endif %}
+                    <span class="chip chip-target">Zilnic: {{ item.task.get_target_display }}</span>
                 </div>
             </div>
             <div class="hw-task-progress">
@@ -115,23 +155,27 @@
                 </div>
                 <div class="hw-bar-label">
                     {% if item.task.target_type == 'minutes' %}
-                        {{ item.progress.time_display }} / {{ item.task.target_value }} min
+                        azi: {{ item.progress.time_display }} / {{ item.task.target_value }} min
                     {% else %}
-                        {{ item.progress.exercises }} / {{ item.task.target_value }} exerciții
+                        azi: {{ item.progress.exercises }} / {{ item.task.target_value }} exerciții
                     {% endif %}
                     {% if item.progress.exercises %} · {{ item.progress.correct }} corecte{% endif %}
                 </div>
             </div>
-            <a href="{% url 'student_platform:run_task' item.task.id %}" class="hw-start-btn {% if item.progress.completed %}done{% endif %}">
-                {% if item.progress.completed %}Exersează{% elif item.progress.exercises %}Continuă{% else %}Începe{% endif %}
+            {% if item.progress.completed %}
+            <a href="{% url 'student_platform:simulators' %}" class="hw-start-btn done">Exersează</a>
+            {% else %}
+            <a href="{% url 'student_platform:run_task' item.task.id %}" class="hw-start-btn">
+                {% if item.progress.exercises %}Continuă{% else %}Începe{% endif %}
             </a>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
     {% empty %}
     <div class="hw-empty">
         <div class="hw-empty-icon">🎉</div>
-        <p>Nu ai teme active momentan. Bravo, ești la zi!</p>
+        <p>Nu ai teme active momentan. Poți exersa liber în <a href="{% url 'student_platform:simulators' %}">Simulatoare</a>!</p>
     </div>
     {% endfor %}
 
@@ -145,7 +189,7 @@
                 <div class="hw-meta">
                     <span>👥 {{ entry.assignment.group.name }}</span>
                     <span>📅 începe pe {{ entry.assignment.start_date|date:"d M Y" }}</span>
-                    <span>{{ entry.total_count }} sarcin{{ entry.total_count|pluralize:"ă,i" }}</span>
+                    <span>{{ entry.total_count }} sarcin{{ entry.total_count|pluralize:"ă,i" }} pe zi</span>
                 </div>
             </div>
         </div>
@@ -156,7 +200,7 @@
     {% if past_assignments %}
     <h2 class="hw-section-title">🗂️ Teme încheiate</h2>
     {% for entry in past_assignments %}
-    <div class="hw-card past-hw {% if entry.all_done %}done-hw{% endif %}">
+    <div class="hw-card past-hw">
         <div class="hw-head">
             <div>
                 <div class="hw-title">{{ entry.assignment.title }}</div>
@@ -165,11 +209,11 @@
                     <span>📅 {{ entry.assignment.start_date|date:"d M" }} – {{ entry.assignment.end_date|date:"d M Y" }}</span>
                 </div>
             </div>
-            {% if entry.all_done %}
-            <span class="hw-done-badge">✓ Finalizată</span>
-            {% else %}
-            <span class="hw-progress-badge">{{ entry.done_count }}/{{ entry.total_count }} sarcini</span>
-            {% endif %}
+        </div>
+        <div class="hw-days">
+            {% for d in entry.days %}
+            <span class="hw-day {{ d.state }}" title="{{ d.date|date:'d M' }}">{{ d.date|date:"j" }}</span>
+            {% endfor %}
         </div>
     </div>
     {% endfor %}

@@ -1,4 +1,4 @@
-{% extends 'teacher_platform/base_teacher.html' %}
+{% extends base_template|default:'teacher_platform/base_teacher.html' %}
 {% load static %}
 
 {% block title %}Exerciții Abac{% endblock %}
@@ -541,6 +541,8 @@ function exabCheckOne(i, advance) {
     document.getElementById('exabProgress').textContent = exabState.answered;
     document.getElementById('exabCorrect').textContent = exabState.correct;
     document.getElementById('exabIncorrect').textContent = exabState.incorrect;
+
+    if (window.MA_logPractice) MA_logPractice('flashcard-exercises', { exercises: 1, correct: value === ex.answer ? 1 : 0, incorrect: value === ex.answer ? 0 : 1 });
 
     if (exabState.answered === exabState.exercises.length) {
         exabFinish();

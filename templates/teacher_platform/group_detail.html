@@ -264,7 +264,7 @@
                 <!-- Progres elevi -->
                 <div class="sim-progress-toggle-row">
                     <button class="sim-progress-toggle" onclick="toggleSimProgress({{ sa.id }})">
-                        📊 Progres elevi <span class="sim-progress-summary">{{ sa.students_done }}/{{ sa.students_total }} au terminat</span>
+                        📊 Progres elevi <span class="sim-progress-summary">{{ sa.students_done }}/{{ sa.students_total }} la zi</span>
                         <span class="sim-progress-arrow" id="simProgArrow-{{ sa.id }}">▾</span>
                     </button>
                 </div>
@@ -284,7 +284,14 @@
                             <tbody>
                                 {% for row in sa.progress_rows %}
                                 <tr>
-                                    <td class="sp-student">{{ row.student.get_full_name }}</td>
+                                    <td class="sp-student">
+                                        {{ row.student.get_full_name }}
+                                        <div class="sp-days">
+                                            {% for d in row.days %}
+                                            <span class="sp-day {{ d.state }}" title="{{ d.date|date:'d M' }}"></span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
                                     {% for cell in row.cells %}
                                     <td class="sp-cell sp-{{ cell.status }}">
                                         {% if cell.status == 'none' %}
@@ -292,14 +299,14 @@
                                         {% else %}
                                             <div class="sp-main">
                                                 {% if cell.status == 'done' %}✓{% endif %}
-                                                {{ cell.progress_text }} / {{ cell.target_text }}
+                                                {{ cell.days_done }}/{{ cell.days_elapsed }} zile
                                             </div>
-                                            <div class="sp-sub">✓{{ cell.correct }} ✗{{ cell.incorrect }} · ⏱{{ cell.time_display }}</div>
+                                            <div class="sp-sub">{{ cell.exercises }} ex. · {{ cell.accuracy }}% corecte · ⏱{{ cell.time_display }}</div>
                                         {% endif %}
                                     </td>
                                     {% endfor %}
-                                    <td class="sp-cell {% if row.all_done %}sp-done{% elif row.done_tasks %}sp-working{% endif %}">
-                                        <div class="sp-main">{{ row.done_tasks }}/{{ row.total_tasks }}</div>
+                                    <td class="sp-cell {% if row.all_done %}sp-done{% elif row.green_days %}sp-working{% endif %}">
+                                        <div class="sp-main">{{ row.green_days }}/{{ row.elapsed_days }} zile</div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -334,11 +341,78 @@
                 <label>Până la <input type="date" id="simHwEnd"></label>
             </div>
 
-            <div id="simTasksContainer"></div>
+            <div id="simTasksList"></div>
 
             <div class="sim-builder-actions">
-                <button class="btn-secondary" onclick="addSimTaskRow()">+ Adaugă sarcină</button>
+                <button class="btn-secondary" onclick="openTaskModal()">+ Adaugă sarcină</button>
                 <button class="btn-primary" onclick="saveSimAssignment()">💾 Salvează tema</button>
+            </div>
+        </div>
+
+        <!-- Modal: sarcină nouă -->
+        <div class="stm-backdrop" id="simTaskModal">
+            <div class="stm-modal">
+                <div class="stm-head">
+                    <h4>Sarcină</h4>
+                    <button class="stm-close" onclick="closeTaskModal()">✕</button>
+                </div>
+
+                <div class="stm-simulators">
+                    <button class="stm-sim active" data-sim="anzan" onclick="stmPickSim('anzan')">🧠<span>Calcul mental</span></button>
+                    <button class="stm-sim" data-sim="flashcards" onclick="stmPickSim('flashcards')">🎴<span>Cartonașe flash</span></button>
+                    <button class="stm-sim" data-sim="flashcard-exercises" onclick="stmPickSim('flashcard-exercises')">✏️<span>Exerciții</span></button>
+                    <button class="stm-sim" data-sim="worksheet" onclick="stmPickSim('worksheet')">📝<span>Fișă de lucru</span></button>
+                </div>
+
+                <div class="stm-fields">
+                    <div class="stm-field" data-for="anzan flashcard-exercises worksheet">
+                        <label>Formule (nivel)</label>
+                        <select id="stmLevel"></select>
+                    </div>
+                    <div class="stm-field" data-for="anzan flashcards flashcard-exercises worksheet">
+                        <label>Cifre</label>
+                        <select id="stmDigits">
+                            <option value="1">1 cifră</option>
+                            <option value="2">2 cifre</option>
+                            <option value="3">3 cifre</option>
+                            <option value="1,2">1-2 cifre</option>
+                            <option value="2,3">2-3 cifre</option>
+                        </select>
+                    </div>
+                    <div class="stm-field" data-for="anzan flashcard-exercises worksheet">
+                        <label>Dificultate</label>
+                        <select id="stmDifficulty">
+                            <option value="easy">Ușor</option>
+                            <option value="medium" selected>Mediu</option>
+                            <option value="hard">Greu</option>
+                        </select>
+                    </div>
+                    <div class="stm-field" data-for="anzan flashcards">
+                        <label>Viteză (secunde)</label>
+                        <input type="number" id="stmSpeed" value="1.5" min="0.1" max="5" step="0.1">
+                    </div>
+                    <div class="stm-field" data-for="anzan flashcard-exercises worksheet">
+                        <label>Termeni</label>
+                        <input type="number" id="stmTerms" value="3" min="2" max="20">
+                    </div>
+                </div>
+
+                <div class="stm-target">
+                    <label>Țintă zilnică</label>
+                    <div class="stm-target-row">
+                        <select id="stmTargetType">
+                            <option value="count">Număr de exerciții</option>
+                            <option value="minutes">Minute de lucru</option>
+                        </select>
+                        <input type="number" id="stmTargetValue" value="5" min="1" max="999">
+                        <span id="stmTargetUnit">exerciții / zi</span>
+                    </div>
+                </div>
+
+                <div class="stm-actions">
+                    <button class="btn-secondary" onclick="closeTaskModal()">Anulează</button>
+                    <button class="btn-primary" onclick="stmConfirm()">OK</button>
+                </div>
             </div>
         </div>
     </div>
@@ -391,6 +465,45 @@
 .sim-task-editor { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.6rem 0.75rem; margin-bottom: 0.6rem; }
 .sim-task-editor .remove-task { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; width: 26px; height: 26px; cursor: pointer; margin-left: auto; }
 .sim-builder-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
+.sim-tasks-empty { color: #6b7280; font-size: 0.88rem; padding: 0.4rem 0; }
+
+/* Modal sarcină */
+.stm-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+    z-index: 500; align-items: flex-start; justify-content: center;
+    padding: 5rem 1.5rem 3rem; overflow-y: auto;
+}
+.stm-backdrop.open { display: flex; }
+.stm-modal {
+    background: white; border-radius: 16px; width: 100%; max-width: 640px;
+    padding: 1.5rem 1.7rem;
+}
+.stm-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.1rem; }
+.stm-head h4 { font-size: 1.15rem; }
+.stm-close { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #6b7280; }
+.stm-simulators { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.6rem; margin-bottom: 1.2rem; }
+.stm-sim {
+    background: #f8f9fb; border: 2px solid #e5e7eb; border-radius: 12px;
+    padding: 0.75rem 0.5rem; cursor: pointer; font-size: 1.4rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+}
+.stm-sim span { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.stm-sim.active { border-color: #2563eb; background: #eff6ff; }
+.stm-sim.active span { color: #1d4ed8; }
+.stm-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.85rem; margin-bottom: 1.2rem; }
+.stm-field label, .stm-target > label {
+    display: block; font-size: 0.8rem; font-weight: 600; color: #6b7280; margin-bottom: 0.3rem;
+}
+.stm-field select, .stm-field input, .stm-target-row select, .stm-target-row input {
+    width: 100%; padding: 0.5rem 0.6rem; border: 1px solid #d6d9e0; border-radius: 8px;
+    background: white; font-size: 0.9rem;
+}
+.stm-target { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1.2rem; }
+.stm-target-row { display: flex; gap: 0.6rem; align-items: center; }
+.stm-target-row select { flex: 1; width: auto; }
+.stm-target-row input { width: 90px; }
+.stm-target-row span { font-size: 0.85rem; color: #166534; font-weight: 600; white-space: nowrap; }
+.stm-actions { display: flex; justify-content: flex-end; gap: 0.7rem; }
 
 /* Progres elevi la teme simulatoare */
 .sim-progress-toggle-row { border-top: 1px solid #f1f2f4; margin-top: 0.6rem; padding-top: 0.6rem; }
@@ -423,6 +536,12 @@
 .sp-cell.sp-working .sp-main { color: #1d4ed8; }
 .sp-dash { color: #c3c8d0; }
 .sp-empty { color: #6b7280; font-size: 0.88rem; }
+.sp-days { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 0.3rem; max-width: 220px; }
+.sp-day { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.sp-day.done { background: #10b981; }
+.sp-day.missed { background: #ef4444; }
+.sp-day.today { background: #2563eb; }
+.sp-day.upcoming { background: #fbbf24; }
 </style>
 
 <script>
@@ -452,67 +571,103 @@ const SIM_LEVELS = [
     ['mix', 'Mix (toate variantele)']
 ];
 
-function addSimTaskRow() {
-    const container = document.getElementById('simTasksContainer');
-    const row = document.createElement('div');
-    row.className = 'sim-task-editor';
-    row.innerHTML = `
-        <select class="t-simulator">
-            <option value="anzan">Calcul mental (Anzan)</option>
-            <option value="flashcards">Cartonașe flash</option>
-            <option value="flashcard-exercises">Exerciții cu cartonașe</option>
-            <option value="worksheet">Fișă de lucru (PDF)</option>
-        </select>
-        <select class="t-level">${SIM_LEVELS.map(l => `<option value="${l[0]}">${l[1]}</option>`).join('')}</select>
-        <select class="t-digits">
-            <option value="1">1 cifră</option>
-            <option value="2">2 cifre</option>
-            <option value="3">3 cifre</option>
-            <option value="1,2">1-2 cifre</option>
-            <option value="2,3">2-3 cifre</option>
-        </select>
-        <select class="t-difficulty">
-            <option value="easy">Ușor</option>
-            <option value="medium" selected>Mediu</option>
-            <option value="hard">Greu</option>
-        </select>
-        <label>Viteză <input type="number" class="t-speed" value="1.5" min="0.1" max="5" step="0.1" style="width:64px"></label>
-        <label>Termeni <input type="number" class="t-terms" value="3" min="2" max="20" style="width:56px"></label>
-        <select class="t-target-type">
-            <option value="count">Exerciții</option>
-            <option value="minutes">Minute</option>
-        </select>
-        <input type="number" class="t-target-value" value="5" min="1" max="999" style="width:60px">
-        <button class="remove-task" onclick="this.parentElement.remove()">✕</button>
-    `;
-    container.appendChild(row);
+const SIM_NAMES = {
+    'anzan': 'Calcul mental (Anzan)',
+    'flashcards': 'Cartonașe flash',
+    'flashcard-exercises': 'Exerciții',
+    'worksheet': 'Fișă de lucru'
+};
+
+// Sarcinile temei în construcție
+let simTasks = [];
+let stmSimulator = 'anzan';
+
+function openTaskModal() {
+    document.getElementById('simTaskModal').classList.add('open');
+    stmPickSim(stmSimulator);
+}
+
+function closeTaskModal() {
+    document.getElementById('simTaskModal').classList.remove('open');
+}
+
+function stmPickSim(sim) {
+    stmSimulator = sim;
+    document.querySelectorAll('.stm-sim').forEach(b =>
+        b.classList.toggle('active', b.dataset.sim === sim));
+    document.querySelectorAll('.stm-field').forEach(f =>
+        f.style.display = f.dataset.for.split(' ').includes(sim) ? 'block' : 'none');
+}
+
+function stmTargetUnitUpdate() {
+    document.getElementById('stmTargetUnit').textContent =
+        document.getElementById('stmTargetType').value === 'minutes' ? 'minute / zi' : 'exerciții / zi';
+}
+
+function stmConfirm() {
+    const digitsVal = document.getElementById('stmDigits').value;
+    const digitsArr = digitsVal.split(',').map(Number);
+    const settings = {
+        digits: digitsArr,
+        digits_label: digitsVal.replace(',', '-') + (digitsArr.length === 1 && digitsArr[0] === 1 ? ' cifră' : ' cifre')
+    };
+    if (stmSimulator === 'flashcards') {
+        settings.speed = parseFloat(document.getElementById('stmSpeed').value) || 1.5;
+    } else {
+        const levelSel = document.getElementById('stmLevel');
+        const difficulty = document.getElementById('stmDifficulty').value;
+        settings.complexity = levelSel.value;
+        settings.complexity_label = levelSel.options[levelSel.selectedIndex].text;
+        settings.difficulty = difficulty;
+        settings.difficulty_label = difficulty === 'easy' ? 'Ușor' : difficulty === 'hard' ? 'Greu' : 'Mediu';
+        settings.terms = parseInt(document.getElementById('stmTerms').value) || 3;
+        if (stmSimulator === 'anzan') {
+            settings.speed = parseFloat(document.getElementById('stmSpeed').value) || 1.5;
+        }
+    }
+    simTasks.push({
+        simulator: stmSimulator,
+        settings: settings,
+        target_type: document.getElementById('stmTargetType').value,
+        target_value: parseInt(document.getElementById('stmTargetValue').value) || 5
+    });
+    renderSimTasks();
+    closeTaskModal();
+}
+
+function removeSimTask(i) {
+    simTasks.splice(i, 1);
+    renderSimTasks();
+}
+
+function renderSimTasks() {
+    const container = document.getElementById('simTasksList');
+    if (simTasks.length === 0) {
+        container.innerHTML = '<p class="sim-tasks-empty">Nicio sarcină încă — apasă „+ Adaugă sarcină”.</p>';
+        return;
+    }
+    container.innerHTML = simTasks.map((t, i) => {
+        const s = t.settings;
+        const chips = [];
+        if (s.complexity_label) chips.push(s.complexity_label);
+        if (s.digits_label) chips.push(s.digits_label);
+        if (s.difficulty_label) chips.push(s.difficulty_label);
+        if (s.speed) chips.push('Viteză ' + s.speed);
+        if (s.terms) chips.push(s.terms + ' termeni');
+        const target = t.target_type === 'minutes' ? t.target_value + ' min/zi' : t.target_value + ' ex./zi';
+        return `
+            <div class="sim-task-editor">
+                <span class="sim-task-index">${i + 1}</span>
+                <strong>${SIM_NAMES[t.simulator]}</strong>
+                <span class="chips">${chips.map(c => `<span class="chip">${c}</span>`).join('')}</span>
+                <span class="chip chip-target">${target}</span>
+                <button class="remove-task" onclick="removeSimTask(${i})">✕</button>
+            </div>`;
+    }).join('');
 }
 
 function collectSimTasks() {
-    const rows = document.querySelectorAll('#simTasksContainer .sim-task-editor');
-    const tasks = [];
-    rows.forEach(row => {
-        const levelSel = row.querySelector('.t-level');
-        const digitsVal = row.querySelector('.t-digits').value;
-        const difficulty = row.querySelector('.t-difficulty').value;
-        const digitsArr = digitsVal.split(',').map(Number);
-        tasks.push({
-            simulator: row.querySelector('.t-simulator').value,
-            settings: {
-                complexity: levelSel.value,
-                complexity_label: levelSel.options[levelSel.selectedIndex].text,
-                digits: digitsArr,
-                digits_label: digitsVal.replace(',', '-') + (digitsArr.length === 1 && digitsArr[0] === 1 ? ' cifră' : ' cifre'),
-                difficulty: difficulty,
-                difficulty_label: difficulty === 'easy' ? 'Ușor' : difficulty === 'hard' ? 'Greu' : 'Mediu',
-                speed: parseFloat(row.querySelector('.t-speed').value) || 1.5,
-                terms: parseInt(row.querySelector('.t-terms').value) || 3
-            },
-            target_type: row.querySelector('.t-target-type').value,
-            target_value: parseInt(row.querySelector('.t-target-value').value) || 5
-        });
-    });
-    return tasks;
+    return simTasks;
 }
 
 function toggleSimProgress(id) {
@@ -562,10 +717,13 @@ async function deleteSimAssignment(id) {
     else { alert(data.error || 'Eroare la ștergere'); }
 }
 
-// pornește cu o sarcină pregătită
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('simTasksContainer')) {
-        addSimTaskRow();
+    if (document.getElementById('simTasksList')) {
+        renderSimTasks();
+        // popularea nivelurilor în modal
+        document.getElementById('stmLevel').innerHTML =
+            SIM_LEVELS.map(l => `<option value="${l[0]}">${l[1]}</option>`).join('');
+        document.getElementById('stmTargetType').addEventListener('change', stmTargetUnitUpdate);
         // perioada implicită: azi -> peste 7 zile
         const today = new Date();
         const week = new Date(Date.now() + 7 * 86400000);

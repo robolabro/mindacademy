@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Count, Q, Avg
+from django.db.models import Count, Q, Avg, Sum
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
-from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult
+from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
 from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm, TeacherProfileForm
@@ -21,6 +21,31 @@ def teacher_required(view_func):
             return redirect('home')
         return view_func(request, *args, **kwargs)
     return wrapper
+
+
+def simulator_access(view_func):
+    """
+    Decorator pentru simulatoare: acces atât pentru profesori, cât și
+    pentru elevi (antrenament liber acasă).
+    """
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.user.role not in ('teacher', 'student'):
+            messages.error(request, 'Acces restricționat.')
+            return redirect('home')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def _simulator_context(request):
+    """Context comun pentru paginile de simulatoare (profesor sau elev)."""
+    is_student = request.user.role == 'student'
+    return {
+        'base_template': 'student_platform/base_student.html' if is_student else 'teacher_platform/base_teacher.html',
+        'is_student_user': is_student,
+        'active_menu': 'simulatoare',
+    }
 
 
 @login_required
@@ -159,51 +184,70 @@ def group_detail(request, group_id):
         group=group
     ).select_related('student').prefetch_related('tasks').order_by('-start_date', '-created_at')[:20]
 
-    # Progresul elevilor la temele pe simulatoare (elev × sarcină)
+    # Progresul elevilor la temele pe simulatoare (zilnic: elev × sarcină × zi)
+    from student_platform.views import assignment_day_states
+
     _results = SimulatorTaskResult.objects.filter(
         task__assignment__in=simulator_assignments
-    ).select_related('task')
-    _res_map = {(r.task_id, r.student_id): r for r in _results}
+    )
+    _totals = {}
+    _by_day = {}
+    for r in _results:
+        key = (r.task_id, r.student_id)
+        t = _totals.setdefault(key, {'ex': 0, 'ok': 0, 'bad': 0, 'sec': 0, 'days_done': 0})
+        t['ex'] += r.completed_exercises
+        t['ok'] += r.correct
+        t['bad'] += r.incorrect
+        t['sec'] += r.time_spent_seconds
+        if r.completed:
+            t['days_done'] += 1
+        _by_day[(r.task_id, r.student_id, r.date)] = r
+
     _sim_short = {
         'anzan': 'Anzan', 'flashcards': 'Cartonașe',
         'flashcard-exercises': 'Exerciții', 'worksheet': 'Fișă',
     }
+    _today = timezone.localdate()
     for sa in simulator_assignments:
         tasks = list(sa.tasks.all())
         for t in tasks:
             t.short_name = _sim_short.get(t.simulator, t.simulator)
+        last_day = min(_today, sa.end_date)
+        elapsed = max(0, (last_day - sa.start_date).days + 1) if sa.start_date <= _today else 0
         roster = [sa.student] if sa.student else [gs.student for gs in students]
         rows = []
         for st in roster:
             cells = []
-            done_tasks = 0
             for t in tasks:
-                r = _res_map.get((t.id, st.id))
-                if r is None:
+                totals = _totals.get((t.id, st.id))
+                if totals is None:
                     cells.append({'status': 'none'})
                     continue
-                if t.target_type == 'minutes':
-                    progress_text = '%d:%02d' % divmod(r.time_spent_seconds, 60)
-                    target_text = f'{t.target_value} min'
-                else:
-                    progress_text = str(r.completed_exercises)
-                    target_text = f'{t.target_value} ex.'
-                if r.completed:
-                    done_tasks += 1
+                answered = totals['ok'] + totals['bad']
+                accuracy = round(totals['ok'] / answered * 100) if answered else 0
                 cells.append({
-                    'status': 'done' if r.completed else 'working',
-                    'progress_text': progress_text,
-                    'target_text': target_text,
-                    'correct': r.correct,
-                    'incorrect': r.incorrect,
-                    'time_display': '%d:%02d' % divmod(r.time_spent_seconds, 60),
+                    'status': 'done' if (elapsed and totals['days_done'] >= elapsed) else 'working',
+                    'days_done': totals['days_done'],
+                    'days_elapsed': elapsed,
+                    'exercises': totals['ex'],
+                    'accuracy': accuracy,
+                    'time_display': '%d:%02d' % divmod(totals['sec'], 60),
                 })
+            student_results = {
+                (t.id, d): _by_day.get((t.id, st.id, d))
+                for t in tasks
+                for d in [sa.start_date + timedelta(days=k)
+                          for k in range((sa.end_date - sa.start_date).days + 1)]
+            }
+            days = assignment_day_states(sa, tasks, student_results, _today)
+            green_days = sum(1 for d in days if d['state'] == 'done')
             rows.append({
                 'student': st,
                 'cells': cells,
-                'done_tasks': done_tasks,
-                'total_tasks': len(tasks),
-                'all_done': len(tasks) > 0 and done_tasks == len(tasks),
+                'days': days,
+                'green_days': green_days,
+                'elapsed_days': elapsed,
+                'all_done': elapsed > 0 and green_days >= elapsed,
             })
         sa.progress_rows = rows
         sa.students_done = sum(1 for row in rows if row['all_done'])
@@ -445,6 +489,50 @@ def student_detail(request, student_id):
         performance_rating__isnull=False
     ).aggregate(Avg('performance_rating'))['performance_rating__avg']
 
+    # Statistici lunare pe simulatoare (teme vs antrenament liber)
+    today = timezone.localdate()
+    try:
+        year, month = map(int, (request.GET.get('luna') or '').split('-'))
+        stats_month = datetime(year, month, 1).date()
+    except (ValueError, TypeError):
+        stats_month = today.replace(day=1)
+    prev_month = (stats_month - timedelta(days=1)).replace(day=1)
+    next_month = (stats_month + timedelta(days=32)).replace(day=1)
+
+    sim_names = dict(SimulatorTask.SIMULATOR_CHOICES)
+
+    def _stat_rows(queryset, sim_field):
+        rows = []
+        for row in queryset:
+            answered = (row['ok'] or 0) + (row['bad'] or 0)
+            rows.append({
+                'simulator': sim_names.get(row[sim_field], row[sim_field]),
+                'exercises': row['ex'] or 0,
+                'correct': row['ok'] or 0,
+                'accuracy': round((row['ok'] or 0) / answered * 100) if answered else 0,
+                'time_display': '%d:%02d' % divmod(row['sec'] or 0, 60),
+            })
+        return rows
+
+    homework_stats = _stat_rows(
+        SimulatorTaskResult.objects.filter(
+            student=student, date__year=stats_month.year, date__month=stats_month.month
+        ).values('task__simulator').annotate(
+            ex=Sum('completed_exercises'), ok=Sum('correct'),
+            bad=Sum('incorrect'), sec=Sum('time_spent_seconds')
+        ).order_by('task__simulator'),
+        'task__simulator'
+    )
+    practice_stats = _stat_rows(
+        SimulatorPracticeLog.objects.filter(
+            student=student, date__year=stats_month.year, date__month=stats_month.month
+        ).values('simulator').annotate(
+            ex=Sum('exercises'), ok=Sum('correct'),
+            bad=Sum('incorrect'), sec=Sum('time_spent_seconds')
+        ).order_by('simulator'),
+        'simulator'
+    )
+
     context = {
         'student': student,
         'group_student': group_student,
@@ -453,6 +541,12 @@ def student_detail(request, student_id):
         'submissions': submissions,
         'attendance_rate': attendance_rate,
         'avg_performance': round(avg_performance, 2) if avg_performance else None,
+        'stats_month': stats_month,
+        'prev_month': prev_month.strftime('%Y-%m'),
+        'next_month': next_month.strftime('%Y-%m'),
+        'show_next_month': next_month <= today,
+        'homework_stats': homework_stats,
+        'practice_stats': practice_stats,
     }
 
     return render(request, 'teacher_platform/student_detail.html', context)
@@ -501,40 +595,76 @@ def lesson_detail(request, lesson_id):
 @teacher_required
 def assignments_list(request):
     """
-    Lista tuturor temelor create de profesor
+    Integrator: toate temele pe simulatoare din toate grupele profesorului,
+    cu progresul elevilor, grupate pe active / viitoare / încheiate.
     """
     teacher = request.user
-
-    # Filtrare
-    status_filter = request.GET.get('status', 'all')
+    today = timezone.localdate()
     group_filter = request.GET.get('group', '')
 
-    assignments_query = Assignment.objects.filter(
+    assignments_query = SimulatorAssignment.objects.filter(
         group__teacher=teacher
-    ).select_related('group').prefetch_related('submissions')
+    ).select_related('group', 'student').prefetch_related('tasks')
 
     if group_filter:
         assignments_query = assignments_query.filter(group_id=group_filter)
 
-    today = timezone.now().date()
+    assignments = list(assignments_query.order_by('-start_date', '-created_at'))
 
-    if status_filter == 'upcoming':
-        assignments_query = assignments_query.filter(due_date__gte=today)
-    elif status_filter == 'past':
-        assignments_query = assignments_query.filter(due_date__lt=today)
+    # Progres: elevi care au terminat toate zilele scurse din temă
+    results = SimulatorTaskResult.objects.filter(
+        task__assignment__in=assignments
+    ).values('task__assignment_id', 'student_id', 'date').annotate(
+        tasks_done=Count('id', filter=Q(completed=True))
+    )
+    done_map = {}
+    for row in results:
+        done_map.setdefault((row['task__assignment_id'], row['student_id']), {})[row['date']] = row['tasks_done']
 
-    assignments = assignments_query.order_by('-due_date')
+    memberships = GroupStudent.objects.filter(
+        group__teacher=teacher, is_active=True
+    ).values_list('group_id', 'student_id')
+    roster = {}
+    for gid, sid in memberships:
+        roster.setdefault(gid, []).append(sid)
 
-    # Grupele pentru filtru
-    groups = Group.objects.filter(
-        teacher=teacher,
-        is_active=True
-    ).order_by('name')
+    active, upcoming, past = [], [], []
+    for sa in assignments:
+        task_count = len(sa.tasks.all())
+        student_ids = [sa.student_id] if sa.student_id else roster.get(sa.group_id, [])
+        last_day = min(today, sa.end_date)
+        elapsed = max(0, (last_day - sa.start_date).days + 1) if sa.start_date <= today else 0
+        students_ok = 0
+        for sid in student_ids:
+            days = done_map.get((sa.id, sid), {})
+            ok_days = sum(
+                1 for d, n in days.items()
+                if sa.start_date <= d <= last_day and n >= task_count
+            )
+            if elapsed > 0 and ok_days >= elapsed:
+                students_ok += 1
+        entry = {
+            'assignment': sa,
+            'task_count': task_count,
+            'students_total': len(student_ids),
+            'students_ok': students_ok,
+            'elapsed_days': elapsed,
+            'total_days': (sa.end_date - sa.start_date).days + 1,
+        }
+        if sa.start_date > today:
+            upcoming.append(entry)
+        elif sa.end_date < today:
+            past.append(entry)
+        else:
+            active.append(entry)
+
+    groups = Group.objects.filter(teacher=teacher, is_active=True).order_by('name')
 
     context = {
-        'assignments': assignments,
+        'active_entries': active,
+        'upcoming_entries': upcoming,
+        'past_entries': past[:20],
         'groups': groups,
-        'status_filter': status_filter,
         'group_filter': group_filter,
         'today': today,
     }
@@ -999,7 +1129,7 @@ def teacher_profile(request):
 
 
 @login_required
-@teacher_required
+@simulator_access
 def simulators_list(request):
     """
     Lista tuturor simulatoarelor disponibile
@@ -1038,45 +1168,46 @@ def simulators_list(request):
 
     context = {
         'simulators': simulators,
+        **_simulator_context(request),
     }
     return render(request, 'teacher_platform/simulators_list.html', context)
 
 
 @login_required
-@teacher_required
+@simulator_access
 def abacus_simulator(request):
     """
     Simulator interactiv de abac
     """
-    return render(request, 'teacher_platform/abacus_simulator.html')
+    return render(request, 'teacher_platform/abacus_simulator.html', _simulator_context(request))
 
 
 @login_required
-@teacher_required
+@simulator_access
 def abacus_exercises(request):
     """
     Exerciții Abac - exerciții tip fișă de lucru rezolvate pe ecran,
     cu răspuns tastat direct și verificare imediată sau la final de set
     """
-    return render(request, 'teacher_platform/abacus_exercises.html')
+    return render(request, 'teacher_platform/abacus_exercises.html', _simulator_context(request))
 
 
 @login_required
-@teacher_required
+@simulator_access
 def flashcard_simulator(request):
     """
     Simulator de cartonașe flash pentru recunoașterea numerelor pe soroban
     """
-    return render(request, 'teacher_platform/flashcard_simulator.html')
+    return render(request, 'teacher_platform/flashcard_simulator.html', _simulator_context(request))
 
 
 @login_required
-@teacher_required
+@simulator_access
 def anzan_simulator(request):
     """
     Simulator Anzan pentru calcul mental rapid cu soroban imaginar
     """
-    return render(request, 'teacher_platform/anzan_simulator.html')
+    return render(request, 'teacher_platform/anzan_simulator.html', _simulator_context(request))
 
 
 # ==================== TEME SIMULATOARE ====================

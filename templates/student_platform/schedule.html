@@ -1,0 +1,111 @@
+{% extends 'student_platform/base_student.html' %}
+
+{% block title %}Orar{% endblock %}
+{% block page_title %}Orar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .or-section-title {
+        font-size: 1.15rem; font-weight: 700; margin: 1.75rem 0 0.9rem;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .or-section-title:first-child { margin-top: 0.25rem; }
+    .or-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+    .or-group-card {
+        background: white; border: 1px solid #e5e7eb; border-radius: 14px;
+        padding: 1.1rem 1.3rem; border-left: 4px solid #2563eb;
+    }
+    .or-group-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .or-group-row { color: #4b5563; font-size: 0.9rem; margin-bottom: 0.3rem; display: flex; gap: 0.5rem; }
+    .or-level-badge {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        background: #eef2ff; color: #4f46e5; font-weight: 700;
+        padding: 0.35rem 0.85rem; border-radius: 999px; font-size: 0.88rem;
+        margin-top: 0.5rem;
+    }
+    .or-lesson {
+        background: white; border: 1px solid #e5e7eb; border-radius: 12px;
+        padding: 0.85rem 1.1rem; margin-bottom: 0.7rem;
+        display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    }
+    .or-lesson.past { opacity: 0.65; }
+    .or-lesson-date {
+        width: 58px; flex-shrink: 0; text-align: center;
+        background: #eef2ff; border-radius: 10px; padding: 0.4rem 0.2rem;
+    }
+    .or-lesson-day { font-size: 1.25rem; font-weight: 800; color: #4f46e5; line-height: 1.1; }
+    .or-lesson-month { font-size: 0.72rem; font-weight: 700; color: #6b7280; text-transform: uppercase; }
+    .or-lesson-info { flex: 1; min-width: 200px; }
+    .or-lesson-title { font-weight: 700; font-size: 0.95rem; }
+    .or-lesson-meta { color: #6b7280; font-size: 0.84rem; margin-top: 0.15rem; display: flex; gap: 0.8rem; flex-wrap: wrap; }
+    .or-empty {
+        background: white; border: 1px dashed #d6d9e0; border-radius: 14px;
+        padding: 2rem 1.5rem; text-align: center; color: #6b7280;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <h2 class="or-section-title">👥 Grupa mea</h2>
+    {% if memberships %}
+    <div class="or-groups">
+        {% for m in memberships %}
+        <div class="or-group-card">
+            <div class="or-group-name">{{ m.group.name }}</div>
+            {% if m.group.course %}<div class="or-group-row">📚 {{ m.group.course.title }}</div>{% endif %}
+            <div class="or-group-row">👩‍🏫 {{ m.group.teacher.get_full_name }}</div>
+            <div class="or-group-row">🗓️ {{ m.group.get_weekday_display }}, ora {{ m.group.start_time|time:"H:i" }}</div>
+            {% if m.group.location %}<div class="or-group-row">📍 {{ m.group.location.name }}</div>{% endif %}
+            {% if soroban_level %}
+            <span class="or-level-badge">🧮 Nivel Soroban: {{ soroban_level }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="or-empty">Nu ești înscris încă într-o grupă. Profesorul tău te va adăuga în curând.</div>
+    {% endif %}
+
+    <h2 class="or-section-title">📅 Lecțiile următoare</h2>
+    {% for lesson in upcoming_lessons %}
+    <div class="or-lesson">
+        <div class="or-lesson-date">
+            <div class="or-lesson-day">{{ lesson.date|date:"j" }}</div>
+            <div class="or-lesson-month">{{ lesson.date|date:"M" }}</div>
+        </div>
+        <div class="or-lesson-info">
+            <div class="or-lesson-title">
+                {% if lesson.lesson_template %}{{ lesson.lesson_template.name }}{% else %}Lecție {{ lesson.group.name }}{% endif %}
+            </div>
+            <div class="or-lesson-meta">
+                <span>👥 {{ lesson.group.name }}</span>
+                <span>🕐 {{ lesson.start_time|time:"H:i" }}</span>
+                <span>{{ lesson.date|date:"l" }}</span>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="or-empty">Nu sunt lecții programate momentan.</div>
+    {% endfor %}
+
+    {% if past_lessons %}
+    <h2 class="or-section-title">🗂️ Lecții recente</h2>
+    {% for lesson in past_lessons %}
+    <div class="or-lesson past">
+        <div class="or-lesson-date">
+            <div class="or-lesson-day">{{ lesson.date|date:"j" }}</div>
+            <div class="or-lesson-month">{{ lesson.date|date:"M" }}</div>
+        </div>
+        <div class="or-lesson-info">
+            <div class="or-lesson-title">
+                {% if lesson.lesson_template %}{{ lesson.lesson_template.name }}{% else %}Lecție {{ lesson.group.name }}{% endif %}
+            </div>
+            <div class="or-lesson-meta">
+                <span>👥 {{ lesson.group.name }}</span>
+                <span>🕐 {{ lesson.start_time|time:"H:i" }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+{% endblock %}
