@@ -18,6 +18,11 @@
             <div>
                 <h2>{{ group.name }}</h2>
                 <span class="group-code-badge">{{ group.code }}</span>
+                {% if group.lesson_type == 'online' %}
+                <span class="lesson-type-badge online">🌐 Online</span>
+                {% else %}
+                <span class="lesson-type-badge">🏫 Fizic</span>
+                {% endif %}
             </div>
             <div class="header-actions">
                 <a href="{% url 'teacher_platform:group_edit' group.id %}" class="btn-secondary">Editează Grupă</a>
@@ -59,6 +64,19 @@
                 <span class="info-value">{{ students.count }} / {{ group.max_students }}</span>
             </div>
         </div>
+
+        {% if group.lesson_type == 'online' %}
+        <div class="meeting-link-box">
+            <span class="meeting-link-label">🎥 Link lecție online:</span>
+            {% if group.meeting_link %}
+            <code class="meeting-link-url" id="meetingLinkValue">{{ group.meeting_link }}</code>
+            <button class="btn-copy-link" id="copyLinkBtn" onclick="copyMeetingLink()">📋 Copiază link</button>
+            {% else %}
+            <span class="meeting-link-missing">Niciun link setat încă —
+                <a href="{% url 'teacher_platform:group_edit' group.id %}">adaugă-l din Editează Grupă</a></span>
+            {% endif %}
+        </div>
+        {% endif %}
 
         {% if group.description %}
         <div class="group-description">
@@ -467,6 +485,34 @@
 .sim-builder-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
 .sim-tasks-empty { color: #6b7280; font-size: 0.88rem; padding: 0.4rem 0; }
 
+/* Tip lecție + link online */
+.lesson-type-badge {
+    display: inline-block; margin-left: 0.5rem;
+    background: #f1f5f9; color: #475569;
+    font-size: 0.8rem; font-weight: 700;
+    padding: 0.25rem 0.7rem; border-radius: 999px;
+}
+.lesson-type-badge.online { background: #e0edff; color: #1d4ed8; }
+.meeting-link-box {
+    display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+    padding: 0.7rem 1rem; margin-top: 1rem;
+}
+.meeting-link-label { font-weight: 600; color: #1e40af; font-size: 0.9rem; }
+.meeting-link-url {
+    background: white; border: 1px solid #d6d9e0; border-radius: 7px;
+    padding: 0.3rem 0.65rem; font-size: 0.85rem; color: #374151;
+    max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.btn-copy-link {
+    background: #2563eb; color: white; border: none; border-radius: 8px;
+    padding: 0.45rem 1rem; font-size: 0.86rem; font-weight: 600; cursor: pointer;
+    transition: background 0.15s ease;
+}
+.btn-copy-link:hover { background: #1d4ed8; }
+.btn-copy-link.copied { background: #10b981; }
+.meeting-link-missing { color: #6b7280; font-size: 0.88rem; }
+
 /* Modal sarcină */
 .stm-backdrop {
     display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
@@ -668,6 +714,28 @@ function renderSimTasks() {
 
 function collectSimTasks() {
     return simTasks;
+}
+
+function copyMeetingLink() {
+    const link = document.getElementById('meetingLinkValue').textContent.trim();
+    const btn = document.getElementById('copyLinkBtn');
+    const done = () => {
+        btn.textContent = '✓ Copiat!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = '📋 Copiază link'; btn.classList.remove('copied'); }, 2000);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(done);
+    } else {
+        // fallback pentru browsere vechi / http
+        const ta = document.createElement('textarea');
+        ta.value = link;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        done();
+    }
 }
 
 function toggleSimProgress(id) {

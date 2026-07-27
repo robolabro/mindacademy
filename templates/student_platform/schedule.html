@@ -23,6 +23,14 @@
         padding: 0.35rem 0.85rem; border-radius: 999px; font-size: 0.88rem;
         margin-top: 0.5rem;
     }
+    .or-join-btn {
+        display: block; text-align: center; margin-top: 0.8rem;
+        background: #2563eb; color: white; text-decoration: none;
+        font-weight: 700; font-size: 0.95rem;
+        padding: 0.6rem 1rem; border-radius: 10px;
+        transition: background 0.15s ease;
+    }
+    .or-join-btn:hover { background: #1d4ed8; }
     .or-lesson {
         background: white; border: 1px solid #e5e7eb; border-radius: 12px;
         padding: 0.85rem 1.1rem; margin-bottom: 0.7rem;
@@ -55,9 +63,16 @@
             {% if m.group.course %}<div class="or-group-row">📚 {{ m.group.course.title }}</div>{% endif %}
             <div class="or-group-row">👩‍🏫 {{ m.group.teacher.get_full_name }}</div>
             <div class="or-group-row">🗓️ {{ m.group.get_weekday_display }}, ora {{ m.group.start_time|time:"H:i" }}</div>
-            {% if m.group.location %}<div class="or-group-row">📍 {{ m.group.location.name }}</div>{% endif %}
+            {% if m.group.lesson_type == 'online' %}
+            <div class="or-group-row">🌐 Lecții online</div>
+            {% elif m.group.location %}
+            <div class="or-group-row">📍 {{ m.group.location.name }}</div>
+            {% endif %}
             {% if soroban_level %}
             <span class="or-level-badge">🧮 Nivel Soroban: {{ soroban_level }}</span>
+            {% endif %}
+            {% if m.group.lesson_type == 'online' and m.group.meeting_link %}
+            <a href="{{ m.group.meeting_link }}" target="_blank" rel="noopener" class="or-join-btn">🎥 Intră în lecție</a>
             {% endif %}
         </div>
         {% endfor %}

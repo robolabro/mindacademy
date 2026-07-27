@@ -56,6 +56,23 @@ class Group(models.Model):
         verbose_name="Locație"
     )
 
+    # Tip lecție: cu prezență fizică sau online
+    LESSON_TYPE_CHOICES = [
+        ('fizic', 'Fizic'),
+        ('online', 'Online'),
+    ]
+    lesson_type = models.CharField(
+        max_length=10,
+        choices=LESSON_TYPE_CHOICES,
+        default='fizic',
+        verbose_name="Tip Lecție"
+    )
+    meeting_link = models.URLField(
+        blank=True,
+        verbose_name="Link Videoconferință",
+        help_text="Link-ul de Zoom/Google Meet pentru grupele online (trimis părinților)"
+    )
+
     # Cod auto-generat (ex: ARITMETICA-12-001)
     code = models.CharField(
         max_length=100,
