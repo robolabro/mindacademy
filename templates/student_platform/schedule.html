@@ -1,7 +1,7 @@
 {% extends 'student_platform/base_student.html' %}
 
-{% block title %}Orar{% endblock %}
-{% block page_title %}Orar{% endblock %}
+{% block title %}Grupa mea{% endblock %}
+{% block page_title %}Grupa mea{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -50,10 +50,106 @@
         background: white; border: 1px dashed #d6d9e0; border-radius: 14px;
         padding: 2rem 1.5rem; text-align: center; color: #6b7280;
     }
+
+    /* Taburi */
+    .gr-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.3rem; }
+    .gr-tab {
+        background: white; border: 1px solid #d6d9e0; border-radius: 999px;
+        padding: 0.5rem 1.2rem; font-size: 0.92rem; font-weight: 600;
+        cursor: pointer; color: #374151; display: flex; align-items: center; gap: 0.45rem;
+    }
+    .gr-tab.active { background: #2563eb; border-color: #2563eb; color: white; }
+    .gr-panel { display: none; }
+    .gr-panel.active { display: block; }
+    .gr-live-dot {
+        display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+        background: #ef4444; animation: grPulse 1.4s infinite;
+    }
+    @keyframes grPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+    /* Lecția live */
+    .lv-header {
+        background: white; border: 1px solid #e5e7eb; border-left: 4px solid #ef4444;
+        border-radius: 12px; padding: 0.9rem 1.2rem; margin-bottom: 1rem;
+        display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap;
+    }
+    .lv-badge {
+        display: inline-flex; align-items: center; gap: 0.45rem;
+        background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 0.85rem;
+        padding: 0.3rem 0.8rem; border-radius: 999px;
+    }
+    .lv-meta { color: #6b7280; font-size: 0.9rem; }
+    .lv-join {
+        background: #2563eb; color: white; text-decoration: none; font-weight: 700;
+        padding: 0.5rem 1.1rem; border-radius: 9px; font-size: 0.9rem;
+    }
+    .lv-task {
+        background: white; border: 1px solid #e5e7eb; border-radius: 12px;
+        padding: 0.9rem 1.1rem; margin-bottom: 0.7rem;
+        display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
+    }
+    .lv-task.done { border-left: 4px solid #10b981; }
+    .lv-task-index {
+        width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+        background: #eef2ff; color: #4f46e5; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .lv-task-index.done { background: #dcfce7; color: #166534; }
+    .lv-task-info { flex: 1; min-width: 220px; }
+    .lv-task-name { font-weight: 700; }
+    .lv-personal-badge {
+        background: #fdf2f8; color: #be185d; font-size: 0.75rem; font-weight: 700;
+        padding: 0.12rem 0.55rem; border-radius: 999px; margin-left: 0.4rem;
+    }
+    .lv-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.3rem; }
+    .lv-chip {
+        background: #f1f5f9; color: #475569; border-radius: 7px;
+        padding: 0.12rem 0.55rem; font-size: 0.78rem; font-weight: 500;
+    }
+    .lv-chip.target { background: #dcfce7; color: #166534; font-weight: 600; }
+    .lv-progress { min-width: 160px; }
+    .lv-bar { height: 8px; background: #eef0f3; border-radius: 999px; overflow: hidden; }
+    .lv-bar-fill { height: 100%; background: #2563eb; border-radius: 999px; transition: width 0.3s ease; }
+    .lv-bar-fill.full { background: #10b981; }
+    .lv-bar-label { font-size: 0.78rem; color: #6b7280; margin-top: 0.25rem; }
+    .lv-start {
+        background: #2563eb; color: white; border: none; border-radius: 9px;
+        padding: 0.5rem 1.1rem; font-weight: 600; font-size: 0.88rem;
+        text-decoration: none; display: inline-block;
+    }
+    .lv-start.done { background: #10b981; }
 </style>
 {% endblock %}
 
 {% block content %}
+    <div class="gr-tabs">
+        <button class="gr-tab {% if initial_tab == 'calendar' %}active{% endif %}" id="grTabCalendar" onclick="grShow('calendar')">📅 Calendar lecții</button>
+        <button class="gr-tab {% if initial_tab == 'live' %}active{% endif %}" id="grTabLive" onclick="grShow('live')">
+            🔴 Lecții online <span class="gr-live-dot" id="grLiveDot" style="display:none;"></span>
+        </button>
+    </div>
+
+    <!-- Tab: Lecții online -->
+    <div class="gr-panel {% if initial_tab == 'live' %}active{% endif %}" id="gr-live">
+        <div id="lvNoSession" class="or-empty">
+            <p>🕐 Nicio lecție online în desfășurare acum.</p>
+            <p style="font-size:0.88rem; margin-top:0.4rem;">Când profesorul pornește lecția, sarcinile vor apărea aici automat.</p>
+        </div>
+        <div id="lvActive" style="display:none;">
+            <div class="lv-header">
+                <div>
+                    <span class="lv-badge"><span class="gr-live-dot"></span> LECȚIE LIVE</span>
+                    <span class="lv-meta" id="lvMeta"></span>
+                </div>
+                <a href="#" target="_blank" rel="noopener" class="lv-join" id="lvJoinBtn" style="display:none;">🎥 Intră în videoconferință</a>
+            </div>
+            <div id="lvTasks"></div>
+            <p id="lvNoTasks" class="or-empty" style="display:none;">Profesorul nu a alocat încă sarcini. Rămâi pe fază! 👀</p>
+        </div>
+    </div>
+
+    <!-- Tab: Calendar -->
+    <div class="gr-panel {% if initial_tab == 'calendar' %}active{% endif %}" id="gr-calendar">
     <h2 class="or-section-title">👥 Grupa mea</h2>
     {% if memberships %}
     <div class="or-groups">
@@ -123,4 +219,72 @@
     </div>
     {% endfor %}
     {% endif %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const LV_STATE_URL = "{% url 'student_platform:live_state' %}";
+let lvPollTimer = null;
+
+function grShow(which) {
+    document.getElementById('grTabCalendar').classList.toggle('active', which === 'calendar');
+    document.getElementById('grTabLive').classList.toggle('active', which === 'live');
+    document.getElementById('gr-calendar').classList.toggle('active', which === 'calendar');
+    document.getElementById('gr-live').classList.toggle('active', which === 'live');
+}
+
+async function lvRefresh() {
+    try {
+        const resp = await fetch(LV_STATE_URL);
+        const data = await resp.json();
+        if (!data.ok) return;
+
+        document.getElementById('grLiveDot').style.display = data.active ? 'inline-block' : 'none';
+        document.getElementById('lvNoSession').style.display = data.active ? 'none' : 'block';
+        document.getElementById('lvActive').style.display = data.active ? 'block' : 'none';
+        if (!data.active) return;
+
+        document.getElementById('lvMeta').textContent =
+            ' ' + data.group_name + ' · pornită la ' + data.started_at;
+        const join = document.getElementById('lvJoinBtn');
+        if (data.meeting_link) { join.href = data.meeting_link; join.style.display = 'inline-block'; }
+        else { join.style.display = 'none'; }
+
+        const wrap = document.getElementById('lvTasks');
+        document.getElementById('lvNoTasks').style.display = data.tasks.length ? 'none' : 'block';
+        wrap.innerHTML = data.tasks.map(t => {
+            const p = t.progress;
+            const label = t.target.includes('min')
+                ? p.time_display + ' / ' + t.target
+                : p.exercises + ' / ' + t.target;
+            return `
+                <div class="lv-task ${p.completed ? 'done' : ''}">
+                    <div class="lv-task-index ${p.completed ? 'done' : ''}">${p.completed ? '✓' : t.order}</div>
+                    <div class="lv-task-info">
+                        <div class="lv-task-name">${t.simulator_name}
+                            ${t.personal ? '<span class="lv-personal-badge">doar pentru tine</span>' : ''}
+                        </div>
+                        <div class="lv-chips">
+                            ${t.chips.map(c => `<span class="lv-chip">${c}</span>`).join('')}
+                            <span class="lv-chip target">Țintă: ${t.target}</span>
+                        </div>
+                    </div>
+                    <div class="lv-progress">
+                        <div class="lv-bar"><div class="lv-bar-fill ${p.completed ? 'full' : ''}" style="width:${p.percent}%"></div></div>
+                        <div class="lv-bar-label">${label}${p.exercises ? ' · ✓' + p.correct : ''}</div>
+                    </div>
+                    <a href="/student/live/sarcina/${t.id}/" class="lv-start ${p.completed ? 'done' : ''}">
+                        ${p.completed ? 'Gata ✓' : p.exercises ? 'Continuă' : 'Începe'}
+                    </a>
+                </div>`;
+        }).join('');
+    } catch (e) { /* rețea — reîncearcă la următorul poll */ }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    lvRefresh();
+    lvPollTimer = setInterval(lvRefresh, 5000);
+});
+</script>
 {% endblock %}

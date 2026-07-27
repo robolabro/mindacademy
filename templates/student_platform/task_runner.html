@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}{{ task.get_simulator_display }}{% endblock %}
-{% block page_title %}{{ assignment.title }}{% endblock %}
+{% block page_title %}{% if runner_title %}{{ runner_title }}{% else %}{{ assignment.title }}{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -190,7 +190,7 @@
 {% endblock %}
 
 {% block content %}
-<a href="{% url 'student_platform:my_assignments' %}" class="tr-back">← Înapoi la temele mele</a>
+<a href="{% if back_url %}{{ back_url }}{% else %}{% url 'student_platform:my_assignments' %}{% endif %}" class="tr-back">{% if back_label %}{{ back_label }}{% else %}← Înapoi la temele mele{% endif %}</a>
 
 {% if is_expired %}
 <div class="tr-expired">⏰ Termenul acestei teme a expirat, dar poți continua să exersezi.</div>
@@ -208,10 +208,10 @@
                 {% endif %}
                 {% if task.settings.digits_label %}<span class="chip">{{ task.settings.digits_label }}</span>{% endif %}
                 {% if task.settings.speed %}<span class="chip">Viteză {{ task.settings.speed }}</span>{% endif %}
-                <span class="chip chip-target">Azi: {{ task.get_target_display }}</span>
+                <span class="chip chip-target">{% if is_live %}Țintă{% else %}Azi{% endif %}: {{ task.get_target_display }}</span>
             </div>
         </div>
-        <span class="tr-done-badge" id="trDoneBadge">✓ Tema de azi e gata</span>
+        <span class="tr-done-badge" id="trDoneBadge">{% if is_live %}✓ Sarcina e gata{% else %}✓ Tema de azi e gata{% endif %}</span>
     </div>
     <div class="tr-progress-wrap">
         <div class="tr-bar"><div class="tr-bar-fill" id="trBarFill" style="width:0%"></div></div>
@@ -222,7 +222,7 @@
     </div>
 </div>
 
-<div class="tr-celebrate" id="trCelebrate">🎉 Felicitări! Ai terminat tema de azi. Poți continua să exersezi.</div>
+<div class="tr-celebrate" id="trCelebrate">{% if is_live %}🎉 Felicitări! Ai terminat sarcina. Poți continua să exersezi.{% else %}🎉 Felicitări! Ai terminat tema de azi. Poți continua să exersezi.{% endif %}</div>
 
 <div class="tr-panel" id="trPanel">
     <!-- Start screen -->
@@ -292,7 +292,7 @@
         </div>
         <div class="tr-modal-actions">
             <button class="tr-btn" onclick="trModalContinue()">Mai lucrez</button>
-            <a href="{% url 'student_platform:my_assignments' %}" class="tr-btn-secondary" style="text-decoration:none; display:inline-block;">Înapoi la teme</a>
+            <a href="{% if back_url %}{{ back_url }}{% else %}{% url 'student_platform:my_assignments' %}{% endif %}" class="tr-btn-secondary" style="text-decoration:none; display:inline-block;">{% if is_live %}Înapoi la lecție{% else %}Înapoi la teme{% endif %}</a>
         </div>
     </div>
 </div>
@@ -308,7 +308,8 @@ const SIMULATOR = "{{ task.simulator|escapejs }}";
 const SETTINGS = {{ settings_json|safe }};
 const TARGET = {{ target_json|safe }};
 let PROGRESS = {{ progress_json|safe }};
-const PROGRESS_URL = "{% url 'student_platform:task_progress' task.id %}";
+const PROGRESS_URL = "{% if progress_url %}{{ progress_url }}{% else %}{% url 'student_platform:task_progress' task.id %}{% endif %}";
+const IS_LIVE = {% if is_live %}true{% else %}false{% endif %};
 // Moduri: 'anzan' = calcul secvențial; 'flash' = recunoaștere numere pe
 // cartonaș; 'sheet' = fișă de exerciții pe ecran
 const MODE = SIMULATOR === 'anzan' ? 'anzan' : SIMULATOR === 'flashcards' ? 'flash' : 'sheet';
@@ -327,11 +328,12 @@ function renderProgress() {
     fill.style.width = PROGRESS.percent + '%';
     fill.classList.toggle('full', PROGRESS.completed);
 
+    const prefix = IS_LIVE ? '' : 'azi: ';
     let label;
     if (TARGET.type === 'minutes') {
-        label = 'azi: ' + fmtTime(PROGRESS.time_seconds) + ' / ' + TARGET.value + ' min lucrate';
+        label = prefix + fmtTime(PROGRESS.time_seconds) + ' / ' + TARGET.value + ' min lucrate';
     } else {
-        label = 'azi: ' + PROGRESS.exercises + ' / ' + TARGET.value + ' exerciții';
+        label = prefix + PROGRESS.exercises + ' / ' + TARGET.value + ' exerciții';
     }
     document.getElementById('trBarText').textContent = label;
     document.getElementById('trBarStats').textContent =
@@ -393,7 +395,7 @@ function showSummary(targetReached) {
     document.getElementById('trModalIcon').textContent =
         targetReached ? '🎉' : acc >= 80 ? '🌟' : acc >= 50 ? '💪' : '📚';
     document.getElementById('trModalTitle').textContent =
-        targetReached ? 'Tema de azi e gata!' : 'Rezultatele tale';
+        targetReached ? (IS_LIVE ? 'Sarcina e gata!' : 'Tema de azi e gata!') : 'Rezultatele tale';
     const mins = session.start ? fmtTime(Math.round((Date.now() - session.start) / 1000)) : '0:00';
     document.getElementById('trModalSub').textContent =
         session.count + ' exerciții lucrate în ' + mins + ' minute';
@@ -758,5 +760,9 @@ function trStopSheet() {
 }
 
 renderProgress();
+if (IS_LIVE) {
+    // heartbeat: elevul apare „conectat" la profesor cât timp are runner-ul deschis
+    setInterval(() => postProgress({}), 15000);
+}
 </script>
 {% endblock %}

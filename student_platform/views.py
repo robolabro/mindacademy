@@ -202,7 +202,8 @@ def schedule(request):
         'upcoming_lessons': upcoming_lessons,
         'past_lessons': past_lessons,
         'soroban_level': profile.soroban_level if profile else None,
-        'active_menu': 'orar',
+        'initial_tab': 'live' if request.GET.get('tab') == 'live' else 'calendar',
+        'active_menu': 'grupa',
     }
     return render(request, 'student_platform/schedule.html', context)
 
@@ -331,3 +332,175 @@ def practice_log(request):
     log.save()
 
     return JsonResponse({'ok': True})
+
+
+# ==================== LECȚII LIVE (elev) ====================
+
+from teacher_platform.models import LiveSession, LiveTask, LiveTaskResult, LiveParticipant
+
+
+def _active_live_session_for(student):
+    """Sesiunea live activă din grupele elevului (prima găsită)."""
+    group_ids = GroupStudent.objects.filter(
+        student=student, is_active=True
+    ).values_list('group_id', flat=True)
+    return LiveSession.objects.filter(
+        group_id__in=group_ids, ended_at__isnull=True
+    ).select_related('group').first()
+
+
+def _live_task_for_student_or_404(user, task_id):
+    """Sarcina live doar dacă aparține unei sesiuni din grupele elevului."""
+    task = get_object_or_404(
+        LiveTask.objects.select_related('session', 'session__group'),
+        pk=task_id
+    )
+    if task.student_id is not None and task.student_id != user.id:
+        raise Http404
+    is_member = GroupStudent.objects.filter(
+        student=user, group_id=task.session.group_id, is_active=True
+    ).exists()
+    if not is_member:
+        raise Http404
+    return task
+
+
+def _live_progress(task, result):
+    """Progresul la o sarcină live (fără dimensiune zilnică)."""
+    if result is None:
+        return {
+            'exercises': 0, 'correct': 0, 'incorrect': 0,
+            'time_seconds': 0, 'time_display': '0:00',
+            'completed': False, 'percent': 0,
+        }
+    if task.target_type == 'minutes':
+        percent = min(100, round(result.time_spent_seconds / (task.target_value * 60) * 100)) if task.target_value else 0
+    else:
+        percent = min(100, round(result.completed_exercises / task.target_value * 100)) if task.target_value else 0
+    return {
+        'exercises': result.completed_exercises,
+        'correct': result.correct,
+        'incorrect': result.incorrect,
+        'time_seconds': result.time_spent_seconds,
+        'time_display': '%d:%02d' % divmod(result.time_spent_seconds, 60),
+        'completed': result.completed,
+        'percent': 100 if result.completed else percent,
+    }
+
+
+@student_required
+def live_state_student(request):
+    """
+    Polling elev: sesiunea live activă + sarcinile lui. Fiecare apel
+    contează ca heartbeat de prezență (elevul apare „conectat" la profesor).
+    """
+    student = request.user
+    session = _active_live_session_for(student)
+    if session is None:
+        return JsonResponse({'ok': True, 'active': False})
+
+    # heartbeat prezență (auto_now actualizează last_seen la fiecare save)
+    participant, created = LiveParticipant.objects.get_or_create(session=session, student=student)
+    if not created:
+        participant.save(update_fields=['last_seen'])
+
+    tasks = session.tasks.filter(
+        Q(student__isnull=True) | Q(student=student)
+    ).order_by('order')
+    results = {
+        r.task_id: r for r in LiveTaskResult.objects.filter(task__session=session, student=student)
+    }
+    sim_names = dict(SimulatorTask.SIMULATOR_CHOICES)
+
+    tasks_json = []
+    for t in tasks:
+        s = t.settings or {}
+        chips = [v for v in (s.get('complexity_label'), s.get('digits_label'),
+                             s.get('difficulty_label')) if v]
+        if s.get('terms'):
+            chips.append(f"{s['terms']} termeni")
+        tasks_json.append({
+            'id': t.id,
+            'order': t.order,
+            'simulator_name': sim_names.get(t.simulator, t.simulator),
+            'personal': t.student_id is not None,
+            'chips': chips,
+            'target': t.get_target_display(),
+            'progress': _live_progress(t, results.get(t.id)),
+        })
+
+    return JsonResponse({
+        'ok': True,
+        'active': True,
+        'session_id': session.id,
+        'group_name': session.group.name,
+        'started_at': timezone.localtime(session.started_at).strftime('%H:%M'),
+        'meeting_link': session.group.meeting_link if session.group.lesson_type == 'online' else '',
+        'tasks': tasks_json,
+    })
+
+
+@student_required
+def live_run_task(request, task_id):
+    """Rulează o sarcină live cu setările impuse — reutilizează runner-ul de teme."""
+    student = request.user
+    task = _live_task_for_student_or_404(student, task_id)
+
+    if task.session.ended_at is not None:
+        messages.info(request, 'Lecția live s-a încheiat.')
+        return redirect('student_platform:schedule')
+
+    result = LiveTaskResult.objects.filter(task=task, student=student).first()
+    progress = _live_progress(task, result)
+
+    context = {
+        'task': task,
+        'runner_title': f'Lecție live · {task.session.group.name}',
+        'is_live': True,
+        'is_expired': False,
+        'settings_json': json.dumps(task.settings),
+        'progress_json': json.dumps(progress),
+        'target_json': json.dumps({'type': task.target_type, 'value': task.target_value}),
+        'progress_url': f'/student/live/sarcina/{task.id}/progres/',
+        'back_url': '/student/grupa/?tab=live',
+        'back_label': '← Înapoi la lecția live',
+        'active_menu': 'grupa',
+    }
+    return render(request, 'student_platform/task_runner.html', context)
+
+
+@student_required
+@require_POST
+def live_task_progress(request, task_id):
+    """POST: acumulează progresul la o sarcină live + heartbeat prezență."""
+    student = request.user
+    task = _live_task_for_student_or_404(student, task_id)
+
+    parsed = _read_deltas(request)
+    if parsed is None:
+        return JsonResponse({'ok': False, 'error': 'JSON invalid'}, status=400)
+    _, delta = parsed
+
+    result, _created = LiveTaskResult.objects.get_or_create(task=task, student=student)
+    result.completed_exercises += delta('exercises')
+    result.correct += delta('correct')
+    result.incorrect += delta('incorrect')
+    result.time_spent_seconds += delta('time_seconds', cap=3600)
+
+    if not result.completed:
+        if task.target_type == 'minutes':
+            reached = result.time_spent_seconds >= task.target_value * 60
+        else:
+            reached = result.completed_exercises >= task.target_value
+        if reached:
+            result.completed = True
+            result.completed_at = timezone.now()
+
+    result.save()
+
+    # heartbeat prezență
+    participant, created = LiveParticipant.objects.get_or_create(session=task.session, student=student)
+    if not created:
+        participant.save(update_fields=['last_seen'])
+
+    return JsonResponse({'ok': True, 'progress': _live_progress(task, result)})
