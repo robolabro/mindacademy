@@ -5,7 +5,7 @@ from django.db.models import Count, Q, Avg, Sum
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
-from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog
+from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog, LiveSession, LiveTask, LiveTaskResult, LiveParticipant
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
 from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm, TeacherProfileForm
@@ -261,6 +261,9 @@ def group_detail(request, group_id):
             is_active=True
         ).order_by('order')
 
+    # Sesiunea live activă (dacă există)
+    live_session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+
     context = {
         'group': group,
         'students': students,
@@ -269,6 +272,7 @@ def group_detail(request, group_id):
         'assignments': assignments,
         'simulator_assignments': simulator_assignments,
         'lesson_templates': lesson_templates,
+        'live_session': live_session,
     }
 
     return render(request, 'teacher_platform/group_detail.html', context)
@@ -1282,3 +1286,176 @@ def simulator_assignment_delete(request, assignment_id):
         return JsonResponse({'error': 'POST necesar'}, status=405)
     assignment.delete()
     return JsonResponse({'ok': True})
+
+
+# ==================== LECȚII LIVE ====================
+
+def _live_session_or_404(request, session_id):
+    return get_object_or_404(
+        LiveSession.objects.select_related('group'),
+        id=session_id, group__teacher=request.user
+    )
+
+
+@login_required
+@teacher_required
+def live_session_start(request, group_id):
+    """Pornește (sau returnează) sesiunea live activă a grupei."""
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+
+    session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+    if session is None:
+        session = LiveSession.objects.create(group=group, teacher=request.user)
+    return JsonResponse({'ok': True, 'session_id': session.id})
+
+
+@login_required
+@teacher_required
+def live_session_end(request, session_id):
+    """Închide sesiunea live."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    session = _live_session_or_404(request, session_id)
+    if session.ended_at is None:
+        session.ended_at = timezone.now()
+        session.save(update_fields=['ended_at'])
+    return JsonResponse({'ok': True})
+
+
+@login_required
+@teacher_required
+def live_task_create(request, session_id):
+    """
+    Adaugă o sarcină în lecția live. JSON:
+    { simulator, settings: {...}, target_type, target_value, student_id (opțional) }
+    """
+    import json
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    session = _live_session_or_404(request, session_id)
+    if session.ended_at is not None:
+        return JsonResponse({'error': 'Sesiunea este închisă'}, status=400)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({'error': 'JSON invalid'}, status=400)
+
+    if data.get('simulator') not in dict(SimulatorTask.SIMULATOR_CHOICES):
+        return JsonResponse({'error': 'Simulator necunoscut'}, status=400)
+
+    student = None
+    if data.get('student_id'):
+        membership = GroupStudent.objects.filter(
+            group=session.group, student_id=data['student_id'], is_active=True
+        ).select_related('student').first()
+        if not membership:
+            return JsonResponse({'error': 'Elevul nu face parte din această grupă'}, status=400)
+        student = membership.student
+
+    task = LiveTask.objects.create(
+        session=session,
+        order=session.tasks.count() + 1,
+        student=student,
+        simulator=data['simulator'],
+        settings=data.get('settings') or {},
+        target_type=data.get('target_type') if data.get('target_type') in ('count', 'minutes') else 'count',
+        target_value=max(1, min(999, int(data.get('target_value') or 5))),
+    )
+    return JsonResponse({'ok': True, 'task_id': task.id})
+
+
+@login_required
+@teacher_required
+def live_task_delete(request, task_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    task = get_object_or_404(
+        LiveTask.objects.select_related('session', 'session__group'),
+        id=task_id, session__group__teacher=request.user
+    )
+    task.delete()
+    return JsonResponse({'ok': True})
+
+
+def _live_state_payload(session):
+    """Starea completă a sesiunii live: sarcini, elevi, rezultate, prezență."""
+    now = timezone.now()
+    tasks = list(session.tasks.select_related('student').order_by('order'))
+    results = {
+        (r.task_id, r.student_id): r
+        for r in LiveTaskResult.objects.filter(task__session=session)
+    }
+    participants = {
+        p.student_id: p for p in session.participants.all()
+    }
+    roster = [
+        gs.student for gs in GroupStudent.objects.filter(
+            group=session.group, is_active=True
+        ).select_related('student').order_by('student__first_name')
+    ]
+
+    sim_names = dict(SimulatorTask.SIMULATOR_CHOICES)
+    tasks_json = [{
+        'id': t.id,
+        'order': t.order,
+        'simulator': t.simulator,
+        'simulator_name': sim_names.get(t.simulator, t.simulator),
+        'target': t.get_target_display(),
+        'student_id': t.student_id,
+        'student_name': t.student.get_full_name() if t.student else None,
+        'settings': t.settings,
+    } for t in tasks]
+
+    students_json = []
+    for st in roster:
+        p = participants.get(st.id)
+        connected = bool(p and (now - p.last_seen).total_seconds() < 30)
+        cells = []
+        for t in tasks:
+            if t.student_id and t.student_id != st.id:
+                cells.append(None)  # sarcină individuală a altui elev
+                continue
+            r = results.get((t.id, st.id))
+            if r is None:
+                cells.append({'status': 'none'})
+            else:
+                if t.target_type == 'minutes':
+                    percent = min(100, round(r.time_spent_seconds / (t.target_value * 60) * 100)) if t.target_value else 0
+                else:
+                    percent = min(100, round(r.completed_exercises / t.target_value * 100)) if t.target_value else 0
+                cells.append({
+                    'status': 'done' if r.completed else 'working',
+                    'exercises': r.completed_exercises,
+                    'correct': r.correct,
+                    'incorrect': r.incorrect,
+                    'time_display': '%d:%02d' % divmod(r.time_spent_seconds, 60),
+                    'percent': 100 if r.completed else percent,
+                })
+        students_json.append({
+            'id': st.id,
+            'name': st.get_full_name() or st.username,
+            'connected': connected,
+            'cells': cells,
+        })
+
+    return {
+        'session_id': session.id,
+        'active': session.is_active,
+        'started_at': session.started_at.strftime('%H:%M'),
+        'tasks': tasks_json,
+        'students': students_json,
+    }
+
+
+@login_required
+@teacher_required
+def live_state(request, group_id):
+    """Polling profesor: starea sesiunii live active a grupei."""
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+    if session is None:
+        return JsonResponse({'ok': True, 'active': False})
+    return JsonResponse({'ok': True, **_live_state_payload(session)})

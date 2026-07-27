@@ -93,6 +93,7 @@
         <button class="tab-btn" data-tab="past-lessons">📚 Lecții Trecute ({{ past_lessons.count }})</button>
         <button class="tab-btn" data-tab="assignments">📝 Teme ({{ assignments.count }})</button>
         <button class="tab-btn" data-tab="sim-assignments">🎯 Teme Simulatoare ({{ simulator_assignments|length }})</button>
+        <button class="tab-btn" data-tab="live-lesson" id="liveTabBtn">🔴 Lecție Live{% if live_session %} <span class="live-dot"></span>{% endif %}</button>
         {% if lesson_templates %}
         <button class="tab-btn" data-tab="templates">📖 Șabloane Lecții ({{ lesson_templates.count }})</button>
         {% endif %}
@@ -415,8 +416,18 @@
                     </div>
                 </div>
 
+                <div class="stm-field" id="stmForField" style="display:none; margin-bottom:1.2rem;">
+                    <label>Pentru</label>
+                    <select id="stmForStudent">
+                        <option value="">👥 Toată grupa</option>
+                        {% for gs in students %}
+                        <option value="{{ gs.student.id }}">👤 {{ gs.student.get_full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <div class="stm-target">
-                    <label>Țintă zilnică</label>
+                    <label id="stmTargetLabel">Țintă zilnică</label>
                     <div class="stm-target-row">
                         <select id="stmTargetType">
                             <option value="count">Număr de exerciții</option>
@@ -432,6 +443,46 @@
                     <button class="btn-primary" onclick="stmConfirm()">OK</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Tab Content: Lecție Live -->
+    <div class="tab-content" id="live-lesson">
+        <!-- Fără sesiune activă -->
+        <div id="liveIdle" {% if live_session %}style="display:none;"{% endif %}>
+            <div class="live-idle-box">
+                <div class="live-idle-icon">🔴</div>
+                <h3>Nicio lecție live în desfășurare</h3>
+                <p>Pornește lecția live ca să aloci sarcini elevilor și să le urmărești rezolvarea în timp real.</p>
+                {% if group.lesson_type == 'online' and group.meeting_link %}
+                <p class="live-idle-hint">💡 Nu uita să trimiți și link-ul de videoconferință: <code>{{ group.meeting_link }}</code></p>
+                {% endif %}
+                <button class="btn-live-start" onclick="liveStart()">🔴 Pornește lecția live</button>
+            </div>
+        </div>
+
+        <!-- Sesiune activă -->
+        <div id="liveActive" {% if not live_session %}style="display:none;"{% endif %}>
+            <div class="live-header">
+                <div class="live-header-left">
+                    <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+                    <span class="live-started" id="liveStartedAt">{% if live_session %}pornită la {{ live_session.started_at|date:"H:i" }}{% endif %}</span>
+                </div>
+                <div class="live-header-actions">
+                    <button class="btn-primary" onclick="openTaskModalLive()">➕ Sarcină live</button>
+                    <button class="btn-live-end" onclick="liveEnd()">⏹ Închide lecția</button>
+                </div>
+            </div>
+
+            <div id="liveTasksBar" class="live-tasks-bar"></div>
+
+            <div class="sim-progress-scroll">
+                <table class="sim-progress-table" id="liveGrid" style="display:none;">
+                    <thead id="liveGridHead"></thead>
+                    <tbody id="liveGridBody"></tbody>
+                </table>
+            </div>
+            <p id="liveNoTasks" class="sp-empty" style="margin-top:0.8rem;">Nicio sarcină alocată încă — apasă „➕ Sarcină live”.</p>
         </div>
     </div>
 
@@ -512,6 +563,60 @@
 .btn-copy-link:hover { background: #1d4ed8; }
 .btn-copy-link.copied { background: #10b981; }
 .meeting-link-missing { color: #6b7280; font-size: 0.88rem; }
+
+/* Lecție live */
+.live-dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: #ef4444; animation: livePulse 1.4s infinite;
+}
+@keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.live-idle-box {
+    background: white; border: 1px dashed #d6d9e0; border-radius: 14px;
+    padding: 2.5rem 1.5rem; text-align: center;
+}
+.live-idle-icon { font-size: 2.4rem; margin-bottom: 0.6rem; }
+.live-idle-box h3 { margin-bottom: 0.4rem; }
+.live-idle-box p { color: #6b7280; margin-bottom: 0.5rem; }
+.live-idle-hint { font-size: 0.86rem; }
+.live-idle-hint code { background: #f1f5f9; padding: 0.15rem 0.5rem; border-radius: 6px; }
+.btn-live-start {
+    margin-top: 1rem; background: #ef4444; color: white; border: none;
+    border-radius: 10px; padding: 0.8rem 1.8rem; font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: background 0.15s ease;
+}
+.btn-live-start:hover { background: #dc2626; }
+.live-header {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 0.7rem;
+    background: white; border: 1px solid #e5e7eb; border-left: 4px solid #ef4444;
+    border-radius: 12px; padding: 0.8rem 1.1rem; margin-bottom: 0.9rem;
+}
+.live-header-left { display: flex; align-items: center; gap: 0.8rem; }
+.live-badge {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 0.85rem;
+    padding: 0.3rem 0.8rem; border-radius: 999px;
+}
+.live-started { color: #6b7280; font-size: 0.88rem; }
+.live-header-actions { display: flex; gap: 0.6rem; }
+.btn-live-end {
+    background: white; color: #b91c1c; border: 1px solid #fecaca;
+    border-radius: 9px; padding: 0.55rem 1.1rem; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer;
+}
+.btn-live-end:hover { background: #fef2f2; }
+.live-tasks-bar { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.live-task-chip {
+    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+    background: white; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 0.5rem 0.8rem;
+}
+.live-task-for { color: #6b7280; font-size: 0.85rem; font-weight: 600; }
+.live-conn {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    margin-right: 0.45rem; background: #d1d5db;
+}
+.live-conn.on { background: #10b981; box-shadow: 0 0 0 3px #d1fae5; }
 
 /* Modal sarcină */
 .stm-backdrop {
@@ -627,8 +732,20 @@ const SIM_NAMES = {
 // Sarcinile temei în construcție
 let simTasks = [];
 let stmSimulator = 'anzan';
+let stmMode = 'homework';  // 'homework' = temă | 'live' = sarcină în lecția live
 
 function openTaskModal() {
+    stmMode = 'homework';
+    document.getElementById('stmForField').style.display = 'none';
+    document.getElementById('stmTargetLabel').textContent = 'Țintă zilnică';
+    document.getElementById('simTaskModal').classList.add('open');
+    stmPickSim(stmSimulator);
+}
+
+function openTaskModalLive() {
+    stmMode = 'live';
+    document.getElementById('stmForField').style.display = 'block';
+    document.getElementById('stmTargetLabel').textContent = 'Țintă';
     document.getElementById('simTaskModal').classList.add('open');
     stmPickSim(stmSimulator);
 }
@@ -671,13 +788,20 @@ function stmConfirm() {
             settings.speed = parseFloat(document.getElementById('stmSpeed').value) || 1.5;
         }
     }
-    simTasks.push({
+    const payload = {
         simulator: stmSimulator,
         settings: settings,
         target_type: document.getElementById('stmTargetType').value,
         target_value: parseInt(document.getElementById('stmTargetValue').value) || 5
-    });
-    renderSimTasks();
+    };
+
+    if (stmMode === 'live') {
+        payload.student_id = document.getElementById('stmForStudent').value || null;
+        liveAddTask(payload);
+    } else {
+        simTasks.push(payload);
+        renderSimTasks();
+    }
     closeTaskModal();
 }
 
@@ -715,6 +839,146 @@ function renderSimTasks() {
 function collectSimTasks() {
     return simTasks;
 }
+
+// ==================== Lecție Live ====================
+const LIVE_STATE_URL = "{% url 'teacher_platform:live_state' group.id %}";
+const LIVE_START_URL = "{% url 'teacher_platform:live_session_start' group.id %}";
+let liveSessionId = {% if live_session %}{{ live_session.id }}{% else %}null{% endif %};
+let livePollTimer = null;
+
+async function liveStart() {
+    const resp = await fetch(LIVE_START_URL, { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } });
+    const data = await resp.json();
+    if (data.ok) {
+        liveSessionId = data.session_id;
+        document.getElementById('liveIdle').style.display = 'none';
+        document.getElementById('liveActive').style.display = 'block';
+        liveStartPolling();
+    }
+}
+
+async function liveEnd() {
+    if (!confirm('Închizi lecția live? Elevii nu vor mai putea lucra la sarcinile ei.')) return;
+    const resp = await fetch(`/teacher/live/${liveSessionId}/inchide/`, {
+        method: 'POST', headers: { 'X-CSRFToken': getCsrf() }
+    });
+    const data = await resp.json();
+    if (data.ok) {
+        liveSessionId = null;
+        liveStopPolling();
+        document.getElementById('liveActive').style.display = 'none';
+        document.getElementById('liveIdle').style.display = 'block';
+    }
+}
+
+async function liveAddTask(payload) {
+    const resp = await fetch(`/teacher/live/${liveSessionId}/sarcina/adauga/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.ok) liveRefresh();
+    else alert(data.error || 'Eroare la alocarea sarcinii');
+}
+
+async function liveDeleteTask(taskId) {
+    if (!confirm('Ștergi această sarcină live?')) return;
+    const resp = await fetch(`/teacher/live/sarcina/${taskId}/sterge/`, {
+        method: 'POST', headers: { 'X-CSRFToken': getCsrf() }
+    });
+    if ((await resp.json()).ok) liveRefresh();
+}
+
+async function liveRefresh() {
+    try {
+        const resp = await fetch(LIVE_STATE_URL);
+        const data = await resp.json();
+        if (!data.ok) return;
+        if (!data.active) {
+            // sesiunea a fost închisă din altă parte
+            if (liveSessionId) {
+                liveSessionId = null;
+                liveStopPolling();
+                document.getElementById('liveActive').style.display = 'none';
+                document.getElementById('liveIdle').style.display = 'block';
+            }
+            return;
+        }
+        liveSessionId = data.session_id;
+        document.getElementById('liveStartedAt').textContent = 'pornită la ' + data.started_at;
+        liveRenderTasks(data);
+        liveRenderGrid(data);
+    } catch (e) { /* rețea — reîncearcă la următorul poll */ }
+}
+
+function liveRenderTasks(data) {
+    const bar = document.getElementById('liveTasksBar');
+    bar.innerHTML = data.tasks.map(t => {
+        const s = t.settings || {};
+        const chips = [];
+        if (s.complexity_label) chips.push(s.complexity_label);
+        if (s.digits_label) chips.push(s.digits_label);
+        if (s.terms) chips.push(s.terms + ' termeni');
+        return `
+            <div class="live-task-chip">
+                <span class="sim-task-index">${t.order}</span>
+                <strong>${t.simulator_name}</strong>
+                ${t.student_name ? `<span class="live-task-for">👤 ${t.student_name}</span>` : '<span class="live-task-for">👥 grupa</span>'}
+                <span class="chip">${chips.join(' · ') || '—'}</span>
+                <span class="chip chip-target">${t.target}</span>
+                <button class="remove-task" onclick="liveDeleteTask(${t.id})">✕</button>
+            </div>`;
+    }).join('');
+    document.getElementById('liveNoTasks').style.display = data.tasks.length ? 'none' : 'block';
+    document.getElementById('liveGrid').style.display = data.tasks.length ? 'table' : 'none';
+}
+
+function liveRenderGrid(data) {
+    if (!data.tasks.length) return;
+    document.getElementById('liveGridHead').innerHTML = `
+        <tr>
+            <th>Elev</th>
+            ${data.tasks.map(t => `<th>${t.order}. ${t.simulator_name}<br><small>${t.target}</small></th>`).join('')}
+        </tr>`;
+    document.getElementById('liveGridBody').innerHTML = data.students.map(st => `
+        <tr>
+            <td class="sp-student">
+                <span class="live-conn ${st.connected ? 'on' : 'off'}"></span>
+                ${st.name}
+            </td>
+            ${st.cells.map(cell => {
+                if (cell === null) return '<td class="sp-cell"><span class="sp-dash">·</span></td>';
+                if (cell.status === 'none') return '<td class="sp-cell sp-none"><span class="sp-dash">—</span></td>';
+                return `
+                    <td class="sp-cell sp-${cell.status}">
+                        <div class="sp-main">${cell.status === 'done' ? '✓ ' : ''}${cell.exercises} ex. (${cell.percent}%)</div>
+                        <div class="sp-sub">✓${cell.correct} ✗${cell.incorrect} · ⏱${cell.time_display}</div>
+                    </td>`;
+            }).join('')}
+        </tr>`).join('');
+}
+
+function liveStartPolling() {
+    liveStopPolling();
+    liveRefresh();
+    livePollTimer = setInterval(liveRefresh, 4000);
+}
+
+function liveStopPolling() {
+    if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
+}
+
+// pornește polling-ul doar cât timp tab-ul live e deschis
+document.addEventListener('DOMContentLoaded', () => {
+    const liveBtn = document.getElementById('liveTabBtn');
+    if (liveBtn) {
+        liveBtn.addEventListener('click', () => { if (liveSessionId) liveStartPolling(); });
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            if (b.id !== 'liveTabBtn') b.addEventListener('click', liveStopPolling);
+        });
+    }
+});
 
 function copyMeetingLink() {
     const link = document.getElementById('meetingLinkValue').textContent.trim();

@@ -571,3 +571,142 @@ class SimulatorPracticeLog(models.Model):
 
     def __str__(self):
         return f"{self.student.get_full_name()} · {self.get_simulator_display()} · {self.date}"
+
+
+class LiveSession(models.Model):
+    """
+    O lecție live (online) pornită de profesor pentru o grupă.
+    O singură sesiune activă per grupă la un moment dat.
+    """
+    group = models.ForeignKey(Group, on_delete=models.CASCADE,
+                              related_name='live_sessions', verbose_name="Grupă")
+    teacher = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='live_sessions',
+        limit_choices_to={'role': 'teacher'},
+        verbose_name="Profesor"
+    )
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='live_sessions',
+        verbose_name="Lecție programată (opțional)"
+    )
+
+    started_at = models.DateTimeField(auto_now_add=True, verbose_name="Pornită la")
+    ended_at = models.DateTimeField(null=True, blank=True, verbose_name="Închisă la")
+
+    class Meta:
+        verbose_name = "Lecție Live"
+        verbose_name_plural = "Lecții Live"
+        ordering = ['-started_at']
+
+    @property
+    def is_active(self):
+        return self.ended_at is None
+
+    def __str__(self):
+        state = 'activă' if self.is_active else 'închisă'
+        return f"Live {self.group.name} · {self.started_at:%d.%m.%Y %H:%M} ({state})"
+
+
+class LiveTask(models.Model):
+    """
+    O sarcină alocată în timpul lecției live: pentru toată grupa sau
+    personalizată pentru un elev. Aceeași structură de setări ca la teme.
+    """
+    session = models.ForeignKey(LiveSession, on_delete=models.CASCADE,
+                                related_name='tasks', verbose_name="Sesiune")
+    order = models.PositiveIntegerField(default=1, verbose_name="Ordine")
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='personal_live_tasks',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev (doar pentru sarcină individuală)"
+    )
+
+    simulator = models.CharField(max_length=30, choices=SimulatorTask.SIMULATOR_CHOICES,
+                                 verbose_name="Simulator")
+    settings = models.JSONField(default=dict, verbose_name="Setări simulator")
+
+    target_type = models.CharField(max_length=10, choices=SimulatorTask.TARGET_CHOICES,
+                                   default='count', verbose_name="Tip țintă")
+    target_value = models.PositiveIntegerField(default=5, verbose_name="Valoare țintă")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Alocată la")
+
+    class Meta:
+        verbose_name = "Sarcină Live"
+        verbose_name_plural = "Sarcini Live"
+        ordering = ['session', 'order']
+
+    def get_target_display(self):
+        if self.target_type == 'minutes':
+            return f"{self.target_value} min"
+        return f"{self.target_value} exerciții"
+
+    def __str__(self):
+        target = self.student.get_full_name() if self.student else 'toată grupa'
+        return f"{self.get_simulator_display()} · {target}"
+
+
+class LiveTaskResult(models.Model):
+    """Rezultatul unui elev la o sarcină live (actualizat în timp real)."""
+    task = models.ForeignKey(LiveTask, on_delete=models.CASCADE,
+                             related_name='results', verbose_name="Sarcină")
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='live_results',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev"
+    )
+
+    completed_exercises = models.PositiveIntegerField(default=0, verbose_name="Exerciții rezolvate")
+    correct = models.PositiveIntegerField(default=0, verbose_name="Corecte")
+    incorrect = models.PositiveIntegerField(default=0, verbose_name="Greșite")
+    time_spent_seconds = models.PositiveIntegerField(default=0, verbose_name="Timp lucrat (sec)")
+
+    completed = models.BooleanField(default=False, verbose_name="Finalizată")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Finalizată la")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizat la")
+
+    class Meta:
+        verbose_name = "Rezultat Sarcină Live"
+        verbose_name_plural = "Rezultate Sarcini Live"
+        unique_together = ['task', 'student']
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} · {self.task} · {self.correct}/{self.completed_exercises}"
+
+
+class LiveParticipant(models.Model):
+    """
+    Prezența unui elev într-o lecție live — actualizată prin heartbeat
+    din platforma elevului; „conectat" = last_seen în ultimele ~30s.
+    """
+    session = models.ForeignKey(LiveSession, on_delete=models.CASCADE,
+                                related_name='participants', verbose_name="Sesiune")
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='live_participations',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev"
+    )
+    joined_at = models.DateTimeField(auto_now_add=True, verbose_name="Conectat la")
+    last_seen = models.DateTimeField(auto_now=True, verbose_name="Văzut ultima dată")
+
+    class Meta:
+        verbose_name = "Participant Live"
+        verbose_name_plural = "Participanți Live"
+        unique_together = ['session', 'student']
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} · {self.session}"

@@ -46,6 +46,13 @@ urlpatterns = [
     path('simulatoare/anzan/', views.anzan_simulator, name='anzan_simulator'),
     path('simulatoare/exercitii-abac/', views.abacus_exercises, name='abacus_exercises'),
 
+    # Lecții live
+    path('grupe/<int:group_id>/live/porneste/', views.live_session_start, name='live_session_start'),
+    path('grupe/<int:group_id>/live/state/', views.live_state, name='live_state'),
+    path('live/<int:session_id>/inchide/', views.live_session_end, name='live_session_end'),
+    path('live/<int:session_id>/sarcina/adauga/', views.live_task_create, name='live_task_create'),
+    path('live/sarcina/<int:task_id>/sterge/', views.live_task_delete, name='live_task_delete'),
+
     # API
     path('api/get-modules/', views.get_modules_for_course, name='get_modules_for_course'),
 ]
