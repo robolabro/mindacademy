@@ -1444,7 +1444,7 @@ def _live_state_payload(session):
     return {
         'session_id': session.id,
         'active': session.is_active,
-        'started_at': session.started_at.strftime('%H:%M'),
+        'started_at': timezone.localtime(session.started_at).strftime('%H:%M'),
         'tasks': tasks_json,
         'students': students_json,
     }
