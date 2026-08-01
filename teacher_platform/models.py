@@ -677,6 +677,9 @@ class LiveTaskResult(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Finalizată la")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizat la")
 
+    # Istoric detaliat: [{ex: "12 + 5 − 3", ca: 14, ua: 14, ok: true, t: 6.2}, ...]
+    exercise_log = models.JSONField(default=list, blank=True, verbose_name="Istoric exerciții")
+
     class Meta:
         verbose_name = "Rezultat Sarcină Live"
         verbose_name_plural = "Rezultate Sarcini Live"

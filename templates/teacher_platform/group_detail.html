@@ -84,6 +84,26 @@
             <p>{{ group.description }}</p>
         </div>
         {% endif %}
+
+        <!-- Acțiuni principale: teme + lecție live -->
+        <div class="group-main-actions">
+            <a href="{% url 'teacher_platform:group_homework' group.id %}" class="gma-card gma-homework">
+                <span class="gma-icon">🎯</span>
+                <span class="gma-text">
+                    <strong>Teme Simulatoare</strong>
+                    <small>{{ sim_assignments_count }} tem{{ sim_assignments_count|pluralize:"ă,e" }} · alocare și progres zilnic</small>
+                </span>
+                <span class="gma-arrow">→</span>
+            </a>
+            <a href="{% url 'teacher_platform:group_live' group.id %}" class="gma-card gma-live">
+                <span class="gma-icon">🔴</span>
+                <span class="gma-text">
+                    <strong>Lecție Live{% if live_session %} <span class="live-dot"></span> în desfășurare{% endif %}</strong>
+                    <small>sarcini în timpul lecției + urmărire în timp real</small>
+                </span>
+                <span class="gma-arrow">→</span>
+            </a>
+        </div>
     </div>
 
     <!-- Tabs -->
@@ -92,8 +112,6 @@
         <button class="tab-btn" data-tab="upcoming-lessons">📅 Lecții Viitoare ({{ upcoming_lessons.count }})</button>
         <button class="tab-btn" data-tab="past-lessons">📚 Lecții Trecute ({{ past_lessons.count }})</button>
         <button class="tab-btn" data-tab="assignments">📝 Teme ({{ assignments.count }})</button>
-        <button class="tab-btn" data-tab="sim-assignments">🎯 Teme Simulatoare ({{ simulator_assignments|length }})</button>
-        <button class="tab-btn" data-tab="live-lesson" id="liveTabBtn">🔴 Lecție Live{% if live_session %} <span class="live-dot"></span>{% endif %}</button>
         {% if lesson_templates %}
         <button class="tab-btn" data-tab="templates">📖 Șabloane Lecții ({{ lesson_templates.count }})</button>
         {% endif %}
@@ -246,247 +264,6 @@
         {% endif %}
     </div>
 
-    <!-- Tab Content: Simulator Assignments -->
-    <div class="tab-content" id="sim-assignments">
-        <div class="sim-hw-list">
-            {% for sa in simulator_assignments %}
-            <div class="sim-hw-card {% if sa.is_active %}active-period{% endif %}">
-                <div class="sim-hw-header">
-                    <div>
-                        <strong>{{ sa.title }}</strong>
-                        <span class="sim-hw-target">
-                            {% if sa.student %}👤 {{ sa.student.get_full_name }}{% else %}👥 Toată grupa{% endif %}
-                        </span>
-                    </div>
-                    <div class="sim-hw-period">
-                        📅 {{ sa.start_date|date:"d M" }} → {{ sa.end_date|date:"d M Y" }}
-                        <button class="sim-hw-delete" onclick="deleteSimAssignment({{ sa.id }})" title="Șterge tema">✕</button>
-                    </div>
-                </div>
-                <div class="sim-hw-tasks">
-                    {% for task in sa.tasks.all %}
-                    <div class="sim-task-row">
-                        <span class="sim-task-index">{{ task.order }}</span>
-                        <span class="sim-task-name">{{ task.get_simulator_display }}</span>
-                        <span class="chips">
-                            {% if task.settings.complexity_label %}<span class="chip">{{ task.settings.complexity_label }}</span>{% endif %}
-                            {% if task.settings.digits_label %}<span class="chip">{{ task.settings.digits_label }}</span>{% endif %}
-                            {% if task.settings.difficulty_label %}<span class="chip">{{ task.settings.difficulty_label }}</span>{% endif %}
-                            {% if task.settings.speed %}<span class="chip">Viteză {{ task.settings.speed }}</span>{% endif %}
-                            {% if task.settings.terms %}<span class="chip">{{ task.settings.terms }} termeni</span>{% endif %}
-                        </span>
-                        <span class="chip chip-target">{{ task.get_target_display }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-
-                <!-- Progres elevi -->
-                <div class="sim-progress-toggle-row">
-                    <button class="sim-progress-toggle" onclick="toggleSimProgress({{ sa.id }})">
-                        📊 Progres elevi <span class="sim-progress-summary">{{ sa.students_done }}/{{ sa.students_total }} la zi</span>
-                        <span class="sim-progress-arrow" id="simProgArrow-{{ sa.id }}">▾</span>
-                    </button>
-                </div>
-                <div class="sim-progress" id="simProg-{{ sa.id }}" style="display:none;">
-                    {% if sa.progress_rows %}
-                    <div class="sim-progress-scroll">
-                        <table class="sim-progress-table">
-                            <thead>
-                                <tr>
-                                    <th>Elev</th>
-                                    {% for task in sa.tasks.all %}
-                                    <th>{{ task.order }}. {{ task.short_name }}<br><small>{{ task.get_target_display }}</small></th>
-                                    {% endfor %}
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for row in sa.progress_rows %}
-                                <tr>
-                                    <td class="sp-student">
-                                        {{ row.student.get_full_name }}
-                                        <div class="sp-days">
-                                            {% for d in row.days %}
-                                            <span class="sp-day {{ d.state }}" title="{{ d.date|date:'d M' }}"></span>
-                                            {% endfor %}
-                                        </div>
-                                    </td>
-                                    {% for cell in row.cells %}
-                                    <td class="sp-cell sp-{{ cell.status }}">
-                                        {% if cell.status == 'none' %}
-                                            <span class="sp-dash">—</span>
-                                        {% else %}
-                                            <div class="sp-main">
-                                                {% if cell.status == 'done' %}✓{% endif %}
-                                                {{ cell.days_done }}/{{ cell.days_elapsed }} zile
-                                            </div>
-                                            <div class="sp-sub">{{ cell.exercises }} ex. · {{ cell.accuracy }}% corecte · ⏱{{ cell.time_display }}</div>
-                                        {% endif %}
-                                    </td>
-                                    {% endfor %}
-                                    <td class="sp-cell {% if row.all_done %}sp-done{% elif row.green_days %}sp-working{% endif %}">
-                                        <div class="sp-main">{{ row.green_days }}/{{ row.elapsed_days }} zile</div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="sp-empty">Niciun elev în această temă.</p>
-                    {% endif %}
-                </div>
-            </div>
-            {% empty %}
-            <div class="empty-state">
-                <p>Nu sunt teme pe simulatoare pentru această grupă.</p>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Builder -->
-        <div class="sim-hw-builder">
-            <h4>➕ Temă nouă pe simulatoare</h4>
-            {% csrf_token %}
-            <div class="sim-builder-row">
-                <input type="text" id="simHwTitle" placeholder="Titlu temă (ex: Temă săptămâna 1)" value="Temă de casă">
-                <select id="simHwStudent">
-                    <option value="">👥 Toată grupa</option>
-                    {% for gs in students %}
-                    <option value="{{ gs.student.id }}">👤 {{ gs.student.get_full_name }}</option>
-                    {% endfor %}
-                </select>
-                <label>De la <input type="date" id="simHwStart"></label>
-                <label>Până la <input type="date" id="simHwEnd"></label>
-            </div>
-
-            <div id="simTasksList"></div>
-
-            <div class="sim-builder-actions">
-                <button class="btn-secondary" onclick="openTaskModal()">+ Adaugă sarcină</button>
-                <button class="btn-primary" onclick="saveSimAssignment()">💾 Salvează tema</button>
-            </div>
-        </div>
-
-    </div>
-
-
-        <!-- Modal: sarcină nouă -->
-        <div class="stm-backdrop" id="simTaskModal">
-            <div class="stm-modal">
-                <div class="stm-head">
-                    <h4>Sarcină</h4>
-                    <button class="stm-close" onclick="closeTaskModal()">✕</button>
-                </div>
-
-                <div class="stm-simulators">
-                    <button class="stm-sim active" data-sim="anzan" onclick="stmPickSim('anzan')">🧠<span>Calcul mental</span></button>
-                    <button class="stm-sim" data-sim="flashcards" onclick="stmPickSim('flashcards')">🎴<span>Cartonașe flash</span></button>
-                    <button class="stm-sim" data-sim="flashcard-exercises" onclick="stmPickSim('flashcard-exercises')">✏️<span>Exerciții</span></button>
-                    <button class="stm-sim" data-sim="worksheet" onclick="stmPickSim('worksheet')">📝<span>Fișă de lucru</span></button>
-                </div>
-
-                <div class="stm-fields">
-                    <div class="stm-field" data-for="anzan flashcard-exercises worksheet">
-                        <label>Formule (nivel)</label>
-                        <select id="stmLevel"></select>
-                    </div>
-                    <div class="stm-field" data-for="anzan flashcards flashcard-exercises worksheet">
-                        <label>Cifre</label>
-                        <select id="stmDigits">
-                            <option value="1">1 cifră</option>
-                            <option value="2">2 cifre</option>
-                            <option value="3">3 cifre</option>
-                            <option value="1,2">1-2 cifre</option>
-                            <option value="2,3">2-3 cifre</option>
-                        </select>
-                    </div>
-                    <div class="stm-field" data-for="anzan flashcard-exercises worksheet">
-                        <label>Dificultate</label>
-                        <select id="stmDifficulty">
-                            <option value="easy">Ușor</option>
-                            <option value="medium" selected>Mediu</option>
-                            <option value="hard">Greu</option>
-                        </select>
-                    </div>
-                    <div class="stm-field" data-for="anzan flashcards">
-                        <label>Viteză (secunde)</label>
-                        <input type="number" id="stmSpeed" value="1.5" min="0.1" max="5" step="0.1">
-                    </div>
-                    <div class="stm-field" data-for="anzan flashcard-exercises worksheet">
-                        <label>Termeni</label>
-                        <input type="number" id="stmTerms" value="3" min="2" max="20">
-                    </div>
-                </div>
-
-                <div class="stm-field" id="stmForField" style="display:none; margin-bottom:1.2rem;">
-                    <label>Pentru</label>
-                    <select id="stmForStudent">
-                        <option value="">👥 Toată grupa</option>
-                        {% for gs in students %}
-                        <option value="{{ gs.student.id }}">👤 {{ gs.student.get_full_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="stm-target">
-                    <label id="stmTargetLabel">Țintă zilnică</label>
-                    <div class="stm-target-row">
-                        <select id="stmTargetType">
-                            <option value="count">Număr de exerciții</option>
-                            <option value="minutes">Minute de lucru</option>
-                        </select>
-                        <input type="number" id="stmTargetValue" value="5" min="1" max="999">
-                        <span id="stmTargetUnit">exerciții / zi</span>
-                    </div>
-                </div>
-
-                <div class="stm-actions">
-                    <button class="btn-secondary" onclick="closeTaskModal()">Anulează</button>
-                    <button class="btn-primary" onclick="stmConfirm()">OK</button>
-                </div>
-            </div>
-        </div>
-    <!-- Tab Content: Lecție Live -->
-    <div class="tab-content" id="live-lesson">
-        <!-- Fără sesiune activă -->
-        <div id="liveIdle" {% if live_session %}style="display:none;"{% endif %}>
-            <div class="live-idle-box">
-                <div class="live-idle-icon">🔴</div>
-                <h3>Nicio lecție live în desfășurare</h3>
-                <p>Pornește lecția live ca să aloci sarcini elevilor și să le urmărești rezolvarea în timp real.</p>
-                {% if group.lesson_type == 'online' and group.meeting_link %}
-                <p class="live-idle-hint">💡 Nu uita să trimiți și link-ul de videoconferință: <code>{{ group.meeting_link }}</code></p>
-                {% endif %}
-                <button class="btn-live-start" onclick="liveStart()">🔴 Pornește lecția live</button>
-            </div>
-        </div>
-
-        <!-- Sesiune activă -->
-        <div id="liveActive" {% if not live_session %}style="display:none;"{% endif %}>
-            <div class="live-header">
-                <div class="live-header-left">
-                    <span class="live-badge"><span class="live-dot"></span> LIVE</span>
-                    <span class="live-started" id="liveStartedAt">{% if live_session %}pornită la {{ live_session.started_at|date:"H:i" }}{% endif %}</span>
-                </div>
-                <div class="live-header-actions">
-                    <button class="btn-primary" onclick="openTaskModalLive()">➕ Sarcină live</button>
-                    <button class="btn-live-end" onclick="liveEnd()">⏹ Închide lecția</button>
-                </div>
-            </div>
-
-            <div id="liveTasksBar" class="live-tasks-bar"></div>
-
-            <div class="sim-progress-scroll">
-                <table class="sim-progress-table" id="liveGrid" style="display:none;">
-                    <thead id="liveGridHead"></thead>
-                    <tbody id="liveGridBody"></tbody>
-                </table>
-            </div>
-            <p id="liveNoTasks" class="sp-empty" style="margin-top:0.8rem;">Nicio sarcină alocată încă — apasă „➕ Sarcină live”.</p>
-        </div>
-    </div>
-
     <!-- Tab Content: Lesson Templates -->
     {% if lesson_templates %}
     <div class="tab-content" id="templates">
@@ -514,29 +291,6 @@
 </div>
 
 <style>
-/* Teme Simulatoare */
-.sim-hw-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
-.sim-hw-card.active-period { border-left: 4px solid #10b981; }
-.sim-hw-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.6rem; }
-.sim-hw-target { margin-left: 0.75rem; color: #6b7280; font-size: 0.9rem; }
-.sim-hw-period { color: #6b7280; font-size: 0.9rem; display: flex; align-items: center; gap: 0.6rem; }
-.sim-hw-delete { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; width: 26px; height: 26px; cursor: pointer; }
-.sim-task-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0; border-top: 1px solid #f1f2f4; flex-wrap: wrap; }
-.sim-task-index { width: 22px; height: 22px; border-radius: 50%; background: #eef2ff; color: #4f46e5; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-.sim-task-name { font-weight: 600; min-width: 160px; }
-.chips { display: flex; gap: 0.4rem; flex-wrap: wrap; flex: 1; }
-.chip { background: #e0edff; color: #1e40af; border-radius: 8px; padding: 0.2rem 0.65rem; font-size: 0.82rem; font-weight: 500; }
-.chip-target { background: #dcfce7; color: #166534; margin-left: auto; }
-.sim-hw-builder { background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem; margin-top: 1.5rem; }
-.sim-hw-builder h4 { margin-bottom: 1rem; }
-.sim-builder-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
-.sim-builder-row input[type="text"] { flex: 1; min-width: 200px; }
-.sim-builder-row input, .sim-builder-row select, .sim-task-editor select, .sim-task-editor input { padding: 0.45rem 0.6rem; border: 1px solid #d6d9e0; border-radius: 8px; background: white; font-size: 0.9rem; }
-.sim-task-editor { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.6rem 0.75rem; margin-bottom: 0.6rem; }
-.sim-task-editor .remove-task { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; width: 26px; height: 26px; cursor: pointer; margin-left: auto; }
-.sim-builder-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
-.sim-tasks-empty { color: #6b7280; font-size: 0.88rem; padding: 0.4rem 0; }
-
 /* Tip lecție + link online */
 .lesson-type-badge {
     display: inline-block; margin-left: 0.5rem;
@@ -565,422 +319,36 @@
 .btn-copy-link.copied { background: #10b981; }
 .meeting-link-missing { color: #6b7280; font-size: 0.88rem; }
 
-/* Lecție live */
+
+/* Punct roșu animat (lecție live în desfășurare) */
 .live-dot {
     display: inline-block; width: 9px; height: 9px; border-radius: 50%;
     background: #ef4444; animation: livePulse 1.4s infinite;
 }
 @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
-.live-idle-box {
-    background: white; border: 1px dashed #d6d9e0; border-radius: 14px;
-    padding: 2.5rem 1.5rem; text-align: center;
-}
-.live-idle-icon { font-size: 2.4rem; margin-bottom: 0.6rem; }
-.live-idle-box h3 { margin-bottom: 0.4rem; }
-.live-idle-box p { color: #6b7280; margin-bottom: 0.5rem; }
-.live-idle-hint { font-size: 0.86rem; }
-.live-idle-hint code { background: #f1f5f9; padding: 0.15rem 0.5rem; border-radius: 6px; }
-.btn-live-start {
-    margin-top: 1rem; background: #ef4444; color: white; border: none;
-    border-radius: 10px; padding: 0.8rem 1.8rem; font-size: 1rem; font-weight: 700;
-    cursor: pointer; transition: background 0.15s ease;
-}
-.btn-live-start:hover { background: #dc2626; }
-.live-header {
-    display: flex; justify-content: space-between; align-items: center;
-    flex-wrap: wrap; gap: 0.7rem;
-    background: white; border: 1px solid #e5e7eb; border-left: 4px solid #ef4444;
-    border-radius: 12px; padding: 0.8rem 1.1rem; margin-bottom: 0.9rem;
-}
-.live-header-left { display: flex; align-items: center; gap: 0.8rem; }
-.live-badge {
-    display: inline-flex; align-items: center; gap: 0.45rem;
-    background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 0.85rem;
-    padding: 0.3rem 0.8rem; border-radius: 999px;
-}
-.live-started { color: #6b7280; font-size: 0.88rem; }
-.live-header-actions { display: flex; gap: 0.6rem; }
-.btn-live-end {
-    background: white; color: #b91c1c; border: 1px solid #fecaca;
-    border-radius: 9px; padding: 0.55rem 1.1rem; font-size: 0.9rem; font-weight: 600;
-    cursor: pointer;
-}
-.btn-live-end:hover { background: #fef2f2; }
-.live-tasks-bar { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-.live-task-chip {
-    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
-    background: white; border: 1px solid #e5e7eb; border-radius: 10px;
-    padding: 0.5rem 0.8rem;
-}
-.live-task-for { color: #6b7280; font-size: 0.85rem; font-weight: 600; }
-.live-conn {
-    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
-    margin-right: 0.45rem; background: #d1d5db;
-}
-.live-conn.on { background: #10b981; box-shadow: 0 0 0 3px #d1fae5; }
 
-/* Modal sarcină */
-.stm-backdrop {
-    display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
-    z-index: 500; align-items: flex-start; justify-content: center;
-    padding: 5rem 1.5rem 3rem; overflow-y: auto;
+/* Carduri de acțiuni principale */
+.group-main-actions {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem; margin-top: 1.2rem;
 }
-.stm-backdrop.open { display: flex; }
-.stm-modal {
-    background: white; border-radius: 16px; width: 100%; max-width: 640px;
-    padding: 1.5rem 1.7rem;
+.gma-card {
+    display: flex; align-items: center; gap: 1rem;
+    background: white; border: 2px solid #e5e7eb; border-radius: 14px;
+    padding: 1.1rem 1.3rem; text-decoration: none; color: #1f2430;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
-.stm-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.1rem; }
-.stm-head h4 { font-size: 1.15rem; }
-.stm-close { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #6b7280; }
-.stm-simulators { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.6rem; margin-bottom: 1.2rem; }
-.stm-sim {
-    background: #f8f9fb; border: 2px solid #e5e7eb; border-radius: 12px;
-    padding: 0.75rem 0.5rem; cursor: pointer; font-size: 1.4rem;
-    display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
-}
-.stm-sim span { font-size: 0.8rem; font-weight: 600; color: #374151; }
-.stm-sim.active { border-color: #2563eb; background: #eff6ff; }
-.stm-sim.active span { color: #1d4ed8; }
-.stm-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.85rem; margin-bottom: 1.2rem; }
-.stm-field label, .stm-target > label {
-    display: block; font-size: 0.8rem; font-weight: 600; color: #6b7280; margin-bottom: 0.3rem;
-}
-.stm-field select, .stm-field input, .stm-target-row select, .stm-target-row input {
-    width: 100%; padding: 0.5rem 0.6rem; border: 1px solid #d6d9e0; border-radius: 8px;
-    background: white; font-size: 0.9rem;
-}
-.stm-target { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1.2rem; }
-.stm-target-row { display: flex; gap: 0.6rem; align-items: center; }
-.stm-target-row select { flex: 1; width: auto; }
-.stm-target-row input { width: 90px; }
-.stm-target-row span { font-size: 0.85rem; color: #166534; font-weight: 600; white-space: nowrap; }
-.stm-actions { display: flex; justify-content: flex-end; gap: 0.7rem; }
-
-/* Progres elevi la teme simulatoare */
-.sim-progress-toggle-row { border-top: 1px solid #f1f2f4; margin-top: 0.6rem; padding-top: 0.6rem; }
-.sim-progress-toggle {
-    background: none; border: none; cursor: pointer; font-size: 0.9rem;
-    font-weight: 600; color: #2563eb; display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.2rem 0;
-}
-.sim-progress-summary {
-    background: #eef2ff; color: #4f46e5; font-size: 0.78rem; font-weight: 600;
-    padding: 0.15rem 0.6rem; border-radius: 999px;
-}
-.sim-progress-arrow { transition: transform 0.2s ease; }
-.sim-progress-arrow.open { transform: rotate(180deg); }
-.sim-progress { margin-top: 0.75rem; }
-.sim-progress-scroll { overflow-x: auto; }
-.sim-progress-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
-.sim-progress-table th {
-    background: #f8f9fb; color: #6b7280; font-weight: 600; text-align: left;
-    padding: 0.5rem 0.7rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap;
-}
-.sim-progress-table th small { color: #9ca3af; font-weight: 500; }
-.sim-progress-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid #f1f2f4; vertical-align: middle; }
-.sp-student { font-weight: 600; white-space: nowrap; }
-.sp-cell .sp-main { font-weight: 700; white-space: nowrap; }
-.sp-cell .sp-sub { color: #6b7280; font-size: 0.76rem; white-space: nowrap; }
-.sp-cell.sp-done { background: #f0fdf4; }
-.sp-cell.sp-done .sp-main { color: #067647; }
-.sp-cell.sp-working { background: #eff6ff; }
-.sp-cell.sp-working .sp-main { color: #1d4ed8; }
-.sp-dash { color: #c3c8d0; }
-.sp-empty { color: #6b7280; font-size: 0.88rem; }
-.sp-days { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 0.3rem; max-width: 220px; }
-.sp-day { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
-.sp-day.done { background: #10b981; }
-.sp-day.missed { background: #ef4444; }
-.sp-day.today { background: #2563eb; }
-.sp-day.upcoming { background: #fbbf24; }
+.gma-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.gma-homework:hover { border-color: #2563eb; }
+.gma-live:hover { border-color: #ef4444; }
+.gma-icon { font-size: 1.9rem; }
+.gma-text { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }
+.gma-text strong { font-size: 1.02rem; }
+.gma-text small { color: #6b7280; font-size: 0.84rem; }
+.gma-arrow { font-size: 1.3rem; color: #9ca3af; font-weight: 700; }
 </style>
 
 <script>
-// ==================== Teme Simulatoare ====================
-const SIM_LEVELS = [
-    ['direct-to-4', 'Calcul direct cu 4'], ['direct-to-5', 'Calcul direct cu 5'],
-    ['direct-to-9', 'Calcul direct cu 9'], ['direct-counting', 'Calcul direct'],
-    ['small-plus-1', '+1 = +5-4'], ['small-minus-1', '-1 = +4-5'],
-    ['small-plus-2', '+2 = +5-3'], ['small-minus-2', '-2 = +3-5'],
-    ['small-plus-3', '+3 = +5-2'], ['small-minus-3', '-3 = +2-5'],
-    ['small-plus-4', '+4 = +5-1'], ['small-minus-4', '-4 = +1-5'],
-    ['small-friends-all', 'Prietenii Mici (toate)'],
-    ['big-plus-1', '+1 = -9+10'], ['big-plus-2', '+2 = -8+10'], ['big-plus-3', '+3 = -7+10'],
-    ['big-plus-4', '+4 = -6+10'], ['big-plus-5', '+5 = -5+10'],
-    ['big-minus-1', '-1 = -10+9'], ['big-minus-2', '-2 = -10+8'], ['big-minus-3', '-3 = -10+7'],
-    ['big-minus-4', '-4 = -10+6'], ['big-minus-5', '-5 = -10+5'],
-    ['big-plus-9', '+9 = -1+10'], ['big-minus-9', '-9 = -10+1'],
-    ['big-plus-8', '+8 = -2+10'], ['big-minus-8', '-8 = -10+2'],
-    ['big-plus-7', '+7 = -3+10'], ['big-minus-7', '-7 = -10+3'],
-    ['big-plus-6', '+6 = -4+10'], ['big-minus-6', '-6 = -10+4'],
-    ['big-friends-all', 'Prietenii Mari (toate)'],
-    ['family-plus-6', 'Familia +6'], ['family-minus-6', 'Familia -6'],
-    ['family-plus-7', 'Familia +7'], ['family-minus-7', 'Familia -7'],
-    ['family-plus-8', 'Familia +8'], ['family-minus-8', 'Familia -8'],
-    ['family-plus-9', 'Familia +9'], ['family-minus-9', 'Familia -9'],
-    ['family-all', 'Familia (toate)'],
-    ['mix', 'Mix (toate variantele)']
-];
-
-const SIM_NAMES = {
-    'anzan': 'Calcul mental (Anzan)',
-    'flashcards': 'Cartonașe flash',
-    'flashcard-exercises': 'Exerciții',
-    'worksheet': 'Fișă de lucru'
-};
-
-// Sarcinile temei în construcție
-let simTasks = [];
-let stmSimulator = 'anzan';
-let stmMode = 'homework';  // 'homework' = temă | 'live' = sarcină în lecția live
-
-function openTaskModal() {
-    stmMode = 'homework';
-    document.getElementById('stmForField').style.display = 'none';
-    document.getElementById('stmTargetLabel').textContent = 'Țintă zilnică';
-    document.getElementById('simTaskModal').classList.add('open');
-    stmPickSim(stmSimulator);
-}
-
-function openTaskModalLive() {
-    stmMode = 'live';
-    document.getElementById('stmForField').style.display = 'block';
-    document.getElementById('stmTargetLabel').textContent = 'Țintă';
-    document.getElementById('simTaskModal').classList.add('open');
-    stmPickSim(stmSimulator);
-}
-
-function closeTaskModal() {
-    document.getElementById('simTaskModal').classList.remove('open');
-}
-
-function stmPickSim(sim) {
-    stmSimulator = sim;
-    document.querySelectorAll('.stm-sim').forEach(b =>
-        b.classList.toggle('active', b.dataset.sim === sim));
-    document.querySelectorAll('.stm-field').forEach(f =>
-        f.style.display = f.dataset.for.split(' ').includes(sim) ? 'block' : 'none');
-}
-
-function stmTargetUnitUpdate() {
-    document.getElementById('stmTargetUnit').textContent =
-        document.getElementById('stmTargetType').value === 'minutes' ? 'minute / zi' : 'exerciții / zi';
-}
-
-function stmConfirm() {
-    const digitsVal = document.getElementById('stmDigits').value;
-    const digitsArr = digitsVal.split(',').map(Number);
-    const settings = {
-        digits: digitsArr,
-        digits_label: digitsVal.replace(',', '-') + (digitsArr.length === 1 && digitsArr[0] === 1 ? ' cifră' : ' cifre')
-    };
-    if (stmSimulator === 'flashcards') {
-        settings.speed = parseFloat(document.getElementById('stmSpeed').value) || 1.5;
-    } else {
-        const levelSel = document.getElementById('stmLevel');
-        const difficulty = document.getElementById('stmDifficulty').value;
-        settings.complexity = levelSel.value;
-        settings.complexity_label = levelSel.options[levelSel.selectedIndex].text;
-        settings.difficulty = difficulty;
-        settings.difficulty_label = difficulty === 'easy' ? 'Ușor' : difficulty === 'hard' ? 'Greu' : 'Mediu';
-        settings.terms = parseInt(document.getElementById('stmTerms').value) || 3;
-        if (stmSimulator === 'anzan') {
-            settings.speed = parseFloat(document.getElementById('stmSpeed').value) || 1.5;
-        }
-    }
-    const payload = {
-        simulator: stmSimulator,
-        settings: settings,
-        target_type: document.getElementById('stmTargetType').value,
-        target_value: parseInt(document.getElementById('stmTargetValue').value) || 5
-    };
-
-    if (stmMode === 'live') {
-        payload.student_id = document.getElementById('stmForStudent').value || null;
-        liveAddTask(payload);
-    } else {
-        simTasks.push(payload);
-        renderSimTasks();
-    }
-    closeTaskModal();
-}
-
-function removeSimTask(i) {
-    simTasks.splice(i, 1);
-    renderSimTasks();
-}
-
-function renderSimTasks() {
-    const container = document.getElementById('simTasksList');
-    if (simTasks.length === 0) {
-        container.innerHTML = '<p class="sim-tasks-empty">Nicio sarcină încă — apasă „+ Adaugă sarcină”.</p>';
-        return;
-    }
-    container.innerHTML = simTasks.map((t, i) => {
-        const s = t.settings;
-        const chips = [];
-        if (s.complexity_label) chips.push(s.complexity_label);
-        if (s.digits_label) chips.push(s.digits_label);
-        if (s.difficulty_label) chips.push(s.difficulty_label);
-        if (s.speed) chips.push('Viteză ' + s.speed);
-        if (s.terms) chips.push(s.terms + ' termeni');
-        const target = t.target_type === 'minutes' ? t.target_value + ' min/zi' : t.target_value + ' ex./zi';
-        return `
-            <div class="sim-task-editor">
-                <span class="sim-task-index">${i + 1}</span>
-                <strong>${SIM_NAMES[t.simulator]}</strong>
-                <span class="chips">${chips.map(c => `<span class="chip">${c}</span>`).join('')}</span>
-                <span class="chip chip-target">${target}</span>
-                <button class="remove-task" onclick="removeSimTask(${i})">✕</button>
-            </div>`;
-    }).join('');
-}
-
-function collectSimTasks() {
-    return simTasks;
-}
-
-// ==================== Lecție Live ====================
-const LIVE_STATE_URL = "{% url 'teacher_platform:live_state' group.id %}";
-const LIVE_START_URL = "{% url 'teacher_platform:live_session_start' group.id %}";
-let liveSessionId = {% if live_session %}{{ live_session.id }}{% else %}null{% endif %};
-let livePollTimer = null;
-
-async function liveStart() {
-    const resp = await fetch(LIVE_START_URL, { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } });
-    const data = await resp.json();
-    if (data.ok) {
-        liveSessionId = data.session_id;
-        document.getElementById('liveIdle').style.display = 'none';
-        document.getElementById('liveActive').style.display = 'block';
-        liveStartPolling();
-    }
-}
-
-async function liveEnd() {
-    if (!confirm('Închizi lecția live? Elevii nu vor mai putea lucra la sarcinile ei.')) return;
-    const resp = await fetch(`/teacher/live/${liveSessionId}/inchide/`, {
-        method: 'POST', headers: { 'X-CSRFToken': getCsrf() }
-    });
-    const data = await resp.json();
-    if (data.ok) {
-        liveSessionId = null;
-        liveStopPolling();
-        document.getElementById('liveActive').style.display = 'none';
-        document.getElementById('liveIdle').style.display = 'block';
-    }
-}
-
-async function liveAddTask(payload) {
-    const resp = await fetch(`/teacher/live/${liveSessionId}/sarcina/adauga/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-        body: JSON.stringify(payload)
-    });
-    const data = await resp.json();
-    if (data.ok) liveRefresh();
-    else alert(data.error || 'Eroare la alocarea sarcinii');
-}
-
-async function liveDeleteTask(taskId) {
-    if (!confirm('Ștergi această sarcină live?')) return;
-    const resp = await fetch(`/teacher/live/sarcina/${taskId}/sterge/`, {
-        method: 'POST', headers: { 'X-CSRFToken': getCsrf() }
-    });
-    if ((await resp.json()).ok) liveRefresh();
-}
-
-async function liveRefresh() {
-    try {
-        const resp = await fetch(LIVE_STATE_URL);
-        const data = await resp.json();
-        if (!data.ok) return;
-        if (!data.active) {
-            // sesiunea a fost închisă din altă parte
-            if (liveSessionId) {
-                liveSessionId = null;
-                liveStopPolling();
-                document.getElementById('liveActive').style.display = 'none';
-                document.getElementById('liveIdle').style.display = 'block';
-            }
-            return;
-        }
-        liveSessionId = data.session_id;
-        document.getElementById('liveStartedAt').textContent = 'pornită la ' + data.started_at;
-        liveRenderTasks(data);
-        liveRenderGrid(data);
-    } catch (e) { /* rețea — reîncearcă la următorul poll */ }
-}
-
-function liveRenderTasks(data) {
-    const bar = document.getElementById('liveTasksBar');
-    bar.innerHTML = data.tasks.map(t => {
-        const s = t.settings || {};
-        const chips = [];
-        if (s.complexity_label) chips.push(s.complexity_label);
-        if (s.digits_label) chips.push(s.digits_label);
-        if (s.terms) chips.push(s.terms + ' termeni');
-        return `
-            <div class="live-task-chip">
-                <span class="sim-task-index">${t.order}</span>
-                <strong>${t.simulator_name}</strong>
-                ${t.student_name ? `<span class="live-task-for">👤 ${t.student_name}</span>` : '<span class="live-task-for">👥 grupa</span>'}
-                <span class="chip">${chips.join(' · ') || '—'}</span>
-                <span class="chip chip-target">${t.target}</span>
-                <button class="remove-task" onclick="liveDeleteTask(${t.id})">✕</button>
-            </div>`;
-    }).join('');
-    document.getElementById('liveNoTasks').style.display = data.tasks.length ? 'none' : 'block';
-    document.getElementById('liveGrid').style.display = data.tasks.length ? 'table' : 'none';
-}
-
-function liveRenderGrid(data) {
-    if (!data.tasks.length) return;
-    document.getElementById('liveGridHead').innerHTML = `
-        <tr>
-            <th>Elev</th>
-            ${data.tasks.map(t => `<th>${t.order}. ${t.simulator_name}<br><small>${t.target}</small></th>`).join('')}
-        </tr>`;
-    document.getElementById('liveGridBody').innerHTML = data.students.map(st => `
-        <tr>
-            <td class="sp-student">
-                <span class="live-conn ${st.connected ? 'on' : 'off'}"></span>
-                ${st.name}
-            </td>
-            ${st.cells.map(cell => {
-                if (cell === null) return '<td class="sp-cell"><span class="sp-dash">·</span></td>';
-                if (cell.status === 'none') return '<td class="sp-cell sp-none"><span class="sp-dash">—</span></td>';
-                return `
-                    <td class="sp-cell sp-${cell.status}">
-                        <div class="sp-main">${cell.status === 'done' ? '✓ ' : ''}${cell.exercises} ex. (${cell.percent}%)</div>
-                        <div class="sp-sub">✓${cell.correct} ✗${cell.incorrect} · ⏱${cell.time_display}</div>
-                    </td>`;
-            }).join('')}
-        </tr>`).join('');
-}
-
-function liveStartPolling() {
-    liveStopPolling();
-    liveRefresh();
-    livePollTimer = setInterval(liveRefresh, 4000);
-}
-
-function liveStopPolling() {
-    if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
-}
-
-// pornește polling-ul doar cât timp tab-ul live e deschis
-document.addEventListener('DOMContentLoaded', () => {
-    const liveBtn = document.getElementById('liveTabBtn');
-    if (liveBtn) {
-        liveBtn.addEventListener('click', () => { if (liveSessionId) liveStartPolling(); });
-        document.querySelectorAll('.tab-btn').forEach(b => {
-            if (b.id !== 'liveTabBtn') b.addEventListener('click', liveStopPolling);
-        });
-    }
-});
-
 function copyMeetingLink() {
     const link = document.getElementById('meetingLinkValue').textContent.trim();
     const btn = document.getElementById('copyLinkBtn');
@@ -1002,69 +370,6 @@ function copyMeetingLink() {
         done();
     }
 }
-
-function toggleSimProgress(id) {
-    const panel = document.getElementById('simProg-' + id);
-    const arrow = document.getElementById('simProgArrow-' + id);
-    const open = panel.style.display === 'none';
-    panel.style.display = open ? 'block' : 'none';
-    arrow.classList.toggle('open', open);
-}
-
-function getCsrf() {
-    const el = document.querySelector('#sim-assignments input[name="csrfmiddlewaretoken"]');
-    return el ? el.value : '';
-}
-
-async function saveSimAssignment() {
-    const tasks = collectSimTasks();
-    if (tasks.length === 0) { alert('Adaugă cel puțin o sarcină.'); return; }
-    const start = document.getElementById('simHwStart').value;
-    const end = document.getElementById('simHwEnd').value;
-    if (!start || !end) { alert('Alege perioada temei (de la / până la).'); return; }
-
-    const resp = await fetch("{% url 'teacher_platform:simulator_assignment_create' group.id %}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-        body: JSON.stringify({
-            title: document.getElementById('simHwTitle').value,
-            student_id: document.getElementById('simHwStudent').value || null,
-            start_date: start,
-            end_date: end,
-            tasks: tasks
-        })
-    });
-    const data = await resp.json();
-    if (data.ok) { location.reload(); }
-    else { alert(data.error || 'Eroare la salvare'); }
-}
-
-async function deleteSimAssignment(id) {
-    if (!confirm('Ștergi această temă?')) return;
-    const resp = await fetch(`/teacher/teme-simulatoare/${id}/sterge/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCsrf() }
-    });
-    const data = await resp.json();
-    if (data.ok) { location.reload(); }
-    else { alert(data.error || 'Eroare la ștergere'); }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('simTasksList')) {
-        renderSimTasks();
-        // popularea nivelurilor în modal
-        document.getElementById('stmLevel').innerHTML =
-            SIM_LEVELS.map(l => `<option value="${l[0]}">${l[1]}</option>`).join('');
-        document.getElementById('stmTargetType').addEventListener('change', stmTargetUnitUpdate);
-        // perioada implicită: azi -> peste 7 zile
-        const today = new Date();
-        const week = new Date(Date.now() + 7 * 86400000);
-        const fmt = d => d.toISOString().slice(0, 10);
-        document.getElementById('simHwStart').value = fmt(today);
-        document.getElementById('simHwEnd').value = fmt(week);
-    }
-});
 
 // Tab switching
 document.querySelectorAll('.tab-btn').forEach(btn => {

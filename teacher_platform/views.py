@@ -179,6 +179,46 @@ def group_detail(request, group_id):
         group=group
     ).prefetch_related('submissions').order_by('-due_date')[:10]
 
+    # Șabloane de lecții disponibile din modulul grupei
+    lesson_templates = []
+    if group.module:
+        lesson_templates = LessonTemplate.objects.filter(
+            module=group.module,
+            is_active=True
+        ).order_by('order')
+
+    # Sesiunea live activă (dacă există)
+    live_session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+
+    context = {
+        'group': group,
+        'students': students,
+        'upcoming_lessons': upcoming_lessons,
+        'past_lessons': past_lessons,
+        'assignments': assignments,
+        'lesson_templates': lesson_templates,
+        'live_session': live_session,
+        'sim_assignments_count': SimulatorAssignment.objects.filter(group=group).count(),
+    }
+
+    return render(request, 'teacher_platform/group_detail.html', context)
+
+
+@login_required
+@teacher_required
+def group_homework(request, group_id):
+    """
+    Pagina dedicată Temelor pe Simulatoare ale unei grupe:
+    lista temelor cu progresul zilnic al elevilor + builder-ul de teme.
+    """
+    group = get_object_or_404(
+        Group.objects.select_related('course', 'module'),
+        id=group_id, teacher=request.user
+    )
+    students = GroupStudent.objects.filter(
+        group=group, is_active=True
+    ).select_related('student').order_by('student__first_name')
+
     # Temele pe simulatoare (de grupă + personalizate)
     simulator_assignments = SimulatorAssignment.objects.filter(
         group=group
@@ -253,29 +293,30 @@ def group_detail(request, group_id):
         sa.students_done = sum(1 for row in rows if row['all_done'])
         sa.students_total = len(rows)
 
-    # Șabloane de lecții disponibile din modulul grupei
-    lesson_templates = []
-    if group.module:
-        lesson_templates = LessonTemplate.objects.filter(
-            module=group.module,
-            is_active=True
-        ).order_by('order')
+    context = {
+        'group': group,
+        'students': students,
+        'simulator_assignments': simulator_assignments,
+    }
+    return render(request, 'teacher_platform/group_homework.html', context)
 
-    # Sesiunea live activă (dacă există)
+
+@login_required
+@teacher_required
+def group_live(request, group_id):
+    """Pagina dedicată Lecției Live a unei grupe."""
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    students = GroupStudent.objects.filter(
+        group=group, is_active=True
+    ).select_related('student').order_by('student__first_name')
     live_session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
 
     context = {
         'group': group,
         'students': students,
-        'upcoming_lessons': upcoming_lessons,
-        'past_lessons': past_lessons,
-        'assignments': assignments,
-        'simulator_assignments': simulator_assignments,
-        'lesson_templates': lesson_templates,
         'live_session': live_session,
     }
-
-    return render(request, 'teacher_platform/group_detail.html', context)
+    return render(request, 'teacher_platform/group_live.html', context)
 
 
 @login_required
@@ -1433,6 +1474,7 @@ def _live_state_payload(session):
                     'incorrect': r.incorrect,
                     'time_display': '%d:%02d' % divmod(r.time_spent_seconds, 60),
                     'percent': 100 if r.completed else percent,
+                    'log': (r.exercise_log or [])[-50:],
                 })
         students_json.append({
             'id': st.id,

@@ -725,6 +725,28 @@
         font-weight: 600;
     }
 
+    .report-settings {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .report-setting {
+        background: #eef2ff;
+        color: #1e40af;
+        border-radius: 999px;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .report-setting .rs-label {
+        color: #6b7280;
+        font-weight: 500;
+        margin-right: 0.3rem;
+    }
+
     .exercises-list {
         margin-top: 2rem;
     }
@@ -1403,6 +1425,8 @@
                         <div class="summary-value" id="reportAvgTime">0s</div>
                     </div>
                 </div>
+
+                <div class="report-settings" id="reportSettings"></div>
 
                 <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--text-primary);">Istoric Exerciții</h3>
                 <div id="exercisesList" class="exercises-list"></div>
@@ -5995,6 +6019,23 @@ function finishSeries() {
     document.getElementById('reportCorrect').textContent = correct;
     document.getElementById('reportAvg').textContent = avgCorrect + '%';
     document.getElementById('reportAvgTime').textContent = avgTime + 's';
+
+    // Settings used for this series (level, speed, terms, digits)
+    const levelSel = document.getElementById('seriesComplexity');
+    const levelLabel = levelSel && levelSel.selectedOptions.length
+        ? levelSel.selectedOptions[0].text : settings.complexity;
+    const digits = settings.digitsAllowed || [1];
+    const digitsLabel = digits.length === 1
+        ? (digits[0] === 1 ? '1 cifră' : digits[0] + ' cifre')
+        : digits.join('-') + ' cifre';
+    const diffLabel = settings.difficulty === 'easy' ? 'Ușor'
+        : settings.difficulty === 'hard' ? 'Greu' : 'Mediu';
+    document.getElementById('reportSettings').innerHTML = `
+        <span class="report-setting"><span class="rs-label">Nivel</span> ${levelLabel}</span>
+        <span class="report-setting"><span class="rs-label">Dificultate</span> ${diffLabel}</span>
+        <span class="report-setting"><span class="rs-label">Viteză</span> ${(settings.speed || 1.5).toFixed(1)}s</span>
+        <span class="report-setting"><span class="rs-label">Termeni</span> ${settings.terms || 3}</span>
+        <span class="report-setting"><span class="rs-label">Cifre</span> ${digitsLabel}</span>`;
 
     // Display exercises list
     const exercisesList = document.getElementById('exercisesList');

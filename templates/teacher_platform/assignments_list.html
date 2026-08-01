@@ -14,12 +14,12 @@
                 {% endfor %}
             </select>
         </form>
-        <span class="al-hint">Temele se creează din pagina grupei → tab „🎯 Teme Simulatoare”.</span>
+        <span class="al-hint">Click pe o temă pentru detalii și progres. Temele se creează din pagina grupei → 🎯 Teme Simulatoare.</span>
     </div>
 
     <h3 class="al-section">📌 Active <span class="al-count">{{ active_entries|length }}</span></h3>
     {% for e in active_entries %}
-    <a href="{% url 'teacher_platform:group_detail' e.assignment.group.id %}#sim-assignments" class="al-card active">
+    <a href="{% url 'teacher_platform:group_homework' e.assignment.group.id %}" class="al-card active">
         <div class="al-main">
             <div class="al-title">{{ e.assignment.title }}</div>
             <div class="al-meta">
@@ -43,7 +43,7 @@
     {% if upcoming_entries %}
     <h3 class="al-section">🔜 Viitoare <span class="al-count">{{ upcoming_entries|length }}</span></h3>
     {% for e in upcoming_entries %}
-    <a href="{% url 'teacher_platform:group_detail' e.assignment.group.id %}#sim-assignments" class="al-card">
+    <a href="{% url 'teacher_platform:group_homework' e.assignment.group.id %}" class="al-card">
         <div class="al-main">
             <div class="al-title">{{ e.assignment.title }}</div>
             <div class="al-meta">
@@ -60,7 +60,7 @@
     {% if past_entries %}
     <h3 class="al-section">🗂️ Încheiate</h3>
     {% for e in past_entries %}
-    <a href="{% url 'teacher_platform:group_detail' e.assignment.group.id %}#sim-assignments" class="al-card past">
+    <a href="{% url 'teacher_platform:group_homework' e.assignment.group.id %}" class="al-card past">
         <div class="al-main">
             <div class="al-title">{{ e.assignment.title }}</div>
             <div class="al-meta">

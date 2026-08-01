@@ -1,0 +1,293 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Teme · {{ group.name }}{% endblock %}
+{% block page_title %}🎯 Teme Simulatoare · {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="breadcrumb">
+        <a href="{% url 'teacher_platform:groups_list' %}">Grupe</a>
+        <span>/</span>
+        <a href="{% url 'teacher_platform:group_detail' group.id %}">{{ group.name }}</a>
+        <span>/</span>
+        <span>Teme Simulatoare</span>
+    </div>
+
+    {% csrf_token %}
+
+    <!-- Builder: temă nouă -->
+    <div class="sim-hw-builder">
+        <h4>➕ Temă nouă pe simulatoare</h4>
+        <p class="sim-hw-note">Temele sunt <strong>zilnice</strong>: fiecare sarcină are o țintă pe zi, în fiecare zi din perioada aleasă.</p>
+        <div class="sim-builder-row">
+            <input type="text" id="simHwTitle" placeholder="Titlu temă (ex: Temă săptămâna 1)" value="Temă de casă">
+            <select id="simHwStudent">
+                <option value="">👥 Toată grupa</option>
+                {% for gs in students %}
+                <option value="{{ gs.student.id }}">👤 {{ gs.student.get_full_name }}</option>
+                {% endfor %}
+            </select>
+            <label>De la <input type="date" id="simHwStart"></label>
+            <label>Până la <input type="date" id="simHwEnd"></label>
+        </div>
+
+        <div id="simTasksList"></div>
+
+        <div class="sim-builder-actions">
+            <button class="btn-secondary" onclick="openHomeworkTaskModal()">+ Adaugă sarcină</button>
+            <button class="btn-primary" onclick="saveSimAssignment()">💾 Salvează tema</button>
+        </div>
+    </div>
+
+    <!-- Lista temelor -->
+    <h3 class="sim-hw-section">📋 Temele grupei</h3>
+    <div class="sim-hw-list">
+        {% for sa in simulator_assignments %}
+        <div class="sim-hw-card {% if sa.is_active %}active-period{% endif %}">
+            <div class="sim-hw-header">
+                <div>
+                    <strong>{{ sa.title }}</strong>
+                    <span class="sim-hw-target">
+                        {% if sa.student %}👤 {{ sa.student.get_full_name }}{% else %}👥 Toată grupa{% endif %}
+                    </span>
+                </div>
+                <div class="sim-hw-period">
+                    📅 {{ sa.start_date|date:"d M" }} → {{ sa.end_date|date:"d M Y" }}
+                    <button class="sim-hw-delete" onclick="deleteSimAssignment({{ sa.id }})" title="Șterge tema">✕</button>
+                </div>
+            </div>
+            <div class="sim-hw-tasks">
+                {% for task in sa.tasks.all %}
+                <div class="sim-task-row">
+                    <span class="sim-task-index">{{ task.order }}</span>
+                    <span class="sim-task-name">{{ task.get_simulator_display }}</span>
+                    <span class="chips">
+                        {% if task.settings.complexity_label %}<span class="chip">{{ task.settings.complexity_label }}</span>{% endif %}
+                        {% if task.settings.digits_label %}<span class="chip">{{ task.settings.digits_label }}</span>{% endif %}
+                        {% if task.settings.difficulty_label %}<span class="chip">{{ task.settings.difficulty_label }}</span>{% endif %}
+                        {% if task.settings.speed %}<span class="chip">Viteză {{ task.settings.speed }}</span>{% endif %}
+                        {% if task.settings.terms %}<span class="chip">{{ task.settings.terms }} termeni</span>{% endif %}
+                    </span>
+                    <span class="chip chip-target">{{ task.get_target_display }}/zi</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Progres elevi -->
+            <div class="sim-progress-toggle-row">
+                <button class="sim-progress-toggle" onclick="toggleSimProgress({{ sa.id }})">
+                    📊 Progres elevi <span class="sim-progress-summary">{{ sa.students_done }}/{{ sa.students_total }} la zi</span>
+                    <span class="sim-progress-arrow" id="simProgArrow-{{ sa.id }}">▾</span>
+                </button>
+            </div>
+            <div class="sim-progress" id="simProg-{{ sa.id }}" style="display:none;">
+                {% if sa.progress_rows %}
+                <div class="sim-progress-scroll">
+                    <table class="sim-progress-table">
+                        <thead>
+                            <tr>
+                                <th>Elev</th>
+                                {% for task in sa.tasks.all %}
+                                <th>{{ task.order }}. {{ task.short_name }}<br><small>{{ task.get_target_display }}/zi</small></th>
+                                {% endfor %}
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in sa.progress_rows %}
+                            <tr>
+                                <td class="sp-student">
+                                    {{ row.student.get_full_name }}
+                                    <div class="sp-days">
+                                        {% for d in row.days %}
+                                        <span class="sp-day {{ d.state }}" title="{{ d.date|date:'d M' }}"></span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                {% for cell in row.cells %}
+                                <td class="sp-cell sp-{{ cell.status }}">
+                                    {% if cell.status == 'none' %}
+                                        <span class="sp-dash">—</span>
+                                    {% else %}
+                                        <div class="sp-main">
+                                            {% if cell.status == 'done' %}✓{% endif %}
+                                            {{ cell.days_done }}/{{ cell.days_elapsed }} zile
+                                        </div>
+                                        <div class="sp-sub">{{ cell.exercises }} ex. · {{ cell.accuracy }}% corecte · ⏱{{ cell.time_display }}</div>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                                <td class="sp-cell {% if row.all_done %}sp-done{% elif row.green_days %}sp-working{% endif %}">
+                                    <div class="sp-main">{{ row.green_days }}/{{ row.elapsed_days }} zile</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="sp-empty">Niciun elev în această temă.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>Nu sunt teme pe simulatoare pentru această grupă. Creează prima temă mai sus. ⬆️</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% include 'teacher_platform/_sim_task_modal.html' %}
+</div>
+
+<style>
+/* Teme Simulatoare */
+.sim-hw-section { margin: 1.8rem 0 1rem; }
+.sim-hw-note { color: #6b7280; font-size: 0.88rem; margin-bottom: 1rem; }
+.sim-hw-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.sim-hw-card.active-period { border-left: 4px solid #10b981; }
+.sim-hw-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.6rem; }
+.sim-hw-target { margin-left: 0.75rem; color: #6b7280; font-size: 0.9rem; }
+.sim-hw-period { color: #6b7280; font-size: 0.9rem; display: flex; align-items: center; gap: 0.6rem; }
+.sim-hw-delete { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; width: 26px; height: 26px; cursor: pointer; }
+.sim-task-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0; border-top: 1px solid #f1f2f4; flex-wrap: wrap; }
+.sim-task-index { width: 22px; height: 22px; border-radius: 50%; background: #eef2ff; color: #4f46e5; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sim-task-name { font-weight: 600; min-width: 160px; }
+.chips { display: flex; gap: 0.4rem; flex-wrap: wrap; flex: 1; }
+.chip { background: #e0edff; color: #1e40af; border-radius: 8px; padding: 0.2rem 0.65rem; font-size: 0.82rem; font-weight: 500; }
+.chip-target { background: #dcfce7; color: #166534; margin-left: auto; }
+.sim-hw-builder { background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem; }
+.sim-hw-builder h4 { margin-bottom: 0.4rem; }
+.sim-builder-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.sim-builder-row input[type="text"] { flex: 1; min-width: 200px; }
+.sim-builder-row input, .sim-builder-row select { padding: 0.45rem 0.6rem; border: 1px solid #d6d9e0; border-radius: 8px; background: white; font-size: 0.9rem; }
+.sim-task-editor { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.6rem 0.75rem; margin-bottom: 0.6rem; }
+.sim-task-editor .remove-task { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; width: 26px; height: 26px; cursor: pointer; margin-left: auto; }
+.sim-builder-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
+.sim-tasks-empty { color: #6b7280; font-size: 0.88rem; padding: 0.4rem 0; }
+
+/* Progres elevi */
+.sim-progress-toggle-row { border-top: 1px solid #f1f2f4; margin-top: 0.6rem; padding-top: 0.6rem; }
+.sim-progress-toggle { background: none; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #2563eb; display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 0; }
+.sim-progress-summary { background: #eef2ff; color: #4f46e5; font-size: 0.78rem; font-weight: 600; padding: 0.15rem 0.6rem; border-radius: 999px; }
+.sim-progress-arrow { transition: transform 0.2s ease; }
+.sim-progress-arrow.open { transform: rotate(180deg); }
+.sim-progress { margin-top: 0.75rem; }
+.sim-progress-scroll { overflow-x: auto; }
+.sim-progress-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+.sim-progress-table th { background: #f8f9fb; color: #6b7280; font-weight: 600; text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.sim-progress-table th small { color: #9ca3af; font-weight: 500; }
+.sim-progress-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid #f1f2f4; vertical-align: middle; }
+.sp-student { font-weight: 600; white-space: nowrap; }
+.sp-cell .sp-main { font-weight: 700; white-space: nowrap; }
+.sp-cell .sp-sub { color: #6b7280; font-size: 0.76rem; white-space: nowrap; }
+.sp-cell.sp-done { background: #f0fdf4; }
+.sp-cell.sp-done .sp-main { color: #067647; }
+.sp-cell.sp-working { background: #eff6ff; }
+.sp-cell.sp-working .sp-main { color: #1d4ed8; }
+.sp-dash { color: #c3c8d0; }
+.sp-empty { color: #6b7280; font-size: 0.88rem; }
+.sp-days { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 0.3rem; max-width: 220px; }
+.sp-day { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.sp-day.done { background: #10b981; }
+.sp-day.missed { background: #ef4444; }
+.sp-day.today { background: #2563eb; }
+.sp-day.upcoming { background: #fbbf24; }
+</style>
+
+<script>
+// Sarcinile temei în construcție
+let simTasks = [];
+
+function openHomeworkTaskModal() {
+    openTaskModal({ showFor: false, targetLabel: 'Țintă zilnică' });
+}
+
+window.stmOnConfirm = function(payload) {
+    delete payload.student_id;  // tema are elevul selectat separat, în builder
+    simTasks.push(payload);
+    renderSimTasks();
+};
+
+function removeSimTask(i) {
+    simTasks.splice(i, 1);
+    renderSimTasks();
+}
+
+function renderSimTasks() {
+    const container = document.getElementById('simTasksList');
+    if (simTasks.length === 0) {
+        container.innerHTML = '<p class="sim-tasks-empty">Nicio sarcină încă — apasă „+ Adaugă sarcină”.</p>';
+        return;
+    }
+    container.innerHTML = simTasks.map((t, i) => {
+        const s = t.settings;
+        const chips = [];
+        if (s.complexity_label) chips.push(s.complexity_label);
+        if (s.digits_label) chips.push(s.digits_label);
+        if (s.difficulty_label) chips.push(s.difficulty_label);
+        if (s.speed) chips.push('Viteză ' + s.speed);
+        if (s.terms) chips.push(s.terms + ' termeni');
+        const target = t.target_type === 'minutes' ? t.target_value + ' min/zi' : t.target_value + ' ex./zi';
+        return `
+            <div class="sim-task-editor">
+                <span class="sim-task-index">${i + 1}</span>
+                <strong>${SIM_NAMES[t.simulator]}</strong>
+                <span class="chips">${chips.map(c => `<span class="chip">${c}</span>`).join('')}</span>
+                <span class="chip chip-target">${target}</span>
+                <button class="remove-task" onclick="removeSimTask(${i})">✕</button>
+            </div>`;
+    }).join('');
+}
+
+async function saveSimAssignment() {
+    if (simTasks.length === 0) { alert('Adaugă cel puțin o sarcină.'); return; }
+    const start = document.getElementById('simHwStart').value;
+    const end = document.getElementById('simHwEnd').value;
+    if (!start || !end) { alert('Alege perioada temei (de la / până la).'); return; }
+
+    const resp = await fetch("{% url 'teacher_platform:simulator_assignment_create' group.id %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({
+            title: document.getElementById('simHwTitle').value,
+            student_id: document.getElementById('simHwStudent').value || null,
+            start_date: start,
+            end_date: end,
+            tasks: simTasks
+        })
+    });
+    const data = await resp.json();
+    if (data.ok) { location.reload(); }
+    else { alert(data.error || 'Eroare la salvare'); }
+}
+
+async function deleteSimAssignment(id) {
+    if (!confirm('Ștergi această temă?')) return;
+    const resp = await fetch(`/teacher/teme-simulatoare/${id}/sterge/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf() }
+    });
+    const data = await resp.json();
+    if (data.ok) { location.reload(); }
+    else { alert(data.error || 'Eroare la ștergere'); }
+}
+
+function toggleSimProgress(id) {
+    const panel = document.getElementById('simProg-' + id);
+    const arrow = document.getElementById('simProgArrow-' + id);
+    const open = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    arrow.classList.toggle('open', open);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderSimTasks();
+    const today = new Date();
+    const week = new Date(Date.now() + 7 * 86400000);
+    const fmt = d => d.toISOString().slice(0, 10);
+    document.getElementById('simHwStart').value = fmt(today);
+    document.getElementById('simHwEnd').value = fmt(week);
+});
+</script>
+{% endblock %}

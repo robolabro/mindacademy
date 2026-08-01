@@ -186,6 +186,19 @@
     .tr-modal-stat.bad .tr-modal-stat-value { color: #ef4444; }
     .tr-modal-stat.acc .tr-modal-stat-value { color: #4f46e5; }
     .tr-modal-actions { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; }
+    .tr-modal-list { text-align: left; max-height: 240px; overflow-y: auto; margin-bottom: 1.2rem; }
+    .tr-modal-list-title { font-weight: 700; font-size: 0.9rem; color: #374151; margin-bottom: 0.45rem; }
+    .tr-modal-item {
+        display: flex; justify-content: space-between; align-items: center; gap: 0.7rem;
+        background: #f8f9fb; border: 1px solid #eef0f3; border-radius: 8px;
+        padding: 0.4rem 0.7rem; margin-bottom: 0.3rem; font-size: 0.88rem;
+    }
+    .tr-modal-item.bad { background: #fef2f2; border-color: #fecaca; }
+    .tr-mi-calc { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .tr-mi-answer { color: #6b7280; font-size: 0.82rem; white-space: nowrap; }
+    .tr-mi-mark { font-weight: 800; }
+    .tr-mi-mark.ok { color: #10b981; }
+    .tr-mi-mark.bad { color: #ef4444; }
 </style>
 {% endblock %}
 
@@ -290,6 +303,7 @@
                 <div class="tr-modal-stat-label">Precizie</div>
             </div>
         </div>
+        <div class="tr-modal-list" id="trModalList"></div>
         <div class="tr-modal-actions">
             <button class="tr-btn" onclick="trModalContinue()">Mai lucrez</button>
             <a href="{% if back_url %}{{ back_url }}{% else %}{% url 'student_platform:my_assignments' %}{% endif %}" class="tr-btn-secondary" style="text-decoration:none; display:inline-block;">{% if is_live %}Înapoi la lecție{% else %}Înapoi la teme{% endif %}</a>
@@ -350,6 +364,9 @@ function getCsrf() {
 }
 
 async function postProgress(delta) {
+    if (session.pending.length) {
+        delta.entries = session.pending.splice(0, 50);
+    }
     try {
         const resp = await fetch(PROGRESS_URL, {
             method: 'POST',
@@ -382,11 +399,20 @@ function elapsedSeconds() {
 }
 
 // ==================== Sesiune (pentru popup-ul de sumar) ====================
-let session = { count: 0, correct: 0, incorrect: 0, start: null };
+let session = { count: 0, correct: 0, incorrect: 0, start: null, entries: [], pending: [] };
 
-function sessionRecord(ok) {
+function exerciseString(ex) {
+    let s = String(ex.terms[0]);
+    ex.operations.forEach((o, i) => { s += ' ' + (o === '-' ? '−' : '+') + ' ' + ex.terms[i + 1]; });
+    return s;
+}
+
+function sessionRecord(ok, exStr, correctAnswer, userAnswer, seconds) {
     session.count++;
     if (ok) session.correct++; else session.incorrect++;
+    const entry = { ex: exStr, ca: correctAnswer, ua: userAnswer, ok: ok, t: seconds };
+    session.entries.push(entry);
+    session.pending.push(entry);
 }
 
 function showSummary(targetReached) {
@@ -402,6 +428,18 @@ function showSummary(targetReached) {
     document.getElementById('trModalCorrect').textContent = session.correct;
     document.getElementById('trModalIncorrect').textContent = session.incorrect;
     document.getElementById('trModalAccuracy').textContent = acc + '%';
+    const list = document.getElementById('trModalList');
+    if (session.entries.length) {
+        list.innerHTML = '<div class="tr-modal-list-title">Exercițiile tale</div>' +
+            session.entries.map((e, i) => `
+                <div class="tr-modal-item ${e.ok ? '' : 'bad'}">
+                    <span class="tr-mi-calc">${i + 1}. ${e.ex} = ${e.ca}</span>
+                    <span class="tr-mi-answer">tu: <strong>${e.ua === null || e.ua === undefined ? '—' : e.ua}</strong></span>
+                    <span class="tr-mi-mark ${e.ok ? 'ok' : 'bad'}">${e.ok ? '✓' : '✗'}</span>
+                </div>`).join('');
+    } else {
+        list.innerHTML = '';
+    }
     document.getElementById('trModal').classList.add('open');
 }
 
@@ -605,12 +643,14 @@ function trSeqSubmit() {
     fb.className = 'tr-feedback ' + (ok ? 'ok' : 'bad');
     fb.textContent = ok ? '✓ Corect!' : ('✗ Greșit. Răspunsul corect: ' + expected);
 
-    sessionRecord(ok);
+    const tsec = elapsedSeconds();
+    const exStr = MODE === 'flash' ? 'Cartonaș' : exerciseString(seqState.exercise);
+    sessionRecord(ok, exStr, expected, value, tsec);
     postProgress({
         exercises: 1,
         correct: ok ? 1 : 0,
         incorrect: ok ? 0 : 1,
-        time_seconds: elapsedSeconds()
+        time_seconds: tsec
     });
 
     setTimeout(() => { if (seqState.running) trNextSeqExercise(); }, ok ? 1200 : 2200);
@@ -713,12 +753,14 @@ function shCheckOne(i, countEmptyAsWrong) {
     document.getElementById('shCorrect').textContent = sheetState.correct;
     document.getElementById('shIncorrect').textContent = sheetState.incorrect;
 
-    sessionRecord(ok);
+    const tsec = elapsedSeconds();
+    sessionRecord(ok, exerciseString(ex), ex.answer,
+        input.value === '' ? null : value, tsec);
     postProgress({
         exercises: 1,
         correct: ok ? 1 : 0,
         incorrect: ok ? 0 : 1,
-        time_seconds: elapsedSeconds()
+        time_seconds: tsec
     });
     return true;
 }

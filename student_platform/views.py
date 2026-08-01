@@ -479,13 +479,29 @@ def live_task_progress(request, task_id):
     parsed = _read_deltas(request)
     if parsed is None:
         return JsonResponse({'ok': False, 'error': 'JSON invalid'}, status=400)
-    _, delta = parsed
+    data, delta = parsed
 
     result, _created = LiveTaskResult.objects.get_or_create(task=task, student=student)
     result.completed_exercises += delta('exercises')
     result.correct += delta('correct')
     result.incorrect += delta('incorrect')
     result.time_spent_seconds += delta('time_seconds', cap=3600)
+
+    # istoric detaliat al exercițiilor (pentru raportul profesorului)
+    entries = data.get('entries')
+    if isinstance(entries, list) and entries:
+        log = list(result.exercise_log or [])
+        for e in entries[:50]:
+            if not isinstance(e, dict):
+                continue
+            log.append({
+                'ex': str(e.get('ex', ''))[:120],
+                'ca': e.get('ca'),
+                'ua': e.get('ua'),
+                'ok': bool(e.get('ok')),
+                't': round(float(e.get('t', 0)), 1) if isinstance(e.get('t'), (int, float)) else 0,
+            })
+        result.exercise_log = log[-200:]
 
     if not result.completed:
         if task.target_type == 'minutes':

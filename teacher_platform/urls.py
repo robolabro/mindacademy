@@ -15,6 +15,8 @@ urlpatterns = [
     path('grupe/adauga/', views.group_add, name='group_add'),
     path('grupe/<int:group_id>/', views.group_detail, name='group_detail'),
     path('grupe/<int:group_id>/editeaza/', views.group_edit, name='group_edit'),
+    path('grupe/<int:group_id>/teme/', views.group_homework, name='group_homework'),
+    path('grupe/<int:group_id>/live/', views.group_live, name='group_live'),
 
     # Calendar
     path('calendar/', views.calendar_view, name='calendar'),
