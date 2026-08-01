@@ -151,13 +151,26 @@ const SIM_NAMES = {
 };
 
 let stmSimulator = 'anzan';
+let stmPerDay = true;  // temele au țintă zilnică; lecția live are țintă unică
 
 function openTaskModal(opts) {
     opts = opts || {};
+    stmPerDay = opts.perDay !== false;
     document.getElementById('stmForField').style.display = opts.showFor ? 'block' : 'none';
     document.getElementById('stmTargetLabel').textContent = opts.targetLabel || 'Țintă';
+    // resetează la valorile implicite la fiecare deschidere
+    document.getElementById('stmDigits').value = '1';
+    document.getElementById('stmDifficulty').value = 'medium';
+    document.getElementById('stmSpeed').value = '1.5';
+    document.getElementById('stmTerms').value = '3';
+    document.getElementById('stmTargetType').value = 'count';
+    document.getElementById('stmTargetValue').value = '5';
+    if (document.getElementById('stmForStudent')) document.getElementById('stmForStudent').value = '';
+    if (document.getElementById('stmLevel')) document.getElementById('stmLevel').selectedIndex = 0;
+    stmSimulator = 'anzan';
+    stmPickSim('anzan');
+    stmTargetUnitUpdate();
     document.getElementById('simTaskModal').classList.add('open');
-    stmPickSim(stmSimulator);
 }
 
 function closeTaskModal() {
@@ -173,8 +186,8 @@ function stmPickSim(sim) {
 }
 
 function stmTargetUnitUpdate() {
-    document.getElementById('stmTargetUnit').textContent =
-        document.getElementById('stmTargetType').value === 'minutes' ? 'minute' : 'exerciții';
+    const unit = document.getElementById('stmTargetType').value === 'minutes' ? 'minute' : 'exerciții';
+    document.getElementById('stmTargetUnit').textContent = stmPerDay ? unit + ' / zi' : unit;
 }
 
 function stmConfirm() {

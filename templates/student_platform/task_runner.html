@@ -755,7 +755,7 @@ function shCheckOne(i, countEmptyAsWrong) {
 
     const tsec = elapsedSeconds();
     sessionRecord(ok, exerciseString(ex), ex.answer,
-        input.value === '' ? null : value, tsec);
+        input.value === '' ? null : parseInt(input.value), tsec);
     postProgress({
         exercises: 1,
         correct: ok ? 1 : 0,

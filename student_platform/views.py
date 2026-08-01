@@ -249,6 +249,21 @@ def run_task(request, task_id):
     return render(request, 'student_platform/task_runner.html', context)
 
 
+def _log_scalar(value, cap):
+    """
+    Normalizează o valoare din istoricul de exerciții (venită de la elev)
+    la un scalar mărginit: numerele rămân numere, orice altceva devine text
+    scurtat; obiectele/listele sunt respinse. Previne umflarea JSONField.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value
+    if value is None:
+        return None
+    return str(value)[:cap]
+
+
 def _read_deltas(request):
     """Citește delte numerice pozitive din corpul JSON al cererii."""
     try:
@@ -476,6 +491,10 @@ def live_task_progress(request, task_id):
     student = request.user
     task = _live_task_for_student_or_404(student, task_id)
 
+    # După ce profesorul a închis lecția, rezultatele devin imutabile.
+    if task.session.ended_at is not None:
+        return JsonResponse({'ok': False, 'error': 'Lecția s-a încheiat'}, status=409)
+
     parsed = _read_deltas(request)
     if parsed is None:
         return JsonResponse({'ok': False, 'error': 'JSON invalid'}, status=400)
@@ -487,7 +506,9 @@ def live_task_progress(request, task_id):
     result.incorrect += delta('incorrect')
     result.time_spent_seconds += delta('time_seconds', cap=3600)
 
-    # istoric detaliat al exercițiilor (pentru raportul profesorului)
+    # istoric detaliat al exercițiilor (pentru raportul profesorului).
+    # Conținutul vine de la elev — coercem la scalari mărginiți (anti-DoS
+    # + defense-in-depth alături de escaping-ul la randare).
     entries = data.get('entries')
     if isinstance(entries, list) and entries:
         log = list(result.exercise_log or [])
@@ -495,9 +516,9 @@ def live_task_progress(request, task_id):
             if not isinstance(e, dict):
                 continue
             log.append({
-                'ex': str(e.get('ex', ''))[:120],
-                'ca': e.get('ca'),
-                'ua': e.get('ua'),
+                'ex': _log_scalar(e.get('ex'), 120),
+                'ca': _log_scalar(e.get('ca'), 40),
+                'ua': _log_scalar(e.get('ua'), 40),
                 'ok': bool(e.get('ok')),
                 't': round(float(e.get('t', 0)), 1) if isinstance(e.get('t'), (int, float)) else 0,
             })

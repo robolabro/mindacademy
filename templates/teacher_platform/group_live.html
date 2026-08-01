@@ -195,7 +195,7 @@ let livePollTimer = null;
 let liveLastData = null;
 
 function openLiveTaskModal() {
-    openTaskModal({ showFor: true, targetLabel: 'Țintă' });
+    openTaskModal({ showFor: true, targetLabel: 'Țintă', perDay: false });
 }
 
 window.stmOnConfirm = function(payload) {
@@ -346,14 +346,23 @@ function openLiveReport(studentIdx, taskIdx) {
     if (!log.length) {
         list.innerHTML = '<p class="lrd-empty">Istoricul detaliat apare pe măsură ce elevul rezolvă exerciții (pentru sarcinile începute după această actualizare).</p>';
     } else {
+        // Escapăm conținutul din log (provine de la elev) înainte de innerHTML
         list.innerHTML = log.map((e, i) => `
             <div class="lrd-item ${e.ok ? '' : 'bad'}">
-                <span class="lrd-calc">${i + 1}. ${e.ex} = ${e.ca}</span>
-                <span class="lrd-answer">răspuns: <strong>${e.ua === null || e.ua === undefined ? '—' : e.ua}</strong>${e.t ? ' · ' + e.t + 's' : ''}</span>
+                <span class="lrd-calc">${i + 1}. ${esc(e.ex)} = ${esc(e.ca)}</span>
+                <span class="lrd-answer">răspuns: <strong>${e.ua === null || e.ua === undefined ? '—' : esc(e.ua)}</strong>${e.t ? ' · ' + esc(e.t) + 's' : ''}</span>
                 <span class="lrd-mark ${e.ok ? 'ok' : 'bad'}">${e.ok ? '✓' : '✗'}</span>
             </div>`).join('');
     }
     document.getElementById('liveReportModal').classList.add('open');
+}
+
+// Escapează valori pentru inserare sigură în innerHTML
+function esc(v) {
+    if (v === null || v === undefined) return '';
+    return String(v).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
 }
 
 function closeLiveReport() {
