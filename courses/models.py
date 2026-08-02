@@ -47,6 +47,8 @@ class Course(models.Model):
     locations = models.ManyToManyField(Location, verbose_name="Locații")
     is_active = models.BooleanField(default=True, verbose_name="Activ")
     featured = models.BooleanField(default=False, verbose_name="Recomandat")
+    airtable_id = models.CharField(max_length=64, blank=True, db_index=True,
+                                   verbose_name="ID Airtable")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -130,6 +132,10 @@ class Module(models.Model):
     description = models.TextField(blank=True, verbose_name="Descriere")
     order = models.PositiveIntegerField(default=0, verbose_name="Ordine")
 
+    # Identificator din Airtable (pentru sincronizare idempotentă a curriculumului)
+    airtable_id = models.CharField(max_length=64, blank=True, db_index=True,
+                                   verbose_name="ID Airtable")
+
     # Culoare pentru calendar (hex color)
     color = models.CharField(
         max_length=7,
@@ -165,6 +171,24 @@ class LessonTemplate(models.Model):
     )
     name = models.CharField(max_length=200, verbose_name="Nume Lecție")
     description = models.TextField(blank=True, verbose_name="Descriere")
+
+    # Obiectivele lecției (din Airtable „Objectives", text liber)
+    objectives = models.TextField(
+        blank=True,
+        verbose_name="Obiective",
+        help_text="Obiectivele lecției (sincronizate din Airtable)"
+    )
+
+    # Materiale pentru elevi (din Airtable „Materials")
+    materials = models.TextField(
+        blank=True,
+        verbose_name="Materiale elevi",
+        help_text="Materiale pentru elevi (sincronizate din Airtable)"
+    )
+
+    # Identificator din Airtable (pentru sincronizare idempotentă)
+    airtable_id = models.CharField(max_length=64, blank=True, db_index=True,
+                                   verbose_name="ID Airtable")
 
     # Pași lecție (poate fi text structurat sau JSON)
     lesson_steps = models.TextField(

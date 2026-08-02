@@ -176,6 +176,11 @@ MINDACADEMY_SETTINGS = {
 # Site URL (pentru email-uri)
 SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')
 
+# Airtable — sincronizarea curriculumului (Course/Module/LessonTemplate).
+# Token = Personal Access Token cu acces la baza cu tabelul Module.
+AIRTABLE_TOKEN = config('AIRTABLE_TOKEN', default='')
+AIRTABLE_BASE_ID = config('AIRTABLE_BASE_ID', default='')
+
 # CSRF Trusted Origins (pentru Railway și domeniul custom)
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
