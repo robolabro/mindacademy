@@ -6,6 +6,9 @@
 {% block extra_css %}
 <style>
     .sim-intro { color: #6b7280; margin-bottom: 1.3rem; }
+    .sim-hint { color: #6b7280; font-size: 0.9rem; margin-top: 1.3rem; }
+    .sim-hint a { color: #2563eb; font-weight: 600; text-decoration: none; }
+    .sim-hint a:hover { text-decoration: underline; }
     .sim-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
     .sim-card {
         background: white; border: 1px solid #e5e7eb; border-radius: 14px;
@@ -32,20 +35,12 @@
             <div class="sim-name">Abac Online</div>
             <div class="sim-desc">Abacul virtual pe care poți muta bilele exact ca pe cel real.</div>
         </a>
-        <a href="{% url 'teacher_platform:flashcard_simulator' %}" class="sim-card">
-            <div class="sim-icon" style="background:#fdf2f8;">🎴</div>
-            <div class="sim-name">Cartonașe Flash</div>
-            <div class="sim-desc">Recunoaște numerele de pe soroban din ce în ce mai repede.</div>
-        </a>
-        <a href="{% url 'teacher_platform:anzan_simulator' %}" class="sim-card">
-            <div class="sim-icon" style="background:#eff6ff;">🧠</div>
-            <div class="sim-name">Anzan (Calcul Mental)</div>
-            <div class="sim-desc">Calculează în minte cu sorobanul imaginar.</div>
-        </a>
         <a href="{% url 'teacher_platform:abacus_exercises' %}" class="sim-card">
             <div class="sim-icon" style="background:#f0fdf4;">✏️</div>
             <div class="sim-name">Exerciții</div>
             <div class="sim-desc">Fișe de exerciții rezolvate direct pe ecran, cu verificare imediată.</div>
         </a>
     </div>
+    <p class="sim-hint">🏋️ Cartonașele flash și calculul mental (Anzan) se antrenează din
+        <a href="{% url 'student_platform:training_mode' %}">Mod Antrenament</a>.</p>
 {% endblock %}

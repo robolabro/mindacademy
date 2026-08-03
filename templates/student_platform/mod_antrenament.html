@@ -1,0 +1,49 @@
+{% extends 'student_platform/base_student.html' %}
+
+{% block title %}Mod Antrenament{% endblock %}
+{% block page_title %}Mod Antrenament{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ma-intro { color: #6b7280; margin-bottom: 1.3rem; }
+    .ma-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.1rem; }
+    .ma-card {
+        background: white; border: 1px solid #e5e7eb; border-radius: 16px;
+        padding: 1.5rem 1.4rem; text-decoration: none; color: #1f2430;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        display: block;
+    }
+    .ma-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.09); }
+    .ma-icon {
+        width: 58px; height: 58px; border-radius: 15px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.9rem; margin-bottom: 0.9rem;
+    }
+    .ma-name { font-size: 1.12rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .ma-desc { color: #6b7280; font-size: 0.9rem; line-height: 1.5; }
+    .ma-tag {
+        display: inline-block; margin-top: 0.7rem;
+        background: #fef3c7; color: #92400e; font-size: 0.75rem; font-weight: 700;
+        padding: 0.15rem 0.6rem; border-radius: 999px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <p class="ma-intro">💪 Aici te antrenezi la recunoașterea numerelor și la calculul mental.
+        Exercițiile lucrate se adaugă la progresul tău.</p>
+    <div class="ma-grid">
+        <a href="{% url 'teacher_platform:flashcard_simulator' %}" class="ma-card">
+            <div class="ma-icon" style="background:#fdf2f8;">🎴</div>
+            <div class="ma-name">Cartonașe Flash</div>
+            <div class="ma-desc">Recunoaște numerele de pe soroban din ce în ce mai repede.</div>
+            <span class="ma-tag">antrenament</span>
+        </a>
+        <a href="{% url 'teacher_platform:anzan_simulator' %}" class="ma-card">
+            <div class="ma-icon" style="background:#eff6ff;">🧠</div>
+            <div class="ma-name">Anzan · Calcul Mental</div>
+            <div class="ma-desc">Calculează în minte cu sorobanul imaginar, tot mai rapid.</div>
+            <span class="ma-tag">antrenament</span>
+        </a>
+    </div>
+{% endblock %}
