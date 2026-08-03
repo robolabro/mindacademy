@@ -713,3 +713,30 @@ class LiveParticipant(models.Model):
 
     def __str__(self):
         return f"{self.student.get_full_name()} · {self.session}"
+
+
+class LessonMilestoneProgress(models.Model):
+    """
+    Bifarea unui milestone de lecție de către profesor, în contextul unei
+    grupe (cât de departe a ajuns grupa în structura lecției din curriculum).
+    """
+    group = models.ForeignKey(Group, on_delete=models.CASCADE,
+                              related_name='milestone_progress', verbose_name="Grupă")
+    milestone = models.ForeignKey('courses.LessonMilestone', on_delete=models.CASCADE,
+                                  related_name='group_progress', verbose_name="Milestone")
+    is_done = models.BooleanField(default=False, verbose_name="Bifat")
+    checked_at = models.DateTimeField(null=True, blank=True, verbose_name="Bifat la")
+    checked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='milestone_checks',
+        limit_choices_to={'role': 'teacher'}, verbose_name="Bifat de"
+    )
+
+    class Meta:
+        verbose_name = "Progres Milestone"
+        verbose_name_plural = "Progres Milestones"
+        unique_together = ['group', 'milestone']
+
+    def __str__(self):
+        state = '✓' if self.is_done else '○'
+        return f"{state} {self.group.name} · {self.milestone.title}"

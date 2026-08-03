@@ -220,3 +220,29 @@ class LessonTemplate(models.Model):
 
     def __str__(self):
         return f"{self.module.name} - {self.name}"
+
+
+class LessonMilestone(models.Model):
+    """
+    Un pas cheie („milestone") din structura unei lecții — definit de admin
+    per LessonTemplate. Profesorul îl bifează pe măsură ce parcurge lecția
+    cu o grupă (progresul se stochează în teacher_platform.LessonMilestoneProgress).
+    Ex: „Încălzire", „Exerciții pe abacul mare", „Exerciții pe abacul online".
+    """
+    lesson_template = models.ForeignKey(
+        LessonTemplate,
+        on_delete=models.CASCADE,
+        related_name='milestones',
+        verbose_name="Lecție"
+    )
+    order = models.PositiveIntegerField(default=0, verbose_name="Ordine")
+    title = models.CharField(max_length=200, verbose_name="Milestone")
+    is_active = models.BooleanField(default=True, verbose_name="Activ")
+
+    class Meta:
+        verbose_name = "Milestone Lecție"
+        verbose_name_plural = "Milestones Lecție"
+        ordering = ['lesson_template', 'order']
+
+    def __str__(self):
+        return f"{self.lesson_template.name} · {self.title}"

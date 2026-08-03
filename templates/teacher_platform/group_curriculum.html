@@ -1,0 +1,228 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Curriculum · {{ group.name }}{% endblock %}
+{% block page_title %}📚 Curriculum · {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="breadcrumb">
+        <a href="{% url 'teacher_platform:groups_list' %}">Grupe</a>
+        <span>/</span>
+        <a href="{% url 'teacher_platform:group_detail' group.id %}">{{ group.name }}</a>
+        <span>/</span>
+        <span>Curriculum</span>
+    </div>
+
+    {% csrf_token %}
+
+    {% if not group.course %}
+    <div class="empty-state"><p>Această grupă nu are un curs atribuit. Alege un curs din „Editează Grupă".</p></div>
+    {% else %}
+
+    <!-- Antet curs cu progres general -->
+    <div class="cur-header">
+        <div>
+            <div class="cur-course">{{ group.course.title }}</div>
+            <div class="cur-sub">{{ modules|length }} unit{{ modules|length|pluralize:"ate,ăți" }} · {{ done_milestones }}/{{ total_milestones }} milestones parcurse</div>
+        </div>
+        <div class="cur-overall">
+            <div class="cur-ring" style="--p: {{ overall_percent }}">
+                <span>{{ overall_percent }}%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Module (unități) → lecții -->
+    {% for m in modules %}
+    <div class="cur-module {% if m.is_current %}current{% endif %}">
+        <div class="cur-module-head" onclick="toggleModule({{ m.module.id }})">
+            <span class="cur-module-color" style="background: {{ m.module.color }};"></span>
+            <div class="cur-module-info">
+                <div class="cur-module-name">
+                    {{ m.module.name }}
+                    {% if m.is_current %}<span class="cur-current-badge">grupa e aici</span>{% endif %}
+                </div>
+                <div class="cur-module-meta">{{ m.lessons|length }} lecții · {{ m.done }}/{{ m.total }} milestones</div>
+            </div>
+            <div class="cur-module-bar"><div class="cur-module-fill" style="width: {{ m.percent }}%"></div></div>
+            <span class="cur-module-arrow" id="modArrow-{{ m.module.id }}">▾</span>
+        </div>
+
+        <div class="cur-lessons" id="mod-{{ m.module.id }}">
+            {% for l in m.lessons %}
+            <div class="cur-lesson">
+                <div class="cur-lesson-head" onclick="toggleLesson({{ l.lt.id }})">
+                    <span class="cur-lesson-dot {% if l.total and l.done == l.total %}done{% elif l.done %}partial{% endif %}"></span>
+                    <span class="cur-lesson-name">{{ l.lt.order }}. {{ l.lt.name }}</span>
+                    {% if l.total %}
+                    <span class="cur-lesson-progress">{{ l.done }}/{{ l.total }}</span>
+                    {% else %}
+                    <span class="cur-lesson-progress muted">fără milestones</span>
+                    {% endif %}
+                    <span class="cur-lesson-arrow" id="lesArrow-{{ l.lt.id }}">▾</span>
+                </div>
+
+                <div class="cur-lesson-body" id="les-{{ l.lt.id }}" style="display:none;">
+                    <!-- Secțiunea 1: resurse profesor -->
+                    <div class="cur-section">
+                        <div class="cur-section-title">👩‍🏫 Resurse profesor</div>
+                        {% if l.lt.lesson_plan_file %}
+                        <a href="{{ l.lt.lesson_plan_file.url }}" target="_blank" class="cur-resource-link">📄 Plan de lecție (PDF)</a>
+                        {% else %}
+                        <span class="cur-empty-inline">Niciun plan de lecție încărcat.</span>
+                        {% endif %}
+                        {% if l.lt.lesson_steps %}<div class="cur-text">{{ l.lt.lesson_steps|linebreaksbr }}</div>{% endif %}
+                    </div>
+
+                    <!-- Secțiunea 2: resurse elevi -->
+                    <div class="cur-section">
+                        <div class="cur-section-title">🎒 Resurse elevi</div>
+                        {% if l.lt.materials %}
+                        <div class="cur-text">{{ l.lt.materials|linebreaksbr }}</div>
+                        {% else %}
+                        <span class="cur-empty-inline">Niciun material pentru elevi.</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Secțiunea 3: structura lecției (milestones) -->
+                    <div class="cur-section">
+                        <div class="cur-section-title">✅ Structura lecției
+                            {% if l.lt.objectives %}<span class="cur-obj" title="{{ l.lt.objectives }}">ⓘ obiective</span>{% endif %}
+                        </div>
+                        {% if l.milestones %}
+                        <div class="cur-milestones">
+                            {% for ms in l.milestones %}
+                            <label class="cur-milestone {% if ms.done %}checked{% endif %}">
+                                <input type="checkbox" {% if ms.done %}checked{% endif %}
+                                       onchange="toggleMilestone(this, {{ ms.obj.id }})">
+                                <span>{{ ms.obj.title }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="cur-empty-inline">Niciun milestone definit. Se adaugă din admin (Șablon Lecție → Milestones).</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="cur-empty-inline" style="padding: 0.8rem 1rem;">Nicio lecție în acest modul.</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state"><p>Cursul nu are module/lecții încă. Se sincronizează din Airtable sau se adaugă din admin.</p></div>
+    {% endfor %}
+
+    {% endif %}
+</div>
+
+<style>
+.cur-header {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    background: white; border: 1px solid #e5e7eb; border-radius: 14px;
+    padding: 1.2rem 1.4rem; margin-bottom: 1.3rem;
+}
+.cur-course { font-size: 1.2rem; font-weight: 700; }
+.cur-sub { color: #6b7280; font-size: 0.9rem; margin-top: 0.2rem; }
+.cur-ring {
+    --p: 0;
+    width: 66px; height: 66px; border-radius: 50%;
+    background: conic-gradient(#2563eb calc(var(--p) * 1%), #eef0f3 0);
+    display: flex; align-items: center; justify-content: center;
+}
+.cur-ring span {
+    width: 50px; height: 50px; border-radius: 50%; background: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.92rem; color: #1d4ed8;
+}
+.cur-module { background: white; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 0.8rem; overflow: hidden; }
+.cur-module.current { border-color: #93c5fd; box-shadow: 0 0 0 1px #93c5fd; }
+.cur-module-head { display: flex; align-items: center; gap: 0.9rem; padding: 0.9rem 1.1rem; cursor: pointer; }
+.cur-module-head:hover { background: #f8f9fb; }
+.cur-module-color { width: 12px; height: 34px; border-radius: 6px; flex-shrink: 0; }
+.cur-module-info { flex: 1; min-width: 0; }
+.cur-module-name { font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+.cur-current-badge { background: #dbeafe; color: #1d4ed8; font-size: 0.72rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 999px; }
+.cur-module-meta { color: #6b7280; font-size: 0.84rem; margin-top: 0.15rem; }
+.cur-module-bar { width: 120px; height: 7px; background: #eef0f3; border-radius: 999px; overflow: hidden; flex-shrink: 0; }
+.cur-module-fill { height: 100%; background: #10b981; border-radius: 999px; }
+.cur-module-arrow { color: #9ca3af; transition: transform 0.2s ease; }
+.cur-module-arrow.open { transform: rotate(180deg); }
+.cur-lessons { display: none; border-top: 1px solid #f1f2f4; }
+.cur-lesson { border-bottom: 1px solid #f1f2f4; }
+.cur-lesson:last-child { border-bottom: none; }
+.cur-lesson-head { display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 1.1rem 0.7rem 2rem; cursor: pointer; }
+.cur-lesson-head:hover { background: #f8f9fb; }
+.cur-lesson-dot { width: 12px; height: 12px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; }
+.cur-lesson-dot.partial { background: #fbbf24; }
+.cur-lesson-dot.done { background: #10b981; }
+.cur-lesson-name { flex: 1; font-weight: 600; font-size: 0.94rem; }
+.cur-lesson-progress { color: #4f46e5; font-weight: 700; font-size: 0.82rem; }
+.cur-lesson-progress.muted { color: #9ca3af; font-weight: 500; }
+.cur-lesson-arrow { color: #9ca3af; font-size: 0.85rem; transition: transform 0.2s ease; }
+.cur-lesson-arrow.open { transform: rotate(180deg); }
+.cur-lesson-body { padding: 0.3rem 1.1rem 1rem 2rem; background: #fafbfc; }
+.cur-section { padding: 0.7rem 0; border-top: 1px dashed #e5e7eb; }
+.cur-section:first-child { border-top: none; }
+.cur-section-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.cur-obj { background: #eef2ff; color: #4f46e5; font-size: 0.72rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 999px; cursor: help; }
+.cur-resource-link { color: #2563eb; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+.cur-resource-link:hover { text-decoration: underline; }
+.cur-text { color: #374151; font-size: 0.88rem; line-height: 1.5; margin-top: 0.3rem; }
+.cur-empty-inline { color: #9ca3af; font-size: 0.86rem; }
+.cur-milestones { display: flex; flex-direction: column; gap: 0.35rem; }
+.cur-milestone { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.6rem; border-radius: 8px; cursor: pointer; font-size: 0.92rem; }
+.cur-milestone:hover { background: #eef2ff; }
+.cur-milestone.checked { color: #067647; text-decoration: line-through; text-decoration-color: #a7f3d0; }
+.cur-milestone input { width: 18px; height: 18px; cursor: pointer; accent-color: #10b981; }
+</style>
+
+<script>
+function getCsrf() {
+    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return el ? el.value : '';
+}
+function toggleModule(id) {
+    const el = document.getElementById('mod-' + id);
+    const arrow = document.getElementById('modArrow-' + id);
+    const open = el.style.display === 'none' || !el.style.display;
+    el.style.display = open ? 'block' : 'none';
+    arrow.classList.toggle('open', open);
+}
+function toggleLesson(id) {
+    const el = document.getElementById('les-' + id);
+    const arrow = document.getElementById('lesArrow-' + id);
+    const open = el.style.display === 'none';
+    el.style.display = open ? 'block' : 'none';
+    arrow.classList.toggle('open', open);
+}
+async function toggleMilestone(input, milestoneId) {
+    const done = input.checked;
+    const label = input.closest('.cur-milestone');
+    label.classList.toggle('checked', done);
+    try {
+        const resp = await fetch("{% url 'teacher_platform:milestone_toggle' group.id %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+            body: JSON.stringify({ milestone_id: milestoneId, done: done })
+        });
+        const data = await resp.json();
+        if (!data.ok) { input.checked = !done; label.classList.toggle('checked', !done); alert(data.error || 'Eroare'); }
+    } catch (e) {
+        input.checked = !done; label.classList.toggle('checked', !done);
+    }
+}
+// deschide automat modulul curent al grupei
+document.addEventListener('DOMContentLoaded', () => {
+    const current = document.querySelector('.cur-module.current');
+    if (current) {
+        const id = current.querySelector('.cur-module-arrow').id.replace('modArrow-', '');
+        toggleModule(id);
+    } else {
+        const first = document.querySelector('.cur-module-arrow');
+        if (first) toggleModule(first.id.replace('modArrow-', ''));
+    }
+});
+</script>
+{% endblock %}

@@ -5,7 +5,7 @@ from django.db.models import Count, Q, Avg, Sum
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
-from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog, LiveSession, LiveTask, LiveTaskResult, LiveParticipant
+from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog, LiveSession, LiveTask, LiveTaskResult, LiveParticipant, LessonMilestoneProgress
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
 from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm, TeacherProfileForm
@@ -317,6 +317,100 @@ def group_live(request, group_id):
         'live_session': live_session,
     }
     return render(request, 'teacher_platform/group_live.html', context)
+
+
+@login_required
+@teacher_required
+def group_curriculum(request, group_id):
+    """
+    Curriculumul grupei (stil code.org): Curs → Module (unități) → Lecții,
+    cu progresul milestone-urilor per lecție. Fiecare lecție are 3 secțiuni:
+    resurse profesor (PDF), resurse elevi (materiale), structura lecției
+    (checklist de milestones bifat de profesor).
+    """
+    group = get_object_or_404(
+        Group.objects.select_related('course'), id=group_id, teacher=request.user)
+
+    modules = []
+    total_milestones = done_milestones = 0
+    if group.course:
+        # progresul bifat al grupei, indexat pe milestone_id
+        done_ids = set(LessonMilestoneProgress.objects.filter(
+            group=group, is_done=True
+        ).values_list('milestone_id', flat=True))
+
+        qs = Module.objects.filter(course=group.course, is_active=True).order_by('order').prefetch_related(
+            'lesson_templates', 'lesson_templates__milestones')
+        for mod in qs:
+            lessons = []
+            mod_total = mod_done = 0
+            for lt in mod.lesson_templates.filter(is_active=True).order_by('order'):
+                mstones = [
+                    {'obj': ms, 'done': ms.id in done_ids}
+                    for ms in lt.milestones.filter(is_active=True).order_by('order')
+                ]
+                l_total = len(mstones)
+                l_done = sum(1 for m in mstones if m['done'])
+                mod_total += l_total
+                mod_done += l_done
+                lessons.append({
+                    'lt': lt,
+                    'milestones': mstones,
+                    'done': l_done,
+                    'total': l_total,
+                    'percent': round(l_done / l_total * 100) if l_total else 0,
+                    'is_current': group.module_id == mod.id,
+                })
+            total_milestones += mod_total
+            done_milestones += mod_done
+            modules.append({
+                'module': mod,
+                'lessons': lessons,
+                'done': mod_done,
+                'total': mod_total,
+                'percent': round(mod_done / mod_total * 100) if mod_total else 0,
+                'is_current': group.module_id == mod.id,
+            })
+
+    context = {
+        'group': group,
+        'modules': modules,
+        'total_milestones': total_milestones,
+        'done_milestones': done_milestones,
+        'overall_percent': round(done_milestones / total_milestones * 100) if total_milestones else 0,
+    }
+    return render(request, 'teacher_platform/group_curriculum.html', context)
+
+
+@login_required
+@teacher_required
+def milestone_toggle(request, group_id):
+    """POST: bifează/debifează un milestone pentru o grupă. JSON: {milestone_id, done}."""
+    import json
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    try:
+        data = json.loads(request.body)
+        milestone_id = int(data['milestone_id'])
+        done = bool(data.get('done'))
+    except (json.JSONDecodeError, KeyError, ValueError, TypeError):
+        return JsonResponse({'error': 'Date invalide'}, status=400)
+
+    # milestone-ul trebuie să aparțină cursului grupei
+    from courses.models import LessonMilestone
+    ms = get_object_or_404(
+        LessonMilestone.objects.select_related('lesson_template__module'),
+        id=milestone_id)
+    if not group.course_id or ms.lesson_template.module.course_id != group.course_id:
+        return JsonResponse({'error': 'Milestone-ul nu aparține cursului grupei'}, status=400)
+
+    prog, _ = LessonMilestoneProgress.objects.get_or_create(group=group, milestone=ms)
+    prog.is_done = done
+    prog.checked_at = timezone.now() if done else None
+    prog.checked_by = request.user if done else None
+    prog.save()
+    return JsonResponse({'ok': True, 'done': prog.is_done})
 
 
 @login_required

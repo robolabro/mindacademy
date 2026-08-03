@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Location, AgeGroup, Course, Testimonial, DemoLesson, ContactMessage, Module, LessonTemplate
+from .models import Location, AgeGroup, Course, Testimonial, DemoLesson, ContactMessage, Module, LessonTemplate, LessonMilestone
 
 
 @admin.register(Location)
@@ -140,9 +140,22 @@ class ModuleAdmin(admin.ModelAdmin):
     color_badge.allow_tags = True
 
 
+class LessonMilestoneInline(admin.TabularInline):
+    """Milestones (structura lecției) definite de admin per lecție."""
+    model = LessonMilestone
+    extra = 3
+    fields = ['order', 'title', 'is_active']
+    ordering = ['order']
+
+
 @admin.register(LessonTemplate)
 class LessonTemplateAdmin(admin.ModelAdmin):
-    list_display = ['name', 'module', 'order', 'is_active']
+    inlines = [LessonMilestoneInline]
+    list_display = ['name', 'module', 'order', 'milestone_count', 'is_active']
+
+    def milestone_count(self, obj):
+        return obj.milestones.count()
+    milestone_count.short_description = 'Milestones'
     list_filter = ['is_active', 'module__course', 'module']
     search_fields = ['name', 'description', 'module__name']
     ordering = ['module', 'order']
