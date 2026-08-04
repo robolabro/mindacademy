@@ -410,7 +410,10 @@ class PullSync:
                 # Upsert după record_id; dacă lipsește (înscriere veche fără
                 # mapare), cădem pe cheia naturală (group, student).
                 obj = Enrollment.objects.filter(airtable_record_id=rec_id).first()
-                if obj is None:
+                # Fallback pe cheia naturală (group, student) doar dacă ambele
+                # sunt deja salvate — în dry-run instanțele nu au pk și nu pot
+                # fi folosite în filtre.
+                if obj is None and group.pk and student.pk:
                     obj = Enrollment.objects.filter(group=group, student=student).first()
                     if obj is not None and not obj.airtable_record_id:
                         obj.airtable_record_id = rec_id
@@ -448,8 +451,9 @@ class PullSync:
             lesson = Lesson.objects.filter(airtable_record_id=rec_id).first()
             if lesson is None:
                 # NU creăm lecții — sunt generate de automatizarea Airtable.
-                self._err(entity, rec_id,
-                          "lecția nu există în Django (update-only, nu creăm)")
+                # Lecțiile Django nu sunt încă legate prin airtable_record_id,
+                # deci e normal să nu le găsim: le numărăm ca „sărite", nu erori.
+                self.stats[entity]['skipped'] += 1
                 continue
             topic = pick(f, 'Lectie', 'Cod Lectie', 'Topic', 'Subiect')
             date_dt = self._parse_datetime(pick(f, 'Schedule', 'Data', 'Date'))
