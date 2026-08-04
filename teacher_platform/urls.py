@@ -19,6 +19,7 @@ urlpatterns = [
     path('grupe/<int:group_id>/live/', views.group_live, name='group_live'),
     path('grupe/<int:group_id>/curriculum/', views.group_curriculum, name='group_curriculum'),
     path('grupe/<int:group_id>/milestone/', views.milestone_toggle, name='milestone_toggle'),
+    path('grupe/<int:group_id>/performanta/', views.group_performance, name='group_performance'),
 
     # Calendar
     path('calendar/', views.calendar_view, name='calendar'),

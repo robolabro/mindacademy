@@ -111,6 +111,14 @@
                 </span>
                 <span class="gma-arrow">→</span>
             </a>
+            <a href="{% url 'teacher_platform:group_performance' group.id %}" class="gma-card gma-performance">
+                <span class="gma-icon">📊</span>
+                <span class="gma-text">
+                    <strong>Performanță</strong>
+                    <small>rezultate per elev + agregat: teme, live, antrenament</small>
+                </span>
+                <span class="gma-arrow">→</span>
+            </a>
         </div>
     </div>
 
@@ -350,6 +358,7 @@
 .gma-homework:hover { border-color: #2563eb; }
 .gma-live:hover { border-color: #ef4444; }
 .gma-curriculum:hover { border-color: #10b981; }
+.gma-performance:hover { border-color: #7c3aed; }
 .gma-icon { font-size: 1.9rem; }
 .gma-text { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }
 .gma-text strong { font-size: 1.02rem; }

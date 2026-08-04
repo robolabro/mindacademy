@@ -415,6 +415,121 @@ def milestone_toggle(request, group_id):
 
 @login_required
 @teacher_required
+def group_performance(request, group_id):
+    """
+    Performanța elevilor unei grupe: agregat per elev din cele 3 surse
+    (Teme, Lecții live, Antrenament liber), plus totalul grupei și
+    rezultatele ultimei lecții live. Fără modele noi — doar agregare.
+    """
+    group = get_object_or_404(
+        Group.objects.select_related('course'), id=group_id, teacher=request.user)
+    memberships = GroupStudent.objects.filter(
+        group=group, is_active=True).select_related('student').order_by('student__first_name')
+    students = [m.student for m in memberships]
+    student_ids = [s.id for s in students]
+
+    def _agg(qs, ex_field):
+        """{student_id: {ex, ok, bad, sec}} dintr-un queryset agregat."""
+        out = {}
+        for row in qs.values('student_id').annotate(
+            ex=Sum(ex_field), ok=Sum('correct'), bad=Sum('incorrect'),
+            sec=Sum('time_spent_seconds')):
+            out[row['student_id']] = {
+                'ex': row['ex'] or 0, 'ok': row['ok'] or 0,
+                'bad': row['bad'] or 0, 'sec': row['sec'] or 0,
+            }
+        return out
+
+    hw = _agg(SimulatorTaskResult.objects.filter(
+        task__assignment__group=group, student_id__in=student_ids), 'completed_exercises')
+    live = _agg(LiveTaskResult.objects.filter(
+        task__session__group=group, student_id__in=student_ids), 'completed_exercises')
+    practice_qs = SimulatorPracticeLog.objects.filter(student_id__in=student_ids)
+    if group.start_date:
+        practice_qs = practice_qs.filter(date__gte=group.start_date)
+    practice = _agg(practice_qs, 'exercises')
+
+    def _acc(ok, bad):
+        answered = ok + bad
+        return round(ok / answered * 100) if answered else 0
+
+    def _cell(d):
+        return {'ex': d['ex'], 'acc': _acc(d['ok'], d['bad'])} if d else {'ex': 0, 'acc': 0}
+
+    rows = []
+    g_ex = g_ok = g_bad = g_sec = 0
+    for st in students:
+        h = hw.get(st.id, {'ex': 0, 'ok': 0, 'bad': 0, 'sec': 0})
+        l = live.get(st.id, {'ex': 0, 'ok': 0, 'bad': 0, 'sec': 0})
+        p = practice.get(st.id, {'ex': 0, 'ok': 0, 'bad': 0, 'sec': 0})
+        tex = h['ex'] + l['ex'] + p['ex']
+        tok = h['ok'] + l['ok'] + p['ok']
+        tbad = h['bad'] + l['bad'] + p['bad']
+        tsec = h['sec'] + l['sec'] + p['sec']
+        g_ex += tex; g_ok += tok; g_bad += tbad; g_sec += tsec
+        rows.append({
+            'student': st,
+            'hw': _cell(h), 'live': _cell(l), 'practice': _cell(p),
+            'total_ex': tex,
+            'total_acc': _acc(tok, tbad),
+            'time_display': '%d:%02d' % divmod(tsec, 60),
+        })
+
+    # ranking după numărul total de exerciții
+    ranked = sorted(rows, key=lambda r: r['total_ex'], reverse=True)
+    for i, r in enumerate(ranked):
+        r['rank'] = i + 1 if r['total_ex'] > 0 else None
+
+    # rezultatele ultimei lecții live (performanța „în timpul lecției")
+    last_session = LiveSession.objects.filter(group=group).order_by('-started_at').first()
+    last_live = None
+    if last_session:
+        from student_platform.views import _live_progress  # reutilizăm formatarea
+        tasks = list(last_session.tasks.select_related('student').order_by('order'))
+        results = {(r.task_id, r.student_id): r
+                   for r in LiveTaskResult.objects.filter(task__session=last_session)}
+        sim_names = dict(SimulatorTask.SIMULATOR_CHOICES)
+        ll_rows = []
+        for st in students:
+            cells = []
+            for t in tasks:
+                if t.student_id and t.student_id != st.id:
+                    cells.append(None); continue
+                r = results.get((t.id, st.id))
+                if r is None:
+                    cells.append({'status': 'none'})
+                else:
+                    answered = r.correct + r.incorrect
+                    cells.append({
+                        'status': 'done' if r.completed else 'working',
+                        'ex': r.completed_exercises, 'correct': r.correct, 'incorrect': r.incorrect,
+                        'acc': round(r.correct / answered * 100) if answered else 0,
+                    })
+            ll_rows.append({'student': st, 'cells': cells})
+        last_live = {
+            'session': last_session,
+            'active': last_session.is_active,
+            'tasks': [{'order': t.order, 'name': sim_names.get(t.simulator, t.simulator),
+                       'student': t.student.get_full_name() if t.student else None} for t in tasks],
+            'rows': ll_rows,
+        }
+
+    context = {
+        'group': group,
+        'rows': rows,
+        'ranked': ranked[:3],
+        'group_total_ex': g_ex,
+        'group_total_acc': _acc(g_ok, g_bad),
+        'group_time_display': '%d:%02d' % divmod(g_sec, 60),
+        'group_avg_ex': round(g_ex / len(students)) if students else 0,
+        'students_count': len(students),
+        'last_live': last_live,
+    }
+    return render(request, 'teacher_platform/group_performance.html', context)
+
+
+@login_required
+@teacher_required
 def calendar_view(request):
     """
     Calendar cu toate lecțiile profesorului
