@@ -193,6 +193,7 @@ AIRTABLE_TABLE_ELEVI = config('AIRTABLE_TABLE_ELEVI', default='tblLdCN1sDksJvYAI
 AIRTABLE_TABLE_LECTII = config('AIRTABLE_TABLE_LECTII', default='tbl1cV52qRBGPBEsV')
 AIRTABLE_TABLE_PREZENTE = config('AIRTABLE_TABLE_PREZENTE', default='tblzEcmV1QiDv7ByG')
 AIRTABLE_TABLE_PROGRES_LECTII = config('AIRTABLE_TABLE_PROGRES_LECTII', default='tblluyRaKCJ00aQLZ')
+AIRTABLE_TABLE_PROFESORI = config('AIRTABLE_TABLE_PROFESORI', default='tblcw6TesETeKS0sm')
 
 # Profesorul atribuit grupelor NOI create din Airtable, când legătura de
 # profesor nu poate fi rezolvată (gol = primul profesor/superuser disponibil).

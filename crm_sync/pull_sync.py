@@ -91,6 +91,7 @@ class PullSync:
         self.map_lesson_tpl = {}   # rec -> LessonTemplate
         self.map_group = {}        # rec -> Group
         self.map_student = {}      # rec -> User(student)
+        self.map_teacher = {}      # rec -> User(teacher)
 
     # -- utilitare -----------------------------------------------------------
     def _t(self, key):
@@ -196,6 +197,52 @@ class PullSync:
         return None
 
     # -- entități ------------------------------------------------------------
+    def sync_profesori(self):
+        """
+        Profesori (Airtable) → User(role=teacher). Potrivim profesorii existenți
+        din Django după email, apoi după nume complet, și le „adoptăm"
+        airtable_record_id (fără duplicate). Dacă nu găsim, creăm un cont de
+        profesor (parolă neutilizabilă). Construiește self.map_teacher pentru
+        rezolvarea legăturii „Profesor" din Grupe.
+        """
+        entity = 'Profesori'
+        records = self.fetch(self._t('AIRTABLE_TABLE_PROFESORI'))
+        for r in records:
+            rec_id, f = r['id'], r.get('fields', {})
+            first = str(pick(f, 'Prenume', 'First Name', default='')).strip()
+            last = str(pick(f, 'Nume', 'Last Name', default='')).strip()
+            email = str(pick(f, 'Email', default='')).strip()
+            try:
+                user = User.objects.filter(airtable_record_id=rec_id).first()
+                if user is None and email:
+                    user = User.objects.filter(email__iexact=email, role='teacher').first()
+                if user is None and (first or last):
+                    user = User.objects.filter(role='teacher',
+                                               first_name__iexact=first,
+                                               last_name__iexact=last).first()
+                if user is not None:
+                    # Adopție: legăm profesorul existent de record-ul Airtable.
+                    if not user.airtable_record_id:
+                        user.airtable_record_id = rec_id
+                    user.sync_status = 'synced'
+                    user.is_archived = False
+                    user.airtable_synced_at = timezone.now()
+                    if not self.dry_run:
+                        user.save()
+                    self.stats[entity]['updated'] += 1
+                else:
+                    user = User(username=f"prof_{rec_id}", role='teacher',
+                                first_name=first, last_name=last, email=email,
+                                airtable_record_id=rec_id, sync_status='synced',
+                                airtable_synced_at=timezone.now())
+                    user.set_unusable_password()
+                    if not self.dry_run:
+                        user.save()
+                    self.stats[entity]['created'] += 1
+                self.map_teacher[rec_id] = user
+            except Exception as exc:  # pragma: no cover
+                self._err(entity, rec_id, exc)
+
     def sync_grupe(self):
         entity = 'Grupe'
         from datetime import time as _time
@@ -206,7 +253,13 @@ class PullSync:
             cod = pick(f, 'Cod Grupa', 'Cod Grupă', 'Cod', default='')
             if self.grupa and str(cod) != self.grupa:
                 continue
-            name = pick(f, 'Grupa', 'Nume Grupa', 'Nume', 'Name', default=cod or rec_id)
+            # Nume curat: „Cod Grupa · Nume Modul" (ex: R0133 · Modul R + ...).
+            modul_nume = pick(f, 'Nume Modul (from Module)', 'Nume Modul')
+            if isinstance(modul_nume, list):
+                modul_nume = modul_nume[0] if modul_nume else ''
+            modul_nume = str(modul_nume or '').strip()
+            cod_s = str(cod or '').strip()
+            name = ' · '.join([p for p in (cod_s, modul_nume) if p]) or cod_s or rec_id
             module = self.map_module.get(first_link(f, 'Modul (link)', 'Module', 'Modul'))
             values = dict(
                 name=str(name),
@@ -223,7 +276,8 @@ class PullSync:
                 # până mapăm profesorii, folosim profesorul implicit. Orarul îl
                 # derivăm din „Start date". La UPDATE nu atingem aceste câmpuri —
                 # nu suprascriem orarul/profesorul stabilit în platformă.
-                teacher = self._default_teacher()
+                teacher = self.map_teacher.get(
+                    first_link(f, 'Profesor', 'Trainer', 'Teacher')) or self._default_teacher()
                 if teacher is None:
                     self._err(entity, rec_id,
                               "niciun profesor disponibil pentru grupa nouă "
@@ -485,6 +539,10 @@ class PullSync:
         self.log(f"== Pull Airtable → Django "
                  f"{'(DRY-RUN)' if self.dry_run else ''} "
                  f"{'grupa=' + self.grupa if self.grupa else '(toată baza)'} ==")
+
+        # Profesorii se sincronizează primii, ca grupele să-și poată lega
+        # profesorul real (din tabelul Profesori), nu pe cel implicit.
+        self.sync_profesori()
 
         # Curriculumul (Module/Lectii Template) NU se sincronizează în pilot:
         # tabelul „Module" din Airtable nu are legătură către un Curs, iar
