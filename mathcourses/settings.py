@@ -199,6 +199,12 @@ AIRTABLE_TABLE_PROFESORI = config('AIRTABLE_TABLE_PROFESORI', default='tblcw6Tes
 # profesor nu poate fi rezolvată (gol = primul profesor/superuser disponibil).
 AIRTABLE_SYNC_DEFAULT_TEACHER_USERNAME = config('AIRTABLE_SYNC_DEFAULT_TEACHER_USERNAME', default='')
 
+# La rularea pe toată baza, sincronizăm DOAR grupele cu aceste statusuri
+# („Status Grupa" din Airtable). Grupele finalizate (Graduated/Merged) rămân
+# arhivă în Airtable, nu se aduc în platformă. Pilotul --grupa=COD ignoră filtrul.
+AIRTABLE_GROUP_ACTIVE_STATUSES = config(
+    'AIRTABLE_GROUP_ACTIVE_STATUSES', default='Active', cast=Csv())
+
 # CSRF Trusted Origins (pentru Railway și domeniul custom)
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',

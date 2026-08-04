@@ -86,6 +86,8 @@ class PullSync:
         self.create_missing_teachers = create_missing_teachers
         self._profesori_by_id = None
         self._unmatched_teachers = set()
+        self.active_statuses = set(
+            getattr(settings, 'AIRTABLE_GROUP_ACTIVE_STATUSES', ['Active']))
 
         self.stats = defaultdict(lambda: dict(created=0, updated=0, archived=0,
                                               skipped=0, errors=0))
@@ -302,8 +304,16 @@ class PullSync:
         for r in records:
             rec_id, f = r['id'], r.get('fields', {})
             cod = pick(f, 'Cod Grupa', 'Cod Grupă', 'Cod', default='')
-            if self.grupa and str(cod) != self.grupa:
-                continue
+            if self.grupa:
+                # Pilot explicit pe o grupă: ignoră filtrul de status.
+                if str(cod) != self.grupa:
+                    continue
+            else:
+                # Rulare pe toată baza: doar grupele active (Graduated/Merged sărite).
+                status_grupa = str(pick(f, 'Status Grupa', 'Status', default='')).strip()
+                if self.active_statuses and status_grupa and status_grupa not in self.active_statuses:
+                    self.stats[entity]['skipped'] += 1
+                    continue
             # Nume curat: „Cod Grupa · Nume Modul" (ex: R0133 · Modul R + ...).
             modul_nume = pick(f, 'Nume Modul (from Module)', 'Nume Modul')
             if isinstance(modul_nume, list):
