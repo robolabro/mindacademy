@@ -32,6 +32,10 @@ class Command(BaseCommand):
                             help="Nu scrie nimic în DB; doar raportează ce s-ar întâmpla.")
         parser.add_argument('--show-schema', action='store_true',
                             help="Tipărește numele câmpurilor din fiecare tabel și iese.")
+        parser.add_argument('--create-missing-teachers', action='store_true',
+                            help="Creează conturi de profesor pentru cei din Airtable "
+                                 "care nu se potrivesc cu niciun profesor Django "
+                                 "(implicit: doar potrivire, fără creare).")
 
     def handle(self, *args, **opts):
         try:
@@ -48,7 +52,8 @@ class Command(BaseCommand):
                     "grupă (--grupa=COD) trebuie validat înainte. Continui doar "
                     "dacă ești sigur."))
 
-            sync = PullSync(dry_run=dry_run, grupa=grupa, log=self.stdout.write)
+            sync = PullSync(dry_run=dry_run, grupa=grupa, log=self.stdout.write,
+                            create_missing_teachers=opts['create_missing_teachers'])
             result = sync.run()
 
             t = result['totals']

@@ -77,11 +77,15 @@ class PullSync:
     airtable_record_id → obiect Django per entitate pentru rezolvarea link-urilor.
     """
 
-    def __init__(self, dry_run=False, grupa=None, fetch=None, log=None):
+    def __init__(self, dry_run=False, grupa=None, fetch=None, log=None,
+                 create_missing_teachers=False):
         self.dry_run = dry_run
         self.grupa = (grupa or '').strip()  # filtru pilot pe „Cod Grupa"
         self.fetch = fetch or _live_fetch
         self.log = log or (lambda msg: None)
+        self.create_missing_teachers = create_missing_teachers
+        self._profesori_by_id = None
+        self._unmatched_teachers = set()
 
         self.stats = defaultdict(lambda: dict(created=0, updated=0, archived=0,
                                               skipped=0, errors=0))
@@ -196,52 +200,99 @@ class PullSync:
             return datetime.combine(d, _t(0, 0))
         return None
 
-    # -- entități ------------------------------------------------------------
-    def sync_profesori(self):
+    # -- rezolvarea profesorilor (lazy, doar cei folosiți de grupele sincronizate) --
+    @staticmethod
+    def _norm_name(s):
+        """Normalizează un nume pentru potrivire: fără diacritice, lowercase."""
+        import unicodedata
+        s = unicodedata.normalize('NFKD', str(s or ''))
+        s = ''.join(c for c in s if not unicodedata.combining(c))
+        return ' '.join(s.lower().split())
+
+    def _load_profesori(self):
+        """Încarcă o singură dată tabelul Profesori într-un dict {rec_id: fields}."""
+        if getattr(self, '_profesori_by_id', None) is not None:
+            return
+        self._profesori_by_id = {}
+        try:
+            for r in self.fetch(self._t('AIRTABLE_TABLE_PROFESORI')):
+                self._profesori_by_id[r['id']] = r.get('fields', {})
+        except Exception as exc:  # pragma: no cover
+            self._err('Profesori', '-', exc)
+
+    def _match_teacher(self, rec_id, first, last, email):
+        """Găsește profesorul Django existent: airtable_record_id → email →
+        nume normalizat → (nume de familie identic + prenume prefix, dacă e unic)."""
+        user = User.objects.filter(airtable_record_id=rec_id).first()
+        if user is not None:
+            return user
+        if email:
+            user = User.objects.filter(role='teacher', email__iexact=email).first()
+            if user is not None:
+                return user
+        target_full = self._norm_name(f"{first} {last}")
+        target_last = self._norm_name(last)
+        target_first = self._norm_name(first)
+        if not (target_first or target_last):
+            return None
+        prefix_matches = []
+        for cand in User.objects.filter(role='teacher'):
+            cf, cl = self._norm_name(cand.first_name), self._norm_name(cand.last_name)
+            if target_full and target_full in (f"{cf} {cl}".strip(), self._norm_name(cand.get_full_name())):
+                return cand
+            # Nume de familie identic + prenume prefix (ex: „Cristi"/„Cristian").
+            if target_last and cl == target_last and target_first and cf and \
+               (cf.startswith(target_first) or target_first.startswith(cf)):
+                prefix_matches.append(cand)
+        # Prefixul se acceptă doar dacă identifică UN singur profesor (fără ambiguitate).
+        return prefix_matches[0] if len(prefix_matches) == 1 else None
+
+    def _resolve_teacher(self, prof_rec_id):
         """
-        Profesori (Airtable) → User(role=teacher). Potrivim profesorii existenți
-        din Django după email, apoi după nume complet, și le „adoptăm"
-        airtable_record_id (fără duplicate). Dacă nu găsim, creăm un cont de
-        profesor (parolă neutilizabilă). Construiește self.map_teacher pentru
-        rezolvarea legăturii „Profesor" din Grupe.
+        Rezolvă profesorul unei grupe din legătura „Profesor". Cache în
+        map_teacher. Adoptă profesorul Django existent (îi setează
+        airtable_record_id); dacă nu găsește și `create_missing_teachers` e
+        activ, creează cont nou; altfel îl raportează ca nepotrivit și
+        returnează None (grupa cade pe profesorul implicit).
         """
+        if not prof_rec_id:
+            return None
+        if prof_rec_id in self.map_teacher:
+            return self.map_teacher[prof_rec_id]
         entity = 'Profesori'
-        records = self.fetch(self._t('AIRTABLE_TABLE_PROFESORI'))
-        for r in records:
-            rec_id, f = r['id'], r.get('fields', {})
-            first = str(pick(f, 'Prenume', 'First Name', default='')).strip()
-            last = str(pick(f, 'Nume', 'Last Name', default='')).strip()
-            email = str(pick(f, 'Email', default='')).strip()
-            try:
-                user = User.objects.filter(airtable_record_id=rec_id).first()
-                if user is None and email:
-                    user = User.objects.filter(email__iexact=email, role='teacher').first()
-                if user is None and (first or last):
-                    user = User.objects.filter(role='teacher',
-                                               first_name__iexact=first,
-                                               last_name__iexact=last).first()
-                if user is not None:
-                    # Adopție: legăm profesorul existent de record-ul Airtable.
-                    if not user.airtable_record_id:
-                        user.airtable_record_id = rec_id
-                    user.sync_status = 'synced'
-                    user.is_archived = False
-                    user.airtable_synced_at = timezone.now()
-                    if not self.dry_run:
-                        user.save()
-                    self.stats[entity]['updated'] += 1
-                else:
-                    user = User(username=f"prof_{rec_id}", role='teacher',
-                                first_name=first, last_name=last, email=email,
-                                airtable_record_id=rec_id, sync_status='synced',
-                                airtable_synced_at=timezone.now())
-                    user.set_unusable_password()
-                    if not self.dry_run:
-                        user.save()
-                    self.stats[entity]['created'] += 1
-                self.map_teacher[rec_id] = user
-            except Exception as exc:  # pragma: no cover
-                self._err(entity, rec_id, exc)
+        self._load_profesori()
+        f = self._profesori_by_id.get(prof_rec_id, {})
+        first = str(pick(f, 'Prenume', 'First Name', default='')).strip()
+        last = str(pick(f, 'Nume', 'Last Name', default='')).strip()
+        email = str(pick(f, 'Email', default='')).strip()
+
+        user = self._match_teacher(prof_rec_id, first, last, email)
+        if user is not None:
+            if not user.airtable_record_id:
+                user.airtable_record_id = prof_rec_id
+            user.sync_status = 'synced'
+            user.is_archived = False
+            user.airtable_synced_at = timezone.now()
+            if not self.dry_run:
+                user.save()
+            self.stats[entity]['updated'] += 1
+        elif self.create_missing_teachers:
+            user = User(username=f"prof_{prof_rec_id}", role='teacher',
+                        first_name=first, last_name=last, email=email,
+                        airtable_record_id=prof_rec_id, sync_status='synced',
+                        airtable_synced_at=timezone.now())
+            user.set_unusable_password()
+            if not self.dry_run:
+                user.save()
+            self.stats[entity]['created'] += 1
+        else:
+            # Nepotrivit și fără creare → raportăm (o dată) și cădem pe implicit.
+            self.stats[entity]['skipped'] += 1
+            self._unmatched_teachers.add(f"{first} {last}".strip() or prof_rec_id)
+            self.map_teacher[prof_rec_id] = None
+            return None
+        self.map_teacher[prof_rec_id] = user
+        return user
 
     def sync_grupe(self):
         entity = 'Grupe'
@@ -276,7 +327,7 @@ class PullSync:
                 # până mapăm profesorii, folosim profesorul implicit. Orarul îl
                 # derivăm din „Start date". La UPDATE nu atingem aceste câmpuri —
                 # nu suprascriem orarul/profesorul stabilit în platformă.
-                teacher = self.map_teacher.get(
+                teacher = self._resolve_teacher(
                     first_link(f, 'Profesor', 'Trainer', 'Teacher')) or self._default_teacher()
                 if teacher is None:
                     self._err(entity, rec_id,
@@ -540,9 +591,9 @@ class PullSync:
                  f"{'(DRY-RUN)' if self.dry_run else ''} "
                  f"{'grupa=' + self.grupa if self.grupa else '(toată baza)'} ==")
 
-        # Profesorii se sincronizează primii, ca grupele să-și poată lega
-        # profesorul real (din tabelul Profesori), nu pe cel implicit.
-        self.sync_profesori()
+        # Profesorii se rezolvă lazy, doar pentru grupele efectiv sincronizate
+        # (vezi _resolve_teacher apelat din sync_grupe) — un pilot pe o grupă
+        # nu atinge toți profesorii din bază.
 
         # Curriculumul (Module/Lectii Template) NU se sincronizează în pilot:
         # tabelul „Module" din Airtable nu are legătură către un Curs, iar
@@ -564,6 +615,12 @@ class PullSync:
         status = 'dry_run' if self.dry_run else (
             'partial' if totals['errors'] else 'success')
         details_lines = [f"{e}: {dict(v)}" for e, v in self.stats.items()]
+        if self._unmatched_teachers:
+            self.log("\nProfesori nepotriviți (grupele lor au primit profesorul "
+                     "implicit; rulează cu --create-missing-teachers ca să le "
+                     "creezi conturi): " + ", ".join(sorted(self._unmatched_teachers)))
+            details_lines.append("PROFESORI NEPOTRIVIȚI: " +
+                                 ", ".join(sorted(self._unmatched_teachers)))
         if self.errors:
             details_lines.append("ERORI:")
             details_lines.extend(self.errors[:50])
