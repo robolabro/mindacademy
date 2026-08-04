@@ -196,10 +196,11 @@ class Enrollment(AirtableSyncMixin, models.Model):
     Mapată din tabelul „Inscrieri" din Airtable — modelul care leagă
     Elev de Grupă. Doar înscrierile cu status „Inscris" sunt mapate activ.
     """
+    # Valori aliniate cu tabelul „Inscrieri" din Airtable (câmpul Status).
     STATUS_CHOICES = [
-        ('inscris', 'Înscris'),
+        ('draft', 'Draft'),
+        ('activ', 'Activ'),
         ('inactiv', 'Inactiv'),
-        ('retras', 'Retras'),
         ('finalizat', 'Finalizat'),
     ]
 
@@ -219,7 +220,7 @@ class Enrollment(AirtableSyncMixin, models.Model):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='inscris',
+        default='activ',
         db_index=True,
         verbose_name="Status Înscriere"
     )

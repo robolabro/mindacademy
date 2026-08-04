@@ -179,6 +179,22 @@ class PullSync:
         except (ValueError, IndexError):
             return None
 
+    @staticmethod
+    def _parse_datetime(value):
+        """Parsează un dateTime ISO Airtable → datetime aware (sau None)."""
+        if not value:
+            return None
+        from django.utils.dateparse import parse_datetime, parse_date
+        s = str(value)
+        dt = parse_datetime(s)
+        if dt is not None:
+            return dt
+        d = parse_date(s)
+        if d is not None:
+            from datetime import datetime, time as _t
+            return datetime.combine(d, _t(0, 0))
+        return None
+
     # -- entități ------------------------------------------------------------
     def sync_grupe(self):
         entity = 'Grupe'
@@ -190,8 +206,8 @@ class PullSync:
             cod = pick(f, 'Cod Grupa', 'Cod Grupă', 'Cod', default='')
             if self.grupa and str(cod) != self.grupa:
                 continue
-            name = pick(f, 'Nume', 'Name', 'Nume Grupa', 'Grupa', default=cod or rec_id)
-            module = self.map_module.get(first_link(f, 'Module', 'Modul'))
+            name = pick(f, 'Grupa', 'Nume Grupa', 'Nume', 'Name', default=cod or rec_id)
+            module = self.map_module.get(first_link(f, 'Modul (link)', 'Module', 'Modul'))
             values = dict(
                 name=str(name),
                 airtable_cod_grupa=str(cod or ''),
@@ -202,10 +218,11 @@ class PullSync:
             existing = Group.objects.filter(airtable_record_id=rec_id).first()
             if existing is None:
                 # La CREARE trebuie completate câmpurile obligatorii ale modelului
-                # (Airtable e sursa pentru orar/profesor; folosim valorile de
-                # acolo dacă există, altfel implicite sigure, de rafinat la
-                # confirmarea schemei). La UPDATE nu le atingem — nu suprascriem
-                # orarul stabilit în platformă.
+                # (Airtable e sursa pentru orar/profesor). Profesorul din Airtable
+                # („Profesor") e legat de tabelul Profesori, nu de userii Django;
+                # până mapăm profesorii, folosim profesorul implicit. Orarul îl
+                # derivăm din „Start date". La UPDATE nu atingem aceste câmpuri —
+                # nu suprascriem orarul/profesorul stabilit în platformă.
                 teacher = self._default_teacher()
                 if teacher is None:
                     self._err(entity, rec_id,
@@ -213,13 +230,24 @@ class PullSync:
                               "(setează AIRTABLE_SYNC_DEFAULT_TEACHER_USERNAME "
                               "sau creează un profesor)")
                     continue
-                weekday = pick(f, 'Zi', 'Ziua', 'Weekday', default=0)
-                try:
-                    weekday = int(weekday)
-                except (ValueError, TypeError):
+                start_dt = self._parse_datetime(pick(f, 'Start date', 'Start Date', 'Data Start'))
+                if start_dt is not None:
+                    # Airtable stochează dateTime în UTC; ora reală a clasei e în
+                    # fusul local (Europe/Bucharest). Convertim înainte de a
+                    # extrage ziua/ora, altfel 17:30 local apare ca 15:30 UTC.
+                    if timezone.is_aware(start_dt):
+                        try:
+                            from zoneinfo import ZoneInfo
+                            start_dt = start_dt.astimezone(ZoneInfo('Europe/Bucharest'))
+                        except Exception:
+                            start_dt = timezone.localtime(start_dt)
+                    weekday = start_dt.weekday()
+                    start_time = start_dt.time()
+                    start_date = start_dt.date()
+                else:
                     weekday = 0
-                start_time = self._parse_time(pick(f, 'Ora', 'Ora Start', 'Start Time')) or _time(0, 0)
-                start_date = pick(f, 'Data Start', 'Start Date') or timezone.now().date()
+                    start_time = self._parse_time(pick(f, 'Start time', 'Ora', 'Ora Start')) or _time(0, 0)
+                    start_date = timezone.now().date()
                 values.update(teacher=teacher, weekday=weekday,
                               start_time=start_time, start_date=start_date)
             try:
@@ -298,9 +326,9 @@ class PullSync:
             rec_id, f = r['id'], r.get('fields', {})
             if allowed_ids is not None and rec_id not in allowed_ids:
                 continue
-            first = str(pick(f, 'Prenume', 'First Name', 'Nume', default='')).strip()
-            last = str(pick(f, 'Nume de familie', 'Last Name', 'Family Name', default='')).strip()
-            full = str(pick(f, 'Name', 'Nume complet', default='')).strip()
+            first = str(pick(f, 'Prenume Copil', 'Prenume', 'First Name', default='')).strip()
+            last = str(pick(f, 'Nume Familie Copil', 'Nume de familie', 'Last Name', default='')).strip()
+            full = str(pick(f, 'Nume copil', 'Name', 'Nume complet', default='')).strip()
             if not (first or last) and full:
                 parts = full.split(' ', 1)
                 first = parts[0]
@@ -354,9 +382,10 @@ class PullSync:
             grp_rec = first_link(f, 'Grupa', 'Grupă', 'Group')
             if grp_rec not in group_ids:
                 continue
-            status = str(pick(f, 'Status', 'Stare', default='')).strip()
-            if status and status.lower() not in ('inscris', 'înscris'):
-                # Doar înscrierile active sunt mapate (decizia A).
+            status = str(pick(f, 'Status', 'Stare', default='')).strip().lower()
+            # Doar înscrierile ACTIVE sunt mapate (decizia A). În Airtable
+            # statusul activ este „Activ" (opțiunile: Draft/Activ/Inactiv/Finalizat).
+            if status not in ('activ', 'inscris', 'înscris'):
                 self.stats[entity]['skipped'] += 1
                 continue
             stud_rec = first_link(f, 'Elev', 'Elevi', 'Student')
@@ -373,7 +402,7 @@ class PullSync:
                 self.stats[entity]['skipped'] += 1
                 continue
             values = dict(group=group, student=student, is_active=True,
-                          status='inscris')
+                          status='activ')
             end = pick(f, 'Data Sfarsit', 'End Date', 'Data Sfârșit')
             if end:
                 values['end_date'] = end
@@ -413,7 +442,7 @@ class PullSync:
         seen = set()
         for r in records:
             rec_id, f = r['id'], r.get('fields', {})
-            grp_rec = first_link(f, 'Grupa', 'Grupă', 'Group')
+            grp_rec = first_link(f, 'Nume Grupa', 'Grupa', 'Grupă', 'Group')
             if grp_rec not in group_ids:
                 continue
             lesson = Lesson.objects.filter(airtable_record_id=rec_id).first()
@@ -422,13 +451,19 @@ class PullSync:
                 self._err(entity, rec_id,
                           "lecția nu există în Django (update-only, nu creăm)")
                 continue
-            topic = pick(f, 'Topic', 'Subiect', 'Nume')
-            date = pick(f, 'Data', 'Date')
+            topic = pick(f, 'Lectie', 'Cod Lectie', 'Topic', 'Subiect')
+            date_dt = self._parse_datetime(pick(f, 'Schedule', 'Data', 'Date'))
+            takeaways = pick(f, 'Lesson Takeaways')
+            homework = pick(f, 'Homework')
             try:
                 if topic is not None:
                     lesson.topic = str(topic)
-                if date:
-                    lesson.date = date
+                if date_dt is not None:
+                    lesson.date = date_dt.date()
+                if takeaways is not None:
+                    lesson.lesson_takeaways = str(takeaways)
+                if homework is not None:
+                    lesson.homework = str(homework)
                 lesson.is_archived = False
                 lesson.sync_status = 'synced'
                 lesson.sync_error = ''
@@ -447,9 +482,11 @@ class PullSync:
                  f"{'(DRY-RUN)' if self.dry_run else ''} "
                  f"{'grupa=' + self.grupa if self.grupa else '(toată baza)'} ==")
 
-        # Ordinea dependențelor: curriculum → grupe → înscrieri(+elevi) → lecții.
-        self.sync_module()
-        self.sync_lectii_template()
+        # Curriculumul (Module/Lectii Template) NU se sincronizează în pilot:
+        # tabelul „Module" din Airtable nu are legătură către un Curs, iar
+        # `Module.course` e obligatoriu în Django. Curriculumul rămâne gestionat
+        # din admin; `Group.module` e nullabil, deci grupele se creează fără el.
+        # (De reactivat după ce definim maparea Categorie Curs → Course.)
         group_ids = self.sync_grupe()
         self.sync_inscrieri(group_ids)
         self.sync_lectii(group_ids)
