@@ -210,16 +210,10 @@ def schedule(request):
 
 @student_required
 def simulators(request):
-    """Simulatoare generale (Abac Online + Exerciții) — ca la profesor."""
+    """Simulatoare pentru antrenament liber (aceleași ca ale profesorului)."""
     context = {'active_menu': 'simulatoare'}
     return render(request, 'student_platform/simulators.html', context)
 
-
-@student_required
-def training_mode(request):
-    """Mod Antrenament — singurul loc cu Cartonașe Flash + Anzan pentru elev."""
-    context = {'active_menu': 'antrenament'}
-    return render(request, 'student_platform/mod_antrenament.html', context)
 
 
 @student_required

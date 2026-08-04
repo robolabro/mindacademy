@@ -914,6 +914,7 @@
                 <div class="mode-card-desc">Exersează calcul mental cu setări personalizate</div>
             </div>
 
+            {% if not is_student_user %}
             <div class="mode-card" onclick="selectMode('series')">
                 <div class="mode-card-icon">📊</div>
                 <div class="mode-card-title">Serii de Exerciții</div>
@@ -937,6 +938,7 @@
                 <div class="mode-card-title">Luptă</div>
                 <div class="mode-card-desc">În curând...</div>
             </div>
+            {% endif %}
         </div>
     </div>
 
@@ -1685,7 +1687,11 @@ const FAMILY_ORDER = [
 ];
 
 // Mode Selection
+// Elevii au acces doar la Mod Antrenament (training) în simulatorul Anzan.
+const IS_STUDENT_USER = {{ is_student_user|yesno:"true,false" }};
+
 function selectMode(mode) {
+    if (IS_STUDENT_USER && mode !== 'training') return;
     currentMode = mode;
     document.getElementById('modeSelection').style.display = 'none';
     document.getElementById(mode + 'Mode').classList.add('active');

@@ -13,7 +13,6 @@ urlpatterns = [
     path('live/sarcina/<int:task_id>/', views.live_run_task, name='live_run_task'),
     path('live/sarcina/<int:task_id>/progres/', views.live_task_progress, name='live_task_progress'),
     path('simulatoare/', views.simulators, name='simulators'),
-    path('mod-antrenament/', views.training_mode, name='training_mode'),
     path('sarcina/<int:task_id>/', views.run_task, name='run_task'),
     path('sarcina/<int:task_id>/progres/', views.task_progress, name='task_progress'),
     path('practica/log/', views.practice_log, name='practice_log'),
