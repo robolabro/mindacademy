@@ -5,7 +5,7 @@ from django.db.models import Count, Q, Avg, Sum
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
-from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog, LiveSession, LiveTask, LiveTaskResult, LiveParticipant, LessonMilestoneProgress
+from .models import Group, Enrollment, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog, LiveSession, LiveTask, LiveTaskResult, LiveParticipant, LessonMilestoneProgress
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
 from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm, TeacherProfileForm
@@ -58,7 +58,7 @@ def dashboard(request):
 
     # Statistici generale
     total_groups = Group.objects.filter(teacher=teacher, is_active=True).count()
-    total_students = GroupStudent.objects.filter(
+    total_students = Enrollment.objects.filter(
         group__teacher=teacher,
         is_active=True
     ).distinct().count()
@@ -158,7 +158,7 @@ def group_detail(request, group_id):
     )
 
     # Studenții din grupă
-    students = GroupStudent.objects.filter(
+    students = Enrollment.objects.filter(
         group=group,
         is_active=True
     ).select_related('student', 'student__student_profile').order_by('student__first_name')
@@ -215,7 +215,7 @@ def group_homework(request, group_id):
         Group.objects.select_related('course', 'module'),
         id=group_id, teacher=request.user
     )
-    students = GroupStudent.objects.filter(
+    students = Enrollment.objects.filter(
         group=group, is_active=True
     ).select_related('student').order_by('student__first_name')
 
@@ -306,7 +306,7 @@ def group_homework(request, group_id):
 def group_live(request, group_id):
     """Pagina dedicată Lecției Live a unei grupe."""
     group = get_object_or_404(Group, id=group_id, teacher=request.user)
-    students = GroupStudent.objects.filter(
+    students = Enrollment.objects.filter(
         group=group, is_active=True
     ).select_related('student').order_by('student__first_name')
     live_session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
@@ -423,7 +423,7 @@ def group_performance(request, group_id):
     """
     group = get_object_or_404(
         Group.objects.select_related('course'), id=group_id, teacher=request.user)
-    memberships = GroupStudent.objects.filter(
+    memberships = Enrollment.objects.filter(
         group=group, is_active=True).select_related('student').order_by('student__first_name')
     students = [m.student for m in memberships]
     student_ids = [s.id for s in students]
@@ -636,7 +636,7 @@ def students_list(request):
     group_filter = request.GET.get('group', '')
 
     # Obține elevii din grupe
-    students_in_groups = GroupStudent.objects.filter(
+    students_in_groups = Enrollment.objects.filter(
         group__teacher=teacher,
         is_active=True
     ).select_related('student', 'student__student_profile', 'group')
@@ -655,7 +655,7 @@ def students_list(request):
         students_with_groups_ids = students_in_groups.values_list('student_id', flat=True)
         for profile in student_profiles:
             if profile.user.id not in students_with_groups_ids:
-                # Creează un obiect pseudo-GroupStudent pentru consistență în template
+                # Creează un obiect pseudo-Enrollment pentru consistență în template
                 class StudentWithoutGroup:
                     def __init__(self, student):
                         self.student = student
@@ -701,7 +701,7 @@ def student_detail(request, student_id):
 
     # Verifică dacă profesorul are acces la acest student
     # (fie prin grupă, fie dacă l-a creat el direct)
-    group_student = GroupStudent.objects.filter(
+    group_student = Enrollment.objects.filter(
         student=student,
         group__teacher=request.user
     ).first()
@@ -714,7 +714,7 @@ def student_detail(request, student_id):
         return redirect('teacher_platform:students_list')
 
     # Grupele studentului
-    student_groups = GroupStudent.objects.filter(
+    student_groups = Enrollment.objects.filter(
         student=student,
         is_active=True
     ).select_related('group', 'group__course', 'group__module')
@@ -820,7 +820,7 @@ def lesson_detail(request, lesson_id):
 
     # Studenții din grupă și prezența lor
     students_data = []
-    group_students = GroupStudent.objects.filter(
+    group_students = Enrollment.objects.filter(
         group=lesson.group,
         is_active=True
     ).select_related('student')
@@ -875,7 +875,7 @@ def assignments_list(request):
     for row in results:
         done_map.setdefault((row['task__assignment_id'], row['student_id']), {})[row['date']] = row['tasks_done']
 
-    memberships = GroupStudent.objects.filter(
+    memberships = Enrollment.objects.filter(
         group__teacher=teacher, is_active=True
     ).values_list('group_id', 'student_id')
     roster = {}
@@ -945,7 +945,7 @@ def assignment_detail(request, assignment_id):
 
     # Studenții care nu au predat
     students_submitted = submissions.values_list('student_id', flat=True)
-    students_not_submitted = GroupStudent.objects.filter(
+    students_not_submitted = Enrollment.objects.filter(
         group=assignment.group,
         is_active=True
     ).exclude(student_id__in=students_submitted).select_related('student')
@@ -1041,7 +1041,7 @@ def student_add(request):
             student = form.save()
 
             # Verifică dacă studentul a fost adăugat într-o grupă
-            group_student = GroupStudent.objects.filter(
+            group_student = Enrollment.objects.filter(
                 student=student,
                 group__teacher=teacher
             ).first()
@@ -1080,7 +1080,7 @@ def student_edit(request, student_id):
     student = get_object_or_404(User, id=student_id, role='student')
 
     # Verifică dacă profesorul are acces la acest student
-    group_student = GroupStudent.objects.filter(
+    group_student = Enrollment.objects.filter(
         student=student,
         group__teacher=request.user
     ).first()
@@ -1120,7 +1120,7 @@ def student_reset_password(request, student_id):
 
     student = get_object_or_404(User, id=student_id, role='student')
 
-    has_access = GroupStudent.objects.filter(
+    has_access = Enrollment.objects.filter(
         student=student, group__teacher=request.user
     ).exists() or (
         hasattr(student, 'student_profile') and student.student_profile.teacher == request.user
@@ -1274,7 +1274,7 @@ def mark_attendance(request, lesson_id):
     student = get_object_or_404(User, id=student_id, role='student')
 
     # Verifică că studentul e în grupă
-    if not GroupStudent.objects.filter(group=lesson.group, student=student, is_active=True).exists():
+    if not Enrollment.objects.filter(group=lesson.group, student=student, is_active=True).exists():
         return JsonResponse({'error': 'Student not in this group'}, status=400)
 
     # Creează sau actualizează attendance
@@ -1288,8 +1288,8 @@ def mark_attendance(request, lesson_id):
         }
     )
 
-    # Actualizează contoarele în GroupStudent
-    group_student = GroupStudent.objects.get(group=lesson.group, student=student)
+    # Actualizează contoarele în Enrollment
+    group_student = Enrollment.objects.get(group=lesson.group, student=student)
     total_lessons = Attendance.objects.filter(
         lesson__group=lesson.group,
         student=student
@@ -1494,7 +1494,7 @@ def simulator_assignment_create(request, group_id):
 
     student = None
     if data.get('student_id'):
-        membership = GroupStudent.objects.filter(
+        membership = Enrollment.objects.filter(
             group=group, student_id=data['student_id'], is_active=True
         ).select_related('student').first()
         if not membership:
@@ -1598,7 +1598,7 @@ def live_task_create(request, session_id):
 
     student = None
     if data.get('student_id'):
-        membership = GroupStudent.objects.filter(
+        membership = Enrollment.objects.filter(
             group=session.group, student_id=data['student_id'], is_active=True
         ).select_related('student').first()
         if not membership:
@@ -1642,7 +1642,7 @@ def _live_state_payload(session):
         p.student_id: p for p in session.participants.all()
     }
     roster = [
-        gs.student for gs in GroupStudent.objects.filter(
+        gs.student for gs in Enrollment.objects.filter(
             group=session.group, is_active=True
         ).select_related('student').order_by('student__first_name')
     ]

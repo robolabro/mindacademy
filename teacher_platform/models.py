@@ -2,13 +2,15 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from accounts.models import User
 from courses.models import Course, Location, Module, LessonTemplate
+from crm_sync.models import AirtableSyncMixin
 from django.utils import timezone
 from django.utils.text import slugify
 
 
-class Group(models.Model):
+class Group(AirtableSyncMixin, models.Model):
     """
-    Grupă de elevi creată de profesor
+    Grupă de elevi creată de profesor.
+    Mapată din tabelul „Grupe" din Airtable (cheie de business: „Cod Grupa").
     """
     WEEKDAY_CHOICES = [
         (0, 'Luni'),
@@ -81,6 +83,16 @@ class Group(models.Model):
         blank=True,
         verbose_name="Cod Grupă",
         help_text="Generat automat: CURS-MODUL-NUMĂR"
+    )
+
+    # „Cod Grupa" din Airtable — cheia de business a tabelului „Grupe".
+    # Distinct de `code` (cod intern generat de platformă).
+    airtable_cod_grupa = models.CharField(
+        max_length=100,
+        blank=True,
+        db_index=True,
+        verbose_name="Cod Grupa (Airtable)",
+        help_text="Codul grupei din Airtable (cheia de business din tabelul Grupe)."
     )
 
     # Data creare editabilă
@@ -178,10 +190,19 @@ class Group(models.Model):
         return next_date
 
 
-class GroupStudent(models.Model):
+class Enrollment(AirtableSyncMixin, models.Model):
     """
-    Relație dintre elev și grupă (membru)
+    Înscrierea unui elev la o grupă (fostul „GroupStudent").
+    Mapată din tabelul „Inscrieri" din Airtable — modelul care leagă
+    Elev de Grupă. Doar înscrierile cu status „Inscris" sunt mapate activ.
     """
+    STATUS_CHOICES = [
+        ('inscris', 'Înscris'),
+        ('inactiv', 'Inactiv'),
+        ('retras', 'Retras'),
+        ('finalizat', 'Finalizat'),
+    ]
+
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='students', verbose_name="Grupă")
     student = models.ForeignKey(
         User,
@@ -194,13 +215,28 @@ class GroupStudent(models.Model):
     enrolled_date = models.DateField(auto_now_add=True, verbose_name="Data Înrolare")
     is_active = models.BooleanField(default=True, verbose_name="Activ")
 
+    # Status înscriere (din Airtable „Inscrieri") + data încheierii.
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='inscris',
+        db_index=True,
+        verbose_name="Status Înscriere"
+    )
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Data Sfârșit Înscriere",
+        help_text="Data la care înscrierea a fost încheiată (din Airtable)."
+    )
+
     # Progres în cadrul grupei
     lessons_attended = models.IntegerField(default=0, verbose_name="Lecții Prezenți")
     lessons_missed = models.IntegerField(default=0, verbose_name="Lecții Absente")
 
     class Meta:
-        verbose_name = "Elev în Grupă"
-        verbose_name_plural = "Elevi în Grupe"
+        verbose_name = "Înscriere"
+        verbose_name_plural = "Înscrieri"
         unique_together = ['group', 'student']
 
     def __str__(self):
@@ -214,9 +250,12 @@ class GroupStudent(models.Model):
         return round((self.lessons_attended / total) * 100, 2)
 
 
-class Lesson(models.Model):
+class Lesson(AirtableSyncMixin, models.Model):
     """
-    Lecție programată sau desfășurată
+    Lecție programată sau desfășurată.
+    Mapată din tabelul „Lectii" din Airtable — generat de automatizări Airtable.
+    Sincronizarea face DOAR UPDATE pe lecțiile existente (găsite după
+    airtable_record_id), niciodată CREATE.
     """
     STATUS_CHOICES = [
         ('scheduled', 'Programată'),
@@ -255,6 +294,13 @@ class Lesson(models.Model):
     # Notițe profesor
     teacher_notes = models.TextField(blank=True, verbose_name="Notițe Profesor")
 
+    # Ce s-a lucrat efectiv la lecție (împins către Airtable la finalizare).
+    lesson_takeaways = models.TextField(
+        blank=True,
+        verbose_name="Ce s-a lucrat (takeaways)",
+        help_text="Rezumatul a ceea ce s-a parcurs efectiv la lecție."
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -267,9 +313,12 @@ class Lesson(models.Model):
         return f"{self.group.name} - {self.date} {self.start_time}"
 
 
-class Attendance(models.Model):
+class Attendance(AirtableSyncMixin, models.Model):
     """
-    Prezență elev la lecție
+    Prezență elev la lecție.
+    Sursa de adevăr pentru EXECUȚIE — se face PUSH către tabelul „Prezente"
+    din Airtable. NU scriem niciodată în „Progres Lectii" (generat de
+    automatizarea Airtable pe baza Prezențelor cu Attended=true).
     """
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='attendances', verbose_name="Lecție")
     student = models.ForeignKey(
@@ -280,8 +329,30 @@ class Attendance(models.Model):
         verbose_name="Elev"
     )
 
+    # Legătura către înscrierea corespunzătoare (elev × grupă). Nullabil —
+    # se completează la sincronizare / creare prezență.
+    enrollment = models.ForeignKey(
+        'Enrollment',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='attendances',
+        verbose_name="Înscriere"
+    )
+
     is_present = models.BooleanField(default=False, verbose_name="Prezent")
     notes = models.TextField(blank=True, verbose_name="Observații")
+
+    # Absență anunțată în prealabil (afectează generarea recuperării).
+    absenta_anuntata = models.BooleanField(
+        default=False,
+        verbose_name="Absență anunțată"
+    )
+    # Marchează dacă absența trebuie să genereze o lecție de recuperare.
+    genereaza_recuperare = models.BooleanField(
+        default=False,
+        verbose_name="Generează recuperare"
+    )
 
     # Evaluare pentru lecție
     performance_rating = models.IntegerField(

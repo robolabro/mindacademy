@@ -253,9 +253,9 @@ def teacher_soroban_overview(request):
         return redirect('home')
 
     # Obține toți elevii profesorului (din grupe)
-    from teacher_platform.models import GroupStudent
+    from teacher_platform.models import Enrollment
 
-    students_in_groups = GroupStudent.objects.filter(
+    students_in_groups = Enrollment.objects.filter(
         group__teacher=request.user,
         is_active=True
     ).values_list('student_id', flat=True)

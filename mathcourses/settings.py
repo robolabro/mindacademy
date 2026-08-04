@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 
     # Apps proprii - ORDINEA E IMPORTANTĂ!
     'accounts',  # Trebuie PRIMA (custom user model)
+    'crm_sync',  # Sincronizare Airtable (mixin partajat + jurnale)
     'courses',  # Cursuri publice (EXISTENT)
     'teacher_platform',  # Platforma profesori
     'student_platform',  # Platforma elevi/părinți

@@ -17,51 +17,11 @@ class AgeGroupAdmin(admin.ModelAdmin):
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    change_list_template = 'admin/courses/course/change_list.html'
     list_display = ['title', 'age_group', 'price', 'featured', 'is_active']
     list_filter = ['featured', 'is_active', 'age_group']
     search_fields = ['title', 'description']
     prepopulated_fields = {'slug': ('title',)}
     filter_horizontal = ['locations']
-
-    def get_urls(self):
-        from django.urls import path
-        urls = super().get_urls()
-        custom = [
-            path('sync-curriculum/', self.admin_site.admin_view(self.sync_curriculum_view),
-                 name='courses_sync_curriculum'),
-        ]
-        return custom + urls
-
-    def sync_curriculum_view(self, request):
-        """Buton admin: sincronizează curriculumul din Airtable (doar staff)."""
-        from django.conf import settings
-        from django.contrib import messages
-        from django.shortcuts import redirect
-        from courses.curriculum_sync import fetch_airtable_records, upsert_curriculum
-
-        token = getattr(settings, 'AIRTABLE_TOKEN', '')
-        base_id = getattr(settings, 'AIRTABLE_BASE_ID', '')
-        if not token or not base_id:
-            messages.error(request, 'Lipsesc AIRTABLE_TOKEN / AIRTABLE_BASE_ID din configurare.')
-            return redirect('admin:courses_course_changelist')
-        try:
-            courses, modules, lessons = fetch_airtable_records(token, base_id)
-            stats = upsert_curriculum(courses, modules, lessons)
-        except ImportError:
-            messages.error(request, 'pyairtable nu este instalat (pip install pyairtable).')
-            return redirect('admin:courses_course_changelist')
-        except Exception as exc:
-            messages.error(request, f'Eroare la sincronizare: {exc}')
-            return redirect('admin:courses_course_changelist')
-
-        messages.success(
-            request,
-            f"Curriculum sincronizat din Airtable — "
-            f"Cursuri: +{stats['courses'][0]}/~{stats['courses'][1]}, "
-            f"Module: +{stats['modules'][0]}/~{stats['modules'][1]}, "
-            f"Lecții: +{stats['lessons'][0]}/~{stats['lessons'][1]}.")
-        return redirect('admin:courses_course_changelist')
 
 
 @admin.register(Testimonial)
@@ -160,7 +120,7 @@ class LessonTemplateAdmin(admin.ModelAdmin):
     search_fields = ['name', 'description', 'module__name']
     ordering = ['module', 'order']
 
-    readonly_fields = ['airtable_id']
+    readonly_fields = ['airtable_record_id', 'airtable_synced_at', 'sync_status']
 
     fieldsets = (
         ('Informații Principale', {
@@ -171,7 +131,7 @@ class LessonTemplateAdmin(admin.ModelAdmin):
             'description': 'Obiective, materiale elevi, pașii lecției și planul de lecție (PDF/document)'
         }),
         ('Status & Sincronizare', {
-            'fields': ('is_active', 'airtable_id'),
-            'description': 'airtable_id se completează automat la sincronizarea din Airtable.'
+            'fields': ('is_active', 'airtable_record_id', 'airtable_synced_at', 'sync_status'),
+            'description': 'airtable_record_id se completează automat la sincronizarea din Airtable (Epic 7).'
         }),
     )

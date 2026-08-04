@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from teacher_platform.models import (
-    GroupStudent, Lesson, SimulatorAssignment, SimulatorTask,
+    Enrollment, Lesson, SimulatorAssignment, SimulatorTask,
     SimulatorTaskResult, SimulatorPracticeLog
 )
 
@@ -41,7 +41,7 @@ def _assignments_for_student(user):
     Temele vizibile pentru un elev: temele personalizate pentru el
     + temele de grupă (fără elev setat) din grupele în care este activ.
     """
-    group_ids = GroupStudent.objects.filter(
+    group_ids = Enrollment.objects.filter(
         student=user, is_active=True
     ).values_list('group_id', flat=True)
 
@@ -63,7 +63,7 @@ def _task_for_student_or_404(user, task_id):
         if assignment.student_id != user.id:
             raise Http404
     else:
-        is_member = GroupStudent.objects.filter(
+        is_member = Enrollment.objects.filter(
             student=user, group_id=assignment.group_id, is_active=True
         ).exists()
         if not is_member:
@@ -182,7 +182,7 @@ def schedule(request):
     student = request.user
     today = timezone.localdate()
 
-    memberships = GroupStudent.objects.filter(
+    memberships = Enrollment.objects.filter(
         student=student, is_active=True
     ).select_related('group', 'group__course', 'group__teacher', 'group__location')
     group_ids = [m.group_id for m in memberships]
@@ -357,7 +357,7 @@ from teacher_platform.models import LiveSession, LiveTask, LiveTaskResult, LiveP
 
 def _active_live_session_for(student):
     """Sesiunea live activă din grupele elevului (prima găsită)."""
-    group_ids = GroupStudent.objects.filter(
+    group_ids = Enrollment.objects.filter(
         student=student, is_active=True
     ).values_list('group_id', flat=True)
     return LiveSession.objects.filter(
@@ -373,7 +373,7 @@ def _live_task_for_student_or_404(user, task_id):
     )
     if task.student_id is not None and task.student_id != user.id:
         raise Http404
-    is_member = GroupStudent.objects.filter(
+    is_member = Enrollment.objects.filter(
         student=user, group_id=task.session.group_id, is_active=True
     ).exists()
     if not is_member:

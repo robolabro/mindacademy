@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from crm_sync.models import AirtableSyncMixin
 
 
 class Location(models.Model):
@@ -32,7 +33,7 @@ class AgeGroup(models.Model):
         return f"{self.name} ({self.min_age}-{self.max_age} ani)"
 
 
-class Course(models.Model):
+class Course(AirtableSyncMixin, models.Model):
     title = models.CharField(max_length=200, verbose_name="Titlu Curs")
     slug = models.SlugField(unique=True, verbose_name="Slug")
     description = models.TextField(verbose_name="Descriere")
@@ -47,8 +48,11 @@ class Course(models.Model):
     locations = models.ManyToManyField(Location, verbose_name="Locații")
     is_active = models.BooleanField(default=True, verbose_name="Activ")
     featured = models.BooleanField(default=False, verbose_name="Recomandat")
+    # DEPRECAT (Epic 3): ID din baza Airtable veche (appREThZie0OQs1Mp).
+    # Nu se mai folosește pentru sincronizare — Epic 7 folosește
+    # `airtable_record_id` (din mixin), populat din baza corectă.
     airtable_id = models.CharField(max_length=64, blank=True, db_index=True,
-                                   verbose_name="ID Airtable")
+                                   verbose_name="ID Airtable (deprecat)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -117,10 +121,11 @@ class ContactMessage(models.Model):
         return f"{self.name} - {self.created_at.strftime('%d.%m.%Y')}"
 
 
-class Module(models.Model):
+class Module(AirtableSyncMixin, models.Model):
     """
     Modul dintr-un curs (ex: Modul 1, Modul 2)
-    Modulele sunt create în admin și nu apar în site-ul public
+    Modulele sunt create în admin și nu apar în site-ul public.
+    Mapat din tabelul „Module" din Airtable.
     """
     course = models.ForeignKey(
         Course,
@@ -132,9 +137,9 @@ class Module(models.Model):
     description = models.TextField(blank=True, verbose_name="Descriere")
     order = models.PositiveIntegerField(default=0, verbose_name="Ordine")
 
-    # Identificator din Airtable (pentru sincronizare idempotentă a curriculumului)
+    # DEPRECAT (Epic 3): ID din baza Airtable veche. Vezi `airtable_record_id`.
     airtable_id = models.CharField(max_length=64, blank=True, db_index=True,
-                                   verbose_name="ID Airtable")
+                                   verbose_name="ID Airtable (deprecat)")
 
     # Culoare pentru calendar (hex color)
     color = models.CharField(
@@ -158,10 +163,11 @@ class Module(models.Model):
         return f"{self.course.title} - {self.name}"
 
 
-class LessonTemplate(models.Model):
+class LessonTemplate(AirtableSyncMixin, models.Model):
     """
     Șablon de lecție din modul (lecții preset)
-    Acestea sunt create în admin și servesc ca bază pentru lecțiile din grupe
+    Acestea sunt create în admin și servesc ca bază pentru lecțiile din grupe.
+    Mapat din tabelul „Lectii Template" din Airtable.
     """
     module = models.ForeignKey(
         Module,
@@ -186,9 +192,9 @@ class LessonTemplate(models.Model):
         help_text="Materiale pentru elevi (sincronizate din Airtable)"
     )
 
-    # Identificator din Airtable (pentru sincronizare idempotentă)
+    # DEPRECAT (Epic 3): ID din baza Airtable veche. Vezi `airtable_record_id`.
     airtable_id = models.CharField(max_length=64, blank=True, db_index=True,
-                                   verbose_name="ID Airtable")
+                                   verbose_name="ID Airtable (deprecat)")
 
     # Pași lecție (poate fi text structurat sau JSON)
     lesson_steps = models.TextField(

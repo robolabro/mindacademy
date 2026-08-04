@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
-from .models import Group, GroupStudent, Lesson
+from .models import Group, Enrollment, Lesson
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Course, Module, Location
 
@@ -189,7 +189,7 @@ class StudentForm(forms.ModelForm):
             # Adaugă elevul în grupă dacă a fost selectată
             group = self.cleaned_data.get('group')
             if group:
-                GroupStudent.objects.create(
+                Enrollment.objects.create(
                     group=group,
                     student=user,
                     is_active=True
