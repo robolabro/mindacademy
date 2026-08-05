@@ -33,3 +33,11 @@ def update_record(table_id, record_id, fields):
     if table_id in _forbidden():
         raise ValueError("Scriere interzisă în Progres Lectii (generat de automatizarea Airtable).")
     return get_table(table_id).update(record_id, fields)
+
+
+def delete_record(table_id, record_id):
+    """Șterge o înregistrare (folosit doar pentru curățarea duplicatelor pe
+    care le-am creat noi). Operațiune ireversibilă."""
+    if table_id in _forbidden():
+        raise ValueError("Ștergere interzisă în Progres Lectii (generat de automatizarea Airtable).")
+    return get_table(table_id).delete(record_id)

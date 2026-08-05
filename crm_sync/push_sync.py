@@ -59,19 +59,30 @@ def build_lectie_fields(lesson):
 
 class PushSync:
     def __init__(self, dry_run=False, grupa=None, log=None,
-                 create_fn=None, update_fn=None):
+                 create_fn=None, update_fn=None, delete_fn=None, fetch_fn=None,
+                 cleanup_duplicates=False):
         self.dry_run = dry_run
         self.grupa = (grupa or '').strip()
         self.log = log or (lambda m: None)
-        # Injectabile pentru teste; implicit clientul REST de scriere.
-        if create_fn is None or update_fn is None:
-            from crm_sync.airtable_push import create_record, update_record
+        self.cleanup_duplicates = cleanup_duplicates
+        # Injectabile pentru teste; implicit clientul REST de scriere/citire.
+        if create_fn is None or update_fn is None or delete_fn is None:
+            from crm_sync.airtable_push import create_record, update_record, delete_record
             create_fn = create_fn or create_record
             update_fn = update_fn or update_record
+            delete_fn = delete_fn or delete_record
+        if fetch_fn is None:
+            from crm_sync.airtable_client import fetch_all
+            fetch_fn = fetch_all
         self._create = create_fn
         self._update = update_fn
-        self.stats = defaultdict(lambda: dict(created=0, updated=0, skipped=0, errors=0))
+        self._delete = delete_fn
+        self._fetch = fetch_fn
+        self.stats = defaultdict(lambda: dict(created=0, updated=0, skipped=0,
+                                              deleted=0, errors=0))
         self.errors = []
+        self._orphans = []  # (att_id, orphan_record_id) de șters (cleanup)
+        self._dupes = []    # id-uri de prezențe duplicate detectate (avertisment)
 
     def _t(self, key):
         return getattr(settings, key)
@@ -87,29 +98,87 @@ class PushSync:
             qs = qs.filter(airtable_cod_grupa=self.grupa)
         return qs
 
+    def _load_existing_prezente(self, lesson_recids):
+        """
+        Reconciliere: citește Prezențele existente din Airtable pentru lecțiile
+        vizate și le indexează după (Elev, Lecție), ca să NU creăm duplicate —
+        actualizăm prezența existentă. Câmpurile linkate vin din REST ca liste
+        de record-id-uri. Returnează {(elev_id, lectie_id): [prezenta_id, ...]}.
+        """
+        index = defaultdict(list)
+        if not lesson_recids:
+            return index
+        try:
+            records = self._fetch(self._t('AIRTABLE_TABLE_PREZENTE'))
+        except Exception as exc:  # pragma: no cover
+            self._err('Prezente', 'reconciliere', exc)
+            return index
+        for r in records:
+            f = r.get('fields', {})
+            elevs = [x for x in (f.get('Elev') or []) if isinstance(x, str)]
+            lectii = [x for x in (f.get('Lectie') or []) if isinstance(x, str)]
+            if not elevs or not lectii:
+                continue
+            lectie = lectii[0]
+            if lectie not in lesson_recids:
+                continue
+            index[(elevs[0], lectie)].append(r['id'])
+        return index
+
     def _build_specs(self):
         """Construiește lista de scrieri (fără a atinge Airtable/DB)."""
         specs = []
         groups = list(self._target_groups())
         group_ids = [g.id for g in groups]
 
-        # --- Prezențe (create/update) ---
         atts = (Attendance.objects
                 .filter(lesson__group_id__in=group_ids)
                 .select_related('student', 'lesson', 'lesson__group', 'enrollment'))
+        atts = list(atts)
+        # Reconciliere prezențe existente (după lecțiile implicate).
+        lesson_recids = {a.lesson.airtable_record_id for a in atts
+                         if a.lesson and a.lesson.airtable_record_id}
+        prez_index = self._load_existing_prezente(lesson_recids)
+
+        # --- Prezențe (create/update, cu evitarea duplicatelor) ---
         for att in atts:
             if not (att.student and att.student.airtable_record_id
                     and att.lesson and att.lesson.airtable_record_id):
                 # Fără elev/lecție mapați în Airtable nu putem lega prezența.
                 self.stats['Prezente']['skipped'] += 1
                 continue
+            key = (att.student.airtable_record_id, att.lesson.airtable_record_id)
+            existing = prez_index.get(key, [])
+            ptr = att.airtable_record_id
+            orphan = None   # prezența „a noastră" de șters (doar cu cleanup)
+            dupe = None     # prezența duplicată detectată (pentru avertisment)
+            if ptr and ptr in existing:
+                # att pointează deja spre o prezență reală. Dacă mai există și
+                # altele (duplicate), o păstrăm pe a lui att și avertizăm; doar
+                # cu --cleanup-duplicates convergem spre cealaltă și o ștergem
+                # pe a noastră.
+                centers = [r for r in existing if r != ptr]
+                if centers and self.cleanup_duplicates:
+                    record_id = centers[0]
+                    orphan = ptr
+                else:
+                    record_id = ptr
+                    dupe = centers[0] if centers else None
+            elif existing:
+                # att nu pointează spre nimic valid → adoptăm prezența existentă
+                # (evităm crearea unui duplicat). Cazul normal: prezență marcată
+                # în Django pentru o lecție care are deja o Prezenta în Airtable.
+                record_id = existing[0]
+            else:
+                record_id = ptr or ''   # nimic în Airtable → create
             specs.append(dict(
                 entity='Prezente',
                 table=self._t('AIRTABLE_TABLE_PREZENTE'),
-                record_id=att.airtable_record_id or '',
+                record_id=record_id,
                 payload=build_prezenta_fields(att),
                 source_kind='prezenta', source_id=att.id,
                 dedupe_key=f"prezenta:{att.id}",
+                orphan=orphan, dupe=dupe,
             ))
 
         # --- Lecție finalizată (doar update; doar lecțiile finalizate) ---
@@ -186,15 +255,45 @@ class PushSync:
             for s in specs:
                 entity = s['entity']
                 self.stats[entity]['created' if not s['record_id'] else 'updated'] += 1
+                if s.get('orphan'):
+                    self._orphans.append((s['source_id'], s['orphan']))
+                if s.get('dupe'):
+                    self._dupes.append(s['dupe'])
+            self._report_dupes()
             return self._finish(specs)
 
         for s in specs:
             job = self._upsert_job(s)
             self._process_job(job)
+            if s['source_kind'] == 'prezenta' and job.status == 'done':
+                # Pointer corect pe att (record_id final: existent/creat).
+                Attendance.objects.filter(pk=s['source_id']).update(
+                    airtable_record_id=job.target_record_id, sync_status='synced',
+                    airtable_synced_at=timezone.now())
+                if s.get('orphan') and s['orphan'] != job.target_record_id:
+                    self._orphans.append((s['source_id'], s['orphan']))
+                if s.get('dupe'):
+                    self._dupes.append(s['dupe'])
+
+        # Curățarea duplicatelor pe care le-am creat noi (ireversibil → opt-in).
+        if self.cleanup_duplicates:
+            for att_id, orphan in self._orphans:
+                try:
+                    self._delete(self._t('AIRTABLE_TABLE_PREZENTE'), orphan)
+                    self.stats['Prezente']['deleted'] += 1
+                except Exception as exc:  # pragma: no cover
+                    self._err('Prezente', f'delete {orphan}', exc)
+        self._report_dupes()
         return self._finish(specs)
 
+    def _report_dupes(self):
+        if self._dupes:
+            self.log(f"  ATENȚIE: {len(self._dupes)} prezențe au duplicate în Airtable "
+                     f"(am păstrat-o pe cea din Django). Rulează cu "
+                     f"--cleanup-duplicates ca să convergem și să ștergem duplicatul.")
+
     def _finish(self, specs):
-        totals = dict(created=0, updated=0, skipped=0, errors=0)
+        totals = dict(created=0, updated=0, skipped=0, deleted=0, errors=0)
         for v in self.stats.values():
             for k in totals:
                 totals[k] += v[k]
@@ -208,8 +307,9 @@ class PushSync:
             synclog = SyncLog.objects.create(
                 direction='push', status=status, scope=self.grupa or 'all', dry_run=False,
                 records_created=totals['created'], records_updated=totals['updated'],
-                records_skipped=totals['skipped'], errors_count=totals['errors'],
-                details=details, finished_at=timezone.now())
+                records_archived=totals['deleted'], records_skipped=totals['skipped'],
+                errors_count=totals['errors'], details=details, finished_at=timezone.now())
         self.log("\n" + details)
         return dict(totals=totals, stats={e: dict(v) for e, v in self.stats.items()},
-                    errors=self.errors, status=status, synclog=synclog, specs=specs)
+                    errors=self.errors, status=status, synclog=synclog, specs=specs,
+                    dupes=list(self._dupes), orphans=list(self._orphans))

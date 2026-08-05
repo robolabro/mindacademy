@@ -26,6 +26,9 @@ class Command(BaseCommand):
                             help="Cod Grupa: restrânge la o singură grupă (pilot).")
         parser.add_argument('--dry-run', action='store_true',
                             help="Nu scrie nimic; doar raportează ce s-ar trimite.")
+        parser.add_argument('--cleanup-duplicates', action='store_true',
+                            help="Șterge din Airtable prezențele duplicate create "
+                                 "anterior de push (ireversibil). Implicit: doar le raportează.")
 
     def handle(self, *args, **opts):
         grupa = opts['grupa']
@@ -35,7 +38,8 @@ class Command(BaseCommand):
                 "Push pe TOATE grupele fără --grupa. Pilotează întâi pe o grupă "
                 "(--grupa=COD)."))
         try:
-            push = PushSync(dry_run=dry_run, grupa=grupa, log=self.stdout.write)
+            push = PushSync(dry_run=dry_run, grupa=grupa, log=self.stdout.write,
+                            cleanup_duplicates=opts['cleanup_duplicates'])
             result = push.run()
         except AirtableConfigError as exc:
             raise CommandError(str(exc))
@@ -44,6 +48,7 @@ class Command(BaseCommand):
         style = self.style.SUCCESS if result['status'] in ('success', 'dry_run') else self.style.WARNING
         self.stdout.write(style(
             f"\nGata [{result['status']}] — create: {t['created']}, "
-            f"actualizate: {t['updated']}, sărite: {t['skipped']}, erori: {t['errors']}."))
+            f"actualizate: {t['updated']}, șterse: {t['deleted']}, "
+            f"sărite: {t['skipped']}, erori: {t['errors']}."))
         for e in result['errors'][:10]:
             self.stdout.write(self.style.ERROR(f"  - {e}"))
