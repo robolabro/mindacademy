@@ -669,11 +669,20 @@ class PullSync:
                         obj.date = sched.date()
                         obj.start_time = sched.time()
                 obj.group = group
-                topic = pick(f, 'Lectie', 'Cod Lectie', 'Topic', 'Subiect')
-                if topic is not None:
-                    obj.topic = str(topic)
                 if template is not None:
                     obj.lesson_template = template
+                # Nume sugestiv: îl construim din șablon („Numar Lectie" +
+                # prima linie din Obiective), fiindcă în „Lectii" câmpul e un cod.
+                # Fallback pe câmpul din Airtable dacă nu există șablon.
+                airtable_topic = pick(f, 'Lectie', 'Topic', 'Subiect')
+                if template is not None:
+                    obj_desc = (template.objectives or '').strip()
+                    first_line = obj_desc.splitlines()[0].strip() if obj_desc else ''
+                    label = template.name or ''
+                    obj.topic = (f"{label} · {first_line}" if (label and first_line)
+                                 else first_line or label or str(airtable_topic or ''))[:300]
+                elif airtable_topic:
+                    obj.topic = str(airtable_topic)[:300]
                 tk = pick(f, 'Lesson Takeaways')
                 if tk is not None:
                     obj.lesson_takeaways = str(tk)
