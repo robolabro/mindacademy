@@ -605,8 +605,12 @@ class PullSync:
 
     def sync_lectii(self, group_ids):
         """
-        Lectii → Lesson. DOAR UPDATE (niciodată CREATE). Dacă lecția nu e găsită
-        după airtable_record_id, logăm eroare și continuăm.
+        Lectii → Lesson (opțiunea A: oglindim orarul din Airtable în Django).
+        Creăm/actualizăm lecțiile grupelor sincronizate, upsert după
+        airtable_record_id. Airtable rămâne sursa; Django reflectă orarul ca
+        profesorul să poată marca prezența, iar Faza 4 împinge execuția înapoi
+        în același record. Nu atingem lecțiile Django ne-legate (fără
+        airtable_record_id) — ex. cele generate manual.
         """
         entity = 'Lectii'
         records = self.fetch(self._t('AIRTABLE_TABLE_LECTII'))
@@ -616,33 +620,55 @@ class PullSync:
             grp_rec = first_link(f, 'Nume Grupa', 'Grupa', 'Grupă', 'Group')
             if grp_rec not in group_ids:
                 continue
-            lesson = Lesson.objects.filter(airtable_record_id=rec_id).first()
-            if lesson is None:
-                # NU creăm lecții — sunt generate de automatizarea Airtable.
-                # Lecțiile Django nu sunt încă legate prin airtable_record_id,
-                # deci e normal să nu le găsim: le numărăm ca „sărite", nu erori.
+            group = self.map_group.get(grp_rec)
+            if group is None:
                 self.stats[entity]['skipped'] += 1
                 continue
-            topic = pick(f, 'Lectie', 'Cod Lectie', 'Topic', 'Subiect')
-            date_dt = self._parse_datetime(pick(f, 'Schedule', 'Data', 'Date'))
-            takeaways = pick(f, 'Lesson Takeaways')
-            homework = pick(f, 'Homework')
+            sched = self._parse_datetime(pick(f, 'Schedule', 'Data', 'Date'))
+            if sched is not None and timezone.is_aware(sched):
+                try:
+                    from zoneinfo import ZoneInfo
+                    sched = sched.astimezone(ZoneInfo('Europe/Bucharest'))
+                except Exception:
+                    sched = timezone.localtime(sched)
+            template = self.map_lesson_tpl.get(
+                first_link(f, 'Lectie Template', 'Lectie Template (from Lectie)'))
+            completed = bool(pick(f, 'Completed', default=False))
             try:
+                obj = Lesson.objects.filter(airtable_record_id=rec_id).first()
+                if obj is None:
+                    if sched is None:
+                        # Fără dată/oră nu putem crea o lecție validă.
+                        self.stats[entity]['skipped'] += 1
+                        continue
+                    obj = Lesson(airtable_record_id=rec_id,
+                                 date=sched.date(), start_time=sched.time())
+                    action = 'created'
+                else:
+                    action = 'updated'
+                    if sched is not None:
+                        obj.date = sched.date()
+                        obj.start_time = sched.time()
+                obj.group = group
+                topic = pick(f, 'Lectie', 'Cod Lectie', 'Topic', 'Subiect')
                 if topic is not None:
-                    lesson.topic = str(topic)
-                if date_dt is not None:
-                    lesson.date = date_dt.date()
-                if takeaways is not None:
-                    lesson.lesson_takeaways = str(takeaways)
-                if homework is not None:
-                    lesson.homework = str(homework)
-                lesson.is_archived = False
-                lesson.sync_status = 'synced'
-                lesson.sync_error = ''
-                lesson.airtable_synced_at = timezone.now()
+                    obj.topic = str(topic)
+                if template is not None:
+                    obj.lesson_template = template
+                tk = pick(f, 'Lesson Takeaways')
+                if tk is not None:
+                    obj.lesson_takeaways = str(tk)
+                hw = pick(f, 'Homework')
+                if hw is not None:
+                    obj.homework = str(hw)
+                obj.status = 'completed' if completed else (obj.status or 'scheduled')
+                obj.is_archived = False
+                obj.sync_status = 'synced'
+                obj.sync_error = ''
+                obj.airtable_synced_at = timezone.now()
                 if not self.dry_run:
-                    lesson.save()
-                self.stats[entity]['updated'] += 1
+                    obj.save()
+                self.stats[entity][action] += 1
                 seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
