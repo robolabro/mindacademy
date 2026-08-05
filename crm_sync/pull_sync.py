@@ -443,27 +443,46 @@ class PullSync:
 
     def sync_lectii_template(self):
         entity = 'Lectii Template'
+        from collections import defaultdict
         records = self.fetch(self._t('AIRTABLE_TABLE_LECTII_TEMPLATE'))
         seen = set()
+        # Ordinea trebuie să fie UNICĂ per modul (unique_together module,order).
+        # „Ordine" din Airtable e adesea gol → o folosim doar dacă e validă și
+        # liberă; altfel atribuim următoarea ordine liberă.
+        used_orders = defaultdict(set)   # modul_rec -> ordini deja folosite
+        initialized = set()
         for r in records:
             rec_id, f = r['id'], r.get('fields', {})
-            module = self.map_module.get(first_link(f, 'Modul', 'Module'))
+            modul_rec = first_link(f, 'Modul', 'Module')
+            module = self.map_module.get(modul_rec)
             if module is None:
                 self.stats[entity]['skipped'] += 1
                 continue
             name = str(pick(f, 'Numar Lectie', 'Nume', 'Name', 'Topic', default=rec_id))
-            order_raw = pick(f, 'Ordine', 'Order', 'Lesson #', 'Nr', default=0)
-            try:
-                order = int(order_raw)
-            except (ValueError, TypeError):
-                order = 0
             try:
                 obj = LessonTemplate.objects.filter(airtable_record_id=rec_id).first()
-                if obj is None:
-                    obj = LessonTemplate(airtable_record_id=rec_id)
-                    action = 'created'
-                else:
+                s = used_orders[modul_rec]
+                if modul_rec not in initialized:
+                    initialized.add(modul_rec)
+                    if module.pk:
+                        s.update(LessonTemplate.objects.filter(module=module)
+                                 .values_list('order', flat=True))
+                if obj is not None:
                     action = 'updated'
+                    order = obj.order  # păstrăm ordinea existentă
+                else:
+                    action = 'created'
+                    try:
+                        desired = int(pick(f, 'Ordine', 'Order', 'Nr', default=0))
+                    except (ValueError, TypeError):
+                        desired = 0
+                    if desired <= 0 or desired in s:
+                        desired = (max(s) + 1) if s else 1
+                        while desired in s:
+                            desired += 1
+                    order = desired
+                    s.add(order)
+                    obj = LessonTemplate(airtable_record_id=rec_id)
                 obj.module = module
                 obj.name = name
                 obj.order = order
