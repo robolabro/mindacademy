@@ -1,9 +1,13 @@
 """
 Push Django → Airtable (Epic 7, Faza 4).
 
-Mind.academy = sursa de adevăr pentru EXECUȚIE. Împingem în Airtable:
-  - Prezențele (tabelul „Prezente") — create sau update după airtable_record_id;
-  - Lecția finalizată (tabelul „Lectii") — DOAR update (după airtable_record_id).
+Mind.academy = sursa de adevăr pentru EXECUȚIE. Împingem în Airtable DOAR
+prezențele (tabelul „Prezente") — create sau update după (Elev, Lecție), cu
+reconciliere ca să nu creăm duplicate.
+
+Lecțiile rămân în proprietatea Airtable (structură + „Completed"/takeaways,
+gestionate de automatizări). NU împingem starea lecției — o tragem la pull.
+`build_lectie_fields` e păstrat pentru o eventuală reactivare, dar nu e folosit.
 
 Reguli dure:
   - NU scriem NICIODATĂ în „Progres Lectii" (generat de automatizarea Airtable
@@ -181,19 +185,10 @@ class PushSync:
                 orphan=orphan, dupe=dupe,
             ))
 
-        # --- Lecție finalizată (doar update; doar lecțiile finalizate) ---
-        lessons = (Lesson.objects
-                   .filter(group_id__in=group_ids, status='completed')
-                   .exclude(airtable_record_id__isnull=True).exclude(airtable_record_id=''))
-        for lesson in lessons:
-            specs.append(dict(
-                entity='Lectii',
-                table=self._t('AIRTABLE_TABLE_LECTII'),
-                record_id=lesson.airtable_record_id,
-                payload=build_lectie_fields(lesson),
-                source_kind='lectie', source_id=lesson.id,
-                dedupe_key=f"lectie:{lesson.id}",
-            ))
+        # NOTĂ: lecțiile rămân în proprietatea Airtable (structură + „Completed"/
+        # takeaways, gestionate de automatizări). NU împingem starea lecției din
+        # Django — o tragem la pull. Push-ul acoperă DOAR execuția: prezențele.
+        # („Completed" în Airtable se poate deduce oricum din Prezențe/Attended.)
         return specs
 
     def _writeback_source(self, spec, new_record_id):
