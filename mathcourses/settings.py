@@ -205,6 +205,11 @@ AIRTABLE_SYNC_DEFAULT_TEACHER_USERNAME = config('AIRTABLE_SYNC_DEFAULT_TEACHER_U
 AIRTABLE_GROUP_ACTIVE_STATUSES = config(
     'AIRTABLE_GROUP_ACTIVE_STATUSES', default='Active', cast=Csv())
 
+# Cursul-container la care se atașează modulele importate din Airtable
+# (gol = primul curs existent, sau se creează unul). Airtable nu are tabel de
+# cursuri; modulele au doar „Categorie Curs".
+AIRTABLE_SYNC_COURSE_SLUG = config('AIRTABLE_SYNC_COURSE_SLUG', default='')
+
 # CSRF Trusted Origins (pentru Railway și domeniul custom)
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',

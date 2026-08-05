@@ -30,7 +30,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from accounts.models import User, StudentProfile
+from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Course, Module, LessonTemplate
 from teacher_platform.models import Group, Enrollment, Lesson
 from crm_sync.models import SyncLog
@@ -277,6 +277,9 @@ class PullSync:
             user.airtable_synced_at = timezone.now()
             if not self.dry_run:
                 user.save()
+                # Fiecare profesor trebuie să aibă și un TeacherProfile
+                # (altfel nu apare în „Profile Profesori").
+                TeacherProfile.objects.get_or_create(user=user)
             self.stats[entity]['updated'] += 1
         elif self.create_missing_teachers:
             user = User(username=f"prof_{prof_rec_id}", role='teacher',
@@ -286,6 +289,7 @@ class PullSync:
             user.set_unusable_password()
             if not self.dry_run:
                 user.save()
+                TeacherProfile.objects.get_or_create(user=user)
             self.stats[entity]['created'] += 1
         else:
             # Nepotrivit și fără creare → raportăm (o dată) și cădem pe implicit.
@@ -376,28 +380,62 @@ class PullSync:
             self._archive_missing(entity, Group, seen)
         return seen
 
+    def _sync_course(self):
+        """
+        Cursul-container la care atașăm modulele din Airtable. Airtable nu are
+        un tabel de cursuri distinct (modulele au doar „Categorie Curs"), iar
+        `Module.course` e obligatoriu în Django. Folosim un curs configurabil
+        (AIRTABLE_SYNC_COURSE_SLUG) sau primul existent; dacă nu există niciunul,
+        îl creăm. Rezultatul e cache-uit.
+        """
+        if hasattr(self, '_course_cache'):
+            return self._course_cache
+        slug = getattr(settings, 'AIRTABLE_SYNC_COURSE_SLUG', '') or ''
+        course = None
+        if slug:
+            course = Course.objects.filter(slug=slug).first()
+        if course is None:
+            course = Course.objects.first()
+        if course is None and not self.dry_run:
+            course = Course.objects.create(
+                title='Aritmetică Mentală', slug='aritmetica-mentala',
+                description='Curs container pentru modulele sincronizate din Airtable.',
+                price=0, frequency='Săptămânal', group_size=8)
+        self._course_cache = course
+        return course
+
     def sync_module(self):
         entity = 'Module'
+        course = self._sync_course()
+        if course is None:
+            return set()  # doar în dry-run fără niciun curs în DB
+        from django.db.models import Max
         records = self.fetch(self._t('AIRTABLE_TABLE_MODULE'))
         seen = set()
+        # Ordinea pentru modulele NOI pornește după maximul existent pe curs
+        # (nu suprascriem ordinea modulelor deja existente).
+        next_order = (Module.objects.filter(course=course).aggregate(m=Max('order'))['m'] or 0)
         for r in records:
             rec_id, f = r['id'], r.get('fields', {})
-            name = pick(f, 'Nume', 'Name', 'Modul', default=rec_id)
-            # Module.course este obligatoriu în model — dacă nu putem rezolva
-            # un curs, sărim (nu creăm module orfane).
-            course = None
-            course_name = pick(f, 'Curs', 'Course')
-            if isinstance(course_name, str) and course_name:
-                course = Course.objects.filter(title=course_name).first()
-            if course is None:
-                self.stats[entity]['skipped'] += 1
-                continue
-            order = pick(f, 'Ordine', 'Order', 'Nr', default=0)
+            name = str(pick(f, 'Nume Modul', 'Nume', 'Name', 'Modul', default=rec_id))
             try:
-                self._upsert(entity, Module, rec_id, dict(
-                    name=str(name), course=course,
-                    order=int(order) if str(order).isdigit() else 0,
-                ), self.map_module)
+                obj = Module.objects.filter(airtable_record_id=rec_id).first()
+                if obj is None:
+                    next_order += 1
+                    obj = Module(airtable_record_id=rec_id, course=course, order=next_order)
+                    action = 'created'
+                else:
+                    action = 'updated'
+                obj.name = name
+                obj.course = course
+                obj.description = str(pick(f, 'Descriere si Obiective', default='') or obj.description or '')
+                obj.is_archived = False
+                obj.sync_status = 'synced'
+                obj.airtable_synced_at = timezone.now()
+                if not self.dry_run:
+                    obj.save()
+                self.stats[entity][action] += 1
+                self.map_module[rec_id] = obj
                 seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
@@ -409,19 +447,34 @@ class PullSync:
         seen = set()
         for r in records:
             rec_id, f = r['id'], r.get('fields', {})
-            module = self.map_module.get(first_link(f, 'Module', 'Modul'))
+            module = self.map_module.get(first_link(f, 'Modul', 'Module'))
             if module is None:
                 self.stats[entity]['skipped'] += 1
                 continue
-            name = pick(f, 'Topic', 'Nume', 'Name', 'Lectie', default=rec_id)
-            order = pick(f, 'Lesson #', 'Ordine', 'Order', 'Nr', default=0)
+            name = str(pick(f, 'Numar Lectie', 'Nume', 'Name', 'Topic', default=rec_id))
+            order_raw = pick(f, 'Ordine', 'Order', 'Lesson #', 'Nr', default=0)
             try:
-                self._upsert(entity, LessonTemplate, rec_id, dict(
-                    module=module, name=str(name),
-                    order=int(order) if str(order).isdigit() else 0,
-                    objectives=str(pick(f, 'Objectives', 'Obiective', default='')),
-                    materials=str(pick(f, 'Materials', 'Materiale', default='')),
-                ), self.map_lesson_tpl)
+                order = int(order_raw)
+            except (ValueError, TypeError):
+                order = 0
+            try:
+                obj = LessonTemplate.objects.filter(airtable_record_id=rec_id).first()
+                if obj is None:
+                    obj = LessonTemplate(airtable_record_id=rec_id)
+                    action = 'created'
+                else:
+                    action = 'updated'
+                obj.module = module
+                obj.name = name
+                obj.order = order
+                obj.objectives = str(pick(f, 'Obiective', 'Objectives', default=''))
+                obj.is_archived = False
+                obj.sync_status = 'synced'
+                obj.airtable_synced_at = timezone.now()
+                if not self.dry_run:
+                    obj.save()
+                self.stats[entity][action] += 1
+                self.map_lesson_tpl[rec_id] = obj
                 seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
@@ -605,11 +658,12 @@ class PullSync:
         # (vezi _resolve_teacher apelat din sync_grupe) — un pilot pe o grupă
         # nu atinge toți profesorii din bază.
 
-        # Curriculumul (Module/Lectii Template) NU se sincronizează în pilot:
-        # tabelul „Module" din Airtable nu are legătură către un Curs, iar
-        # `Module.course` e obligatoriu în Django. Curriculumul rămâne gestionat
-        # din admin; `Group.module` e nullabil, deci grupele se creează fără el.
-        # (De reactivat după ce definim maparea Categorie Curs → Course.)
+        # Curriculumul: modulele și șabloanele de lecție se sincronizează primele,
+        # ca grupele să-și poată lega modulul (Group.module) din harta map_module.
+        # Modulele se atașează la un curs-container (vezi _sync_course).
+        self.sync_module()
+        self.sync_lectii_template()
+
         group_ids = self.sync_grupe()
         self.sync_inscrieri(group_ids)
         self.sync_lectii(group_ids)
