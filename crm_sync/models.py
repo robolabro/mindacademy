@@ -162,6 +162,20 @@ class AirtablePushJob(models.Model):
     # formula/lookup/rollup/count).
     payload = models.JSONField(default=dict, verbose_name="Payload câmpuri")
 
+    # Legătura către obiectul Django sursă, ca după un CREATE să scriem
+    # record-id-ul Airtable înapoi pe el (idempotență la rulările următoare).
+    SOURCE_CHOICES = [
+        ('prezenta', 'Prezență'),
+        ('lectie', 'Lecție finalizată'),
+    ]
+    source_kind = models.CharField(max_length=20, choices=SOURCE_CHOICES, blank=True,
+                                   verbose_name="Tip sursă")
+    source_id = models.PositiveIntegerField(null=True, blank=True,
+                                            verbose_name="ID obiect Django sursă")
+    # Cheie de deduplicare: un singur job „pending" per sursă.
+    dedupe_key = models.CharField(max_length=64, blank=True, db_index=True,
+                                  verbose_name="Cheie deduplicare")
+
     status = models.CharField(max_length=10, choices=STATUS_CHOICES,
                               default='pending', db_index=True, verbose_name="Status")
     attempts = models.PositiveIntegerField(default=0, verbose_name="Încercări")

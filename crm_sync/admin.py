@@ -15,9 +15,9 @@ class SyncLogAdmin(admin.ModelAdmin):
 
 @admin.register(AirtablePushJob)
 class AirtablePushJobAdmin(admin.ModelAdmin):
-    list_display = ['created_at', 'target_table', 'target_record_id', 'status',
-                    'attempts', 'processed_at']
-    list_filter = ['status', 'target_table']
-    search_fields = ['target_record_id', 'last_error']
+    list_display = ['created_at', 'source_kind', 'target_table', 'target_record_id',
+                    'status', 'attempts', 'processed_at']
+    list_filter = ['status', 'source_kind', 'target_table']
+    search_fields = ['target_record_id', 'dedupe_key', 'last_error']
     readonly_fields = ['created_at', 'processed_at']
     date_hierarchy = 'created_at'
