@@ -32,6 +32,9 @@ class Command(BaseCommand):
         parser.add_argument('--only-pending', action='store_true',
                             help="Trimite doar execuția modificată în platformă "
                                  "(sync_status=pending). Folosit de cron-ul de push.")
+        parser.add_argument('--push-new-lessons', action='store_true',
+                            help="Creează în Airtable lecțiile adăugate în Mind.academy "
+                                 "(§4/A). Necesită AIRTABLE_NEW_LESSON_FIELDS setat corect.")
 
     def handle(self, *args, **opts):
         grupa = opts['grupa']
@@ -44,7 +47,8 @@ class Command(BaseCommand):
         try:
             push = PushSync(dry_run=dry_run, grupa=grupa, log=self.stdout.write,
                             cleanup_duplicates=opts['cleanup_duplicates'],
-                            only_pending=only_pending)
+                            only_pending=only_pending,
+                            push_new_lessons=opts['push_new_lessons'])
             result = push.run()
         except AirtableConfigError as exc:
             raise CommandError(str(exc))

@@ -210,6 +210,12 @@ AIRTABLE_GROUP_ACTIVE_STATUSES = config(
 # cursuri; modulele au doar „Categorie Curs".
 AIRTABLE_SYNC_COURSE_SLUG = config('AIRTABLE_SYNC_COURSE_SLUG', default='')
 
+# Câmpuri suplimentare setate pe lecțiile CREATE din Mind.academy în Airtable
+# (§4/A). Aici pui flag-urile care spun automatizării tale să NU genereze
+# prezențe automat pentru toată grupa (ex. {"Lectie Individuala": True}).
+# Lasă gol până confirmi comportamentul automatizărilor în chat-ul Airtable.
+AIRTABLE_NEW_LESSON_FIELDS = {}
+
 # CSRF Trusted Origins (pentru Railway și domeniul custom)
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',

@@ -55,15 +55,47 @@ def build_takeaways_fields(lesson):
     return {'Lesson Takeaways': lesson.lesson_takeaways}
 
 
+def build_new_lesson_fields(lesson):
+    """
+    Câmpuri pentru o lecție CREATĂ în Mind.academy (§4/A) → nouă în „Lectii".
+    Orarul din Django (dată+oră locală) → „Schedule" în UTC ISO. Flag-urile care
+    suprimă auto-prezențele automatizării vin din AIRTABLE_NEW_LESSON_FIELDS.
+    """
+    from datetime import datetime
+    fields = {}
+    group = lesson.group
+    if group and group.airtable_record_id:
+        fields['Nume Grupa'] = [group.airtable_record_id]
+    if lesson.date and lesson.start_time:
+        try:
+            from zoneinfo import ZoneInfo
+            local = datetime.combine(lesson.date, lesson.start_time,
+                                     tzinfo=ZoneInfo('Europe/Bucharest'))
+            fields['Schedule'] = local.astimezone(ZoneInfo('UTC')).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        except Exception:
+            fields['Schedule'] = f"{lesson.date}T{lesson.start_time}"
+    tpl = lesson.lesson_template
+    if tpl is not None and getattr(tpl, 'airtable_record_id', ''):
+        fields['Lectie Template'] = [tpl.airtable_record_id]
+    if lesson.homework:
+        fields['Homework'] = lesson.homework
+    if lesson.lesson_takeaways:
+        fields['Lesson Takeaways'] = lesson.lesson_takeaways
+    extra = getattr(settings, 'AIRTABLE_NEW_LESSON_FIELDS', {}) or {}
+    fields.update(extra)
+    return fields
+
+
 class PushSync:
     def __init__(self, dry_run=False, grupa=None, log=None,
                  create_fn=None, update_fn=None, delete_fn=None, fetch_fn=None,
-                 cleanup_duplicates=False, only_pending=False):
+                 cleanup_duplicates=False, only_pending=False, push_new_lessons=False):
         self.dry_run = dry_run
         self.grupa = (grupa or '').strip()
         self.log = log or (lambda m: None)
         self.cleanup_duplicates = cleanup_duplicates
         self.only_pending = only_pending
+        self.push_new_lessons = push_new_lessons
         # Injectabile pentru teste; implicit clientul REST de scriere/citire.
         if create_fn is None or update_fn is None or delete_fn is None:
             from crm_sync.airtable_push import create_record, update_record, delete_record
@@ -200,6 +232,28 @@ class PushSync:
                 source_kind='lectie', source_id=lesson.id,
                 dedupe_key=f"lectie:{lesson.id}",
             ))
+
+        # --- Lecții CREATE în Mind.academy (§4/A) → nouă în „Lectii" (opt-in) ---
+        # Doar lecțiile fără airtable_record_id (originare din platformă). După
+        # create primesc id și nu se mai recreează. Flag-urile de suprimare a
+        # auto-prezențelor vin din AIRTABLE_NEW_LESSON_FIELDS.
+        if self.push_new_lessons:
+            from django.db.models import Q
+            new_lessons = (Lesson.objects
+                           .filter(group_id__in=group_ids)
+                           .filter(Q(airtable_record_id__isnull=True) | Q(airtable_record_id='')))
+            for lesson in new_lessons:
+                if not (lesson.group and lesson.group.airtable_record_id):
+                    self.stats['Lectii']['skipped'] += 1
+                    continue
+                specs.append(dict(
+                    entity='Lectii',
+                    table=self._t('AIRTABLE_TABLE_LECTII'),
+                    record_id='',   # create
+                    payload=build_new_lesson_fields(lesson),
+                    source_kind='lectie_nou', source_id=lesson.id,
+                    dedupe_key=f"lectie_nou:{lesson.id}",
+                ))
         return specs
 
     def _writeback_source(self, spec, new_record_id):
@@ -241,14 +295,14 @@ class PushSync:
             job.attempts = job.attempts + 1
             job.last_error = ''
             job.save()
-            entity = 'Lectii' if job.source_kind == 'lectie' else 'Prezente'
+            entity = 'Prezente' if job.source_kind == 'prezenta' else 'Lectii'
             self.stats[entity]['created' if op == 'create' else 'updated'] += 1
         except Exception as exc:  # pragma: no cover - depinde de rețea
             job.status = 'error'
             job.attempts = job.attempts + 1
             job.last_error = str(exc)[:2000]
             job.save()
-            self._err('Lectii' if job.source_kind == 'lectie' else 'Prezente',
+            self._err('Prezente' if job.source_kind == 'prezenta' else 'Lectii',
                       job.dedupe_key, exc)
 
     def run(self):
@@ -285,6 +339,12 @@ class PushSync:
             elif s['source_kind'] == 'lectie':
                 Lesson.objects.filter(pk=s['source_id']).update(
                     sync_status='synced', airtable_synced_at=timezone.now())
+            elif s['source_kind'] == 'lectie_nou':
+                # Lecție nou-creată în Airtable → salvăm record-id-ul pe lecția
+                # Django (devine „mapată"; nu se mai recreează).
+                Lesson.objects.filter(pk=s['source_id']).update(
+                    airtable_record_id=job.target_record_id, sync_status='synced',
+                    airtable_synced_at=timezone.now())
 
         # Curățarea duplicatelor pe care le-am creat noi (ireversibil → opt-in).
         if self.cleanup_duplicates:
