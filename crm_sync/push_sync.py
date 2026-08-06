@@ -1,13 +1,11 @@
 """
 Push Django → Airtable (Epic 7, Faza 4).
 
-Mind.academy = sursa de adevăr pentru EXECUȚIE. Împingem în Airtable DOAR
-prezențele (tabelul „Prezente") — create sau update după (Elev, Lecție), cu
-reconciliere ca să nu creăm duplicate.
-
-Lecțiile rămân în proprietatea Airtable (structură + „Completed"/takeaways,
-gestionate de automatizări). NU împingem starea lecției — o tragem la pull.
-`build_lectie_fields` e păstrat pentru o eventuală reactivare, dar nu e folosit.
+Mind.academy = sursa de adevăr pentru EXECUȚIE. Împingem în Airtable:
+  - Prezențele (tabelul „Prezente") — create/update după (Elev, Lecție), cu
+    reconciliere ca să nu creăm duplicate;
+  - „Ce s-a lucrat" (câmpul „Lesson Takeaways" din „Lectii") — DOAR update, doar
+    acest câmp. Restul lecției (orar, „Completed") rămâne al Airtable.
 
 Reguli dure:
   - NU scriem NICIODATĂ în „Progres Lectii" (generat de automatizarea Airtable
@@ -51,14 +49,10 @@ def build_prezenta_fields(att):
     return fields
 
 
-def build_lectie_fields(lesson):
-    """Câmpuri editabile pentru update în tabelul „Lectii"."""
-    fields = {'Completed': lesson.status == 'completed'}
-    if lesson.lesson_takeaways:
-        fields['Lesson Takeaways'] = lesson.lesson_takeaways
-    if lesson.homework:
-        fields['Homework'] = lesson.homework
-    return fields
+def build_takeaways_fields(lesson):
+    """Doar câmpul editat de profesor la finalul lecției. NU trimitem
+    „Completed"/orar — acelea rămân ale Airtable."""
+    return {'Lesson Takeaways': lesson.lesson_takeaways}
 
 
 class PushSync:
@@ -185,10 +179,22 @@ class PushSync:
                 orphan=orphan, dupe=dupe,
             ))
 
-        # NOTĂ: lecțiile rămân în proprietatea Airtable (structură + „Completed"/
-        # takeaways, gestionate de automatizări). NU împingem starea lecției din
-        # Django — o tragem la pull. Push-ul acoperă DOAR execuția: prezențele.
-        # („Completed" în Airtable se poate deduce oricum din Prezențe/Attended.)
+        # --- „Ce s-a lucrat" (takeaways) → update în „Lectii", DOAR acest câmp ---
+        # Doar lecțiile deja mapate în Airtable (au airtable_record_id) și cu
+        # takeaways scris în platformă. Orarul/„Completed" rămân ale Airtable.
+        lessons = (Lesson.objects
+                   .filter(group_id__in=group_ids)
+                   .exclude(lesson_takeaways='')
+                   .exclude(airtable_record_id__isnull=True).exclude(airtable_record_id=''))
+        for lesson in lessons:
+            specs.append(dict(
+                entity='Lectii',
+                table=self._t('AIRTABLE_TABLE_LECTII'),
+                record_id=lesson.airtable_record_id,
+                payload=build_takeaways_fields(lesson),
+                source_kind='lectie', source_id=lesson.id,
+                dedupe_key=f"lectie:{lesson.id}",
+            ))
         return specs
 
     def _writeback_source(self, spec, new_record_id):

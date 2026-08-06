@@ -683,8 +683,10 @@ class PullSync:
                                  else first_line or label or str(airtable_topic or ''))[:300]
                 elif airtable_topic:
                     obj.topic = str(airtable_topic)[:300]
+                # Takeaways = proprietatea Mind.academy: importăm din Airtable
+                # DOAR dacă în Django e gol (nu suprascriem ce a scris profesorul).
                 tk = pick(f, 'Lesson Takeaways')
-                if tk is not None:
+                if tk is not None and not (obj.lesson_takeaways or '').strip():
                     obj.lesson_takeaways = str(tk)
                 hw = pick(f, 'Homework')
                 if hw is not None:
