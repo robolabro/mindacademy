@@ -33,6 +33,7 @@ urlpatterns = [
 
     # Lecții
     path('lectii/<int:lesson_id>/', views.lesson_detail, name='lesson_detail'),
+    path('lectii/<int:lesson_id>/gestioneaza/', views.lesson_manage, name='lesson_manage'),
     path('lectii/adauga/', views.lesson_create, name='lesson_create'),
     path('lectii/adauga/<int:group_id>/', views.lesson_create, name='lesson_create_for_group'),
     path('lectii/<int:lesson_id>/editeaza/', views.lesson_edit, name='lesson_edit'),

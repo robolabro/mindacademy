@@ -847,6 +847,78 @@ def lesson_detail(request, lesson_id):
 
 @login_required
 @teacher_required
+def lesson_manage(request, lesson_id):
+    """
+    Ecran unificat de lecție: prezență + „ce s-a lucrat" + milestones +
+    pornire lecție live, într-un singur loc. La salvare, prezențele și
+    takeaways se marchează pentru trimitere automată în Airtable (push).
+    """
+    lesson = get_object_or_404(
+        Lesson.objects.select_related('group', 'lesson_template', 'group__course'),
+        id=lesson_id, group__teacher=request.user)
+    group = lesson.group
+    enrollments = list(Enrollment.objects.filter(group=group, is_active=True)
+                       .select_related('student').order_by('student__first_name', 'student__last_name'))
+
+    if request.method == 'POST':
+        for enr in enrollments:
+            sid = enr.student_id
+            present = request.POST.get(f'present_{sid}')
+            if present is None:
+                continue  # elevul nu a fost marcat
+            rating = (request.POST.get(f'rating_{sid}') or '').strip()
+            Attendance.objects.update_or_create(
+                lesson=lesson, student_id=sid,
+                defaults=dict(
+                    is_present=(present == '1'),
+                    absenta_anuntata=bool(request.POST.get(f'anuntata_{sid}')),
+                    genereaza_recuperare=bool(request.POST.get(f'recuperare_{sid}')),
+                    performance_rating=int(rating) if rating.isdigit() else None,
+                    notes=request.POST.get(f'notes_{sid}', '').strip(),
+                    enrollment=enr,
+                ))
+        # contoare prezență per înscriere
+        for enr in enrollments:
+            total = Attendance.objects.filter(lesson__group=group, student_id=enr.student_id).count()
+            att_c = Attendance.objects.filter(lesson__group=group, student_id=enr.student_id, is_present=True).count()
+            Enrollment.objects.filter(pk=enr.pk).update(lessons_attended=att_c, lessons_missed=total - att_c)
+
+        lesson.lesson_takeaways = request.POST.get('takeaways', '').strip()
+        lesson.homework = request.POST.get('homework', '').strip()
+        if request.POST.get('completed'):
+            lesson.status = 'completed'
+        lesson.save()
+        messages.success(request, 'Lecția a fost salvată. Prezențele și „ce s-a lucrat" se trimit automat în Airtable.')
+        return redirect('teacher_platform:lesson_manage', lesson_id=lesson.id)
+
+    # GET
+    rows = []
+    for enr in enrollments:
+        att = Attendance.objects.filter(lesson=lesson, student=enr.student).first()
+        rows.append({'enr': enr, 'student': enr.student, 'att': att})
+
+    milestones = []
+    if lesson.lesson_template_id:
+        done_ids = set(LessonMilestoneProgress.objects.filter(group=group, is_done=True)
+                       .values_list('milestone_id', flat=True))
+        for ms in lesson.lesson_template.milestones.filter(is_active=True).order_by('order'):
+            milestones.append({'ms': ms, 'done': ms.id in done_ids})
+
+    live = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+    present_count = sum(1 for r in rows if r['att'] and r['att'].is_present)
+    absent_count = sum(1 for r in rows if r['att'] and not r['att'].is_present)
+    context = {
+        'lesson': lesson, 'group': group, 'rows': rows,
+        'milestones': milestones,
+        'ms_done': sum(1 for m in milestones if m['done']), 'ms_total': len(milestones),
+        'live': live, 'present_count': present_count, 'absent_count': absent_count,
+        'rating_range': [1, 2, 3, 4, 5],
+    }
+    return render(request, 'teacher_platform/lesson_manage.html', context)
+
+
+@login_required
+@teacher_required
 def assignments_list(request):
     """
     Integrator: toate temele pe simulatoare din toate grupele profesorului,

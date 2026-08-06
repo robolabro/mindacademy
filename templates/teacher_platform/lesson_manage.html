@@ -1,0 +1,240 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+{% load static %}
+
+{% block title %}Lecție · {{ group.name }}{% endblock %}
+{% block page_title %}📚 Gestionează lecția{% endblock %}
+
+{% block content %}
+<div class="lm-screen">
+  <div class="lm-crumb">
+    <a href="{% url 'teacher_platform:group_detail' group.id %}">{{ group.name }}</a> ›
+    <span>Lecția {{ lesson.date|date:"d M" }}</span>
+  </div>
+
+  {% if messages %}
+    {% for m in messages %}<div class="lm-flash">{{ m }}</div>{% endfor %}
+  {% endif %}
+
+  <form method="post" id="lmForm">
+    {% csrf_token %}
+
+    <!-- HERO -->
+    <section class="lm-card lm-hero" id="lmHero">
+      <div class="lm-hero-top">
+        <div>
+          <div class="lm-meta">{{ lesson.date|date:"l, d F" }} · {{ lesson.start_time|time:"H:i" }}{% if lesson.end_time %}–{{ lesson.end_time|time:"H:i" }}{% endif %}</div>
+          <h1 class="lm-h1">{% if lesson.topic %}{{ lesson.topic }}{% elif lesson.lesson_template %}{{ lesson.lesson_template.name }}{% else %}Lecție{% endif %}</h1>
+          <div class="lm-meta">{{ group.name }}{% if group.module %} · {{ group.module.name }}{% endif %} · {{ rows|length }} elevi</div>
+          <div class="lm-badges">
+            {% if group.lesson_type == 'online' %}<span class="lm-badge online">🌐 Online</span>{% else %}<span class="lm-badge">🏫 Fizic</span>{% endif %}
+            <span class="lm-badge status">{{ lesson.get_status_display }}</span>
+          </div>
+        </div>
+        <div class="lm-hero-actions">
+          {% if group.lesson_type == 'online' and group.meeting_link %}
+            <a class="lm-btn ghost" href="{{ group.meeting_link }}" target="_blank" rel="noopener">🎥 Deschide call</a>
+          {% endif %}
+          <button type="button" class="lm-btn live" id="liveBtn"
+                  data-start="{% url 'teacher_platform:live_session_start' group.id %}"
+                  data-panel="{% url 'teacher_platform:group_live' group.id %}">
+            {% if live %}● Mergi la panoul live{% else %}▶ Pornește lecția live{% endif %}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ATTENDANCE -->
+    <section class="lm-card">
+      <div class="lm-sec-h">
+        <h2>✓ Prezență</h2>
+        <span class="lm-pill" id="attCount">{{ present_count }} prezenți · {{ absent_count }} absenți</span>
+      </div>
+      <div class="lm-att">
+        {% for r in rows %}
+        {% with s=r.student a=r.att sid=r.student.id %}
+        <div class="lm-row{% if a and not a.is_present %} absent{% endif %}" data-sid="{{ sid }}">
+          <div class="lm-stud">
+            <span class="lm-av">{{ s.first_name|slice:":1" }}{{ s.last_name|slice:":1" }}</span>
+            <div><div class="lm-nm">{{ s.get_full_name|default:s.username }}</div><div class="lm-sub">Înscris · activ</div></div>
+          </div>
+          <div class="lm-seg" role="group" aria-label="Prezență {{ s.get_full_name }}">
+            <input type="radio" id="p{{ sid }}" name="present_{{ sid }}" value="1" {% if a and a.is_present %}checked{% endif %}>
+            <label for="p{{ sid }}" class="p">Prezent</label>
+            <input type="radio" id="a{{ sid }}" name="present_{{ sid }}" value="0" {% if a and not a.is_present %}checked{% endif %}>
+            <label for="a{{ sid }}" class="a">Absent</label>
+          </div>
+          <div class="lm-extra">
+            <label class="lm-chk"><input type="checkbox" name="anuntata_{{ sid }}" {% if a and a.absenta_anuntata %}checked{% endif %}> 📣 Absență anunțată</label>
+            <label class="lm-chk"><input type="checkbox" name="recuperare_{{ sid }}" {% if a and a.genereaza_recuperare %}checked{% endif %}> ↻ Generează recuperare</label>
+            <span class="lm-stars" data-sid="{{ sid }}">
+              {% for v in rating_range %}<button type="button" data-v="{{ v }}" aria-label="{{ v }}">★</button>{% endfor %}
+              <input type="hidden" name="rating_{{ sid }}" value="{% if a and a.performance_rating %}{{ a.performance_rating }}{% endif %}">
+            </span>
+            <input class="lm-note" type="text" name="notes_{{ sid }}" value="{{ a.notes|default:'' }}" placeholder="notiță…">
+          </div>
+        </div>
+        {% endwith %}
+        {% empty %}
+        <p class="lm-empty">Grupa nu are elevi înscriși activ.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <div class="lm-two">
+      <!-- TAKEAWAYS -->
+      <section class="lm-card">
+        <div class="lm-sec-h"><h2>📝 Ce s-a lucrat</h2></div>
+        <div class="lm-body">
+          <label class="lm-fld" for="tk">Rezumatul lecției</label>
+          <textarea id="tk" name="takeaways" rows="5" placeholder="Ex: Am consolidat adunarea cu prietenul mic. Exerciții pe abac + 20 anzan.">{{ lesson.lesson_takeaways }}</textarea>
+          <p class="lm-hint">Se trimite automat în Airtable („Lesson Takeaways").</p>
+          <label class="lm-fld" for="hw" style="margin-top:1rem">Temă pentru acasă</label>
+          <input class="lm-txt" id="hw" name="homework" value="{{ lesson.homework }}" placeholder="Ex: 2 fișe + 10 min Anzan zilnic">
+          <label class="lm-chk done" style="margin-top:1rem"><input type="checkbox" name="completed" {% if lesson.status == 'completed' %}checked{% endif %}> Marchează lecția ca finalizată</label>
+        </div>
+      </section>
+
+      <!-- MILESTONES -->
+      <section class="lm-card">
+        <div class="lm-sec-h"><h2>🎯 Parcurs lecție</h2><span class="lm-pill" id="msCount">{{ ms_done }}/{{ ms_total }}</span></div>
+        <div class="lm-ms">
+          {% if milestones %}
+          <div class="lm-bar"><i id="msBar" style="width:{% if ms_total %}{% widthratio ms_done ms_total 100 %}{% else %}0{% endif %}%"></i></div>
+          {% for m in milestones %}
+          <label class="lm-msrow{% if m.done %} done{% endif %}">
+            <input type="checkbox" data-ms="{{ m.ms.id }}" {% if m.done %}checked{% endif %}>
+            <span>{{ m.ms.title }}</span>
+          </label>
+          {% endfor %}
+          {% else %}
+          <p class="lm-empty">Lecția nu are milestones definite{% if not lesson.lesson_template %} (nu e legată de un șablon){% endif %}.</p>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+
+    <div class="lm-savebar"><div class="lm-in">
+      <span class="lm-msg">💾 Prezențele + „ce s-a lucrat" se trimit automat în Airtable</span>
+      <span class="lm-sp">
+        <a class="lm-btn ghost" href="{% url 'teacher_platform:group_detail' group.id %}">Înapoi</a>
+        <button type="submit" class="lm-btn primary">Salvează lecția</button>
+      </span>
+    </div></div>
+  </form>
+</div>
+
+<style>
+  .lm-screen{--brand:#4f46e5;--brand-soft:#eef0fe;--ink:#1c2434;--ink-soft:#5b6579;--line:#e3e8f0;--line2:#d3dae6;
+    --surface:#fff;--surface2:#f7f9fc;--present:#16a34a;--present-soft:#e6f6ec;--absent:#dc2626;--absent-soft:#fdecec;
+    --warn:#d97706;--warn-soft:#fdf1e0;--live:#e11d48;--live-soft:#fdeaf0;
+    color:var(--ink);max-width:1000px;margin:0 auto;padding-bottom:5rem;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .lm-crumb{font-size:.82rem;color:var(--ink-soft);margin:0 0 1rem}
+  .lm-crumb a{color:var(--ink-soft);text-decoration:none}
+  .lm-flash{background:var(--present-soft);color:var(--present);border:1px solid #b7e4c7;border-radius:10px;padding:.6rem .9rem;margin-bottom:1rem;font-size:.9rem;font-weight:600}
+  .lm-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(20,26,45,.05);margin-bottom:1.1rem}
+  .lm-badge{display:inline-flex;gap:.3rem;font-size:.74rem;font-weight:700;padding:.2rem .6rem;border-radius:999px;background:var(--surface2);color:var(--ink-soft)}
+  .lm-badge.online{background:var(--brand-soft);color:var(--brand)}
+  .lm-badge.status{background:var(--warn-soft);color:var(--warn)}
+  .lm-hero{padding:1.2rem 1.3rem}
+  .lm-hero-top{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start}
+  .lm-h1{margin:.2rem 0 .1rem;font-size:1.4rem;letter-spacing:-.01em}
+  .lm-meta{color:var(--ink-soft);font-size:.9rem}
+  .lm-badges{display:flex;gap:.4rem;margin-top:.55rem;flex-wrap:wrap}
+  .lm-hero-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+  .lm-btn{border:1px solid transparent;border-radius:10px;padding:.55rem .95rem;font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:.4rem;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .lm-btn.live{background:var(--live);color:#fff}
+  .lm-btn.ghost{background:transparent;color:var(--brand);border-color:var(--line2)}
+  .lm-btn.primary{background:var(--brand);color:#fff}
+  .lm-sec-h{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.3rem .3rem}
+  .lm-sec-h h2{font-size:1.05rem;margin:0}
+  .lm-pill{font-size:.78rem;font-weight:700;color:var(--ink-soft);background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:.15rem .6rem}
+  .lm-att{padding:.4rem .6rem 1rem}
+  .lm-row{display:grid;grid-template-columns:1fr auto;gap:.5rem 1rem;align-items:center;padding:.6rem .7rem}
+  .lm-row+.lm-row{border-top:1px solid var(--line)}
+  .lm-stud{display:flex;align-items:center;gap:.7rem;min-width:0}
+  .lm-av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.82rem;background:var(--brand-soft);color:var(--brand);flex:none;text-transform:uppercase}
+  .lm-nm{font-weight:600} .lm-sub{font-size:.76rem;color:var(--ink-soft)}
+  .lm-seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+  .lm-seg input{position:absolute;opacity:0;pointer-events:none}
+  .lm-seg label{padding:.4rem .75rem;font-weight:700;font-size:.82rem;color:var(--ink-soft);cursor:pointer;user-select:none}
+  .lm-seg input:checked+label.p{background:var(--present-soft);color:var(--present)}
+  .lm-seg input:checked+label.a{background:var(--absent-soft);color:var(--absent)}
+  .lm-seg input:focus-visible+label{outline:2px solid var(--brand);outline-offset:-2px}
+  .lm-extra{grid-column:1/-1;display:none;gap:.5rem;flex-wrap:wrap;align-items:center;padding:.3rem .2rem 0 3rem}
+  .lm-row.absent .lm-extra{display:flex}
+  .lm-chk{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;color:var(--ink-soft);cursor:pointer}
+  .lm-chk input{accent-color:var(--warn);width:1rem;height:1rem}
+  .lm-stars button{border:0;background:transparent;font-size:1.05rem;line-height:1;color:var(--line2);padding:.1rem;cursor:pointer}
+  .lm-stars button.on{color:var(--warn)}
+  .lm-note{border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:.3rem .55rem;font-size:.8rem;color:var(--ink);width:150px}
+  .lm-two{display:grid;grid-template-columns:1.3fr 1fr;gap:1.1rem}
+  @media(max-width:760px){.lm-two{grid-template-columns:1fr}}
+  .lm-body{padding:.2rem 1.3rem 1.3rem}
+  .lm-fld{display:block;font-size:.76rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:0 0 .35rem}
+  .lm-screen textarea,.lm-txt{width:100%;border:1px solid var(--line2);background:var(--surface2);border-radius:10px;padding:.6rem .75rem;font-family:inherit;font-size:.9rem;color:var(--ink);resize:vertical}
+  .lm-hint{font-size:.78rem;color:var(--ink-soft);margin:.35rem 0 0}
+  .lm-ms{padding:.2rem 1.3rem 1.3rem}
+  .lm-bar{height:7px;border-radius:999px;background:var(--surface2);overflow:hidden;margin:.2rem 0 .8rem;border:1px solid var(--line)}
+  .lm-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#6366f1)}
+  .lm-msrow{display:flex;gap:.6rem;align-items:flex-start;padding:.4rem 0;font-size:.9rem;cursor:pointer}
+  .lm-msrow input{margin-top:.15rem;accent-color:var(--brand);width:1.05rem;height:1.05rem}
+  .lm-msrow.done span{color:var(--ink-soft);text-decoration:line-through}
+  .lm-empty{color:var(--ink-soft);font-size:.88rem;padding:.4rem .2rem}
+  .lm-savebar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:.7rem 1.5rem;z-index:30}
+  .lm-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+  .lm-msg{color:var(--ink-soft);font-size:.84rem}
+  .lm-sp{margin-left:auto;display:flex;gap:.6rem}
+  @media (prefers-color-scheme:dark){.lm-screen{--ink:#e8ecf5;--ink-soft:#9aa4bb;--line:#28324a;--line2:#334063;--surface:#161d2c;--surface2:#1b2436;--brand:#8b8cf8;--brand-soft:#20264a;--present:#4ade80;--present-soft:#12291c;--absent:#f87171;--absent-soft:#2c1618;--warn:#fbbf24;--warn-soft:#2a2011;--live:#fb7185}
+    .lm-savebar{background:rgba(22,29,44,.92)}}
+</style>
+
+<script>
+(function(){
+  var CSRF="{{ csrf_token }}";
+  // prezent/absent → toggle extras + count
+  function recount(){
+    var p=0,a=0;
+    document.querySelectorAll('.lm-row').forEach(function(row){
+      var pr=row.querySelector('input[value="1"]'), ab=row.querySelector('input[value="0"]');
+      if(pr&&pr.checked)p++; if(ab&&ab.checked)a++;
+      row.classList.toggle('absent', ab&&ab.checked);
+    });
+    var el=document.getElementById('attCount'); if(el)el.textContent=p+" prezenți · "+a+" absenți";
+  }
+  document.querySelectorAll('.lm-seg input').forEach(function(i){i.addEventListener('change',recount);});
+  // stele
+  document.querySelectorAll('.lm-stars').forEach(function(box){
+    var hidden=box.querySelector('input[type=hidden]');
+    var cur=parseInt(hidden.value||'0',10);
+    function paint(n){box.querySelectorAll('button').forEach(function(b,j){b.classList.toggle('on',j<n);});}
+    paint(cur);
+    box.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+      var v=parseInt(b.dataset.v,10); if(v===parseInt(hidden.value||'0',10)){v=0;} hidden.value=v?v:''; paint(v);});});
+  });
+  // milestones (salvare imediată)
+  document.querySelectorAll('.lm-msrow input').forEach(function(cb){
+    cb.addEventListener('change',function(){
+      var row=cb.closest('.lm-msrow'); row.classList.toggle('done',cb.checked);
+      fetch("{% url 'teacher_platform:milestone_toggle' group.id %}",{method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+        body:JSON.stringify({milestone_id:parseInt(cb.dataset.ms,10),done:cb.checked})})
+        .then(function(r){return r.json();}).then(function(){
+          var all=document.querySelectorAll('.lm-msrow input'),done=document.querySelectorAll('.lm-msrow input:checked').length;
+          document.getElementById('msBar').style.width=(all.length?done/all.length*100:0)+'%';
+          document.getElementById('msCount').textContent=done+"/"+all.length;
+        }).catch(function(){cb.checked=!cb.checked;row.classList.toggle('done',cb.checked);});
+    });
+  });
+  // live
+  var lb=document.getElementById('liveBtn');
+  if(lb)lb.addEventListener('click',function(){
+    lb.disabled=true;
+    fetch(lb.dataset.start,{method:'POST',headers:{'X-CSRFToken':CSRF}})
+      .then(function(r){return r.json();}).then(function(){window.location=lb.dataset.panel;})
+      .catch(function(){lb.disabled=false;});
+  });
+  recount();
+})();
+</script>
+{% endblock %}
