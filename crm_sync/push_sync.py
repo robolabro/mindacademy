@@ -49,10 +49,13 @@ def build_prezenta_fields(att):
     return fields
 
 
-def build_takeaways_fields(lesson):
-    """Doar câmpul editat de profesor la finalul lecției. NU trimitem
-    „Completed"/orar — acelea rămân ale Airtable."""
-    return {'Lesson Takeaways': lesson.lesson_takeaways}
+def build_content_fields(lesson):
+    """Conținutul editat de profesor la lecție: „ce s-a lucrat" + tema pentru
+    acasă. NU trimitem „Completed"/orar — acelea rămân ale Airtable."""
+    return {
+        'Lesson Takeaways': lesson.lesson_takeaways,
+        'Homework': lesson.homework,
+    }
 
 
 def build_new_lesson_fields(lesson):
@@ -214,21 +217,23 @@ class PushSync:
                 orphan=orphan, dupe=dupe,
             ))
 
-        # --- „Ce s-a lucrat" (takeaways) → update în „Lectii", DOAR acest câmp ---
-        # Doar lecțiile deja mapate în Airtable (au airtable_record_id) și cu
-        # takeaways scris în platformă. Orarul/„Completed" rămân ale Airtable.
+        # --- Conținut lecție („ce s-a lucrat" + temă) → update în „Lectii" ---
+        # Doar lecțiile deja mapate în Airtable (au airtable_record_id). Orarul/
+        # „Completed" rămân ale Airtable; noi scriem doar Lesson Takeaways + Homework.
+        from django.db.models import Q
         lessons = (Lesson.objects
                    .filter(group_id__in=group_ids)
-                   .exclude(lesson_takeaways='')
                    .exclude(airtable_record_id__isnull=True).exclude(airtable_record_id=''))
         if self.only_pending:
             lessons = lessons.filter(sync_status='pending')
+        else:
+            lessons = lessons.exclude(Q(lesson_takeaways='') & Q(homework=''))
         for lesson in lessons:
             specs.append(dict(
                 entity='Lectii',
                 table=self._t('AIRTABLE_TABLE_LECTII'),
                 record_id=lesson.airtable_record_id,
-                payload=build_takeaways_fields(lesson),
+                payload=build_content_fields(lesson),
                 source_kind='lectie', source_id=lesson.id,
                 dedupe_key=f"lectie:{lesson.id}",
             ))

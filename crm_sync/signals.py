@@ -42,12 +42,14 @@ def register():
 
     @receiver(pre_save, sender=Lesson, dispatch_uid='crm_lesson_dirty')
     def _lesson_pre(sender, instance, **kw):
-        # Doar când se schimbă „ce s-a lucrat" (takeaways). Lecțiile noi (import
-        # sau creare) NU se marchează aici — push-ul lor e tratat separat.
+        # Când se schimbă conținutul scris de profesor („ce s-a lucrat" sau tema).
+        # Lecțiile noi (import/creare) NU se marchează aici — push-ul lor e separat.
         instance._push_dirty = False
         if instance.pk:
-            old = sender.objects.filter(pk=instance.pk).only('lesson_takeaways').first()
-            if old is not None and (old.lesson_takeaways or '') != (instance.lesson_takeaways or ''):
+            old = sender.objects.filter(pk=instance.pk).only('lesson_takeaways', 'homework').first()
+            if old is not None and (
+                    (old.lesson_takeaways or '') != (instance.lesson_takeaways or '')
+                    or (old.homework or '') != (instance.homework or '')):
                 instance._push_dirty = True
 
     @receiver(post_save, sender=Lesson, dispatch_uid='crm_lesson_mark')

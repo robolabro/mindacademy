@@ -172,7 +172,10 @@ def group_detail(request, group_id):
     past_lessons = Lesson.objects.filter(
         group=group,
         date__lt=timezone.now().date()
-    ).select_related('lesson_template').order_by('-date', '-start_time')[:10]
+    ).select_related('lesson_template').annotate(
+        present_count=Count('attendances', filter=Q(attendances__is_present=True)),
+        marked_count=Count('attendances'),
+    ).order_by('-date', '-start_time')[:10]
 
     # Temele grupei
     assignments = Assignment.objects.filter(
@@ -199,6 +202,7 @@ def group_detail(request, group_id):
         'lesson_templates': lesson_templates,
         'live_session': live_session,
         'sim_assignments_count': SimulatorAssignment.objects.filter(group=group).count(),
+        'enrolled_count': students.count(),
     }
 
     return render(request, 'teacher_platform/group_detail.html', context)

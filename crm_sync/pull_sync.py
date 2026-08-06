@@ -688,8 +688,10 @@ class PullSync:
                 tk = pick(f, 'Lesson Takeaways')
                 if tk is not None and not (obj.lesson_takeaways or '').strip():
                     obj.lesson_takeaways = str(tk)
+                # Tema (Homework) = și ea proprietatea Mind.academy: importăm din
+                # Airtable doar dacă în Django e gol (nu suprascriem ce a scris profesorul).
                 hw = pick(f, 'Homework')
-                if hw is not None:
+                if hw is not None and not (obj.homework or '').strip():
                     obj.homework = str(hw)
                 obj.status = 'completed' if completed else (obj.status or 'scheduled')
                 obj.is_archived = False
