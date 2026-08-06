@@ -58,11 +58,12 @@ def build_takeaways_fields(lesson):
 class PushSync:
     def __init__(self, dry_run=False, grupa=None, log=None,
                  create_fn=None, update_fn=None, delete_fn=None, fetch_fn=None,
-                 cleanup_duplicates=False):
+                 cleanup_duplicates=False, only_pending=False):
         self.dry_run = dry_run
         self.grupa = (grupa or '').strip()
         self.log = log or (lambda m: None)
         self.cleanup_duplicates = cleanup_duplicates
+        self.only_pending = only_pending
         # Injectabile pentru teste; implicit clientul REST de scriere/citire.
         if create_fn is None or update_fn is None or delete_fn is None:
             from crm_sync.airtable_push import create_record, update_record, delete_record
@@ -132,6 +133,8 @@ class PushSync:
         atts = (Attendance.objects
                 .filter(lesson__group_id__in=group_ids)
                 .select_related('student', 'lesson', 'lesson__group', 'enrollment'))
+        if self.only_pending:
+            atts = atts.filter(sync_status='pending')
         atts = list(atts)
         # Reconciliere prezențe existente (după lecțiile implicate).
         lesson_recids = {a.lesson.airtable_record_id for a in atts
@@ -186,6 +189,8 @@ class PushSync:
                    .filter(group_id__in=group_ids)
                    .exclude(lesson_takeaways='')
                    .exclude(airtable_record_id__isnull=True).exclude(airtable_record_id=''))
+        if self.only_pending:
+            lessons = lessons.filter(sync_status='pending')
         for lesson in lessons:
             specs.append(dict(
                 entity='Lectii',
@@ -266,8 +271,10 @@ class PushSync:
         for s in specs:
             job = self._upsert_job(s)
             self._process_job(job)
-            if s['source_kind'] == 'prezenta' and job.status == 'done':
-                # Pointer corect pe att (record_id final: existent/creat).
+            if job.status != 'done':
+                continue
+            if s['source_kind'] == 'prezenta':
+                # Pointer corect pe att (record_id final: existent/creat) + synced.
                 Attendance.objects.filter(pk=s['source_id']).update(
                     airtable_record_id=job.target_record_id, sync_status='synced',
                     airtable_synced_at=timezone.now())
@@ -275,6 +282,9 @@ class PushSync:
                     self._orphans.append((s['source_id'], s['orphan']))
                 if s.get('dupe'):
                     self._dupes.append(s['dupe'])
+            elif s['source_kind'] == 'lectie':
+                Lesson.objects.filter(pk=s['source_id']).update(
+                    sync_status='synced', airtable_synced_at=timezone.now())
 
         # Curățarea duplicatelor pe care le-am creat noi (ireversibil → opt-in).
         if self.cleanup_duplicates:

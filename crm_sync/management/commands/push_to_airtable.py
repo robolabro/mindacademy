@@ -29,17 +29,22 @@ class Command(BaseCommand):
         parser.add_argument('--cleanup-duplicates', action='store_true',
                             help="Șterge din Airtable prezențele duplicate create "
                                  "anterior de push (ireversibil). Implicit: doar le raportează.")
+        parser.add_argument('--only-pending', action='store_true',
+                            help="Trimite doar execuția modificată în platformă "
+                                 "(sync_status=pending). Folosit de cron-ul de push.")
 
     def handle(self, *args, **opts):
         grupa = opts['grupa']
         dry_run = opts['dry_run']
-        if not grupa and not dry_run:
+        only_pending = opts['only_pending']
+        if not grupa and not dry_run and not only_pending:
             self.stdout.write(self.style.WARNING(
                 "Push pe TOATE grupele fără --grupa. Pilotează întâi pe o grupă "
                 "(--grupa=COD)."))
         try:
             push = PushSync(dry_run=dry_run, grupa=grupa, log=self.stdout.write,
-                            cleanup_duplicates=opts['cleanup_duplicates'])
+                            cleanup_duplicates=opts['cleanup_duplicates'],
+                            only_pending=only_pending)
             result = push.run()
         except AirtableConfigError as exc:
             raise CommandError(str(exc))
