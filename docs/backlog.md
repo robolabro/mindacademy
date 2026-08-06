@@ -40,8 +40,15 @@
 - **Prezențe** → tabelul „Prezente" (create/update cu reconciliere după Elev+Lecție, fără duplicate; leagă Elev/Lecție/Grupa/Inscriere).
 - **Takeaways** → update „Lesson Takeaways" (doar acest câmp; Mind.academy e owner).
 - **§4/A** — lecții create în platformă → create în „Lectii" (opt-in `--push-new-lessons`).
+- **Takeaways + Temă (Homework)** → update în „Lectii" (doar aceste câmpuri; Mind.academy e owner; pull nu le suprascrie).
 - **Push automat** — semnal marchează execuția modificată `pending`; `--only-pending` trimite doar ce s-a schimbat.
+- **Mai multe grupe deodată** — `--grupa=COD1,COD2,...` la pull ȘI push.
 - Niciodată scriere în „Progres Lectii" (gardă la nivel de client).
+
+### UX profesor · **Done**
+- **Ecran unificat „Gestionează lecția"** (`lesson_manage`): prezență (prezent/absent, absență anunțată, generează recuperare, evaluare 1–5, notiță) + „ce s-a lucrat" + temă + milestones + pornire lecție live — într-un singur loc. La salvare, execuția se marchează `pending` → push automat.
+- **Pagina grupei**: fiecare lecție duce la ecranul de gestionare; lecțiile trecute arată sumarul de prezență.
+- **Date demo**: `seed_test_data` (profesor + copii + grupă online).
 
 ### Automatizare (cron Railway)
 - **Pull nocturn** (`nightly_sync`) — `Todo` (de configurat în Railway; opțional).
@@ -64,10 +71,12 @@
 - [ ] Parcurgerea planului de testare (stories) — vezi `docs/test-plan` / artifact.
 - [ ] Date demo: `python manage.py seed_test_data` (profesor + copii + grupă online). `--wipe` la final.
 
-### Îmbunătățiri UX (propuneri)
-- [ ] UI prietenos pentru profesor: marcare prezență + „ce s-a lucrat" într-un singur ecran de lecție.
-- [ ] UI creare lecție ad-hoc (recuperare/suplimentară) din platformă (backend gata prin §4/A).
+### Îmbunătățiri UX
+- [x] Ecran unificat de lecție (prezență + „ce s-a lucrat" + temă + milestones + live) — **Done** (`lesson_manage`).
+- [x] Pagina grupei duce la ecranul de gestionare per lecție + sumar prezență — **Done**.
+- [ ] UI creare lecție ad-hoc (recuperare/suplimentară) din platformă (backend gata prin §4/A; lipsește ecranul dedicat).
 - [ ] Buton „push acum" în admin pe grupă (alternativă la cron pentru cazuri urgente).
+- [ ] Buton direct „Gestionează" în calendar (acum e din pagina grupei).
 
 ### Idei de business de evaluat (neîncepute)
 - [ ] Rol **părinte**: vizualizare progres/prezență copil în platformă.
