@@ -80,7 +80,9 @@ class PullSync:
     def __init__(self, dry_run=False, grupa=None, fetch=None, log=None,
                  create_missing_teachers=False):
         self.dry_run = dry_run
-        self.grupa = (grupa or '').strip()  # filtru pilot pe „Cod Grupa"
+        # Filtru pe „Cod Grupa": una sau mai multe (separate prin virgulă).
+        self.grupa = (grupa or '').strip()
+        self.grupa_codes = {c.strip() for c in self.grupa.split(',') if c.strip()}
         self.fetch = fetch or _live_fetch
         self.log = log or (lambda msg: None)
         self.create_missing_teachers = create_missing_teachers
@@ -308,9 +310,9 @@ class PullSync:
         for r in records:
             rec_id, f = r['id'], r.get('fields', {})
             cod = pick(f, 'Cod Grupa', 'Cod Grupă', 'Cod', default='')
-            if self.grupa:
-                # Pilot explicit pe o grupă: ignoră filtrul de status.
-                if str(cod) != self.grupa:
+            if self.grupa_codes:
+                # Pilot explicit pe una/mai multe grupe: ignoră filtrul de status.
+                if str(cod) not in self.grupa_codes:
                     continue
             else:
                 # Rulare pe toată baza: doar grupele active (Graduated/Merged sărite).
@@ -376,7 +378,7 @@ class PullSync:
                 self._err(entity, rec_id, exc)
         # Arhivarea grupelor se face doar la rularea completă (fără --grupa),
         # ca să nu arhivăm restul bazei în timpul unui pilot.
-        if not self.grupa:
+        if not self.grupa_codes:
             self._archive_missing(entity, Group, seen)
         return seen
 

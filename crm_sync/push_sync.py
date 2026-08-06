@@ -94,7 +94,9 @@ class PushSync:
                  create_fn=None, update_fn=None, delete_fn=None, fetch_fn=None,
                  cleanup_duplicates=False, only_pending=False, push_new_lessons=False):
         self.dry_run = dry_run
+        # Filtru pe „Cod Grupa": una sau mai multe (separate prin virgulă).
         self.grupa = (grupa or '').strip()
+        self.grupa_codes = {c.strip() for c in self.grupa.split(',') if c.strip()}
         self.log = log or (lambda m: None)
         self.cleanup_duplicates = cleanup_duplicates
         self.only_pending = only_pending
@@ -128,8 +130,8 @@ class PushSync:
 
     def _target_groups(self):
         qs = Group.objects.exclude(airtable_record_id__isnull=True).exclude(airtable_record_id='')
-        if self.grupa:
-            qs = qs.filter(airtable_cod_grupa=self.grupa)
+        if self.grupa_codes:
+            qs = qs.filter(airtable_cod_grupa__in=list(self.grupa_codes))
         return qs
 
     def _load_existing_prezente(self, lesson_recids):

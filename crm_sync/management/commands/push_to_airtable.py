@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--grupa', default=None,
-                            help="Cod Grupa: restrânge la o singură grupă (pilot).")
+                            help="Cod Grupa (una sau mai multe, separate prin virgulă): restrânge la grupele date.")
         parser.add_argument('--dry-run', action='store_true',
                             help="Nu scrie nimic; doar raportează ce s-ar trimite.")
         parser.add_argument('--cleanup-duplicates', action='store_true',

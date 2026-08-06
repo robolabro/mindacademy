@@ -27,7 +27,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--grupa', default=None,
-                            help="Cod Grupa: restrânge sincronizarea la o singură grupă (pilot).")
+                            help="Cod Grupa (una sau mai multe, separate prin virgulă): restrânge sincronizarea la grupele date.")
         parser.add_argument('--dry-run', action='store_true',
                             help="Nu scrie nimic în DB; doar raportează ce s-ar întâmpla.")
         parser.add_argument('--show-schema', action='store_true',
