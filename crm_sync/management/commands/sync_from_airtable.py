@@ -61,8 +61,8 @@ class Command(BaseCommand):
                 else self.style.WARNING
             self.stdout.write(style(
                 f"\nGata [{result['status']}] — create: {t['created']}, "
-                f"actualizate: {t['updated']}, arhivate: {t['archived']}, "
-                f"sărite: {t['skipped']}, erori: {t['errors']}."))
+                f"actualizate: {t['updated']}, neschimbate: {t.get('unchanged', 0)}, "
+                f"arhivate: {t['archived']}, sărite: {t['skipped']}, erori: {t['errors']}."))
             if result['errors']:
                 self.stdout.write(self.style.ERROR(
                     f"{len(result['errors'])} erori (primele 10):"))

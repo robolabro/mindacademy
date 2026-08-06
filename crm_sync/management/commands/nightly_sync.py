@@ -39,8 +39,8 @@ class Command(BaseCommand):
         style = self.style.SUCCESS if result['status'] in ('success', 'dry_run') else self.style.WARNING
         self.stdout.write(style(
             f"\nSync nocturn [{result['status']}] — create: {t['created']}, "
-            f"actualizate: {t['updated']}, arhivate: {t['archived']}, "
-            f"sărite: {t['skipped']}, erori: {t['errors']}."))
+            f"actualizate: {t['updated']}, neschimbate: {t.get('unchanged', 0)}, "
+            f"arhivate: {t['archived']}, sărite: {t['skipped']}, erori: {t['errors']}."))
         if result['errors']:
             for e in result['errors'][:10]:
                 self.stdout.write(self.style.ERROR(f"  - {e}"))

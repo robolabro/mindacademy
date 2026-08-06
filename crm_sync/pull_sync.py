@@ -91,8 +91,8 @@ class PullSync:
         self.active_statuses = set(
             getattr(settings, 'AIRTABLE_GROUP_ACTIVE_STATUSES', ['Active']))
 
-        self.stats = defaultdict(lambda: dict(created=0, updated=0, archived=0,
-                                              skipped=0, errors=0))
+        self.stats = defaultdict(lambda: dict(created=0, updated=0, unchanged=0,
+                                              archived=0, skipped=0, errors=0))
         self.errors = []
         # map-uri de rezolvare a link-urilor
         self.map_module = {}       # rec -> Module
@@ -110,34 +110,52 @@ class PullSync:
         self.errors.append(f"[{entity}] {rec_id}: {message}")
         self.log(f"  ! EROARE {entity} {rec_id}: {message}")
 
-    def _upsert(self, entity, model, rec_id, values, id_map=None):
-        """
-        Găsește după airtable_record_id și actualizează, sau creează.
-        În dry_run nu scrie; simulează find (pentru rezolvarea link-urilor
-        folosește obiectul existent dacă e găsit, altfel un obiect ne-salvat).
-        Returnează (obj, action) unde action ∈ {'created','updated','noop'}.
-        """
-        existing = model.objects.filter(airtable_record_id=rec_id).first()
-        if existing:
-            action = 'updated'
-            obj = existing
-        else:
-            action = 'created'
-            obj = model(airtable_record_id=rec_id)
-
+    @staticmethod
+    def _differs(obj, values):
+        """True dacă vreo valoare din `values` diferă de obiectul actual.
+        Câmpurile de sincronizare (airtable_synced_at etc.) NU se compară."""
+        from django.db.models import Model
         for k, v in values.items():
-            setattr(obj, k, v)
-        obj.is_archived = False
-        obj.sync_status = 'synced'
-        obj.sync_error = ''
-        obj.airtable_synced_at = timezone.now()
+            if isinstance(v, Model):
+                if getattr(obj, k + '_id') != v.pk:
+                    return True
+            else:
+                if getattr(obj, k) != v:
+                    return True
+        return False
 
-        if not self.dry_run:
-            obj.save()
-
-        self.stats[entity][action] += 1
-        if id_map is not None:
+    def _save_if_changed(self, entity, obj, values, created, id_map=None, rec_id=None):
+        """
+        Scrie DOAR dacă s-a schimbat ceva. Dacă obiectul există, datele sunt
+        identice și e deja „curat" (synced, ne-arhivat), nu-l rescriem — îl
+        numărăm „neschimbat". Actualizează întotdeauna map-ul + returnează acțiunea.
+        """
+        clean = (not created) and (not obj.is_archived) and obj.sync_status == 'synced'
+        if clean and not self._differs(obj, values):
+            self.stats[entity]['unchanged'] += 1
+            action = 'unchanged'
+        else:
+            for k, v in values.items():
+                setattr(obj, k, v)
+            obj.is_archived = False
+            obj.sync_status = 'synced'
+            obj.sync_error = ''
+            obj.airtable_synced_at = timezone.now()
+            if not self.dry_run:
+                obj.save()
+            action = 'created' if created else 'updated'
+            self.stats[entity][action] += 1
+        if id_map is not None and rec_id is not None:
             id_map[rec_id] = obj
+        return action
+
+    def _upsert(self, entity, model, rec_id, values, id_map=None):
+        """Găsește după airtable_record_id și scrie doar dacă s-a schimbat ceva."""
+        obj = model.objects.filter(airtable_record_id=rec_id).first()
+        created = obj is None
+        if created:
+            obj = model(airtable_record_id=rec_id)
+        action = self._save_if_changed(entity, obj, values, created, id_map, rec_id)
         return obj, action
 
     def _archive_missing(self, entity, model, seen_ids, base_qs=None):
@@ -422,22 +440,14 @@ class PullSync:
             name = str(pick(f, 'Nume Modul', 'Nume', 'Name', 'Modul', default=rec_id))
             try:
                 obj = Module.objects.filter(airtable_record_id=rec_id).first()
-                if obj is None:
+                created = obj is None
+                if created:
                     next_order += 1
                     obj = Module(airtable_record_id=rec_id, course=course, order=next_order)
-                    action = 'created'
-                else:
-                    action = 'updated'
-                obj.name = name
-                obj.course = course
-                obj.description = str(pick(f, 'Descriere si Obiective', default='') or obj.description or '')
-                obj.is_archived = False
-                obj.sync_status = 'synced'
-                obj.airtable_synced_at = timezone.now()
-                if not self.dry_run:
-                    obj.save()
-                self.stats[entity][action] += 1
-                self.map_module[rec_id] = obj
+                values = dict(
+                    name=name, course=course,
+                    description=str(pick(f, 'Descriere si Obiective', default='') or obj.description or ''))
+                self._save_if_changed(entity, obj, values, created, self.map_module, rec_id)
                 seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
@@ -469,11 +479,10 @@ class PullSync:
                     if module.pk:
                         s.update(LessonTemplate.objects.filter(module=module)
                                  .values_list('order', flat=True))
-                if obj is not None:
-                    action = 'updated'
+                created = obj is None
+                if not created:
                     order = obj.order  # păstrăm ordinea existentă
                 else:
-                    action = 'created'
                     try:
                         desired = int(pick(f, 'Ordine', 'Order', 'Nr', default=0))
                     except (ValueError, TypeError):
@@ -485,17 +494,9 @@ class PullSync:
                     order = desired
                     s.add(order)
                     obj = LessonTemplate(airtable_record_id=rec_id)
-                obj.module = module
-                obj.name = name
-                obj.order = order
-                obj.objectives = str(pick(f, 'Obiective', 'Objectives', default=''))
-                obj.is_archived = False
-                obj.sync_status = 'synced'
-                obj.airtable_synced_at = timezone.now()
-                if not self.dry_run:
-                    obj.save()
-                self.stats[entity][action] += 1
-                self.map_lesson_tpl[rec_id] = obj
+                values = dict(module=module, name=name, order=order,
+                              objectives=str(pick(f, 'Obiective', 'Objectives', default='')))
+                self._save_if_changed(entity, obj, values, created, self.map_lesson_tpl, rec_id)
                 seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
@@ -525,16 +526,10 @@ class PullSync:
             try:
                 existing = User.objects.filter(airtable_record_id=rec_id).first()
                 if existing:
-                    existing.first_name = first or existing.first_name
-                    existing.last_name = last or existing.last_name
-                    existing.is_archived = False
-                    existing.sync_status = 'synced'
-                    existing.sync_error = ''
-                    existing.airtable_synced_at = timezone.now()
-                    if not self.dry_run:
-                        existing.save()
-                    self.stats[entity]['updated'] += 1
-                    self.map_student[rec_id] = existing
+                    values = dict(first_name=first or existing.first_name,
+                                  last_name=last or existing.last_name)
+                    self._save_if_changed(entity, existing, values, False,
+                                          self.map_student, rec_id)
                 else:
                     # Username derivat direct din record_id (alfanumeric, unic,
                     # stabil). Nu folosim numele — copiii pot avea nume identice.
@@ -594,7 +589,8 @@ class PullSync:
                           status='activ')
             end = pick(f, 'Data Sfarsit', 'End Date', 'Data Sfârșit')
             if end:
-                values['end_date'] = end
+                from django.utils.dateparse import parse_date
+                values['end_date'] = parse_date(str(end)) or end
             try:
                 # Upsert după record_id; dacă lipsește (înscriere veche fără
                 # mapare), cădem pe cheia naturală (group, student).
@@ -606,19 +602,10 @@ class PullSync:
                     obj = Enrollment.objects.filter(group=group, student=student).first()
                     if obj is not None and not obj.airtable_record_id:
                         obj.airtable_record_id = rec_id
-                if obj is None:
+                created = obj is None
+                if created:
                     obj = Enrollment(airtable_record_id=rec_id)
-                    action = 'created'
-                else:
-                    action = 'updated'
-                for k, v in values.items():
-                    setattr(obj, k, v)
-                obj.is_archived = False
-                obj.sync_status = 'synced'
-                obj.airtable_synced_at = timezone.now()
-                if not self.dry_run:
-                    obj.save()
-                self.stats[entity][action] += 1
+                self._save_if_changed(entity, obj, values, created)
                 seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
@@ -657,52 +644,41 @@ class PullSync:
             completed = bool(pick(f, 'Completed', default=False))
             try:
                 obj = Lesson.objects.filter(airtable_record_id=rec_id).first()
-                if obj is None:
+                created = obj is None
+                if created:
                     if sched is None:
                         # Fără dată/oră nu putem crea o lecție validă.
                         self.stats[entity]['skipped'] += 1
                         continue
                     obj = Lesson(airtable_record_id=rec_id,
                                  date=sched.date(), start_time=sched.time())
-                    action = 'created'
-                else:
-                    action = 'updated'
-                    if sched is not None:
-                        obj.date = sched.date()
-                        obj.start_time = sched.time()
-                obj.group = group
+                values = dict(group=group)
+                if sched is not None:
+                    values['date'] = sched.date()
+                    values['start_time'] = sched.time()
                 if template is not None:
-                    obj.lesson_template = template
-                # Nume sugestiv: îl construim din șablon („Numar Lectie" +
-                # prima linie din Obiective), fiindcă în „Lectii" câmpul e un cod.
-                # Fallback pe câmpul din Airtable dacă nu există șablon.
+                    values['lesson_template'] = template
+                # Nume sugestiv din șablon („Numar Lectie" + prima linie din
+                # Obiective); fallback pe câmpul din Airtable dacă nu e șablon.
                 airtable_topic = pick(f, 'Lectie', 'Topic', 'Subiect')
                 if template is not None:
                     obj_desc = (template.objectives or '').strip()
                     first_line = obj_desc.splitlines()[0].strip() if obj_desc else ''
                     label = template.name or ''
-                    obj.topic = (f"{label} · {first_line}" if (label and first_line)
-                                 else first_line or label or str(airtable_topic or ''))[:300]
+                    values['topic'] = (f"{label} · {first_line}" if (label and first_line)
+                                       else first_line or label or str(airtable_topic or ''))[:300]
                 elif airtable_topic:
-                    obj.topic = str(airtable_topic)[:300]
-                # Takeaways = proprietatea Mind.academy: importăm din Airtable
+                    values['topic'] = str(airtable_topic)[:300]
+                values['status'] = 'completed' if completed else (obj.status or 'scheduled')
+                # Takeaways/Tema = proprietatea Mind.academy: importăm din Airtable
                 # DOAR dacă în Django e gol (nu suprascriem ce a scris profesorul).
                 tk = pick(f, 'Lesson Takeaways')
                 if tk is not None and not (obj.lesson_takeaways or '').strip():
-                    obj.lesson_takeaways = str(tk)
-                # Tema (Homework) = și ea proprietatea Mind.academy: importăm din
-                # Airtable doar dacă în Django e gol (nu suprascriem ce a scris profesorul).
+                    values['lesson_takeaways'] = str(tk)
                 hw = pick(f, 'Homework')
                 if hw is not None and not (obj.homework or '').strip():
-                    obj.homework = str(hw)
-                obj.status = 'completed' if completed else (obj.status or 'scheduled')
-                obj.is_archived = False
-                obj.sync_status = 'synced'
-                obj.sync_error = ''
-                obj.airtable_synced_at = timezone.now()
-                if not self.dry_run:
-                    obj.save()
-                self.stats[entity][action] += 1
+                    values['homework'] = str(hw)
+                self._save_if_changed(entity, obj, values, created)
                 seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
@@ -731,7 +707,7 @@ class PullSync:
         return self._finish()
 
     def _finish(self):
-        totals = dict(created=0, updated=0, archived=0, skipped=0, errors=0)
+        totals = dict(created=0, updated=0, unchanged=0, archived=0, skipped=0, errors=0)
         for s in self.stats.values():
             for k in totals:
                 totals[k] += s[k]
