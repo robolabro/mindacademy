@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 
     # Apps proprii - ORDINEA E IMPORTANTĂ!
     'accounts',  # Trebuie PRIMA (custom user model)
+    'crm_sync',  # Sincronizare Airtable (mixin partajat + jurnale)
     'courses',  # Cursuri publice (EXISTENT)
     'teacher_platform',  # Platforma profesori
     'student_platform',  # Platforma elevi/părinți
@@ -49,6 +50,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'accounts.middleware.ForcePasswordChangeMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -140,7 +142,7 @@ AUTH_USER_MODEL = 'accounts.User'
 
 # ==================== AUTHENTICATION ====================
 LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/teacher/'  # Redirect la teacher dashboard după login
+LOGIN_REDIRECT_URL = '/dupa-login/'  # Redirect după login, în funcție de rol (profesor/elev)
 LOGOUT_REDIRECT_URL = 'home'
 
 # ==================== EMAIL CONFIGURATION ====================
@@ -174,6 +176,45 @@ MINDACADEMY_SETTINGS = {
 
 # Site URL (pentru email-uri)
 SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')
+
+# Airtable — sincronizarea bidirecțională (Epic 7) cu baza
+# „Schedule SmartyKids Bucurestii Noi" (appNojgKwbj01pq8a).
+# Token = Personal Access Token (PAT), DOAR din variabile de mediu — niciodată
+# în cod sau în git. Scope minim: doar această bază, doar tabelele de mai jos.
+AIRTABLE_TOKEN = config('AIRTABLE_TOKEN', default='')
+AIRTABLE_BASE_ID = config('AIRTABLE_BASE_ID', default='appNojgKwbj01pq8a')
+
+# ID-urile tabelelor din bază (nu sunt secrete — pot avea valori implicite).
+AIRTABLE_TABLE_GRUPE = config('AIRTABLE_TABLE_GRUPE', default='tblXZRQQ0NLmtz586')
+AIRTABLE_TABLE_MODULE = config('AIRTABLE_TABLE_MODULE', default='tblU1RA8t59Pbz6yR')
+AIRTABLE_TABLE_LECTII_TEMPLATE = config('AIRTABLE_TABLE_LECTII_TEMPLATE', default='tblU2cSO5s65dO07P')
+AIRTABLE_TABLE_INSCRIERI = config('AIRTABLE_TABLE_INSCRIERI', default='tbl81zgbmF13ayzq3')
+AIRTABLE_TABLE_ELEVI = config('AIRTABLE_TABLE_ELEVI', default='tblLdCN1sDksJvYAI')
+AIRTABLE_TABLE_LECTII = config('AIRTABLE_TABLE_LECTII', default='tbl1cV52qRBGPBEsV')
+AIRTABLE_TABLE_PREZENTE = config('AIRTABLE_TABLE_PREZENTE', default='tblzEcmV1QiDv7ByG')
+AIRTABLE_TABLE_PROGRES_LECTII = config('AIRTABLE_TABLE_PROGRES_LECTII', default='tblluyRaKCJ00aQLZ')
+AIRTABLE_TABLE_PROFESORI = config('AIRTABLE_TABLE_PROFESORI', default='tblcw6TesETeKS0sm')
+
+# Profesorul atribuit grupelor NOI create din Airtable, când legătura de
+# profesor nu poate fi rezolvată (gol = primul profesor/superuser disponibil).
+AIRTABLE_SYNC_DEFAULT_TEACHER_USERNAME = config('AIRTABLE_SYNC_DEFAULT_TEACHER_USERNAME', default='')
+
+# La rularea pe toată baza, sincronizăm DOAR grupele cu aceste statusuri
+# („Status Grupa" din Airtable). Grupele finalizate (Graduated/Merged) rămân
+# arhivă în Airtable, nu se aduc în platformă. Pilotul --grupa=COD ignoră filtrul.
+AIRTABLE_GROUP_ACTIVE_STATUSES = config(
+    'AIRTABLE_GROUP_ACTIVE_STATUSES', default='Active', cast=Csv())
+
+# Cursul-container la care se atașează modulele importate din Airtable
+# (gol = primul curs existent, sau se creează unul). Airtable nu are tabel de
+# cursuri; modulele au doar „Categorie Curs".
+AIRTABLE_SYNC_COURSE_SLUG = config('AIRTABLE_SYNC_COURSE_SLUG', default='')
+
+# Câmpuri suplimentare setate pe lecțiile CREATE din Mind.academy în Airtable
+# (§4/A). Aici pui flag-urile care spun automatizării tale să NU genereze
+# prezențe automat pentru toată grupa (ex. {"Lectie Individuala": True}).
+# Lasă gol până confirmi comportamentul automatizărilor în chat-ul Airtable.
+AIRTABLE_NEW_LESSON_FIELDS = {}
 
 # CSRF Trusted Origins (pentru Railway și domeniul custom)
 CSRF_TRUSTED_ORIGINS = config(

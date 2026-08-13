@@ -17,10 +17,10 @@
 - **+4 = +5 - 1**: Poate include **Direct + Small Friends (+1, +2, +3)**
 
 #### Small Friends Minus
-- **-1 = -5 + 4**: Poate include **Direct + Small Friends Plus (toate)**
-- **-2 = -5 + 3**: Poate include **Direct + Small Friends (+1, +2, +3, +4, -1)**
-- **-3 = -5 + 2**: Poate include **Direct + Small Friends (+1, +2, +3, +4, -1, -2)**
-- **-4 = -5 + 1**: Poate include **Direct + Small Friends (+1, +2, +3, +4, -1, -2, -3)**
+- **-1 = +4 - 5**: Poate include **Direct + Small Friends Plus (toate)**
+- **-2 = +3 - 5**: Poate include **Direct + Small Friends (+1, +2, +3, +4, -1)**
+- **-3 = +2 - 5**: Poate include **Direct + Small Friends (+1, +2, +3, +4, -1, -2)**
+- **-4 = +1 - 5**: Poate include **Direct + Small Friends (+1, +2, +3, +4, -1, -2, -3)**
 
 **Distribuție probabilități:**
 - Prima formulă (+1): 50% Direct + 50% din formulele anterioare

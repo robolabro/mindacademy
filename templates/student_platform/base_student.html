@@ -1,0 +1,182 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Platforma Elevului{% endblock %} - MindAcademy</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f6f8;
+            color: #1f2430;
+            min-height: 100vh;
+        }
+        .st-topbar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0.7rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .st-topbar-left { display: flex; align-items: center; gap: 0.7rem; }
+        .st-menu-toggle {
+            display: none; background: none; border: 1px solid #d6d9e0;
+            border-radius: 8px; width: 38px; height: 38px; font-size: 1.1rem; cursor: pointer;
+        }
+        .st-logo { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: #1f2430; }
+        .st-logo-seal {
+            width: 36px; height: 36px; border-radius: 9px;
+            background: #2563eb; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.15rem; font-weight: 700;
+        }
+        .st-logo-text { font-weight: 700; font-size: 1.05rem; }
+        .st-topbar-title { font-size: 1.05rem; font-weight: 600; color: #374151; }
+        .st-user { display: flex; align-items: center; gap: 0.85rem; }
+        .st-user-name { font-weight: 600; font-size: 0.92rem; }
+        .st-user-role {
+            background: #e0edff; color: #1e40af;
+            font-size: 0.75rem; font-weight: 600;
+            padding: 0.15rem 0.6rem; border-radius: 999px;
+        }
+        .st-logout {
+            background: white; color: #b91c1c;
+            border: 1px solid #fecaca; border-radius: 8px;
+            padding: 0.4rem 0.85rem; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: background 0.15s ease;
+        }
+        .st-logout:hover { background: #fef2f2; }
+
+        /* Layout cu sidebar */
+        .st-layout { display: flex; min-height: calc(100vh - 61px); }
+        .st-sidebar {
+            width: 230px; flex-shrink: 0;
+            background: white; border-right: 1px solid #e5e7eb;
+            padding: 1rem 0.7rem;
+        }
+        .st-nav-item {
+            display: flex; align-items: center; gap: 0.7rem;
+            padding: 0.65rem 0.85rem; border-radius: 10px;
+            color: #374151; text-decoration: none; font-weight: 600; font-size: 0.93rem;
+            margin-bottom: 0.25rem;
+        }
+        .st-nav-item:hover { background: #f3f4f6; }
+        .st-nav-item.active { background: #e0edff; color: #1d4ed8; }
+        .st-nav-item.disabled { color: #b0b5bd; cursor: default; }
+        .st-nav-item.disabled:hover { background: none; }
+        .st-nav-icon { font-size: 1.15rem; width: 24px; text-align: center; }
+        .st-nav-soon {
+            margin-left: auto; background: #f1f5f9; color: #94a3b8;
+            font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 999px;
+        }
+        .st-nav-section {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+            color: #9ca3af; text-transform: uppercase;
+            padding: 0.9rem 0.85rem 0.35rem;
+        }
+        .st-main { flex: 1; max-width: 1080px; padding: 1.5rem 1.5rem 3rem; }
+        .st-messages { padding: 1rem 1.5rem 0; }
+        .st-alert {
+            padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 0.6rem;
+            font-size: 0.92rem; font-weight: 500;
+        }
+        .st-alert-success { background: #dcfce7; color: #166534; }
+        .st-alert-error { background: #fee2e2; color: #b91c1c; }
+        .st-alert-info, .st-alert-warning { background: #e0edff; color: #1e40af; }
+
+        @media (max-width: 860px) {
+            .st-menu-toggle { display: block; }
+            .st-sidebar {
+                position: fixed; top: 61px; left: -240px; bottom: 0; z-index: 200;
+                transition: left 0.25s ease;
+            }
+            .st-sidebar.open { left: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.18); }
+            .st-topbar-title { display: none; }
+            .st-user-name { display: none; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="st-topbar">
+        <div class="st-topbar-left">
+            <button class="st-menu-toggle" onclick="document.getElementById('stSidebar').classList.toggle('open')">☰</button>
+            <a href="{% url 'student_platform:my_assignments' %}" class="st-logo">
+                <span class="st-logo-seal">心</span>
+                <span class="st-logo-text">Mind.Academy</span>
+            </a>
+        </div>
+        <div class="st-topbar-title">{% block page_title %}Temele mele{% endblock %}</div>
+        <div class="st-user">
+            <span class="st-user-name">{{ user.get_full_name|default:user.username }}</span>
+            <span class="st-user-role">Elev</span>
+            <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="st-logout">Ieșire</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="st-layout">
+        <aside class="st-sidebar" id="stSidebar">
+            <div class="st-nav-section">Învățare</div>
+            <a href="{% url 'student_platform:my_assignments' %}" class="st-nav-item {% if active_menu == 'teme' %}active{% endif %}">
+                <span class="st-nav-icon">📌</span> Temele mele
+            </a>
+            <a href="{% url 'student_platform:simulators' %}" class="st-nav-item {% if active_menu == 'simulatoare' %}active{% endif %}">
+                <span class="st-nav-icon">🧮</span> Antrenament
+            </a>
+            <div class="st-nav-section">Școala mea</div>
+            <a href="{% url 'student_platform:schedule' %}" class="st-nav-item {% if active_menu == 'grupa' %}active{% endif %}">
+                <span class="st-nav-icon">👥</span> Grupa mea
+            </a>
+            <span class="st-nav-item disabled">
+                <span class="st-nav-icon">📊</span> Progres <span class="st-nav-soon">curând</span>
+            </span>
+            <span class="st-nav-item disabled">
+                <span class="st-nav-icon">🏆</span> Recompense <span class="st-nav-soon">curând</span>
+            </span>
+        </aside>
+
+        <div style="flex:1; min-width:0;">
+            {% if messages %}
+            <div class="st-messages">
+                {% for message in messages %}
+                <div class="st-alert st-alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <main class="st-main">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {% if user.role == 'student' %}
+    <script>
+    // Jurnal de antrenament liber: simulatoarele apelează MA_logPractice(simulator, delte)
+    window.MA_logPractice = function(simulator, delta) {
+        try {
+            const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1]
+                || (document.querySelector('input[name="csrfmiddlewaretoken"]') || {}).value;
+            fetch('{% url "student_platform:practice_log" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf || '' },
+                body: JSON.stringify(Object.assign({ simulator: simulator }, delta)),
+                keepalive: true
+            });
+        } catch (e) { /* jurnalizarea nu blochează exercițiile */ }
+    };
+    </script>
+    {% endif %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

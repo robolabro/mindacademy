@@ -2,13 +2,15 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from accounts.models import User
 from courses.models import Course, Location, Module, LessonTemplate
+from crm_sync.models import AirtableSyncMixin
 from django.utils import timezone
 from django.utils.text import slugify
 
 
-class Group(models.Model):
+class Group(AirtableSyncMixin, models.Model):
     """
-    Grupă de elevi creată de profesor
+    Grupă de elevi creată de profesor.
+    Mapată din tabelul „Grupe" din Airtable (cheie de business: „Cod Grupa").
     """
     WEEKDAY_CHOICES = [
         (0, 'Luni'),
@@ -56,6 +58,23 @@ class Group(models.Model):
         verbose_name="Locație"
     )
 
+    # Tip lecție: cu prezență fizică sau online
+    LESSON_TYPE_CHOICES = [
+        ('fizic', 'Fizic'),
+        ('online', 'Online'),
+    ]
+    lesson_type = models.CharField(
+        max_length=10,
+        choices=LESSON_TYPE_CHOICES,
+        default='fizic',
+        verbose_name="Tip Lecție"
+    )
+    meeting_link = models.URLField(
+        blank=True,
+        verbose_name="Link Videoconferință",
+        help_text="Link-ul de Zoom/Google Meet pentru grupele online (trimis părinților)"
+    )
+
     # Cod auto-generat (ex: ARITMETICA-12-001)
     code = models.CharField(
         max_length=100,
@@ -64,6 +83,16 @@ class Group(models.Model):
         blank=True,
         verbose_name="Cod Grupă",
         help_text="Generat automat: CURS-MODUL-NUMĂR"
+    )
+
+    # „Cod Grupa" din Airtable — cheia de business a tabelului „Grupe".
+    # Distinct de `code` (cod intern generat de platformă).
+    airtable_cod_grupa = models.CharField(
+        max_length=100,
+        blank=True,
+        db_index=True,
+        verbose_name="Cod Grupa (Airtable)",
+        help_text="Codul grupei din Airtable (cheia de business din tabelul Grupe)."
     )
 
     # Data creare editabilă
@@ -161,10 +190,20 @@ class Group(models.Model):
         return next_date
 
 
-class GroupStudent(models.Model):
+class Enrollment(AirtableSyncMixin, models.Model):
     """
-    Relație dintre elev și grupă (membru)
+    Înscrierea unui elev la o grupă (fostul „GroupStudent").
+    Mapată din tabelul „Inscrieri" din Airtable — modelul care leagă
+    Elev de Grupă. Doar înscrierile cu status „Inscris" sunt mapate activ.
     """
+    # Valori aliniate cu tabelul „Inscrieri" din Airtable (câmpul Status).
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('activ', 'Activ'),
+        ('inactiv', 'Inactiv'),
+        ('finalizat', 'Finalizat'),
+    ]
+
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='students', verbose_name="Grupă")
     student = models.ForeignKey(
         User,
@@ -177,13 +216,28 @@ class GroupStudent(models.Model):
     enrolled_date = models.DateField(auto_now_add=True, verbose_name="Data Înrolare")
     is_active = models.BooleanField(default=True, verbose_name="Activ")
 
+    # Status înscriere (din Airtable „Inscrieri") + data încheierii.
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='activ',
+        db_index=True,
+        verbose_name="Status Înscriere"
+    )
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Data Sfârșit Înscriere",
+        help_text="Data la care înscrierea a fost încheiată (din Airtable)."
+    )
+
     # Progres în cadrul grupei
     lessons_attended = models.IntegerField(default=0, verbose_name="Lecții Prezenți")
     lessons_missed = models.IntegerField(default=0, verbose_name="Lecții Absente")
 
     class Meta:
-        verbose_name = "Elev în Grupă"
-        verbose_name_plural = "Elevi în Grupe"
+        verbose_name = "Înscriere"
+        verbose_name_plural = "Înscrieri"
         unique_together = ['group', 'student']
 
     def __str__(self):
@@ -197,9 +251,12 @@ class GroupStudent(models.Model):
         return round((self.lessons_attended / total) * 100, 2)
 
 
-class Lesson(models.Model):
+class Lesson(AirtableSyncMixin, models.Model):
     """
-    Lecție programată sau desfășurată
+    Lecție programată sau desfășurată.
+    Mapată din tabelul „Lectii" din Airtable — generat de automatizări Airtable.
+    Sincronizarea face DOAR UPDATE pe lecțiile existente (găsite după
+    airtable_record_id), niciodată CREATE.
     """
     STATUS_CHOICES = [
         ('scheduled', 'Programată'),
@@ -238,6 +295,13 @@ class Lesson(models.Model):
     # Notițe profesor
     teacher_notes = models.TextField(blank=True, verbose_name="Notițe Profesor")
 
+    # Ce s-a lucrat efectiv la lecție (împins către Airtable la finalizare).
+    lesson_takeaways = models.TextField(
+        blank=True,
+        verbose_name="Ce s-a lucrat (takeaways)",
+        help_text="Rezumatul a ceea ce s-a parcurs efectiv la lecție."
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -250,9 +314,12 @@ class Lesson(models.Model):
         return f"{self.group.name} - {self.date} {self.start_time}"
 
 
-class Attendance(models.Model):
+class Attendance(AirtableSyncMixin, models.Model):
     """
-    Prezență elev la lecție
+    Prezență elev la lecție.
+    Sursa de adevăr pentru EXECUȚIE — se face PUSH către tabelul „Prezente"
+    din Airtable. NU scriem niciodată în „Progres Lectii" (generat de
+    automatizarea Airtable pe baza Prezențelor cu Attended=true).
     """
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='attendances', verbose_name="Lecție")
     student = models.ForeignKey(
@@ -263,8 +330,30 @@ class Attendance(models.Model):
         verbose_name="Elev"
     )
 
+    # Legătura către înscrierea corespunzătoare (elev × grupă). Nullabil —
+    # se completează la sincronizare / creare prezență.
+    enrollment = models.ForeignKey(
+        'Enrollment',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='attendances',
+        verbose_name="Înscriere"
+    )
+
     is_present = models.BooleanField(default=False, verbose_name="Prezent")
     notes = models.TextField(blank=True, verbose_name="Observații")
+
+    # Absență anunțată în prealabil (afectează generarea recuperării).
+    absenta_anuntata = models.BooleanField(
+        default=False,
+        verbose_name="Absență anunțată"
+    )
+    # Marchează dacă absența trebuie să genereze o lecție de recuperare.
+    genereaza_recuperare = models.BooleanField(
+        default=False,
+        verbose_name="Generează recuperare"
+    )
 
     # Evaluare pentru lecție
     performance_rating = models.IntegerField(
@@ -406,3 +495,320 @@ class LessonNote(models.Model):
 
     def __str__(self):
         return f"{self.teacher.get_full_name()} - {self.lesson_template.name} ({self.group.name})"
+
+class SimulatorAssignment(models.Model):
+    """
+    Temă pe simulatoare pentru o grupă, cu perioadă de lucru.
+    Dacă `student` este setat, tema este personalizată pentru acel elev
+    (suprascrie tema de grupă pentru el); altfel se aplică întregii grupe.
+    """
+    group = models.ForeignKey(Group, on_delete=models.CASCADE,
+                              related_name='simulator_assignments', verbose_name="Grupă")
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='personal_simulator_assignments',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev (doar pentru temă personalizată)"
+    )
+
+    title = models.CharField(max_length=200, verbose_name="Titlu", default="Temă de casă")
+    start_date = models.DateField(verbose_name="De la data")
+    end_date = models.DateField(verbose_name="Până la data")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creată la")
+
+    class Meta:
+        verbose_name = "Temă Simulatoare"
+        verbose_name_plural = "Teme Simulatoare"
+        ordering = ['-start_date', '-created_at']
+
+    def __str__(self):
+        target = self.student.get_full_name() if self.student else self.group.name
+        return f"{self.title} · {target} ({self.start_date} → {self.end_date})"
+
+    @property
+    def is_active(self):
+        from django.utils import timezone
+        today = timezone.now().date()
+        return self.start_date <= today <= self.end_date
+
+
+class SimulatorTask(models.Model):
+    """
+    O sarcină dintr-o temă: un simulator + setările lui + ținta
+    (număr de exerciții sau minute de lucru).
+    Setările sunt stocate ca JSON și corespund parametrilor simulatoarelor:
+    complexity, digits (listă), difficulty, speed, terms, columns etc.
+    """
+    SIMULATOR_CHOICES = [
+        ('anzan', 'Calcul mental (Anzan)'),
+        ('flashcards', 'Cartonașe flash'),
+        ('flashcard-exercises', 'Exerciții'),
+        ('worksheet', 'Fișă de lucru'),
+    ]
+    TARGET_CHOICES = [
+        ('count', 'Număr de exerciții'),
+        ('minutes', 'Minute de lucru'),
+    ]
+
+    assignment = models.ForeignKey(SimulatorAssignment, on_delete=models.CASCADE,
+                                   related_name='tasks', verbose_name="Temă")
+    order = models.PositiveIntegerField(default=1, verbose_name="Ordine")
+
+    simulator = models.CharField(max_length=30, choices=SIMULATOR_CHOICES, verbose_name="Simulator")
+    settings = models.JSONField(default=dict, verbose_name="Setări simulator")
+
+    target_type = models.CharField(max_length=10, choices=TARGET_CHOICES,
+                                   default='count', verbose_name="Tip țintă")
+    target_value = models.PositiveIntegerField(default=5, verbose_name="Valoare țintă")
+
+    class Meta:
+        verbose_name = "Sarcină Simulator"
+        verbose_name_plural = "Sarcini Simulator"
+        ordering = ['assignment', 'order']
+
+    def __str__(self):
+        return f"{self.get_simulator_display()} ({self.get_target_display()})"
+
+    def get_target_display(self):
+        if self.target_type == 'minutes':
+            return f"{self.target_value} min"
+        return f"{self.target_value} exerciții"
+
+
+class SimulatorTaskResult(models.Model):
+    """
+    Rezultatul ZILNIC al unui elev la o sarcină de simulator.
+    Temele sunt zilnice: ținta sarcinii trebuie atinsă în fiecare zi
+    din perioada temei; fiecare zi are propriul rând de rezultat.
+    """
+    task = models.ForeignKey(SimulatorTask, on_delete=models.CASCADE,
+                             related_name='results', verbose_name="Sarcină")
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='simulator_results',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev"
+    )
+    date = models.DateField(default=timezone.localdate, verbose_name="Ziua")
+
+    completed_exercises = models.PositiveIntegerField(default=0, verbose_name="Exerciții rezolvate")
+    correct = models.PositiveIntegerField(default=0, verbose_name="Corecte")
+    incorrect = models.PositiveIntegerField(default=0, verbose_name="Greșite")
+    time_spent_seconds = models.PositiveIntegerField(default=0, verbose_name="Timp lucrat (sec)")
+
+    completed = models.BooleanField(default=False, verbose_name="Finalizată (ziua)")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Finalizată la")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizat la")
+
+    class Meta:
+        verbose_name = "Rezultat Sarcină (zi)"
+        verbose_name_plural = "Rezultate Sarcini (zile)"
+        unique_together = ['task', 'student', 'date']
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} · {self.task} · {self.date} · {self.correct}/{self.completed_exercises}"
+
+
+class SimulatorPracticeLog(models.Model):
+    """
+    Jurnal ZILNIC de antrenament liber pe simulatoare (în afara temelor).
+    Un rând per elev × simulator × zi; contoarele se acumulează.
+    """
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='practice_logs',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev"
+    )
+    simulator = models.CharField(max_length=30, choices=SimulatorTask.SIMULATOR_CHOICES,
+                                 verbose_name="Simulator")
+    date = models.DateField(default=timezone.localdate, verbose_name="Ziua")
+
+    exercises = models.PositiveIntegerField(default=0, verbose_name="Exerciții")
+    correct = models.PositiveIntegerField(default=0, verbose_name="Corecte")
+    incorrect = models.PositiveIntegerField(default=0, verbose_name="Greșite")
+    time_spent_seconds = models.PositiveIntegerField(default=0, verbose_name="Timp (sec)")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizat la")
+
+    class Meta:
+        verbose_name = "Antrenament Liber (zi)"
+        verbose_name_plural = "Antrenamente Libere (zile)"
+        unique_together = ['student', 'simulator', 'date']
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} · {self.get_simulator_display()} · {self.date}"
+
+
+class LiveSession(models.Model):
+    """
+    O lecție live (online) pornită de profesor pentru o grupă.
+    O singură sesiune activă per grupă la un moment dat.
+    """
+    group = models.ForeignKey(Group, on_delete=models.CASCADE,
+                              related_name='live_sessions', verbose_name="Grupă")
+    teacher = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='live_sessions',
+        limit_choices_to={'role': 'teacher'},
+        verbose_name="Profesor"
+    )
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='live_sessions',
+        verbose_name="Lecție programată (opțional)"
+    )
+
+    started_at = models.DateTimeField(auto_now_add=True, verbose_name="Pornită la")
+    ended_at = models.DateTimeField(null=True, blank=True, verbose_name="Închisă la")
+
+    class Meta:
+        verbose_name = "Lecție Live"
+        verbose_name_plural = "Lecții Live"
+        ordering = ['-started_at']
+
+    @property
+    def is_active(self):
+        return self.ended_at is None
+
+    def __str__(self):
+        state = 'activă' if self.is_active else 'închisă'
+        return f"Live {self.group.name} · {self.started_at:%d.%m.%Y %H:%M} ({state})"
+
+
+class LiveTask(models.Model):
+    """
+    O sarcină alocată în timpul lecției live: pentru toată grupa sau
+    personalizată pentru un elev. Aceeași structură de setări ca la teme.
+    """
+    session = models.ForeignKey(LiveSession, on_delete=models.CASCADE,
+                                related_name='tasks', verbose_name="Sesiune")
+    order = models.PositiveIntegerField(default=1, verbose_name="Ordine")
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='personal_live_tasks',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev (doar pentru sarcină individuală)"
+    )
+
+    simulator = models.CharField(max_length=30, choices=SimulatorTask.SIMULATOR_CHOICES,
+                                 verbose_name="Simulator")
+    settings = models.JSONField(default=dict, verbose_name="Setări simulator")
+
+    target_type = models.CharField(max_length=10, choices=SimulatorTask.TARGET_CHOICES,
+                                   default='count', verbose_name="Tip țintă")
+    target_value = models.PositiveIntegerField(default=5, verbose_name="Valoare țintă")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Alocată la")
+
+    class Meta:
+        verbose_name = "Sarcină Live"
+        verbose_name_plural = "Sarcini Live"
+        ordering = ['session', 'order']
+
+    def get_target_display(self):
+        if self.target_type == 'minutes':
+            return f"{self.target_value} min"
+        return f"{self.target_value} exerciții"
+
+    def __str__(self):
+        target = self.student.get_full_name() if self.student else 'toată grupa'
+        return f"{self.get_simulator_display()} · {target}"
+
+
+class LiveTaskResult(models.Model):
+    """Rezultatul unui elev la o sarcină live (actualizat în timp real)."""
+    task = models.ForeignKey(LiveTask, on_delete=models.CASCADE,
+                             related_name='results', verbose_name="Sarcină")
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='live_results',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev"
+    )
+
+    completed_exercises = models.PositiveIntegerField(default=0, verbose_name="Exerciții rezolvate")
+    correct = models.PositiveIntegerField(default=0, verbose_name="Corecte")
+    incorrect = models.PositiveIntegerField(default=0, verbose_name="Greșite")
+    time_spent_seconds = models.PositiveIntegerField(default=0, verbose_name="Timp lucrat (sec)")
+
+    completed = models.BooleanField(default=False, verbose_name="Finalizată")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Finalizată la")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizat la")
+
+    # Istoric detaliat: [{ex: "12 + 5 − 3", ca: 14, ua: 14, ok: true, t: 6.2}, ...]
+    exercise_log = models.JSONField(default=list, blank=True, verbose_name="Istoric exerciții")
+
+    class Meta:
+        verbose_name = "Rezultat Sarcină Live"
+        verbose_name_plural = "Rezultate Sarcini Live"
+        unique_together = ['task', 'student']
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} · {self.task} · {self.correct}/{self.completed_exercises}"
+
+
+class LiveParticipant(models.Model):
+    """
+    Prezența unui elev într-o lecție live — actualizată prin heartbeat
+    din platforma elevului; „conectat" = last_seen în ultimele ~30s.
+    """
+    session = models.ForeignKey(LiveSession, on_delete=models.CASCADE,
+                                related_name='participants', verbose_name="Sesiune")
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='live_participations',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elev"
+    )
+    joined_at = models.DateTimeField(auto_now_add=True, verbose_name="Conectat la")
+    last_seen = models.DateTimeField(auto_now=True, verbose_name="Văzut ultima dată")
+
+    class Meta:
+        verbose_name = "Participant Live"
+        verbose_name_plural = "Participanți Live"
+        unique_together = ['session', 'student']
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} · {self.session}"
+
+
+class LessonMilestoneProgress(models.Model):
+    """
+    Bifarea unui milestone de lecție de către profesor, în contextul unei
+    grupe (cât de departe a ajuns grupa în structura lecției din curriculum).
+    """
+    group = models.ForeignKey(Group, on_delete=models.CASCADE,
+                              related_name='milestone_progress', verbose_name="Grupă")
+    milestone = models.ForeignKey('courses.LessonMilestone', on_delete=models.CASCADE,
+                                  related_name='group_progress', verbose_name="Milestone")
+    is_done = models.BooleanField(default=False, verbose_name="Bifat")
+    checked_at = models.DateTimeField(null=True, blank=True, verbose_name="Bifat la")
+    checked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='milestone_checks',
+        limit_choices_to={'role': 'teacher'}, verbose_name="Bifat de"
+    )
+
+    class Meta:
+        verbose_name = "Progres Milestone"
+        verbose_name_plural = "Progres Milestones"
+        unique_together = ['group', 'milestone']
+
+    def __str__(self):
+        state = '✓' if self.is_done else '○'
+        return f"{state} {self.group.name} · {self.milestone.title}"

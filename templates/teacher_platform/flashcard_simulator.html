@@ -1,4 +1,5 @@
-{% extends 'teacher_platform/base_teacher.html' %}
+{% extends base_template|default:'teacher_platform/base_teacher.html' %}
+{% load static %}
 
 {% block title %}Simulator Cartonașe Flash{% endblock %}
 {% block page_title %}Cartonașe Flash{% endblock %}
@@ -32,7 +33,7 @@
     :fullscreen,
     :-webkit-full-screen,
     :-moz-full-screen {
-        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        background: #f0f1f4;
     }
 
     .flashcard-container {
@@ -44,7 +45,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        background: #f0f1f4;
     }
 
     /* Override main-content padding for flashcard page */
@@ -335,7 +336,7 @@
     }
 
     .toggle-btn.active {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        background: var(--primary-color);
         color: white;
         border-color: var(--primary-color);
     }
@@ -365,7 +366,7 @@
 
     .start-btn {
         padding: 0.6rem 2rem;
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        background: #E91E63;
         color: white;
         border: none;
         border-radius: 8px;
@@ -429,6 +430,44 @@
         animation: pulse 0.5s ease;
     }
 
+    /* Colored countdown circle: 3 = red, 2 = yellow, 1 = green (like Anzan) */
+    .countdown-circle-fc {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 5rem;
+        font-weight: 700;
+        margin: 1.5rem auto;
+        animation: pulse 0.5s ease;
+    }
+
+    .student-panel .countdown-circle-fc {
+        width: 100px;
+        height: 100px;
+        font-size: 3.5rem;
+        margin: 2rem auto;
+    }
+
+    .countdown-circle-fc.count-3 { background: #ef4444; }
+    .countdown-circle-fc.count-2 { background: #f59e0b; }
+    .countdown-circle-fc.count-1 { background: #10b981; }
+
+    /* Clean number inputs: no spinner arrows */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
     @keyframes pulse {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.1); }
@@ -447,12 +486,12 @@
 
     .abacus-frame-mini {
         display: inline-flex;
-        gap: 5rem;
-        padding: 2.5rem 3.5rem;
-        background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-        border-radius: 20px;
-        border: 8px solid #654321;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+        gap: 3rem;
+        padding: 1.25rem 2.25rem;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
     }
 
     .rod-mini {
@@ -464,41 +503,38 @@
     }
 
     .rod-line-mini {
-        width: 8px;
-        height: 350px;
-        background: linear-gradient(to bottom, #4a2511 0%, #654321 50%, #4a2511 100%);
+        width: 5px;
+        height: 218px;
+        background: #c3c8d0;
         position: relative;
         display: flex;
         flex-direction: column;
-        border-radius: 4px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        border-radius: 2px;
     }
 
     .divider-mini {
         position: absolute;
-        top: 25%;
+        top: 72px;
         left: 50%;
         transform: translateX(-50%);
-        width: 40px;
-        height: 6px;
-        background: linear-gradient(to right, #2c2c2c 0%, #1a1a1a 50%, #2c2c2c 100%);
+        width: 54px;
+        height: 3px;
+        background: #9aa0a9;
         border-radius: 2px;
         z-index: 5;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     }
 
     /* Marker dot on units column (rightmost rod, index 0) */
     .rod-mini:last-child .divider-mini::after {
         content: '';
         position: absolute;
-        width: 10px;
-        height: 10px;
-        background: radial-gradient(circle, #ff4444 0%, #cc0000 100%);
+        width: 8px;
+        height: 8px;
+        background: #1F2430;
         border-radius: 50%;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        box-shadow: 0 2px 4px rgba(255, 68, 68, 0.6), 0 0 8px rgba(255, 68, 68, 0.4);
         z-index: 6;
     }
 
@@ -523,104 +559,72 @@
     }
 
     .bead-mini {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
+        width: 46px;
+        height: 24px;
+        clip-path: polygon(28% 0, 72% 0, 100% 50%, 72% 100%, 28% 100%, 0 50%);
         position: relative;
-        transition: all 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
+        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), background 0.2s ease;
         cursor: pointer;
-        margin: 4px 0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        margin: 1px 0;
         flex-shrink: 0;
+        background: #F2A93B;
     }
 
-    /* Top beads (heaven - value 5) */
-    .bead-mini.top {
-        /* Inactive state - at top edge, muted color */
-        background: linear-gradient(135deg, #b8c5d6 0%, #8fa3bc 100%);
-        box-shadow:
-            0 4px 10px rgba(0, 0, 0, 0.3),
-            inset -2px -2px 4px rgba(0, 0, 0, 0.2),
-            inset 2px 2px 4px rgba(255, 255, 255, 0.4);
+    .bead-mini:hover {
+        filter: brightness(1.06);
     }
 
+    /* Beads touching the separator are counted - they turn teal */
+    .bead-mini.active {
+        background: #2E9E8F;
+    }
+
+    /* Heaven bead (5): add by lowering to the separator */
     .bead-mini.top.active {
-        /* Active state - touching separator, vibrant color */
-        background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
-        transform: translateY(35px);
-        box-shadow:
-            0 6px 14px rgba(46, 204, 196, 0.5),
-            inset -2px -2px 4px rgba(0, 0, 0, 0.2),
-            inset 2px 2px 4px rgba(255, 255, 255, 0.5);
+        transform: translateY(38px);
     }
 
-    .bead-mini.top:hover {
-        filter: brightness(1.1);
-        transform: scale(1.05);
-    }
-
-    .bead-mini.top.active:hover {
-        filter: brightness(1.1);
-        transform: translateY(35px) scale(1.05);
-    }
-
-    /* Bottom beads (earth - value 1 each) */
-    .bead-mini.bottom {
-        /* Inactive state - at bottom edge, muted color */
-        background: linear-gradient(135deg, #b8c5d6 0%, #8fa3bc 100%);
-        box-shadow:
-            0 4px 10px rgba(0, 0, 0, 0.3),
-            inset -2px -2px 4px rgba(0, 0, 0, 0.2),
-            inset 2px 2px 4px rgba(255, 255, 255, 0.4);
-    }
-
+    /* Earth beads (1): add by raising to the separator */
     .bead-mini.bottom.active {
-        /* Active state - touching separator, vibrant color */
-        background: linear-gradient(135deg, #f6c23e 0%, #e6a609 100%);
-        transform: translateY(-50px);
-        box-shadow:
-            0 6px 14px rgba(246, 194, 62, 0.5),
-            inset -2px -2px 4px rgba(0, 0, 0, 0.2),
-            inset 2px 2px 4px rgba(255, 255, 255, 0.5);
-    }
-
-    .bead-mini.bottom:hover {
-        filter: brightness(1.1);
-        transform: scale(1.05);
-    }
-
-    .bead-mini.bottom.active:hover {
-        filter: brightness(1.1);
-        transform: translateY(-50px) scale(1.05);
+        transform: translateY(-31px);
     }
 
     .answer-input {
-        width: 400px;
-        padding: 1.2rem;
-        font-size: 2.5rem;
+        width: 320px;
+        max-width: 90%;
+        padding: 0.9rem;
+        font-size: 2rem;
         text-align: center;
-        border: 3px solid #e0e0e0;
+        border: 1px solid #e5e7eb;
         border-radius: 10px;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s ease;
+        margin-bottom: 1.25rem;
+        background: white;
+        transition: border-color 0.15s ease;
     }
 
     .answer-input:focus {
         outline: none;
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Training mode: larger abacus capture */
+    #trainingContent .mini-abacus {
+        transform: scale(1.25);
+        transform-origin: top center;
+        margin-bottom: 4.5rem;
+        margin-top: 1rem;
     }
 
     .submit-btn {
-        padding: 1rem 3rem;
-        background: var(--primary-color);
+        padding: 0.9rem 3rem;
+        background: #E91E63;
         color: white;
         border: none;
-        border-radius: 10px;
+        border-radius: 999px;
         cursor: pointer;
-        font-size: 1.3rem;
+        font-size: 1.15rem;
         font-weight: 600;
-        transition: all 0.3s ease;
+        transition: filter 0.15s ease;
         display: block;
         margin: 0 auto;
     }
@@ -681,23 +685,25 @@
 
     /* Student individual Start button */
     .student-start-btn {
-        padding: 0.8rem 1.5rem;
-        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
-        color: white;
-        border: none;
-        border-radius: 10px;
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: white;
+        color: #8a8f98;
+        border: 4px solid #17b8cc;
         cursor: pointer;
-        font-size: 1.1rem;
+        font-size: 1.35rem;
         font-weight: 600;
-        transition: all 0.3s ease;
-        margin: 1rem auto;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: all 0.2s ease;
+        margin: auto;
         display: block;
-        box-shadow: 0 4px 12px rgba(0, 176, 155, 0.3);
     }
 
     .student-start-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 176, 155, 0.4);
+        background: #e9fbfd;
+        color: #17b8cc;
     }
 
     /* Classwork Mode */
@@ -705,60 +711,53 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.35rem;
-        padding: 0.35rem 0.5rem;
+        margin-bottom: 0;
+        padding: 0.5rem 0.9rem;
+        background: #aeb3bb;
+        border-radius: 8px 8px 0 0;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .classwork-header h2 {
+        color: white;
+        font-size: 1.15rem;
     }
 
     .classwork-controls {
         display: flex;
-        gap: 1rem;
+        gap: 0.6rem;
+        flex-wrap: wrap;
     }
 
     .control-btn {
-        padding: 0.7rem 1.5rem;
+        padding: 0.5rem 1.3rem;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    .settings-btn {
-        background: #6c757d;
+        transition: filter 0.15s ease;
+        background: #9187f2;
         color: white;
     }
 
-    .settings-btn:hover {
-        background: #5a6268;
+    .control-btn:hover {
+        filter: brightness(1.08);
     }
 
-    .start-all-btn {
-        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+    .settings-btn, .start-all-btn, .results-btn {
+        background: #9187f2;
         color: white;
-    }
-
-    .start-all-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 176, 155, 0.3);
-    }
-
-    .results-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .results-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
     }
 
     .students-grid {
         display: grid;
-        gap: 0.4rem;
+        gap: 0;
         height: calc(96vh - 60px);
         overflow-y: auto;
-        padding: 0.2rem;
+        padding: 0;
+        border: 1px solid #d9dce3;
     }
 
     /* Fixed grid layout based on number of students */
@@ -787,14 +786,13 @@
     }
 
     .student-panel {
-        background: #f8f9fa;
-        border: 2px solid #dee2e6;
-        border-radius: 8px;
-        padding: 0.35rem;
+        background: #f6f7fb;
+        border: 1px solid #d9dce3;
+        border-radius: 0;
+        padding: 0.5rem;
         display: flex;
         flex-direction: column;
-        /* min-height: 340px; */
-        /* max-height: 480px; */
+        position: relative;
         overflow-y: auto;
     }
 
@@ -806,40 +804,33 @@
 
     .student-panel .abacus-frame-mini {
         gap: 2rem;
-        padding: 1rem 1.5rem;
-        border: 4px solid #654321;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid #e5e7eb;
     }
 
     .student-panel .rod-line-mini {
-        width: 5px;
-        height: 260px;
+        width: 4px;
+        height: 190px;
     }
 
     .student-panel .bead-mini {
-        width: 28px;
-        height: 28px;
-        margin: 2px 0;
+        width: 38px;
+        height: 20px;
+        margin: 1px 0;
     }
 
     .student-panel .divider-mini {
-        width: 30px;
-        height: 4px;
+        top: 62px;
+        width: 44px;
+        height: 2px;
     }
 
     .student-panel .bead-mini.top.active {
-        transform: translateY(25px);
-    }
-
-    .student-panel .bead-mini.top.active:hover {
-        transform: translateY(25px) scale(1.05);
+        transform: translateY(32px);
     }
 
     .student-panel .bead-mini.bottom.active {
-        transform: translateY(-50px);
-    }
-
-    .student-panel .bead-mini.bottom.active:hover {
-        transform: translateY(-50px) scale(1.05);
+        transform: translateY(-30px);
     }
 
     /* Compact elements in student panel */
@@ -931,65 +922,68 @@
     :fullscreen .student-panel .rod-line-mini,
     :-webkit-full-screen .student-panel .rod-line-mini,
     :-moz-full-screen .student-panel .rod-line-mini {
-        width: 9px;
-        height: 220px;
+        width: 5px;
+        height: 218px;
     }
 
     :fullscreen .student-panel .bead-mini,
     :-webkit-full-screen .student-panel .bead-mini,
     :-moz-full-screen .student-panel .bead-mini {
-        width: 52px;
-        height: 52px;
+        width: 46px;
+        height: 24px;
     }
 
     :fullscreen .student-panel .divider-mini,
     :-webkit-full-screen .student-panel .divider-mini,
     :-moz-full-screen .student-panel .divider-mini {
-        width: 40px;
-        height: 6px;
+        top: 72px;
+        width: 54px;
+        height: 3px;
     }
 
     :fullscreen .student-panel .bead-mini.top.active,
     :-webkit-full-screen .student-panel .bead-mini.top.active,
     :-moz-full-screen .student-panel .bead-mini.top.active {
-        transform: translateY(42px);
-    }
-
-    :fullscreen .student-panel .bead-mini.top.active:hover,
-    :-webkit-full-screen .student-panel .bead-mini.top.active:hover,
-    :-moz-full-screen .student-panel .bead-mini.top.active:hover {
-        transform: translateY(42px) scale(1.05);
+        transform: translateY(38px);
     }
 
     :fullscreen .student-panel .bead-mini.bottom.active,
     :-webkit-full-screen .student-panel .bead-mini.bottom.active,
     :-moz-full-screen .student-panel .bead-mini.bottom.active {
-        transform: translateY(-50px);
-    }
-
-    :fullscreen .student-panel .bead-mini.bottom.active:hover,
-    :-webkit-full-screen .student-panel .bead-mini.bottom.active:hover,
-    :-moz-full-screen .student-panel .bead-mini.bottom.active:hover {
-        transform: translateY(-50px) scale(1.05);
+        transform: translateY(-31px);
     }
 
     .student-header {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
         margin-bottom: 0.4rem;
-        padding-bottom: 0.3rem;
-        border-bottom: 1px solid #dee2e6;
+        padding: 0.3rem 4.5rem 0.3rem 0.3rem;
         gap: 0.3rem;
+        position: relative;
     }
 
     .student-name-input {
         padding: 0.3rem 0.4rem;
-        font-size: 0.9rem;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        flex: 1;
-        max-width: 120px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #5b54c9;
+        border: none;
+        border-bottom: 1.5px solid #5b54c9;
+        border-radius: 0;
+        background: transparent;
+        text-align: center;
+        max-width: 180px;
+    }
+
+    .student-name-input:focus {
+        outline: none;
+    }
+
+    .student-header-buttons {
+        position: absolute;
+        right: 0.4rem;
+        top: 0.25rem;
     }
 
     .student-header-buttons {
@@ -1023,18 +1017,18 @@
     }
 
     .student-settings-btn {
-        background: #6c757d;
+        background: #F2860D;
         color: white;
         border: none;
-        border-radius: 4px;
-        padding: 0.3rem 0.5rem;
+        border-radius: 8px;
+        padding: 0.35rem 0.55rem;
         cursor: pointer;
-        font-size: 0.8rem;
-        transition: all 0.2s ease;
+        font-size: 0.95rem;
+        transition: filter 0.15s ease;
     }
 
     .student-settings-btn:hover {
-        background: #5a6268;
+        filter: brightness(1.1);
     }
 
     .delete-student-btn {
@@ -1182,20 +1176,19 @@
     }
 
     .answer-btn {
-        padding: 0.8rem 2rem;
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        padding: 0.8rem 2.5rem;
+        background: #E91E63;
         color: white;
         border: none;
-        border-radius: 10px;
+        border-radius: 999px;
         cursor: pointer;
-        font-size: 1.2rem;
+        font-size: 1.15rem;
         font-weight: 600;
-        transition: all 0.3s ease;
+        transition: filter 0.15s ease;
     }
 
     .answer-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+        filter: brightness(1.08);
     }
 
     .your-answer-label {
@@ -1265,6 +1258,7 @@
                 <div class="mode-card-title">Mod Antrenament</div>
                 <div class="mode-card-desc">Învață să recunoști numerele pe soroban</div>
             </div>
+            {% if not is_student_user %}
             <div class="mode-card" data-mode="flash" onclick="selectMode('flash')">
                 <div class="mode-card-icon">⚡</div>
                 <div class="mode-card-title">Mod Flash</div>
@@ -1280,6 +1274,7 @@
                 <div class="mode-card-title">Lucru în Clasă</div>
                 <div class="mode-card-desc">Practică împreună cu 4 elevi simultan</div>
             </div>
+            {% endif %}
         </div>
     </div>
 
@@ -1478,6 +1473,9 @@
                 <div class="setting-controls">
                     <select id="levelSelect" class="level-select" onchange="updateLevel()">
                         <option value="direct-counting" selected>Calcul direct</option>
+                        <option value="direct-to-4">Calcul direct cu 4</option>
+                        <option value="direct-to-5">Calcul direct cu 5</option>
+                        <option value="direct-to-9">Calcul direct cu 9</option>
                         <option value="small-friends-all">Prietenii Mici</option>
                         <option value="big-friends-all">Prietenii Mari</option>
                         <option value="family">Familia</option>
@@ -2321,14 +2319,27 @@
             <button class="feedback-modal-btn" onclick="closeFlashSummary()">Închide</button>
         </div>
     </div>
+
+    <!-- Classwork Results Modal -->
+    <div id="classworkResultsModal" class="feedback-modal" style="display: none;">
+        <div class="feedback-modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <h2 class="feedback-modal-title">Rezultate Lucru în Clasă</h2>
+            <div id="classworkResultsContent" style="text-align: left; margin: 2rem 0; font-size: 1.1rem;">
+                <!-- Results will be dynamically populated here -->
+            </div>
+            <button class="feedback-modal-btn" onclick="closeClassworkResults()">Închide</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/anzan_engine.js' %}"></script>
 <script>
     // Global state
     let currentMode = null;
-    let lastExercise = null; // Track last exercise to prevent consecutive duplicates
+    let exerciseHistory = []; // Track all exercises in session to prevent duplicates
+    const MAX_HISTORY_SIZE = 100; // Keep last 100 exercises to prevent memory issues
     let currentSettings = {
         training: {
             direction: 'abacus-to-number',
@@ -2382,6 +2393,11 @@
     let exerciseTimer = null;
     let flashTimer = null;
 
+    // Global variables to track Enter key listeners
+    let currentTrainingInputListener = null;
+    let currentFlashInputListener = null;
+    let currentExerciseInputListener = null;
+
     // Student-specific data
     let studentNumbers = {
         1: 0,
@@ -2409,8 +2425,38 @@
         10: null
     };
 
+    let studentStats = {
+        1: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        2: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        3: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        4: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        5: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        6: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        7: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        8: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        9: { correct: 0, incorrect: 0, total: 0, responseTimes: [] },
+        10: { correct: 0, incorrect: 0, total: 0, responseTimes: [] }
+    };
+
+    let studentStartTimes = {
+        1: null,
+        2: null,
+        3: null,
+        4: null,
+        5: null,
+        6: null,
+        7: null,
+        8: null,
+        9: null,
+        10: null
+    };
+
+    // Elevii au acces doar la Mod Antrenament (training) în Cartonașe Flash.
+    const IS_STUDENT_USER = {{ is_student_user|yesno:"true,false" }};
+
     // Mode selection
     function selectMode(mode) {
+        if (IS_STUDENT_USER && mode !== 'training') return;
         console.log('selectMode called with mode:', mode);
 
         const modeSelection = document.getElementById('modeSelection');
@@ -2450,6 +2496,13 @@
             if (classworkMode) {
                 classworkMode.classList.add('active');
                 currentMode = 'classwork';
+
+                // Reset statistics for all students
+                for (let i = 1; i <= 10; i++) {
+                    studentStats[i] = { correct: 0, incorrect: 0, total: 0, responseTimes: [] };
+                    studentStartTimes[i] = null;
+                    studentResults[i] = null;
+                }
             }
         }
 
@@ -2739,7 +2792,7 @@
      *    - Used when not enough beads available, but 5-bead (heavenly bead) is available
      *    - Pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
      *    - Addition: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
-     *    - Subtraction: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
+     *    - Subtraction: -4 = +1-5, -3 = +2-5, -2 = +3-5, -1 = +4-5
      *    - Example: 4 + 1 = Add 5, then subtract 4 (friend of 1)
      *
      * 3. BIG FRIENDS (10-Complements)
@@ -2781,16 +2834,17 @@
 
             case 'direct-counting':
                 // Direct counting for multi-digit numbers
-                for (let i = 0; i < addends; i++) {
-                    numbers.push(getRandomNumber(1, maxNum));
-                }
-                // Generate operators based on formula
-                for (let i = 1; i < addends; i++) {
-                    if (formula === 'mixed') {
-                        operators.push(Math.random() < 0.5 ? '+' : '-');
-                    } else {
-                        operators.push(formula === 'addition' ? '+' : '-');
-                    }
+                if (section === 1) {
+                    // For 1-digit: use direct-to-9 logic
+                    const resultDirect = generateDirectTo(9, addends, formula);
+                    numbers = resultDirect.numbers;
+                    operators = resultDirect.operators || [];
+                } else {
+                    // For 2-digit and 3-digit: use multi-digit direct calculation
+                    // Each digit position (hundreds, tens, units) follows direct-to-9 rules independently
+                    const resultMultiDigit = generateMultiDigitDirectCalculation(section, addends, formula);
+                    numbers = resultMultiDigit.numbers;
+                    operators = resultMultiDigit.operators || [];
                 }
                 break;
 
@@ -2992,42 +3046,60 @@
         const numbers = [];
         const operators = [];
 
+        // Helper: pick a number different from prevNum (max 10 attempts)
+        const pickNonConsecutive = (min, max, prevNum) => {
+            if (min > max) return min;
+            let num = getRandomNumber(min, max);
+            if (max > min) {
+                let attempts = 0;
+                while (num === prevNum && attempts < 10) {
+                    num = getRandomNumber(min, max);
+                    attempts++;
+                }
+            }
+            return num;
+        };
+
         if (formula === 'addition') {
             // For addition, ensure sum doesn't exceed maxUnits
             // This ensures we can use direct counting without formulas
             let remaining = maxUnits;
 
             for (let i = 0; i < addends; i++) {
+                const prevNum = numbers.length > 0 ? numbers[numbers.length - 1] : -1;
                 if (i === addends - 1) {
-                    // Last number: use whatever is left (at least 0, at most maxUnits)
-                    numbers.push(Math.max(0, Math.min(remaining, maxUnits)));
+                    // Last number: use whatever is left (at least 1, at most maxUnits)
+                    const lastNum = Math.max(1, Math.min(remaining, maxUnits));
+                    numbers.push(lastNum);
                 } else {
                     // Generate a number that leaves room for remaining addends
                     const minForRemaining = addends - i - 1; // At least 1 for each remaining
                     const maxAllowed = Math.max(1, remaining - minForRemaining);
-                    const num = getRandomNumber(1, Math.min(maxAllowed, maxUnits));
+                    const num = pickNonConsecutive(1, Math.min(maxAllowed, maxUnits), prevNum);
                     numbers.push(num);
                     remaining -= num;
                 }
                 if (i > 0) operators.push('+');
             }
         } else if (formula === 'subtraction') {
-            // For subtraction, ensure result is not negative
-            // First number should be large enough to subtract all others
-            const minFirst = addends - 1; // At least 1 for each number to subtract
+            // For subtraction, ensure result is between 0 and maxUnits
+            // First number must be at least addends (1 for each subtracted number)
+            const minFirst = addends; // At least 1 for each subtracted term so result >= 0
             const firstNum = getRandomNumber(minFirst, maxUnits);
             numbers.push(firstNum);
 
             let remaining = firstNum;
             for (let i = 1; i < addends; i++) {
+                const prevNum = numbers[numbers.length - 1];
                 if (i === addends - 1) {
-                    // Last number: use whatever is left (at least 0, at most maxUnits)
-                    numbers.push(Math.max(0, Math.min(remaining, maxUnits)));
+                    // Last number: random between 1 and remaining (result can be 0 or positive)
+                    // This allows variants like 9-6=3, 9-7=2, 9-8=1, 9-9=0
+                    numbers.push(pickNonConsecutive(1, remaining, prevNum));
                 } else {
                     // Generate a number that leaves room for remaining subtractions
                     const minForRemaining = addends - i - 1;
                     const maxAllowed = Math.max(1, remaining - minForRemaining);
-                    const num = getRandomNumber(1, Math.min(maxAllowed, maxUnits));
+                    const num = pickNonConsecutive(1, Math.min(maxAllowed, maxUnits), prevNum);
                     numbers.push(num);
                     remaining -= num;
                 }
@@ -3043,11 +3115,12 @@
             for (let i = 1; i < addends; i++) {
                 // Randomly choose operator
                 const useAddition = Math.random() < 0.5;
+                const prevNum = numbers[numbers.length - 1];
 
                 if (useAddition) {
                     // Addition: can add 1-maxUnits (e.g., 1-5 for direct-to-5)
                     // Allow intermediate results to go beyond maxUnits (up to 10 for single digit)
-                    const num = getRandomNumber(1, maxUnits);
+                    const num = pickNonConsecutive(1, maxUnits, prevNum);
                     numbers.push(num);
                     operators.push('+');
                     currentValue += num;
@@ -3055,13 +3128,13 @@
                     // Subtraction: can subtract 1-maxUnits, but ensure we don't go negative
                     const maxSubtract = Math.min(maxUnits, currentValue);
                     if (maxSubtract >= 1) {
-                        const num = getRandomNumber(1, maxSubtract);
+                        const num = pickNonConsecutive(1, maxSubtract, prevNum);
                         numbers.push(num);
                         operators.push('-');
                         currentValue -= num;
                     } else {
                         // If we can't subtract, do addition instead
-                        const num = getRandomNumber(1, maxUnits);
+                        const num = pickNonConsecutive(1, maxUnits, prevNum);
                         numbers.push(num);
                         operators.push('+');
                         currentValue += num;
@@ -3073,17 +3146,303 @@
         return { numbers, operators };
     }
 
-    // Helper: Generate Small Friends with Direct Counting (for specific small friends levels)
-    // Progressive logic: 50% direct counting + 50% specific small friend
-    function generateSmallFriendsWithDirect(target, addends, formula, section) {
-        const rand = Math.random();
-        if (rand < 0.5) {
-            // 50% - Generate direct counting
-            return generateDirectTo(9, addends, formula);
-        } else {
-            // 50% - Generate specific small friend exercise
-            return generateSmallFriendsExercise(target, addends, formula);
+    // Helper: Generate multi-digit direct calculation
+    // Each digit position (hundreds, tens, units) follows direct-to-9 rules independently
+    function generateMultiDigitDirectCalculation(section, addends, formula) {
+        const numbers = [];
+        const operators = [];
+
+        // Determine number of digit positions based on section
+        const numDigits = section; // section 2 = 2 digits, section 3 = 3 digits
+
+        // Generate digit sequences for each position (hundreds, tens, units)
+        const digitSequences = [];
+        for (let digitPos = 0; digitPos < numDigits; digitPos++) {
+            // For each digit position, generate a valid direct-to-9 sequence
+            const digitResult = generateDirectTo(9, addends, formula);
+            digitSequences.push(digitResult.numbers);
+
+            // Use operators from the first digit position (all positions use same operators)
+            if (digitPos === 0) {
+                operators.push(...digitResult.operators);
+            }
         }
+
+        // Combine digit sequences into full multi-digit numbers
+        for (let i = 0; i < addends; i++) {
+            let number = 0;
+            for (let digitPos = 0; digitPos < numDigits; digitPos++) {
+                const digitValue = digitSequences[digitPos][i];
+                const placeValue = Math.pow(10, numDigits - 1 - digitPos);
+                number += digitValue * placeValue;
+            }
+            numbers.push(number);
+        }
+
+        return { numbers, operators };
+    }
+
+    // Small Friends allowed operations - Explicit tables (same as in direct calculation)
+    // These define the SPECIFIC operations allowed at each formula level
+    const directTo4 = {
+        '+': [[1,1],[1,2],[1,3],[2,1],[2,2],[3,1]],
+        '-': [[1,1],[2,1],[2,2],[3,1],[3,2],[3,3],[4,1],[4,2],[4,3],[4,4]]
+    };
+    const directTo5 = {
+        '+': [[1,5],[2,5],[3,5],[4,5],[5,1],[5,2],[5,3],[5,4]],
+        '-': [[5,5],[6,1],[6,5],[7,1],[7,2],[7,5],[8,1],[8,2],[8,3],[8,5],[9,1],[9,2],[9,3],[9,4],[9,5]]
+    };
+    const directTo9 = {
+        '+': [[1,6],[1,7],[1,8],[2,6],[2,7],[3,6],[6,1],[6,2],[6,3],[7,1],[7,2],[8,1]],
+        '-': [[6,1],[6,5],[6,6],[7,1],[7,2],[7,5],[7,6],[7,7],[8,1],[8,2],[8,3],[8,5],[8,6],[8,7],[8,8],[9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7],[9,8],[9,9]]
+    };
+    const smallPlus1 = {
+        '+': [[4,1]]  // Only 4+1, NOT 1+4
+    };
+    const smallPlus2 = {
+        '+': [[3,2],[4,2]]  // Only 3+2, 4+2, NOT 2+3, 2+4
+    };
+    const smallPlus3 = {
+        '+': [[2,3],[3,3],[4,3]]  // Only 2+3, 3+3, 4+3, NOT 3+4
+    };
+    const smallPlus4 = {
+        '+': [[1,4],[2,4],[3,4],[4,4]]  // 1+4, 2+4, 3+4, 4+4
+    };
+    const smallMinus1 = {
+        '-': [[5,1]]  // Only 5-1
+    };
+    const smallMinus2 = {
+        '-': [[5,2],[6,2]]  // 5-2, 6-2
+    };
+    const smallMinus3 = {
+        '-': [[5,3],[6,3],[7,3]]  // 5-3, 6-3, 7-3
+    };
+    const smallMinus4 = {
+        '-': [[5,4],[6,4],[7,4],[8,4]]  // 5-4, 6-4, 7-4, 8-4
+    };
+
+    // Helper: Check if an operation is in a specific table
+    function isInTable(table, op, currentValue, term) {
+        const ops = table[op] || [];
+        return ops.some(([v, t]) => v === currentValue && t === term);
+    }
+
+    // Helper: Get allowed Small Friends operations for a given intermediate state
+    // Returns list of {op, term, isFormula} objects
+    // maxPlusFormula:  max allowed Small Friends addition formula number (0 = none)
+    // maxMinusFormula: max allowed Small Friends subtraction formula number (0 = none)
+    // formulaType: 'addition', 'subtraction', or 'mixed'
+    function getSmallFriendsAllowedOps(currentValue, maxPlusFormula, maxMinusFormula, formulaType) {
+        const allowed = [];
+
+        // Special case: Starting from 0 can add any digit 1-9 directly
+        if (currentValue === 0 && formulaType !== 'subtraction') {
+            for (let n = 1; n <= 9; n++) {
+                allowed.push({ op: '+', term: n, isFormula: false });
+            }
+            return allowed;
+        }
+
+        // Check additions (unless subtraction-only mode)
+        if (formulaType !== 'subtraction') {
+            for (let n = 1; n <= 9; n++) {
+                const result = currentValue + n;
+                if (result > 9) break; // Cannot exceed single digit
+
+                // First check if it's a direct operation (direct-to-4, direct-to-5, direct-to-9)
+                const isDirect = isInTable(directTo4, '+', currentValue, n) ||
+                                isInTable(directTo5, '+', currentValue, n) ||
+                                isInTable(directTo9, '+', currentValue, n);
+
+                if (isDirect) {
+                    allowed.push({ op: '+', term: n, isFormula: false });
+                    continue;
+                }
+
+                // Check if it's a Small Friends formula operation
+                // Formula operations are cumulative - each level includes previous levels
+                let isFormula = false;
+
+                // Check formula +1
+                if (maxPlusFormula >= 1 && isInTable(smallPlus1, '+', currentValue, n)) {
+                    isFormula = true;
+                }
+                // Check formula +2
+                if (maxPlusFormula >= 2 && isInTable(smallPlus2, '+', currentValue, n)) {
+                    isFormula = true;
+                }
+                // Check formula +3
+                if (maxPlusFormula >= 3 && isInTable(smallPlus3, '+', currentValue, n)) {
+                    isFormula = true;
+                }
+                // Check formula +4
+                if (maxPlusFormula >= 4 && isInTable(smallPlus4, '+', currentValue, n)) {
+                    isFormula = true;
+                }
+
+                if (isFormula) {
+                    allowed.push({ op: '+', term: n, isFormula: true });
+                }
+            }
+        }
+
+        // Check subtractions (unless addition-only mode)
+        if (formulaType !== 'addition') {
+            for (let n = 1; n <= currentValue; n++) {
+                const result = currentValue - n;
+
+                // First check if it's a direct operation (direct-to-4, direct-to-5, direct-to-9)
+                const isDirect = isInTable(directTo4, '-', currentValue, n) ||
+                                isInTable(directTo5, '-', currentValue, n) ||
+                                isInTable(directTo9, '-', currentValue, n);
+
+                if (isDirect) {
+                    allowed.push({ op: '-', term: n, isFormula: false });
+                    continue;
+                }
+
+                // Check if it's a Small Friends formula operation
+                // Formula operations are cumulative - each level includes previous levels
+                let isFormula = false;
+
+                // Check formula -1
+                if (maxMinusFormula >= 1 && isInTable(smallMinus1, '-', currentValue, n)) {
+                    isFormula = true;
+                }
+                // Check formula -2
+                if (maxMinusFormula >= 2 && isInTable(smallMinus2, '-', currentValue, n)) {
+                    isFormula = true;
+                }
+                // Check formula -3
+                if (maxMinusFormula >= 3 && isInTable(smallMinus3, '-', currentValue, n)) {
+                    isFormula = true;
+                }
+                // Check formula -4
+                if (maxMinusFormula >= 4 && isInTable(smallMinus4, '-', currentValue, n)) {
+                    isFormula = true;
+                }
+
+                if (isFormula) {
+                    allowed.push({ op: '-', term: n, isFormula: true });
+                }
+            }
+        }
+
+        return allowed;
+    }
+
+    // Helper: Generate Small Friends with Direct Counting (for specific small friends levels)
+    // Step-by-step approach: for each intermediate result, only operations allowed at the
+    // current level are considered, preventing higher-level formulas from appearing in
+    // lower-level exercises (e.g. formula +2 cannot appear in a small-plus-1 exercise).
+    function generateSmallFriendsWithDirect(target, addends, formula, section) {
+        const absTarget = Math.abs(target);
+        const isPlus = target > 0;
+
+        // Learning order for small friends formulas
+        const smallLearningOrder = [1, 2, 3, 4, -1, -2, -3, -4];
+        const levelIndex = smallLearningOrder.indexOf(target);
+        const idx = levelIndex >= 0 ? levelIndex : 0;
+
+        // Progressive split (50% selected formula always):
+        // Remaining 50% splits between direct (decreasing) and prev small friends (increasing):
+        // idx=0 (+1): 50% formula, 50% direct,  0% prev small
+        // idx=1 (+2): 50% formula, 45% direct,  5% prev small
+        // idx=2 (+3): 50% formula, 40% direct, 10% prev small
+        // idx=3 (+4): 50% formula, 35% direct, 15% prev small
+        // idx=4 (-1): 50% formula, 30% direct, 20% prev small
+        // idx=5 (-2): 50% formula, 25% direct, 25% prev small
+        // idx=6 (-3): 50% formula, 20% direct, 30% prev small
+        // idx=7 (-4): 50% formula, 15% direct, 35% prev small
+        const directProportion   = Math.max(0.15, 0.50 - idx * 0.05);
+        const prevSmallProportion = 0.50 - directProportion;
+
+        const rand = Math.random();
+
+        if (rand >= 0.50) {
+            // 50% non-formula exercises
+            const nonFormulaRand = rand - 0.50; // 0..0.50
+
+            if (nonFormulaRand < directProportion || prevSmallProportion <= 0) {
+                // Direct exercise
+                return generateDirectTo(9, addends, formula);
+            } else {
+                // Previous small friends exercise
+                const previousFormulas = levelIndex > 0 ? smallLearningOrder.slice(0, levelIndex) : [];
+                const eligiblePrevious = formula === 'addition'
+                    ? previousFormulas.filter(f => f > 0)
+                    : formula === 'subtraction'
+                    ? previousFormulas.filter(f => f < 0)
+                    : previousFormulas;
+
+                if (eligiblePrevious.length === 0) {
+                    return generateDirectTo(9, addends, formula);
+                }
+
+                const randomPrev = eligiblePrevious[getRandomNumber(0, eligiblePrevious.length - 1)];
+                return generateSmallFriendsExercise(randomPrev, addends, formula);
+            }
+        }
+
+        // 50% path: Generate exercise that MUST use the SPECIFIC selected formula
+        // For small-plus-N:  addition formulas +1..+N allowed, no subtraction formulas
+        // For small-minus-N: subtraction formulas -1..-N allowed, no addition formulas
+        const maxPlusFormula  = isPlus  ? absTarget : 0;
+        const maxMinusFormula = !isPlus ? absTarget : 0;
+
+        // Lookup table for the specific target formula (to verify its use)
+        const targetFormulaTable = isPlus
+            ? (absTarget === 1 ? smallPlus1  : absTarget === 2 ? smallPlus2  : absTarget === 3 ? smallPlus3  : smallPlus4)
+            : (absTarget === 1 ? smallMinus1 : absTarget === 2 ? smallMinus2 : absTarget === 3 ? smallMinus3 : smallMinus4);
+
+        const maxAttempts = 100;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const numbers   = [];
+            const operators = [];
+            let hasSpecificFormulaUse = false;
+
+            // Pick a starting value that leaves room for subsequent operations
+            let firstNum;
+            if (formula === 'subtraction') {
+                firstNum = getRandomNumber(Math.max(addends, 1), 9);
+            } else {
+                firstNum = getRandomNumber(1, 8);
+            }
+            numbers.push(firstNum);
+            let currentValue = firstNum;
+
+            let valid = true;
+            for (let i = 1; i < addends; i++) {
+                // Build the list of allowed (op, term) pairs from the current state
+                const allowed = getSmallFriendsAllowedOps(
+                    currentValue, maxPlusFormula, maxMinusFormula, formula
+                );
+
+                if (allowed.length === 0) {
+                    valid = false;
+                    break;
+                }
+
+                // Pick a random allowed operation
+                const choice = allowed[getRandomNumber(0, allowed.length - 1)];
+                numbers.push(choice.term);
+                operators.push(choice.op);
+
+                // Check if this operation is specifically from the target formula table
+                if (choice.isFormula && isInTable(targetFormulaTable, choice.op, currentValue, choice.term)) {
+                    hasSpecificFormulaUse = true;
+                }
+                currentValue = choice.op === '+' ? currentValue + choice.term : currentValue - choice.term;
+            }
+
+            if (valid && hasSpecificFormulaUse) {
+                return { numbers, operators };
+            }
+        }
+
+        // Fallback after exhausting attempts: return a plain direct exercise
+        console.warn('[generateSmallFriendsWithDirect] Could not generate formula exercise, using direct fallback');
+        return generateDirectTo(9, addends, formula);
     }
 
     // Helper: Get allowed Big Friends formulas for progressive learning
@@ -3117,47 +3476,62 @@
     }
 
     // Helper: Generate Big Friends with Progressive levels (for specific big friends levels)
-    // Progressive logic: Direct (4,5,9) + Small Friends (all) + Previously learned Big Friends
+    // Progressive logic: 50% selected formula always.
+    // Remaining 50%: direct decreases, small friends stays ~20%, prev big friends increases.
     function generateBigFriendsWithProgressive(target, addends, formula, section) {
         const allowedBigFriends = getAllowedBigFriendsFormulas(target);
-
-        // Calculate probability distribution
-        // If no previous Big Friends, split between Direct and Small Friends
-        // Otherwise: 30% Direct, 30% Small Friends, 40% Previous Big Friends
         const hasPreviousBigFriends = allowedBigFriends.length > 0;
+
+        // Learning order index (used for progressive split)
+        const bigLearningOrder = [1, 2, 3, 4, 5, -1, -2, -3, -4, -5, 6, 7, 8, 9, -6, -7, -8, -9];
+        const levelIndex = bigLearningOrder.indexOf(target);
+        const idx = levelIndex >= 0 ? levelIndex : 0;
+
+        // Helper: pick a random small friends formula according to operation type
+        const getRandomSmall = () => {
+            const smallFormulas = formula === 'addition'
+                ? [1, 2, 3, 4]
+                : formula === 'subtraction'
+                ? [-1, -2, -3, -4]
+                : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
+            return smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
+        };
+
         const rand = Math.random();
 
+        if (rand < 0.50) {
+            // 50% - Generate exercise using the selected big friends formula
+            return generateBigFriendsExercise(target, addends, formula, section);
+        }
+
+        // Remaining 50%: progressive split between direct, small friends, prev big friends.
+        // Progressive proportions (of the total 100%):
+        //   idx=0  (big+1, no prev): 30% direct, 20% small,  0% prev big
+        //   idx=1  (big+2):          20% direct, 20% small, 10% prev big
+        //   idx=5  (big-1):          16% direct, 20% small, 14% prev big
+        //   idx=10 (big+6):          11% direct, 20% small, 19% prev big
+        //   idx=17 (big-9):           5% direct, 20% small, 25% prev big
+        const remainingRand = rand - 0.50; // 0..0.50
+
         if (!hasPreviousBigFriends) {
-            // First Big Friends formula (+1): only Direct and Small Friends available
-            if (rand < 0.5) {
-                // 50% - Generate direct counting
+            // First big friends formula: split remaining 50% between direct (30%) and small (20%)
+            if (remainingRand < 0.30) {
                 return generateDirectTo(9, addends, formula);
             } else {
-                // 50% - Generate small friends
-                const smallFormulas = formula === 'addition'
-                    ? [1, 2, 3, 4]
-                    : formula === 'subtraction'
-                    ? [-1, -2, -3, -4]
-                    : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
-                const randomSmall = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
-                return generateSmallFriendsExercise(randomSmall, addends, formula);
+                return generateSmallFriendsExercise(getRandomSmall(), addends, formula);
             }
         } else {
-            // Has previous Big Friends: use progressive distribution
-            if (rand < 0.3) {
-                // 30% - Generate direct counting
+            // Direct decreases from 20% to 5% as level advances
+            const directProp  = Math.max(0.05, 0.20 - (idx - 1) * 0.01);
+            const smallProp   = 0.20;
+            const prevBigProp = 0.50 - directProp - smallProp; // fills the rest
+
+            if (remainingRand < directProp) {
                 return generateDirectTo(9, addends, formula);
-            } else if (rand < 0.6) {
-                // 30% - Generate small friends
-                const smallFormulas = formula === 'addition'
-                    ? [1, 2, 3, 4]
-                    : formula === 'subtraction'
-                    ? [-1, -2, -3, -4]
-                    : Math.random() < 0.5 ? [1, 2, 3, 4] : [-1, -2, -3, -4];
-                const randomSmall = smallFormulas[getRandomNumber(0, smallFormulas.length - 1)];
-                return generateSmallFriendsExercise(randomSmall, addends, formula);
+            } else if (remainingRand < directProp + smallProp) {
+                return generateSmallFriendsExercise(getRandomSmall(), addends, formula);
             } else {
-                // 40% - Generate previously learned Big Friends
+                // Previously learned big friends
                 const randomBigFriend = allowedBigFriends[getRandomNumber(0, allowedBigFriends.length - 1)];
                 return generateBigFriendsExercise(randomBigFriend, addends, formula, section);
             }
@@ -3167,7 +3541,7 @@
     // Helper: Generate Small Friends exercise for specific formula
     // Small Friends are pairs that sum to 5: (1,4), (2,3), (3,2), (4,1)
     // Addition formulas: +4 = +5-1, +3 = +5-2, +2 = +5-3, +1 = +5-4
-    // Subtraction formulas: -4 = -5+1, -3 = -5+2, -2 = -5+3, -1 = -5+4
+    // Subtraction formulas: -4 = +1-5, -3 = +2-5, -2 = +3-5, -1 = +4-5
     function generateSmallFriendsExercise(target, addends, formula) {
         const numbers = [];
         const operators = [];
@@ -3195,7 +3569,7 @@
             }
         } else if (formula === 'subtraction' && target < 0) {
             // For subtraction: need first number that when subtracting requires 5-complement
-            // Example: -1 = -5+4, so we need a number like 5, 6, 7, 8, or 9 (has 5-bead active)
+            // Example: -1 = +4-5, so we need a number like 5, 6, 7, 8, or 9 (has 5-bead active)
             // First number should be 5 to 9 to require the formula
             const validFirstNumbers = [5, 6, 7, 8, 9];
             numbers.push(validFirstNumbers[getRandomNumber(0, validFirstNumbers.length - 1)]);
@@ -3540,11 +3914,14 @@
             input.type = 'number';
             input.className = 'answer-input';
             input.placeholder = 'Introdu numărul';
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
+
+            // Store listener reference for cleanup
+            currentTrainingInputListener = function(e) {
+                if (e.key === 'Enter' && !e.repeat) {
                     checkTrainingAnswer(parseInt(this.value));
                 }
-            });
+            };
+            input.addEventListener('keydown', currentTrainingInputListener);
 
             const submitBtn = document.createElement('button');
             submitBtn.className = 'submit-btn';
@@ -3584,6 +3961,14 @@
     }
 
     function checkTrainingAnswer(answer) {
+        // Clear input and its listener to prevent multiple submissions
+        const content = document.getElementById('trainingContent');
+        const input = content.querySelector('.answer-input');
+        if (input && currentTrainingInputListener) {
+            input.removeEventListener('keydown', currentTrainingInputListener);
+            currentTrainingInputListener = null;
+        }
+
         const feedback = document.createElement('div');
         feedback.className = 'feedback';
 
@@ -3598,8 +3983,9 @@
             stats.incorrect++;
             document.getElementById('trainingIncorrect').textContent = stats.incorrect;
         }
+        if (window.MA_logPractice) MA_logPractice('flashcards', { exercises: 1, correct: answer === currentNumber ? 1 : 0, incorrect: answer === currentNumber ? 0 : 1 });
 
-        const content = document.getElementById('trainingContent');
+        content.innerHTML = ''; // Clear content including input
         content.appendChild(feedback);
 
         setTimeout(() => {
@@ -3693,14 +4079,9 @@
         const content = document.getElementById('flashContent');
         content.innerHTML = '';
 
-        // Show countdown 3, 2, 1
+        // Colored countdown: 3 red, 2 yellow, 1 green
         const countdown = document.createElement('div');
-        countdown.className = 'countdown';
-        countdown.style.fontSize = '5rem';
-        countdown.style.fontWeight = 'bold';
-        countdown.style.color = '#2196F3';
-        countdown.style.textAlign = 'center';
-        countdown.style.padding = '2rem';
+        countdown.className = 'countdown-circle-fc count-3';
         content.appendChild(countdown);
 
         let count = 3;
@@ -3710,6 +4091,7 @@
             count--;
             if (count > 0) {
                 countdown.textContent = count;
+                countdown.className = 'countdown-circle-fc count-' + count;
             } else {
                 clearInterval(countdownInterval);
                 countdown.remove();
@@ -3767,11 +4149,14 @@
                 input.type = 'number';
                 input.className = 'answer-input';
                 input.placeholder = 'Introdu numărul';
-                input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
+
+                // Store listener reference for cleanup
+                currentFlashInputListener = function(e) {
+                    if (e.key === 'Enter' && !e.repeat) {
                         checkFlashAnswer(parseInt(this.value));
                     }
-                });
+                };
+                input.addEventListener('keydown', currentFlashInputListener);
 
                 const submitBtn = document.createElement('button');
                 submitBtn.className = 'submit-btn';
@@ -3818,13 +4203,20 @@
     }
 
     function checkFlashAnswer(answer) {
+        // Clear input and its listener to prevent multiple submissions
+        const content = document.getElementById('flashContent');
+        const input = content.querySelector('.answer-input');
+        if (input && currentFlashInputListener) {
+            input.removeEventListener('keydown', currentFlashInputListener);
+            currentFlashInputListener = null;
+        }
+
         // Record response time
         if (stats.questionStartTime) {
             const responseTime = Date.now() - stats.questionStartTime;
             stats.responseTimes.push(responseTime);
         }
 
-        const content = document.getElementById('flashContent');
         const feedback = document.createElement('div');
         feedback.className = 'feedback';
 
@@ -3839,7 +4231,9 @@
             stats.incorrect++;
             document.getElementById('flashIncorrect').textContent = stats.incorrect;
         }
+        if (window.MA_logPractice) MA_logPractice('flashcards', { exercises: 1, correct: answer === currentNumber ? 1 : 0, incorrect: answer === currentNumber ? 0 : 1 });
 
+        content.innerHTML = ''; // Clear content including input
         content.appendChild(feedback);
 
         setTimeout(() => {
@@ -3888,6 +4282,7 @@
             stats.incorrect++;
             document.getElementById('flashIncorrect').textContent = stats.incorrect;
         }
+        if (window.MA_logPractice) MA_logPractice('flashcards', { exercises: 1, correct: abacusNumber === currentNumber ? 1 : 0, incorrect: abacusNumber === currentNumber ? 0 : 1 });
 
         content.appendChild(feedback);
 
@@ -3923,7 +4318,7 @@
     // Exercises Mode
     function startExercises() {
         // Reset duplicate tracking for new session
-        lastExercise = null;
+        exerciseHistory = [];
 
         stats.correct = 0;
         stats.incorrect = 0;
@@ -3975,43 +4370,55 @@
         // Randomly select a formula from the available formulas
         const formula = formulas[getRandomNumber(0, formulas.length - 1)];
 
-        // Generate exercise based on level
+        // Generate the exercise with the SAME rules engine as the Anzan
+        // simulator (anzan_engine.js) so every level follows the pedagogy
+        const complexityMap = { 'family': 'family-all' };
+        const engineComplexity = complexityMap[level] || level;
+        const digitCount = parseInt(section) || 1;
+
         let numbers = [];
         let operators = [];
         let correctAnswer = 0;
 
-        // Regenerate exercise until we get a valid result (>0 and <100) and different from last exercise
         let attempts = 0;
-        const maxAttempts = 100;
+        const maxAttempts = 30;
         let isDuplicate = false;
         do {
-            const exerciseData = generateExerciseForLevel(level, formula, section, addends);
-            numbers = exerciseData.numbers;
-            operators = exerciseData.operators || [];
+            const ex = generateExerciseTerms({
+                terms: Math.max(2, addends),
+                operation: formula === 'addition' ? 'addition' : formula === 'subtraction' ? 'subtraction' : 'mixed',
+                negative: 'no',
+                complexity: engineComplexity,
+                digits: digitCount,
+                digitsAllowed: [digitCount]
+            });
+            if (!ex.terms || ex.terms.length < 2) { attempts++; continue; }
+            numbers = ex.terms;
+            operators = ex.operations;
 
-            // Calculate correct answer using individual operators
             correctAnswer = numbers[0];
             for (let i = 1; i < numbers.length; i++) {
-                const operator = operators[i - 1] || (formula === 'addition' ? '+' : '-');
-                if (operator === '+') {
-                    correctAnswer += numbers[i];
-                } else {
-                    correctAnswer -= numbers[i];
-                }
+                correctAnswer = operators[i - 1] === '+' ? correctAnswer + numbers[i] : correctAnswer - numbers[i];
             }
 
-            // Check if this exercise is a duplicate of the last one
-            isDuplicate = exercisesAreEqual({ numbers, operators }, lastExercise);
+            isDuplicate = exerciseHistory.some(prevExercise =>
+                exercisesAreEqual({ numbers, operators }, prevExercise)
+            );
 
             attempts++;
             if (attempts >= maxAttempts) {
                 console.warn('Could not generate valid exercise after', maxAttempts, 'attempts');
                 break;
             }
-        } while (correctAnswer <= 0 || correctAnswer >= 100 || isDuplicate);
+        } while (correctAnswer <= 0 || isDuplicate);
 
-        // Save this exercise as the last one
-        lastExercise = { numbers: [...numbers], operators: [...operators] };
+        // Add this exercise to history
+        exerciseHistory.push({ numbers: [...numbers], operators: [...operators] });
+
+        // Limit history size to prevent memory issues
+        if (exerciseHistory.length > MAX_HISTORY_SIZE) {
+            exerciseHistory.shift(); // Remove oldest exercise
+        }
 
         // Display problem
         const problemDiv = document.createElement('div');
@@ -4036,8 +4443,10 @@
             if (index < numbers.length - 1) {
                 const operator = document.createElement('span');
                 operator.textContent = operators[index] || (formula === 'addition' ? '+' : '-');
-                operator.style.fontSize = '1.5rem';
-                operator.style.fontWeight = 'bold';
+                operator.style.fontSize = '2.5rem';
+                operator.style.fontWeight = '700';
+                operator.style.color = '#4b4f8a';
+                operator.style.margin = '0 0.5rem';
                 problemDiv.appendChild(operator);
             }
         });
@@ -4071,11 +4480,14 @@
             input.className = 'answer-input';
             input.placeholder = 'Introdu răspunsul';
             input.dataset.correctAnswer = correctAnswer;
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
+
+            // Store listener reference for cleanup
+            currentExerciseInputListener = function(e) {
+                if (e.key === 'Enter' && !e.repeat) {
                     checkExerciseAnswer(parseInt(this.value), parseInt(this.dataset.correctAnswer));
                 }
-            });
+            };
+            input.addEventListener('keydown', currentExerciseInputListener);
 
             const submitBtn = document.createElement('button');
             submitBtn.className = 'submit-btn';
@@ -4091,7 +4503,14 @@
     }
 
     function checkExerciseAnswer(answer, correctAnswer) {
+        // Clear input and its listener to prevent multiple submissions
         const content = document.getElementById('exercisesContent');
+        const input = content.querySelector('.answer-input');
+        if (input && currentExerciseInputListener) {
+            input.removeEventListener('keydown', currentExerciseInputListener);
+            currentExerciseInputListener = null;
+        }
+
         const feedback = document.createElement('div');
         feedback.className = 'feedback';
 
@@ -4107,6 +4526,7 @@
             document.getElementById('exercisesIncorrect').textContent = stats.incorrect;
         }
 
+        content.innerHTML = ''; // Clear content including input
         content.appendChild(feedback);
 
         setTimeout(() => {
@@ -4232,16 +4652,20 @@
 
         // Show countdown 3, 2, 1
         const countdown = panel.querySelector('.countdown');
-        countdown.style.display = 'block';
+        countdown.style.display = 'flex';
 
         let count = 3;
+        countdown.textContent = count;
+        countdown.className = 'countdown countdown-circle-fc count-3';
         const countdownInterval = setInterval(() => {
-            countdown.textContent = count;
             count--;
-
-            if (count < 0) {
+            if (count > 0) {
+                countdown.textContent = count;
+                countdown.className = 'countdown countdown-circle-fc count-' + count;
+            } else {
                 clearInterval(countdownInterval);
                 countdown.style.display = 'none';
+                countdown.className = 'countdown';
                 showSingleStudentExercise(studentId);
             }
         }, 1000);
@@ -4288,6 +4712,9 @@
                 input.style.display = 'block';
                 answerArea.style.display = 'flex';
 
+                // Start timing when answer input is shown
+                studentStartTimes[studentId] = Date.now();
+
                 // Focus on input for quick entry
                 input.focus();
             }, settings.speed * 1000);
@@ -4305,6 +4732,9 @@
             const input = answerArea.querySelector('.answer-input');
             input.style.display = 'none';
             answerArea.style.display = 'flex';
+
+            // Start timing when exercise is shown
+            studentStartTimes[studentId] = Date.now();
         }
     }
 
@@ -4358,6 +4788,20 @@
         const isCorrect = userAnswer === correctAnswer;
         studentResults[studentId] = isCorrect;
 
+        // Update statistics
+        studentStats[studentId].total++;
+        if (isCorrect) {
+            studentStats[studentId].correct++;
+        } else {
+            studentStats[studentId].incorrect++;
+        }
+
+        // Track response time
+        if (studentStartTimes[studentId]) {
+            const responseTime = Date.now() - studentStartTimes[studentId];
+            studentStats[studentId].responseTimes.push(responseTime);
+        }
+
         // Update status indicator
         const statusDiv = panel.querySelector('.student-status');
         statusDiv.classList.add('show');
@@ -4399,21 +4843,58 @@
         const panels = Array.from(document.querySelectorAll('.student-panel')).filter(
             panel => panel.style.display !== 'none'
         );
-        let results = 'Rezultate:\n\n';
+
+        const resultsContent = document.getElementById('classworkResultsContent');
+        resultsContent.innerHTML = '';
 
         panels.forEach((panel, index) => {
             const studentId = parseInt(panel.dataset.studentId);
             const name = panel.querySelector('.student-name-input').value;
-            const result = studentResults[studentId];
+            const stats = studentStats[studentId];
 
-            let status = 'Not answered';
-            if (result === true) status = '✓ Correct';
-            else if (result === false) status = `✗ Incorrect (Correct: ${studentNumbers[studentId]})`;
+            const totalExercises = stats.total;
+            const correctRate = totalExercises > 0 ? ((stats.correct / totalExercises) * 100).toFixed(1) : 0;
+            const avgResponseTime = stats.responseTimes.length > 0
+                ? (stats.responseTimes.reduce((a, b) => a + b, 0) / stats.responseTimes.length / 1000).toFixed(2)
+                : 0;
 
-            results += `${name}: ${status}\n`;
+            const studentCard = document.createElement('div');
+            studentCard.style.cssText = 'margin: 1.5rem 0; padding: 1.5rem; background: #f5f5f5; border-radius: 12px; border-left: 4px solid #2196F3;';
+
+            studentCard.innerHTML = `
+                <h3 style="margin: 0 0 1rem 0; color: #1976D2; font-size: 1.3rem;">${name}</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem;">
+                    <div style="padding: 0.8rem; background: #e8f5e9; border-radius: 8px;">
+                        <strong style="color: #2e7d32;">Răspunsuri corecte:</strong><br>
+                        <span style="font-size: 1.5rem; color: #1b5e20;">${stats.correct}</span>
+                    </div>
+                    <div style="padding: 0.8rem; background: #ffebee; border-radius: 8px;">
+                        <strong style="color: #c62828;">Răspunsuri greșite:</strong><br>
+                        <span style="font-size: 1.5rem; color: #b71c1c;">${stats.incorrect}</span>
+                    </div>
+                    <div style="padding: 0.8rem; background: #e3f2fd; border-radius: 8px;">
+                        <strong style="color: #1565c0;">Total exerciții:</strong><br>
+                        <span style="font-size: 1.5rem; color: #0d47a1;">${totalExercises}</span>
+                    </div>
+                    <div style="padding: 0.8rem; background: #fff3e0; border-radius: 8px;">
+                        <strong style="color: #e65100;">Rată de succes:</strong><br>
+                        <span style="font-size: 1.5rem; color: #bf360c;">${correctRate}%</span>
+                    </div>
+                    <div style="padding: 0.8rem; background: #f3e5f5; border-radius: 8px;">
+                        <strong style="color: #6a1b9a;">Timp mediu:</strong><br>
+                        <span style="font-size: 1.5rem; color: #4a148c;">${avgResponseTime}s</span>
+                    </div>
+                </div>
+            `;
+
+            resultsContent.appendChild(studentCard);
         });
 
-        alert(results);
+        document.getElementById('classworkResultsModal').style.display = 'flex';
+    }
+
+    function closeClassworkResults() {
+        document.getElementById('classworkResultsModal').style.display = 'none';
     }
 
     function toggleFullscreen() {
@@ -4468,6 +4949,9 @@
                 onclick: card.getAttribute('onclick')
             });
         });
+
+        // Apply level restrictions on page load
+        updateLevel();
     });
 </script>
 {% endblock %}

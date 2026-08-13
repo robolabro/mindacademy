@@ -1,0 +1,810 @@
+{% extends 'student_platform/base_student.html' %}
+{% load static %}
+
+{% block title %}{{ task.get_simulator_display }}{% endblock %}
+{% block page_title %}{% if runner_title %}{{ runner_title }}{% else %}{{ assignment.title }}{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tr-back {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        color: #6b7280; text-decoration: none; font-size: 0.9rem; font-weight: 500;
+        margin-bottom: 0.9rem;
+    }
+    .tr-back:hover { color: #2563eb; }
+
+    .tr-header {
+        background: white; border: 1px solid #e5e7eb; border-radius: 14px;
+        padding: 1rem 1.3rem; margin-bottom: 1.25rem;
+    }
+    .tr-header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; }
+    .tr-title { font-size: 1.1rem; font-weight: 700; }
+    .tr-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.4rem; }
+    .chip {
+        background: #f1f5f9; color: #475569; border-radius: 7px;
+        padding: 0.14rem 0.6rem; font-size: 0.8rem; font-weight: 500;
+    }
+    .chip-target { background: #dcfce7; color: #166534; font-weight: 600; }
+    .tr-done-badge {
+        background: #dcfce7; color: #166534; font-weight: 700;
+        font-size: 0.85rem; padding: 0.3rem 0.85rem; border-radius: 999px;
+        display: none;
+    }
+    .tr-progress-wrap { margin-top: 0.9rem; }
+    .tr-bar { height: 10px; background: #eef0f3; border-radius: 999px; overflow: hidden; }
+    .tr-bar-fill { height: 100%; background: #2563eb; border-radius: 999px; transition: width 0.4s ease; }
+    .tr-bar-fill.full { background: #10b981; }
+    .tr-bar-label { font-size: 0.83rem; color: #6b7280; margin-top: 0.35rem; display: flex; justify-content: space-between; }
+
+    .tr-expired {
+        background: #fef3c7; color: #92400e; border-radius: 10px;
+        padding: 0.7rem 1rem; font-size: 0.9rem; font-weight: 500; margin-bottom: 1rem;
+    }
+
+    .tr-panel {
+        background: white; border: 1px solid #e5e7eb; border-radius: 14px;
+        padding: 2rem 1.5rem; text-align: center; min-height: 380px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+
+    /* Start screen */
+    .tr-start-icon { font-size: 3rem; margin-bottom: 0.8rem; }
+    .tr-start-hint { color: #6b7280; max-width: 480px; margin-bottom: 1.5rem; line-height: 1.5; }
+    .tr-btn {
+        background: #2563eb; color: white; border: none; border-radius: 10px;
+        padding: 0.8rem 2.2rem; font-size: 1.05rem; font-weight: 700;
+        cursor: pointer; transition: background 0.15s ease;
+    }
+    .tr-btn:hover { background: #1d4ed8; }
+    .tr-btn-secondary {
+        background: white; color: #374151; border: 1px solid #d6d9e0;
+        border-radius: 10px; padding: 0.6rem 1.4rem; font-size: 0.92rem; font-weight: 600;
+        cursor: pointer;
+    }
+    .tr-btn-secondary:hover { background: #f8f9fb; }
+    .tr-btn-verify {
+        background: #f59e0b; color: white; border: none; border-radius: 10px;
+        padding: 0.6rem 1.4rem; font-size: 0.92rem; font-weight: 700; cursor: pointer;
+    }
+    .tr-btn-verify:hover { background: #d97706; }
+
+    /* Countdown */
+    .tr-countdown { font-size: 6rem; font-weight: 800; }
+    .tr-countdown.c3 { color: #ef4444; }
+    .tr-countdown.c2 { color: #f59e0b; }
+    .tr-countdown.c1 { color: #10b981; }
+    .tr-countdown.go { color: #10b981; font-size: 4rem; }
+
+    /* Sequential display */
+    .tr-number { font-size: 7rem; font-weight: 800; color: #1f2430; line-height: 1; }
+    .tr-number .minus { color: #ef4444; }
+    @media (max-width: 640px) { .tr-number { font-size: 4.5rem; } }
+    .tr-run-meta { color: #9ca3af; font-size: 0.9rem; margin-bottom: 1.2rem; display: flex; gap: 1.2rem; justify-content: center; }
+    .tr-timer { font-weight: 700; color: #4f46e5; }
+
+    .tr-answer-zone { display: none; flex-direction: column; align-items: center; gap: 1rem; }
+    .tr-answer-input {
+        width: 260px; max-width: 90%; padding: 0.85rem;
+        font-size: 2rem; text-align: center; font-weight: 700;
+        border: 2px solid #d6d9e0; border-radius: 12px; outline: none;
+    }
+    .tr-answer-input:focus { border-color: #2563eb; }
+    .tr-feedback { font-size: 1.3rem; font-weight: 700; min-height: 1.8rem; }
+    .tr-feedback.ok { color: #10b981; }
+    .tr-feedback.bad { color: #ef4444; }
+
+    /* Soroban card (flashcards) */
+    .fc-card {
+        display: flex; gap: 0.9rem; padding: 1.3rem 1.6rem;
+        background: #fafbfc; border: 2px solid #e5e7eb; border-radius: 16px;
+    }
+    .fc-rod { display: flex; flex-direction: column; align-items: center; position: relative; width: 46px; height: 218px; }
+    .fc-rod-line {
+        width: 5px; height: 218px; background: #c3c8d0; border-radius: 2px;
+        position: absolute; left: 50%; transform: translateX(-50%);
+    }
+    .fc-divider {
+        position: absolute; top: 72px; left: 50%; transform: translateX(-50%);
+        width: 54px; height: 3px; background: #9aa0a9; border-radius: 2px; z-index: 5;
+    }
+    .fc-rod:last-child .fc-divider::after {
+        content: ''; position: absolute; width: 8px; height: 8px;
+        background: #1F2430; border-radius: 50%;
+        top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 6;
+    }
+    .fc-beads { position: absolute; width: 100%; display: flex; flex-direction: column; align-items: center; }
+    .fc-beads.top { top: 0; padding-top: 8px; }
+    .fc-beads.bottom { bottom: 0; padding-bottom: 8px; }
+    .fc-bead {
+        width: 46px; height: 24px; margin: 1px 0; flex-shrink: 0;
+        clip-path: polygon(28% 0, 72% 0, 100% 50%, 72% 100%, 28% 100%, 0 50%);
+        background: #F2A93B; transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .fc-bead.active { background: #2E9E8F; }
+    .fc-bead.top.active { transform: translateY(38px); }
+    .fc-bead.bottom.active { transform: translateY(-31px); }
+
+    /* Sheet mode */
+    .sheet-stats { display: flex; gap: 1.4rem; justify-content: center; margin-bottom: 1.2rem; flex-wrap: wrap; color: #6b7280; font-size: 0.92rem; }
+    .sheet-stats b { color: #1f2430; }
+    .sheet-grid { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; width: 100%; }
+    .sheet-ex {
+        background: #fafbfc; border: 2px solid #e5e7eb; border-radius: 12px;
+        padding: 0.7rem 0.9rem; min-width: 96px; position: relative;
+    }
+    .sheet-ex.correct { border-color: #10b981; background: #f0fdf4; }
+    .sheet-ex.incorrect { border-color: #ef4444; background: #fef2f2; }
+    .sheet-ex-num {
+        position: absolute; top: -10px; left: -10px;
+        width: 24px; height: 24px; border-radius: 50%;
+        background: #eef2ff; color: #4f46e5; font-size: 0.78rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .sheet-table { border-collapse: collapse; width: 100%; }
+    .sheet-table td {
+        text-align: right; font-size: 1.25rem; font-weight: 600;
+        padding: 0.12rem 0.35rem; font-variant-numeric: tabular-nums;
+    }
+    .sheet-answer-cell { border-top: 2px solid #1f2430; }
+    .sheet-answer {
+        width: 76px; padding: 0.3rem 0.2rem; font-size: 1.15rem; font-weight: 700;
+        text-align: right; border: 1px solid #d6d9e0; border-radius: 7px; outline: none;
+    }
+    .sheet-answer:focus { border-color: #2563eb; }
+    .sheet-answer:disabled { background: transparent; border-color: transparent; color: #1f2430; }
+    .sheet-correct-value { text-align: right; color: #ef4444; font-weight: 700; font-size: 1rem; min-height: 1.3rem; padding-right: 0.35rem; }
+
+    .tr-run-controls { margin-top: 1.6rem; display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
+
+    /* Celebration */
+    .tr-celebrate {
+        display: none; background: #dcfce7; color: #166534;
+        border-radius: 12px; padding: 0.85rem 1.2rem; font-weight: 700;
+        margin-bottom: 1.1rem; text-align: center; font-size: 1.02rem;
+    }
+
+    /* Popup sumar rezultate */
+    .tr-modal-backdrop {
+        display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+        z-index: 500; align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .tr-modal-backdrop.open { display: flex; }
+    .tr-modal {
+        background: white; border-radius: 18px; width: 100%; max-width: 420px;
+        padding: 2rem 1.8rem; text-align: center;
+    }
+    .tr-modal-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+    .tr-modal-title { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.3rem; }
+    .tr-modal-sub { color: #6b7280; font-size: 0.92rem; margin-bottom: 1.3rem; }
+    .tr-modal-stats { display: flex; gap: 0.7rem; justify-content: center; margin-bottom: 1.4rem; }
+    .tr-modal-stat {
+        flex: 1; background: #f8f9fb; border-radius: 12px; padding: 0.8rem 0.4rem;
+    }
+    .tr-modal-stat-value { font-size: 1.45rem; font-weight: 800; }
+    .tr-modal-stat-label { font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-top: 0.15rem; }
+    .tr-modal-stat.ok .tr-modal-stat-value { color: #10b981; }
+    .tr-modal-stat.bad .tr-modal-stat-value { color: #ef4444; }
+    .tr-modal-stat.acc .tr-modal-stat-value { color: #4f46e5; }
+    .tr-modal-actions { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; }
+    .tr-modal-list { text-align: left; max-height: 240px; overflow-y: auto; margin-bottom: 1.2rem; }
+    .tr-modal-list-title { font-weight: 700; font-size: 0.9rem; color: #374151; margin-bottom: 0.45rem; }
+    .tr-modal-item {
+        display: flex; justify-content: space-between; align-items: center; gap: 0.7rem;
+        background: #f8f9fb; border: 1px solid #eef0f3; border-radius: 8px;
+        padding: 0.4rem 0.7rem; margin-bottom: 0.3rem; font-size: 0.88rem;
+    }
+    .tr-modal-item.bad { background: #fef2f2; border-color: #fecaca; }
+    .tr-mi-calc { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .tr-mi-answer { color: #6b7280; font-size: 0.82rem; white-space: nowrap; }
+    .tr-mi-mark { font-weight: 800; }
+    .tr-mi-mark.ok { color: #10b981; }
+    .tr-mi-mark.bad { color: #ef4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% if back_url %}{{ back_url }}{% else %}{% url 'student_platform:my_assignments' %}{% endif %}" class="tr-back">{% if back_label %}{{ back_label }}{% else %}← Înapoi la temele mele{% endif %}</a>
+
+{% if is_expired %}
+<div class="tr-expired">⏰ Termenul acestei teme a expirat, dar poți continua să exersezi.</div>
+{% endif %}
+
+<div class="tr-header">
+    <div class="tr-header-top">
+        <div>
+            <div class="tr-title">{{ task.get_simulator_display }}</div>
+            <div class="tr-chips">
+                {% if task.simulator != 'flashcards' %}
+                    {% if task.settings.complexity_label %}<span class="chip">{{ task.settings.complexity_label }}</span>{% endif %}
+                    {% if task.settings.difficulty_label %}<span class="chip">{{ task.settings.difficulty_label }}</span>{% endif %}
+                    {% if task.settings.terms %}<span class="chip">{{ task.settings.terms }} termeni</span>{% endif %}
+                {% endif %}
+                {% if task.settings.digits_label %}<span class="chip">{{ task.settings.digits_label }}</span>{% endif %}
+                {% if task.settings.speed %}<span class="chip">Viteză {{ task.settings.speed }}</span>{% endif %}
+                <span class="chip chip-target">{% if is_live %}Țintă{% else %}Azi{% endif %}: {{ task.get_target_display }}</span>
+            </div>
+        </div>
+        <span class="tr-done-badge" id="trDoneBadge">{% if is_live %}✓ Sarcina e gata{% else %}✓ Tema de azi e gata{% endif %}</span>
+    </div>
+    <div class="tr-progress-wrap">
+        <div class="tr-bar"><div class="tr-bar-fill" id="trBarFill" style="width:0%"></div></div>
+        <div class="tr-bar-label">
+            <span id="trBarText"></span>
+            <span id="trBarStats"></span>
+        </div>
+    </div>
+</div>
+
+<div class="tr-celebrate" id="trCelebrate">{% if is_live %}🎉 Felicitări! Ai terminat sarcina. Poți continua să exersezi.{% else %}🎉 Felicitări! Ai terminat tema de azi. Poți continua să exersezi.{% endif %}</div>
+
+<div class="tr-panel" id="trPanel">
+    <!-- Start screen -->
+    <div id="trStartScreen">
+        <div class="tr-start-icon" id="trStartIcon">🧮</div>
+        <p class="tr-start-hint" id="trStartHint"></p>
+        <button class="tr-btn" onclick="trStart()">Începe</button>
+    </div>
+
+    <!-- Countdown -->
+    <div id="trCountdown" class="tr-countdown" style="display:none;"></div>
+
+    <!-- Sequential run area (anzan / flashcards) -->
+    <div id="trSeqArea" style="display:none; width:100%;">
+        <div class="tr-run-meta">
+            <span id="trSeqCounter"></span>
+            <span class="tr-timer" id="trSeqTimer" style="display:none;"></span>
+        </div>
+        <div id="trDisplayZone" style="display:flex; justify-content:center; align-items:center; min-height:250px;"></div>
+        <div class="tr-answer-zone" id="trAnswerZone">
+            <div id="trAnswerQuestion">Cât este rezultatul?</div>
+            <input type="number" class="tr-answer-input" id="trAnswerInput"
+                   onkeydown="if(event.key==='Enter'){trSeqSubmit();}">
+            <div class="tr-feedback" id="trFeedback"></div>
+        </div>
+        <div class="tr-run-controls">
+            <button class="tr-btn-secondary" onclick="trStopSeq()">Oprește</button>
+        </div>
+    </div>
+
+    <!-- Sheet run area (worksheet / exerciții) -->
+    <div id="trSheetArea" style="display:none; width:100%;">
+        <div class="sheet-stats">
+            <span>Rezolvate: <b id="shAnswered">0</b>/<b id="shTotal">0</b></span>
+            <span style="color:#10b981;">Corecte: <b id="shCorrect">0</b></span>
+            <span style="color:#ef4444;">Greșite: <b id="shIncorrect">0</b></span>
+            <span class="tr-timer" id="trSheetTimer" style="display:none;"></span>
+        </div>
+        <div class="sheet-grid" id="sheetGrid"></div>
+        <div class="tr-run-controls">
+            <button class="tr-btn-verify" id="sheetVerifyBtn" onclick="shVerifyAll()">✔ Verifică rezultatele</button>
+            <button class="tr-btn" id="sheetNewBtn" style="display:none;" onclick="trStartSheet()">🔄 Set nou</button>
+            <button class="tr-btn-secondary" onclick="trStopSheet()">Oprește</button>
+        </div>
+    </div>
+</div>
+
+<!-- Popup sumar rezultate -->
+<div class="tr-modal-backdrop" id="trModal">
+    <div class="tr-modal">
+        <div class="tr-modal-icon" id="trModalIcon">🎉</div>
+        <div class="tr-modal-title" id="trModalTitle">Rezultatele tale</div>
+        <div class="tr-modal-sub" id="trModalSub"></div>
+        <div class="tr-modal-stats">
+            <div class="tr-modal-stat ok">
+                <div class="tr-modal-stat-value" id="trModalCorrect">0</div>
+                <div class="tr-modal-stat-label">Corecte</div>
+            </div>
+            <div class="tr-modal-stat bad">
+                <div class="tr-modal-stat-value" id="trModalIncorrect">0</div>
+                <div class="tr-modal-stat-label">Greșite</div>
+            </div>
+            <div class="tr-modal-stat acc">
+                <div class="tr-modal-stat-value" id="trModalAccuracy">0%</div>
+                <div class="tr-modal-stat-label">Precizie</div>
+            </div>
+        </div>
+        <div class="tr-modal-list" id="trModalList"></div>
+        <div class="tr-modal-actions">
+            <button class="tr-btn" onclick="trModalContinue()">Mai lucrez</button>
+            <a href="{% if back_url %}{{ back_url }}{% else %}{% url 'student_platform:my_assignments' %}{% endif %}" class="tr-btn-secondary" style="text-decoration:none; display:inline-block;">{% if is_live %}Înapoi la lecție{% else %}Înapoi la teme{% endif %}</a>
+        </div>
+    </div>
+</div>
+
+<form style="display:none;">{% csrf_token %}</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/anzan_engine.js' %}"></script>
+<script>
+const TASK_ID = {{ task.id }};
+const SIMULATOR = "{{ task.simulator|escapejs }}";
+const SETTINGS = {{ settings_json|safe }};
+const TARGET = {{ target_json|safe }};
+let PROGRESS = {{ progress_json|safe }};
+const PROGRESS_URL = "{% if progress_url %}{{ progress_url }}{% else %}{% url 'student_platform:task_progress' task.id %}{% endif %}";
+const IS_LIVE = {% if is_live %}true{% else %}false{% endif %};
+// Moduri: 'anzan' = calcul secvențial; 'flash' = recunoaștere numere pe
+// cartonaș; 'sheet' = fișă de exerciții pe ecran
+const MODE = SIMULATOR === 'anzan' ? 'anzan' : SIMULATOR === 'flashcards' ? 'flash' : 'sheet';
+
+// ==================== Progres & țintă ====================
+function fmtTime(sec) {
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+}
+
+let celebrateShown = false;
+let wasCompleted = PROGRESS.completed;
+
+function renderProgress() {
+    const fill = document.getElementById('trBarFill');
+    fill.style.width = PROGRESS.percent + '%';
+    fill.classList.toggle('full', PROGRESS.completed);
+
+    const prefix = IS_LIVE ? '' : 'azi: ';
+    let label;
+    if (TARGET.type === 'minutes') {
+        label = prefix + fmtTime(PROGRESS.time_seconds) + ' / ' + TARGET.value + ' min lucrate';
+    } else {
+        label = prefix + PROGRESS.exercises + ' / ' + TARGET.value + ' exerciții';
+    }
+    document.getElementById('trBarText').textContent = label;
+    document.getElementById('trBarStats').textContent =
+        PROGRESS.exercises > 0 ? ('✓ ' + PROGRESS.correct + '  ·  ✗ ' + PROGRESS.incorrect) : '';
+
+    document.getElementById('trDoneBadge').style.display = PROGRESS.completed ? 'inline-block' : 'none';
+    document.getElementById('trCelebrate').style.display =
+        (PROGRESS.completed && celebrateShown) ? 'block' : 'none';
+}
+
+function getCsrf() {
+    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return el ? el.value : '';
+}
+
+async function postProgress(delta) {
+    if (session.pending.length) {
+        delta.entries = session.pending.splice(0, 50);
+    }
+    try {
+        const resp = await fetch(PROGRESS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+            body: JSON.stringify(delta)
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            PROGRESS = data.progress;
+            if (PROGRESS.completed && !wasCompleted) {
+                wasCompleted = true;
+                celebrateShown = true;
+                // ținta zilei atinsă -> sumarul sesiunii
+                setTimeout(() => showSummary(true), MODE === 'sheet' ? 400 : 900);
+            }
+            renderProgress();
+        }
+    } catch (e) {
+        console.warn('Nu s-a putut salva progresul:', e);
+    }
+}
+
+// Timp lucrat: măsurăm de la începutul exercițiului până la răspuns
+let exerciseStart = null;
+function elapsedSeconds() {
+    if (!exerciseStart) return 0;
+    const sec = Math.round((Date.now() - exerciseStart) / 1000);
+    exerciseStart = Date.now();
+    return Math.max(0, Math.min(sec, 300));
+}
+
+// ==================== Sesiune (pentru popup-ul de sumar) ====================
+let session = { count: 0, correct: 0, incorrect: 0, start: null, entries: [], pending: [] };
+
+function exerciseString(ex) {
+    let s = String(ex.terms[0]);
+    ex.operations.forEach((o, i) => { s += ' ' + (o === '-' ? '−' : '+') + ' ' + ex.terms[i + 1]; });
+    return s;
+}
+
+function sessionRecord(ok, exStr, correctAnswer, userAnswer, seconds) {
+    session.count++;
+    if (ok) session.correct++; else session.incorrect++;
+    const entry = { ex: exStr, ca: correctAnswer, ua: userAnswer, ok: ok, t: seconds };
+    session.entries.push(entry);
+    session.pending.push(entry);
+}
+
+function showSummary(targetReached) {
+    if (session.count === 0 && !targetReached) return;
+    const acc = session.count ? Math.round(session.correct / session.count * 100) : 0;
+    document.getElementById('trModalIcon').textContent =
+        targetReached ? '🎉' : acc >= 80 ? '🌟' : acc >= 50 ? '💪' : '📚';
+    document.getElementById('trModalTitle').textContent =
+        targetReached ? (IS_LIVE ? 'Sarcina e gata!' : 'Tema de azi e gata!') : 'Rezultatele tale';
+    const mins = session.start ? fmtTime(Math.round((Date.now() - session.start) / 1000)) : '0:00';
+    document.getElementById('trModalSub').textContent =
+        session.count + ' exerciții lucrate în ' + mins + ' minute';
+    document.getElementById('trModalCorrect').textContent = session.correct;
+    document.getElementById('trModalIncorrect').textContent = session.incorrect;
+    document.getElementById('trModalAccuracy').textContent = acc + '%';
+    const list = document.getElementById('trModalList');
+    if (session.entries.length) {
+        list.innerHTML = '<div class="tr-modal-list-title">Exercițiile tale</div>' +
+            session.entries.map((e, i) => `
+                <div class="tr-modal-item ${e.ok ? '' : 'bad'}">
+                    <span class="tr-mi-calc">${i + 1}. ${e.ex} = ${e.ca}</span>
+                    <span class="tr-mi-answer">tu: <strong>${e.ua === null || e.ua === undefined ? '—' : e.ua}</strong></span>
+                    <span class="tr-mi-mark ${e.ok ? 'ok' : 'bad'}">${e.ok ? '✓' : '✗'}</span>
+                </div>`).join('');
+    } else {
+        list.innerHTML = '';
+    }
+    document.getElementById('trModal').classList.add('open');
+}
+
+function trModalContinue() {
+    document.getElementById('trModal').classList.remove('open');
+}
+
+// ==================== Timer vizibil (ținte pe minute) ====================
+let timerInterval = null;
+function startVisibleTimer(elId) {
+    const el = document.getElementById(elId);
+    if (TARGET.type !== 'minutes') { el.style.display = 'none'; return; }
+    el.style.display = 'inline';
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const base = PROGRESS.time_seconds + (exerciseStart ? Math.round((Date.now() - exerciseStart) / 1000) : 0);
+        el.textContent = '⏱ ' + fmtTime(Math.min(base, TARGET.value * 60)) + ' / ' + TARGET.value + ' min';
+    }, 1000);
+}
+function stopVisibleTimer() { clearInterval(timerInterval); }
+
+// ==================== Generare exerciții ====================
+function digitsAllowedList() {
+    return (SETTINGS.digits && SETTINGS.digits.length) ? SETTINGS.digits : [1];
+}
+
+function genExercise() {
+    const digitsAllowed = digitsAllowedList();
+    const ex = generateExerciseTerms({
+        terms: SETTINGS.terms || 3,
+        operation: 'mixed',
+        negative: 'no',
+        complexity: SETTINGS.complexity || 'mix',
+        digits: Math.max(...digitsAllowed),
+        digitsAllowed: digitsAllowed,
+        difficulty: SETTINGS.difficulty || 'medium'
+    });
+    if (!ex.terms || !ex.terms.length) return null;
+    let result = ex.terms[0];
+    ex.operations.forEach((o, i) => {
+        result = o === '+' ? result + ex.terms[i + 1] : result - ex.terms[i + 1];
+    });
+    return { terms: ex.terms, operations: ex.operations, answer: result };
+}
+
+// Cartonașe: un număr aleatoriu cu numărul de cifre permis
+let lastFlashNumber = null;
+function genFlashNumber() {
+    const digitsAllowed = digitsAllowedList();
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const d = digitsAllowed[Math.floor(Math.random() * digitsAllowed.length)];
+        const min = d === 1 ? 0 : Math.pow(10, d - 1);
+        const max = Math.pow(10, d) - 1;
+        const n = min + Math.floor(Math.random() * (max - min + 1));
+        if (n !== lastFlashNumber) { lastFlashNumber = n; return n; }
+    }
+    return lastFlashNumber === 0 ? 1 : lastFlashNumber - 1;
+}
+
+// ==================== Ecran de start ====================
+const START_META = {
+    'anzan': ['🧠', 'Numerele vor apărea pe ecran unul câte unul. Calculează mintal și scrie rezultatul la final.'],
+    'flashcards': ['🎴', 'Un cartonaș cu un număr pe soroban va apărea pentru scurt timp. Citește-l repede și scrie numărul pe care l-ai văzut!'],
+    'flashcard-exercises': ['✏️', 'Rezolvă exercițiile de pe ecran. Scrie rezultatul sub fiecare calcul și apasă Enter — afli imediat dacă ai răspuns corect.'],
+    'worksheet': ['📝', 'Rezolvă fișa de lucru de pe ecran. Scrie rezultatul sub fiecare calcul și apasă Enter — afli imediat dacă ai răspuns corect.']
+};
+document.getElementById('trStartIcon').textContent = START_META[SIMULATOR][0];
+document.getElementById('trStartHint').textContent = START_META[SIMULATOR][1];
+
+function trStart() {
+    document.getElementById('trStartScreen').style.display = 'none';
+    if (!session.start) session.start = Date.now();
+    if (MODE === 'sheet') {
+        trStartSheet();
+    } else {
+        trCountdown(() => trStartSeq());
+    }
+}
+
+// ==================== Countdown 3-2-1 colorat ====================
+function trCountdown(done) {
+    const el = document.getElementById('trCountdown');
+    el.style.display = 'block';
+    const steps = [['3', 'c3'], ['2', 'c2'], ['1', 'c1'], ['Start!', 'go']];
+    let i = 0;
+    const tick = () => {
+        if (i >= steps.length) {
+            el.style.display = 'none';
+            done();
+            return;
+        }
+        el.className = 'tr-countdown ' + steps[i][1];
+        el.textContent = steps[i][0];
+        i++;
+        setTimeout(tick, i === steps.length ? 600 : 800);
+    };
+    tick();
+}
+
+// ==================== Mod secvențial (anzan / cartonașe) ====================
+let seqState = { running: false, exercise: null, flashNumber: null, timeouts: [], count: 0 };
+
+function sorobanCardHTML(n) {
+    const digits = String(Math.abs(n)).split('').map(Number);
+    const rods = digits.map(d => {
+        const heaven = d >= 5;
+        const earth = d % 5;
+        let earthBeads = '';
+        for (let i = 0; i < 4; i++) {
+            earthBeads += `<div class="fc-bead bottom ${i < earth ? 'active' : ''}"></div>`;
+        }
+        return `<div class="fc-rod">
+            <div class="fc-rod-line"></div>
+            <div class="fc-divider"></div>
+            <div class="fc-beads top"><div class="fc-bead top ${heaven ? 'active' : ''}"></div></div>
+            <div class="fc-beads bottom">${earthBeads}</div>
+        </div>`;
+    }).join('');
+    return `<div class="fc-card">${rods}</div>`;
+}
+
+function trStartSeq() {
+    seqState.running = true;
+    document.getElementById('trSeqArea').style.display = 'block';
+    startVisibleTimer('trSeqTimer');
+    trNextSeqExercise();
+}
+
+function trNextSeqExercise() {
+    if (!seqState.running) return;
+    seqState.count++;
+    document.getElementById('trSeqCounter').textContent = 'Exercițiul ' + seqState.count;
+    document.getElementById('trAnswerZone').style.display = 'none';
+    document.getElementById('trFeedback').textContent = '';
+    document.getElementById('trFeedback').className = 'tr-feedback';
+
+    seqState.timeouts.forEach(clearTimeout);
+    seqState.timeouts = [];
+    const speedMs = Math.max(200, (SETTINGS.speed || 1.5) * 1000);
+    exerciseStart = Date.now();
+
+    if (MODE === 'flash') {
+        // Recunoaștere: arată cartonașul `speed` secunde, apoi cere numărul
+        const n = genFlashNumber();
+        seqState.flashNumber = n;
+        document.getElementById('trDisplayZone').innerHTML = sorobanCardHTML(n);
+        seqState.timeouts.push(setTimeout(() => {
+            if (!seqState.running) return;
+            document.getElementById('trDisplayZone').innerHTML = '<div class="tr-number" style="color:#c3c8d0;">?</div>';
+            trShowAnswerZone('Ce număr ai văzut?');
+        }, speedMs));
+        return;
+    }
+
+    // Anzan: termenii apar pe rând, apoi se cere rezultatul
+    const ex = genExercise();
+    if (!ex) {
+        document.getElementById('trDisplayZone').innerHTML =
+            '<div style="color:#b42318;">Nu s-a putut genera un exercițiu. Încearcă din nou.</div>';
+        return;
+    }
+    seqState.exercise = ex;
+    const signedTerms = ex.terms.map((t, i) =>
+        i > 0 && ex.operations[i - 1] === '-' ? -t : t
+    );
+    signedTerms.forEach((t, i) => {
+        seqState.timeouts.push(setTimeout(() => {
+            if (!seqState.running) return;
+            const negative = t < 0;
+            document.getElementById('trDisplayZone').innerHTML =
+                `<div class="tr-number">${negative ? '<span class="minus">−</span>' : ''}${Math.abs(t)}</div>`;
+        }, i * speedMs));
+    });
+    seqState.timeouts.push(setTimeout(() => {
+        if (!seqState.running) return;
+        document.getElementById('trDisplayZone').innerHTML = '<div class="tr-number" style="color:#c3c8d0;">?</div>';
+        trShowAnswerZone('Cât este rezultatul?');
+    }, signedTerms.length * speedMs));
+}
+
+function trShowAnswerZone(question) {
+    document.getElementById('trAnswerQuestion').textContent = question;
+    const zone = document.getElementById('trAnswerZone');
+    zone.style.display = 'flex';
+    const input = document.getElementById('trAnswerInput');
+    input.value = '';
+    input.disabled = false;
+    input.focus();
+}
+
+function trSeqSubmit() {
+    const input = document.getElementById('trAnswerInput');
+    if (input.value === '' || input.disabled) return;
+    const expected = MODE === 'flash' ? seqState.flashNumber : (seqState.exercise && seqState.exercise.answer);
+    if (expected === null || expected === undefined) return;
+    input.disabled = true;
+
+    const value = parseInt(input.value);
+    const ok = value === expected;
+    const fb = document.getElementById('trFeedback');
+    fb.className = 'tr-feedback ' + (ok ? 'ok' : 'bad');
+    fb.textContent = ok ? '✓ Corect!' : ('✗ Greșit. Răspunsul corect: ' + expected);
+
+    const tsec = elapsedSeconds();
+    const exStr = MODE === 'flash' ? 'Cartonaș' : exerciseString(seqState.exercise);
+    sessionRecord(ok, exStr, expected, value, tsec);
+    postProgress({
+        exercises: 1,
+        correct: ok ? 1 : 0,
+        incorrect: ok ? 0 : 1,
+        time_seconds: tsec
+    });
+
+    setTimeout(() => { if (seqState.running) trNextSeqExercise(); }, ok ? 1200 : 2200);
+}
+
+function trStopSeq() {
+    seqState.running = false;
+    seqState.timeouts.forEach(clearTimeout);
+    stopVisibleTimer();
+    document.getElementById('trSeqArea').style.display = 'none';
+    document.getElementById('trStartScreen').style.display = 'block';
+    if (session.count > 0) showSummary(false);
+}
+
+// ==================== Mod fișă (exerciții pe ecran) ====================
+let sheetState = { exercises: [], answered: 0, correct: 0, incorrect: 0 };
+
+function sheetBatchSize() {
+    if (TARGET.type === 'count') {
+        const remaining = TARGET.value - PROGRESS.exercises;
+        if (remaining > 0) return Math.min(remaining, 24);
+        return Math.min(TARGET.value, 12);
+    }
+    return 12;
+}
+
+function trStartSheet() {
+    sheetState = { exercises: [], answered: 0, correct: 0, incorrect: 0 };
+    const count = sheetBatchSize();
+
+    const seen = new Set();
+    let guard = 0;
+    while (sheetState.exercises.length < count && guard++ < count * 6) {
+        const ex = genExercise();
+        if (!ex) continue;
+        const key = ex.terms.join(',') + '|' + ex.operations.join('');
+        if (seen.has(key) && guard < count * 5) continue;
+        seen.add(key);
+        ex.checked = false;
+        sheetState.exercises.push(ex);
+    }
+
+    const grid = document.getElementById('sheetGrid');
+    grid.innerHTML = sheetState.exercises.map((ex, i) => {
+        let rows = `<tr><td>${ex.terms[0]}</td></tr>`;
+        for (let k = 0; k < ex.operations.length; k++) {
+            rows += `<tr><td>${ex.operations[k] === '-' ? '-' : ''}${ex.terms[k + 1]}</td></tr>`;
+        }
+        return `
+            <div class="sheet-ex" id="sh-ex-${i}">
+                <div class="sheet-ex-num">${i + 1}</div>
+                <table class="sheet-table">
+                    ${rows}
+                    <tr><td class="sheet-answer-cell">
+                        <input type="number" class="sheet-answer" id="sh-in-${i}"
+                               onkeydown="if(event.key==='Enter'){shSubmit(${i});}"
+                               onblur="shSubmit(${i})">
+                    </td></tr>
+                </table>
+                <div class="sheet-correct-value" id="sh-cv-${i}"></div>
+            </div>`;
+    }).join('');
+
+    document.getElementById('shTotal').textContent = sheetState.exercises.length;
+    document.getElementById('shAnswered').textContent = '0';
+    document.getElementById('shCorrect').textContent = '0';
+    document.getElementById('shIncorrect').textContent = '0';
+    document.getElementById('sheetNewBtn').style.display = 'none';
+    document.getElementById('sheetVerifyBtn').style.display = 'inline-block';
+    document.getElementById('trSheetArea').style.display = 'block';
+
+    exerciseStart = Date.now();
+    startVisibleTimer('trSheetTimer');
+    const first = document.getElementById('sh-in-0');
+    if (first) setTimeout(() => first.focus(), 100);
+}
+
+function shCheckOne(i, countEmptyAsWrong) {
+    const ex = sheetState.exercises[i];
+    if (!ex || ex.checked) return false;
+    const input = document.getElementById('sh-in-' + i);
+    if (input.value === '' && !countEmptyAsWrong) return false;
+
+    const ok = input.value !== '' && parseInt(input.value) === ex.answer;
+    ex.checked = true;
+    input.disabled = true;
+    sheetState.answered++;
+
+    const wrap = document.getElementById('sh-ex-' + i);
+    if (ok) {
+        sheetState.correct++;
+        wrap.classList.add('correct');
+    } else {
+        sheetState.incorrect++;
+        wrap.classList.add('incorrect');
+        document.getElementById('sh-cv-' + i).textContent = ex.answer;
+    }
+
+    document.getElementById('shAnswered').textContent = sheetState.answered;
+    document.getElementById('shCorrect').textContent = sheetState.correct;
+    document.getElementById('shIncorrect').textContent = sheetState.incorrect;
+
+    const tsec = elapsedSeconds();
+    sessionRecord(ok, exerciseString(ex), ex.answer,
+        input.value === '' ? null : parseInt(input.value), tsec);
+    postProgress({
+        exercises: 1,
+        correct: ok ? 1 : 0,
+        incorrect: ok ? 0 : 1,
+        time_seconds: tsec
+    });
+    return true;
+}
+
+function shSubmit(i) {
+    if (!shCheckOne(i, false)) return;
+    if (sheetState.answered === sheetState.exercises.length) {
+        shFinish();
+        return;
+    }
+    for (let k = i + 1; k < sheetState.exercises.length; k++) {
+        const next = document.getElementById('sh-in-' + k);
+        if (next && !next.disabled) { next.focus(); return; }
+    }
+    for (let k = 0; k < i; k++) {
+        const next = document.getElementById('sh-in-' + k);
+        if (next && !next.disabled) { next.focus(); return; }
+    }
+}
+
+function shVerifyAll() {
+    sheetState.exercises.forEach((ex, i) => shCheckOne(i, true));
+    shFinish();
+}
+
+function shFinish() {
+    stopVisibleTimer();
+    document.getElementById('sheetVerifyBtn').style.display = 'none';
+    document.getElementById('sheetNewBtn').style.display = 'inline-block';
+    // sumarul apare și dacă ținta zilei nu e încă atinsă
+    if (!PROGRESS.completed) setTimeout(() => showSummary(false), 350);
+}
+
+function trStopSheet() {
+    stopVisibleTimer();
+    document.getElementById('trSheetArea').style.display = 'none';
+    document.getElementById('trStartScreen').style.display = 'block';
+    if (session.count > 0 && !PROGRESS.completed) showSummary(false);
+}
+
+renderProgress();
+if (IS_LIVE) {
+    // heartbeat: elevul apare „conectat" la profesor cât timp are runner-ul deschis
+    setInterval(() => postProgress({}), 15000);
+}
+</script>
+{% endblock %}

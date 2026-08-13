@@ -31,6 +31,11 @@
                 <div>
                     <h3>{{ group.name }}</h3>
                     <span class="group-code-badge">{{ group.code }}</span>
+                    {% if group.lesson_type == 'online' %}
+                    <span class="group-code-badge" style="background:#e0edff; color:#1d4ed8;">🌐 Online</span>
+                    {% else %}
+                    <span class="group-code-badge" style="background:#f1f5f9; color:#475569;">🏫 Fizic</span>
+                    {% endif %}
                 </div>
                 <div class="group-actions">
                     <a href="{% url 'teacher_platform:group_detail' group.id %}" class="btn-secondary">Vezi Detalii</a>

@@ -1,0 +1,386 @@
+{% extends 'teacher_platform/base_teacher.html' %}
+
+{% block title %}Lecție Live · {{ group.name }}{% endblock %}
+{% block page_title %}🔴 Lecție Live · {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="breadcrumb">
+        <a href="{% url 'teacher_platform:groups_list' %}">Grupe</a>
+        <span>/</span>
+        <a href="{% url 'teacher_platform:group_detail' group.id %}">{{ group.name }}</a>
+        <span>/</span>
+        <span>Lecție Live</span>
+    </div>
+
+    {% csrf_token %}
+
+    <!-- Fără sesiune activă -->
+    <div id="liveIdle" {% if live_session %}style="display:none;"{% endif %}>
+        <div class="live-idle-box">
+            <div class="live-idle-icon">🔴</div>
+            <h3>Nicio lecție live în desfășurare</h3>
+            <p>Pornește lecția live ca să aloci sarcini elevilor și să le urmărești rezolvarea în timp real.</p>
+            {% if group.lesson_type == 'online' and group.meeting_link %}
+            <p class="live-idle-hint">💡 Nu uita să trimiți și link-ul de videoconferință: <code>{{ group.meeting_link }}</code></p>
+            {% endif %}
+            <button class="btn-live-start" onclick="liveStart()">🔴 Pornește lecția live</button>
+        </div>
+    </div>
+
+    <!-- Sesiune activă -->
+    <div id="liveActive" {% if not live_session %}style="display:none;"{% endif %}>
+        <div class="live-header">
+            <div class="live-header-left">
+                <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+                <span class="live-started" id="liveStartedAt">{% if live_session %}pornită la {{ live_session.started_at|date:"H:i" }}{% endif %}</span>
+            </div>
+            <div class="live-header-actions">
+                <button class="btn-primary" onclick="openLiveTaskModal()">➕ Sarcină live</button>
+                <button class="btn-live-end" onclick="liveEnd()">⏹ Închide lecția</button>
+            </div>
+        </div>
+
+        <div id="liveTasksBar" class="live-tasks-bar"></div>
+
+        <div class="sim-progress-scroll">
+            <table class="sim-progress-table" id="liveGrid" style="display:none;">
+                <thead id="liveGridHead"></thead>
+                <tbody id="liveGridBody"></tbody>
+            </table>
+        </div>
+        <p id="liveNoTasks" class="sp-empty" style="margin-top:0.8rem;">Nicio sarcină alocată încă — apasă „➕ Sarcină live”.</p>
+        <p class="live-hint">💡 Apasă pe celula unui elev ca să vezi raportul detaliat cu toate calculele lui.</p>
+    </div>
+
+    {% include 'teacher_platform/_sim_task_modal.html' %}
+
+    <!-- Raport detaliat per elev × sarcină -->
+    <div class="lrd-backdrop" id="liveReportModal" onclick="if(event.target===this) closeLiveReport()">
+        <div class="lrd-modal">
+            <div class="lrd-head">
+                <div>
+                    <h4 id="lrdTitle">Raport detaliat</h4>
+                    <div class="lrd-chips" id="lrdChips"></div>
+                </div>
+                <button class="stm-close" onclick="closeLiveReport()">✕</button>
+            </div>
+            <div class="lrd-summary" id="lrdSummary"></div>
+            <h5 class="lrd-list-title">Istoric exerciții</h5>
+            <div class="lrd-list" id="lrdList"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Lecție live */
+.live-dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: #ef4444; animation: livePulse 1.4s infinite;
+}
+@keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.live-idle-box {
+    background: white; border: 1px dashed #d6d9e0; border-radius: 14px;
+    padding: 3.5rem 1.5rem; text-align: center;
+}
+.live-idle-icon { font-size: 2.4rem; margin-bottom: 0.6rem; }
+.live-idle-box h3 { margin-bottom: 0.4rem; }
+.live-idle-box p { color: #6b7280; margin-bottom: 0.5rem; }
+.live-idle-hint { font-size: 0.86rem; }
+.live-idle-hint code { background: #f1f5f9; padding: 0.15rem 0.5rem; border-radius: 6px; }
+.btn-live-start {
+    margin-top: 1rem; background: #ef4444; color: white; border: none;
+    border-radius: 10px; padding: 0.8rem 1.8rem; font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: background 0.15s ease;
+}
+.btn-live-start:hover { background: #dc2626; }
+.live-header {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 0.7rem;
+    background: white; border: 1px solid #e5e7eb; border-left: 4px solid #ef4444;
+    border-radius: 12px; padding: 0.8rem 1.1rem; margin-bottom: 0.9rem;
+}
+.live-header-left { display: flex; align-items: center; gap: 0.8rem; }
+.live-badge {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 0.85rem;
+    padding: 0.3rem 0.8rem; border-radius: 999px;
+}
+.live-started { color: #6b7280; font-size: 0.88rem; }
+.live-header-actions { display: flex; gap: 0.6rem; }
+.btn-live-end {
+    background: white; color: #b91c1c; border: 1px solid #fecaca;
+    border-radius: 9px; padding: 0.55rem 1.1rem; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer;
+}
+.btn-live-end:hover { background: #fef2f2; }
+.live-tasks-bar { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.live-task-chip {
+    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+    background: white; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 0.5rem 0.8rem;
+}
+.live-task-for { color: #6b7280; font-size: 0.85rem; font-weight: 600; }
+.live-task-chip .sim-task-index { width: 22px; height: 22px; border-radius: 50%; background: #eef2ff; color: #4f46e5; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.live-task-chip .remove-task { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; width: 26px; height: 26px; cursor: pointer; margin-left: auto; }
+.chip { background: #e0edff; color: #1e40af; border-radius: 8px; padding: 0.2rem 0.65rem; font-size: 0.82rem; font-weight: 500; }
+.chip-target { background: #dcfce7; color: #166534; }
+.live-conn {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    margin-right: 0.45rem; background: #d1d5db;
+}
+.live-conn.on { background: #10b981; box-shadow: 0 0 0 3px #d1fae5; }
+.live-hint { color: #9ca3af; font-size: 0.83rem; margin-top: 0.8rem; }
+
+/* Grila live */
+.sim-progress-scroll { overflow-x: auto; }
+.sim-progress-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; background: white; border-radius: 12px; overflow: hidden; }
+.sim-progress-table th { background: #f8f9fb; color: #6b7280; font-weight: 600; text-align: left; padding: 0.55rem 0.8rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.sim-progress-table th small { color: #9ca3af; font-weight: 500; }
+.sim-progress-table td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #f1f2f4; vertical-align: middle; }
+.sp-student { font-weight: 600; white-space: nowrap; }
+.sp-cell .sp-main { font-weight: 700; white-space: nowrap; }
+.sp-cell .sp-sub { color: #6b7280; font-size: 0.76rem; white-space: nowrap; }
+.sp-cell.sp-done { background: #f0fdf4; }
+.sp-cell.sp-done .sp-main { color: #067647; }
+.sp-cell.sp-working { background: #eff6ff; }
+.sp-cell.sp-working .sp-main { color: #1d4ed8; }
+.sp-cell.clickable { cursor: pointer; }
+.sp-cell.clickable:hover { outline: 2px solid #93c5fd; outline-offset: -2px; }
+.sp-dash { color: #c3c8d0; }
+.sp-empty { color: #6b7280; font-size: 0.88rem; }
+
+/* Raport detaliat */
+.lrd-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+    z-index: 600; align-items: flex-start; justify-content: center;
+    padding: 4rem 1.5rem 2rem; overflow-y: auto;
+}
+.lrd-backdrop.open { display: flex; }
+.lrd-modal {
+    background: white; border-radius: 16px; width: 100%; max-width: 560px;
+    padding: 1.5rem 1.7rem;
+}
+.lrd-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.9rem; }
+.lrd-head h4 { font-size: 1.1rem; margin-bottom: 0.35rem; }
+.lrd-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.lrd-chips .chip { font-size: 0.78rem; }
+.lrd-summary { display: flex; gap: 0.7rem; margin-bottom: 1.1rem; }
+.lrd-stat { flex: 1; background: #f8f9fb; border-radius: 10px; padding: 0.6rem 0.4rem; text-align: center; }
+.lrd-stat b { display: block; font-size: 1.2rem; }
+.lrd-stat span { font-size: 0.72rem; color: #6b7280; font-weight: 600; }
+.lrd-stat.ok b { color: #067647; }
+.lrd-stat.bad b { color: #b91c1c; }
+.lrd-list-title { margin-bottom: 0.5rem; color: #374151; }
+.lrd-list { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; }
+.lrd-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 0.8rem;
+    background: #fafbfc; border: 1px solid #eef0f3; border-radius: 9px;
+    padding: 0.45rem 0.8rem; font-size: 0.9rem;
+}
+.lrd-item.bad { background: #fef2f2; border-color: #fecaca; }
+.lrd-calc { font-weight: 600; font-variant-numeric: tabular-nums; }
+.lrd-answer { color: #6b7280; font-size: 0.84rem; white-space: nowrap; }
+.lrd-mark { font-weight: 800; }
+.lrd-mark.ok { color: #10b981; }
+.lrd-mark.bad { color: #ef4444; }
+.lrd-empty { color: #6b7280; font-size: 0.88rem; padding: 0.6rem 0; }
+</style>
+
+<script>
+const LIVE_STATE_URL = "{% url 'teacher_platform:live_state' group.id %}";
+const LIVE_START_URL = "{% url 'teacher_platform:live_session_start' group.id %}";
+let liveSessionId = {% if live_session %}{{ live_session.id }}{% else %}null{% endif %};
+let livePollTimer = null;
+let liveLastData = null;
+
+function openLiveTaskModal() {
+    openTaskModal({ showFor: true, targetLabel: 'Țintă', perDay: false });
+}
+
+window.stmOnConfirm = function(payload) {
+    liveAddTask(payload);
+};
+
+async function liveStart() {
+    const resp = await fetch(LIVE_START_URL, { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } });
+    const data = await resp.json();
+    if (data.ok) {
+        liveSessionId = data.session_id;
+        document.getElementById('liveIdle').style.display = 'none';
+        document.getElementById('liveActive').style.display = 'block';
+        liveStartPolling();
+    }
+}
+
+async function liveEnd() {
+    if (!confirm('Închizi lecția live? Elevii nu vor mai putea lucra la sarcinile ei.')) return;
+    const resp = await fetch(`/teacher/live/${liveSessionId}/inchide/`, {
+        method: 'POST', headers: { 'X-CSRFToken': getCsrf() }
+    });
+    const data = await resp.json();
+    if (data.ok) {
+        liveSessionId = null;
+        liveStopPolling();
+        document.getElementById('liveActive').style.display = 'none';
+        document.getElementById('liveIdle').style.display = 'block';
+    }
+}
+
+async function liveAddTask(payload) {
+    const resp = await fetch(`/teacher/live/${liveSessionId}/sarcina/adauga/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.ok) liveRefresh();
+    else alert(data.error || 'Eroare la alocarea sarcinii');
+}
+
+async function liveDeleteTask(taskId) {
+    if (!confirm('Ștergi această sarcină live?')) return;
+    const resp = await fetch(`/teacher/live/sarcina/${taskId}/sterge/`, {
+        method: 'POST', headers: { 'X-CSRFToken': getCsrf() }
+    });
+    if ((await resp.json()).ok) liveRefresh();
+}
+
+async function liveRefresh() {
+    try {
+        const resp = await fetch(LIVE_STATE_URL);
+        const data = await resp.json();
+        if (!data.ok) return;
+        if (!data.active) {
+            if (liveSessionId) {
+                liveSessionId = null;
+                liveStopPolling();
+                document.getElementById('liveActive').style.display = 'none';
+                document.getElementById('liveIdle').style.display = 'block';
+            }
+            return;
+        }
+        liveSessionId = data.session_id;
+        liveLastData = data;
+        document.getElementById('liveStartedAt').textContent = 'pornită la ' + data.started_at;
+        liveRenderTasks(data);
+        liveRenderGrid(data);
+    } catch (e) { /* rețea — reîncearcă la următorul poll */ }
+}
+
+function taskChips(t) {
+    const s = t.settings || {};
+    const chips = [];
+    if (s.complexity_label) chips.push(s.complexity_label);
+    if (s.digits_label) chips.push(s.digits_label);
+    if (s.difficulty_label) chips.push(s.difficulty_label);
+    if (s.speed) chips.push('Viteză ' + s.speed);
+    if (s.terms) chips.push(s.terms + ' termeni');
+    return chips;
+}
+
+function liveRenderTasks(data) {
+    const bar = document.getElementById('liveTasksBar');
+    bar.innerHTML = data.tasks.map(t => `
+        <div class="live-task-chip">
+            <span class="sim-task-index">${t.order}</span>
+            <strong>${t.simulator_name}</strong>
+            ${t.student_name ? `<span class="live-task-for">👤 ${t.student_name}</span>` : '<span class="live-task-for">👥 grupa</span>'}
+            ${taskChips(t).map(c => `<span class="chip">${c}</span>`).join('')}
+            <span class="chip chip-target">${t.target}</span>
+            <button class="remove-task" onclick="liveDeleteTask(${t.id})">✕</button>
+        </div>`).join('');
+    document.getElementById('liveNoTasks').style.display = data.tasks.length ? 'none' : 'block';
+    document.getElementById('liveGrid').style.display = data.tasks.length ? 'table' : 'none';
+}
+
+function liveRenderGrid(data) {
+    if (!data.tasks.length) return;
+    document.getElementById('liveGridHead').innerHTML = `
+        <tr>
+            <th>Elev</th>
+            ${data.tasks.map(t => `<th>${t.order}. ${t.simulator_name}<br><small>${t.target}</small></th>`).join('')}
+        </tr>`;
+    document.getElementById('liveGridBody').innerHTML = data.students.map((st, si) => `
+        <tr>
+            <td class="sp-student">
+                <span class="live-conn ${st.connected ? 'on' : 'off'}"></span>
+                ${st.name}
+            </td>
+            ${st.cells.map((cell, ti) => {
+                if (cell === null) return '<td class="sp-cell"><span class="sp-dash">·</span></td>';
+                if (cell.status === 'none') return '<td class="sp-cell sp-none"><span class="sp-dash">—</span></td>';
+                return `
+                    <td class="sp-cell sp-${cell.status} clickable" onclick="openLiveReport(${si}, ${ti})" title="Vezi raportul detaliat">
+                        <div class="sp-main">${cell.status === 'done' ? '✓ ' : ''}${cell.exercises} ex. (${cell.percent}%)</div>
+                        <div class="sp-sub">✓${cell.correct} ✗${cell.incorrect} · ⏱${cell.time_display}</div>
+                    </td>`;
+            }).join('')}
+        </tr>`).join('');
+}
+
+// ==================== Raport detaliat ====================
+function openLiveReport(studentIdx, taskIdx) {
+    if (!liveLastData) return;
+    const st = liveLastData.students[studentIdx];
+    const task = liveLastData.tasks[taskIdx];
+    const cell = st.cells[taskIdx];
+    if (!cell || cell.status === 'none') return;
+
+    document.getElementById('lrdTitle').textContent = st.name + ' · ' + task.simulator_name;
+    document.getElementById('lrdChips').innerHTML =
+        taskChips(task).map(c => `<span class="chip">${c}</span>`).join('') +
+        `<span class="chip chip-target">Țintă: ${task.target}</span>`;
+
+    const answered = cell.correct + cell.incorrect;
+    const acc = answered ? Math.round(cell.correct / answered * 100) : 0;
+    document.getElementById('lrdSummary').innerHTML = `
+        <div class="lrd-stat"><b>${cell.exercises}</b><span>Exerciții</span></div>
+        <div class="lrd-stat ok"><b>${cell.correct}</b><span>Corecte</span></div>
+        <div class="lrd-stat bad"><b>${cell.incorrect}</b><span>Greșite</span></div>
+        <div class="lrd-stat"><b>${acc}%</b><span>Precizie</span></div>
+        <div class="lrd-stat"><b>${cell.time_display}</b><span>Timp</span></div>`;
+
+    const list = document.getElementById('lrdList');
+    const log = cell.log || [];
+    if (!log.length) {
+        list.innerHTML = '<p class="lrd-empty">Istoricul detaliat apare pe măsură ce elevul rezolvă exerciții (pentru sarcinile începute după această actualizare).</p>';
+    } else {
+        // Escapăm conținutul din log (provine de la elev) înainte de innerHTML
+        list.innerHTML = log.map((e, i) => `
+            <div class="lrd-item ${e.ok ? '' : 'bad'}">
+                <span class="lrd-calc">${i + 1}. ${esc(e.ex)} = ${esc(e.ca)}</span>
+                <span class="lrd-answer">răspuns: <strong>${e.ua === null || e.ua === undefined ? '—' : esc(e.ua)}</strong>${e.t ? ' · ' + esc(e.t) + 's' : ''}</span>
+                <span class="lrd-mark ${e.ok ? 'ok' : 'bad'}">${e.ok ? '✓' : '✗'}</span>
+            </div>`).join('');
+    }
+    document.getElementById('liveReportModal').classList.add('open');
+}
+
+// Escapează valori pentru inserare sigură în innerHTML
+function esc(v) {
+    if (v === null || v === undefined) return '';
+    return String(v).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+function closeLiveReport() {
+    document.getElementById('liveReportModal').classList.remove('open');
+}
+
+function liveStartPolling() {
+    liveStopPolling();
+    liveRefresh();
+    livePollTimer = setInterval(liveRefresh, 4000);
+}
+
+function liveStopPolling() {
+    if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (liveSessionId) liveStartPolling();
+});
+</script>
+{% endblock %}

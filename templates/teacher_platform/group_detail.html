@@ -18,6 +18,11 @@
             <div>
                 <h2>{{ group.name }}</h2>
                 <span class="group-code-badge">{{ group.code }}</span>
+                {% if group.lesson_type == 'online' %}
+                <span class="lesson-type-badge online">🌐 Online</span>
+                {% else %}
+                <span class="lesson-type-badge">🏫 Fizic</span>
+                {% endif %}
             </div>
             <div class="header-actions">
                 <a href="{% url 'teacher_platform:group_edit' group.id %}" class="btn-secondary">Editează Grupă</a>
@@ -60,12 +65,61 @@
             </div>
         </div>
 
+        {% if group.lesson_type == 'online' %}
+        <div class="meeting-link-box">
+            <span class="meeting-link-label">🎥 Link lecție online:</span>
+            {% if group.meeting_link %}
+            <code class="meeting-link-url" id="meetingLinkValue">{{ group.meeting_link }}</code>
+            <button class="btn-copy-link" id="copyLinkBtn" onclick="copyMeetingLink()">📋 Copiază link</button>
+            {% else %}
+            <span class="meeting-link-missing">Niciun link setat încă —
+                <a href="{% url 'teacher_platform:group_edit' group.id %}">adaugă-l din Editează Grupă</a></span>
+            {% endif %}
+        </div>
+        {% endif %}
+
         {% if group.description %}
         <div class="group-description">
             <strong>Descriere:</strong>
             <p>{{ group.description }}</p>
         </div>
         {% endif %}
+
+        <!-- Acțiuni principale: teme + lecție live -->
+        <div class="group-main-actions">
+            <a href="{% url 'teacher_platform:group_homework' group.id %}" class="gma-card gma-homework">
+                <span class="gma-icon">🎯</span>
+                <span class="gma-text">
+                    <strong>Teme Simulatoare</strong>
+                    <small>{{ sim_assignments_count }} tem{{ sim_assignments_count|pluralize:"ă,e" }} · alocare și progres zilnic</small>
+                </span>
+                <span class="gma-arrow">→</span>
+            </a>
+            <a href="{% url 'teacher_platform:group_live' group.id %}" class="gma-card gma-live">
+                <span class="gma-icon">🔴</span>
+                <span class="gma-text">
+                    <strong>Lecție Live{% if live_session %} <span class="live-dot"></span> în desfășurare{% endif %}</strong>
+                    <small>sarcini în timpul lecției + urmărire în timp real</small>
+                </span>
+                <span class="gma-arrow">→</span>
+            </a>
+            <a href="{% url 'teacher_platform:group_curriculum' group.id %}" class="gma-card gma-curriculum">
+                <span class="gma-icon">📚</span>
+                <span class="gma-text">
+                    <strong>Curriculum</strong>
+                    <small>curs → module → lecții, cu milestones și resurse</small>
+                </span>
+                <span class="gma-arrow">→</span>
+            </a>
+            <a href="{% url 'teacher_platform:group_performance' group.id %}" class="gma-card gma-performance">
+                <span class="gma-icon">📊</span>
+                <span class="gma-text">
+                    <strong>Performanță</strong>
+                    <small>rezultate per elev + agregat: teme, live, antrenament</small>
+                </span>
+                <span class="gma-arrow">→</span>
+            </a>
+        </div>
     </div>
 
     <!-- Tabs -->
@@ -118,7 +172,7 @@
         {% if upcoming_lessons %}
         <div class="lessons-list-detailed">
             {% for lesson in upcoming_lessons %}
-            <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}" class="lesson-card-detailed">
+            <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}" class="lesson-card-detailed" title="Gestionează lecția">
                 <div class="lesson-date-box">
                     <div class="date-day">{{ lesson.date|date:"d" }}</div>
                     <div class="date-month">{{ lesson.date|date:"M" }}</div>
@@ -163,7 +217,7 @@
         {% if past_lessons %}
         <div class="lessons-list-detailed">
             {% for lesson in past_lessons %}
-            <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}" class="lesson-card-detailed">
+            <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}" class="lesson-card-detailed" title="Gestionează lecția">
                 <div class="lesson-date-box past">
                     <div class="date-day">{{ lesson.date|date:"d" }}</div>
                     <div class="date-month">{{ lesson.date|date:"M" }}</div>
@@ -180,6 +234,11 @@
                     </h4>
                     <div class="lesson-meta">
                         <span>🕐 {{ lesson.start_time|date:"H:i" }}</span>
+                        {% if lesson.marked_count %}
+                        <span title="Prezenți din total marcați">✓ {{ lesson.present_count }}/{{ lesson.marked_count }} prezenți</span>
+                        {% else %}
+                        <span style="opacity:.6">— fără prezență</span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="lesson-status-badge status-{{ lesson.status }}">
@@ -252,7 +311,89 @@
     {% endif %}
 </div>
 
+<style>
+/* Tip lecție + link online */
+.lesson-type-badge {
+    display: inline-block; margin-left: 0.5rem;
+    background: #f1f5f9; color: #475569;
+    font-size: 0.8rem; font-weight: 700;
+    padding: 0.25rem 0.7rem; border-radius: 999px;
+}
+.lesson-type-badge.online { background: #e0edff; color: #1d4ed8; }
+.meeting-link-box {
+    display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+    padding: 0.7rem 1rem; margin-top: 1rem;
+}
+.meeting-link-label { font-weight: 600; color: #1e40af; font-size: 0.9rem; }
+.meeting-link-url {
+    background: white; border: 1px solid #d6d9e0; border-radius: 7px;
+    padding: 0.3rem 0.65rem; font-size: 0.85rem; color: #374151;
+    max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.btn-copy-link {
+    background: #2563eb; color: white; border: none; border-radius: 8px;
+    padding: 0.45rem 1rem; font-size: 0.86rem; font-weight: 600; cursor: pointer;
+    transition: background 0.15s ease;
+}
+.btn-copy-link:hover { background: #1d4ed8; }
+.btn-copy-link.copied { background: #10b981; }
+.meeting-link-missing { color: #6b7280; font-size: 0.88rem; }
+
+
+/* Punct roșu animat (lecție live în desfășurare) */
+.live-dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: #ef4444; animation: livePulse 1.4s infinite;
+}
+@keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* Carduri de acțiuni principale */
+.group-main-actions {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem; margin-top: 1.2rem;
+}
+.gma-card {
+    display: flex; align-items: center; gap: 1rem;
+    background: white; border: 2px solid #e5e7eb; border-radius: 14px;
+    padding: 1.1rem 1.3rem; text-decoration: none; color: #1f2430;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.gma-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.gma-homework:hover { border-color: #2563eb; }
+.gma-live:hover { border-color: #ef4444; }
+.gma-curriculum:hover { border-color: #10b981; }
+.gma-performance:hover { border-color: #7c3aed; }
+.gma-icon { font-size: 1.9rem; }
+.gma-text { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }
+.gma-text strong { font-size: 1.02rem; }
+.gma-text small { color: #6b7280; font-size: 0.84rem; }
+.gma-arrow { font-size: 1.3rem; color: #9ca3af; font-weight: 700; }
+</style>
+
 <script>
+function copyMeetingLink() {
+    const link = document.getElementById('meetingLinkValue').textContent.trim();
+    const btn = document.getElementById('copyLinkBtn');
+    const done = () => {
+        btn.textContent = '✓ Copiat!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = '📋 Copiază link'; btn.classList.remove('copied'); }, 2000);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(done);
+    } else {
+        // fallback pentru browsere vechi / http
+        const ta = document.createElement('textarea');
+        ta.value = link;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        done();
+    }
+}
+
 // Tab switching
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {

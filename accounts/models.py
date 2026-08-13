@@ -2,11 +2,13 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from crm_sync.models import AirtableSyncMixin
 
 
-class User(AbstractUser):
+class User(AbstractUser, AirtableSyncMixin):
     """
-    Model custom pentru utilizatori cu roluri multiple
+    Model custom pentru utilizatori cu roluri multiple.
+    Elevii (role='student') sunt mapați din tabelul „Elevi" din Airtable.
     """
     ROLE_CHOICES = [
         ('admin', 'Administrator'),

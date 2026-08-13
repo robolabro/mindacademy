@@ -67,6 +67,33 @@
             {% endif %}
         </div>
 
+        <!-- Cont de elev (login pe platforma elevilor) -->
+        <div class="contact-info" style="margin-bottom: 1rem;">
+            <h3>🔑 Cont de Elev</h3>
+            <div class="contact-grid" style="align-items: center;">
+                <div><strong>Username:</strong> <code style="background:#f1f5f9; padding:0.15rem 0.5rem; border-radius:6px;">{{ student.username }}</code></div>
+                <div>
+                    <strong>Parolă:</strong>
+                    {% if student.must_change_password %}
+                        <span style="color:#b45309;">temporară — <code style="background:#fef3c7; padding:0.15rem 0.5rem; border-radius:6px;">{{ student.username }}</code> (o schimbă la prima logare)</span>
+                    {% else %}
+                        <span style="color:#067647;">setată de elev ✓</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <strong>Ultima logare:</strong>
+                    {% if student.last_login %}{{ student.last_login|date:"d M Y H:i" }}{% else %}<span style="color:#6b7280;">nu s-a logat încă</span>{% endif %}
+                </div>
+                <div>
+                    <form method="post" action="{% url 'teacher_platform:student_reset_password' student.id %}"
+                          onsubmit="return confirm('Resetezi parola elevului la valoarea temporară ({{ student.username }})?');" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-secondary">🔄 Resetează parola</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Contact Info -->
         {% if student.email or student.phone or student.parent_email or student.parent_phone %}
         <div class="contact-info">
@@ -94,7 +121,103 @@
         <button class="tab-btn active" data-tab="groups">👥 Grupe ({{ student_groups.count }})</button>
         <button class="tab-btn" data-tab="attendance">📊 Prezență ({{ attendances.count }})</button>
         <button class="tab-btn" data-tab="submissions">📝 Teme Predate ({{ submissions.count }})</button>
+        <button class="tab-btn" data-tab="simulator-stats">🧮 Simulatoare</button>
     </div>
+
+    <!-- Tab Content: Statistici Simulatoare -->
+    <div class="tab-content" id="simulator-stats">
+        <div class="ss-month-nav">
+            <a href="?luna={{ prev_month }}" class="ss-month-btn">‹</a>
+            <span class="ss-month-label">{{ stats_month|date:"F Y" }}</span>
+            {% if show_next_month %}
+            <a href="?luna={{ next_month }}" class="ss-month-btn">›</a>
+            {% else %}
+            <span class="ss-month-btn disabled">›</span>
+            {% endif %}
+        </div>
+
+        <div class="ss-tabs">
+            <button class="ss-tab active" onclick="ssShow(this, 'ss-homework')">📌 Teme</button>
+            <button class="ss-tab" onclick="ssShow(this, 'ss-practice')">🧮 Exerciții libere</button>
+        </div>
+
+        <div id="ss-homework" class="ss-panel active">
+            {% if homework_stats %}
+            <table class="ss-table">
+                <thead><tr><th>Simulator</th><th>Exerciții</th><th>Corecte</th><th>Precizie</th><th>Timp</th></tr></thead>
+                <tbody>
+                    {% for row in homework_stats %}
+                    <tr>
+                        <td class="ss-sim">{{ row.simulator }}</td>
+                        <td>{{ row.exercises }}</td>
+                        <td>{{ row.correct }}</td>
+                        <td><span class="ss-acc {% if row.accuracy >= 80 %}good{% elif row.accuracy >= 50 %}mid{% else %}low{% endif %}">{{ row.accuracy }}%</span></td>
+                        <td>⏱ {{ row.time_display }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state"><p>Nicio temă lucrată în această lună.</p></div>
+            {% endif %}
+        </div>
+
+        <div id="ss-practice" class="ss-panel">
+            {% if practice_stats %}
+            <table class="ss-table">
+                <thead><tr><th>Simulator</th><th>Exerciții</th><th>Corecte</th><th>Precizie</th><th>Timp</th></tr></thead>
+                <tbody>
+                    {% for row in practice_stats %}
+                    <tr>
+                        <td class="ss-sim">{{ row.simulator }}</td>
+                        <td>{{ row.exercises }}</td>
+                        <td>{{ row.correct }}</td>
+                        <td><span class="ss-acc {% if row.accuracy >= 80 %}good{% elif row.accuracy >= 50 %}mid{% else %}low{% endif %}">{{ row.accuracy }}%</span></td>
+                        <td>⏱ {{ row.time_display }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state"><p>Niciun antrenament liber în această lună.</p></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+    .ss-month-nav { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; }
+    .ss-month-btn {
+        width: 34px; height: 34px; border-radius: 9px; background: white;
+        border: 1px solid #d6d9e0; display: flex; align-items: center; justify-content: center;
+        text-decoration: none; color: #374151; font-size: 1.15rem; font-weight: 700;
+    }
+    .ss-month-btn.disabled { opacity: 0.35; }
+    .ss-month-label { font-weight: 700; font-size: 1.05rem; text-transform: capitalize; }
+    .ss-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .ss-tab {
+        background: white; border: 1px solid #d6d9e0; border-radius: 999px;
+        padding: 0.45rem 1.1rem; font-size: 0.88rem; font-weight: 600; cursor: pointer; color: #374151;
+    }
+    .ss-tab.active { background: #2563eb; border-color: #2563eb; color: white; }
+    .ss-panel { display: none; }
+    .ss-panel.active { display: block; }
+    .ss-table { border-collapse: collapse; width: 100%; background: white; border-radius: 12px; overflow: hidden; font-size: 0.9rem; }
+    .ss-table th { background: #f8f9fb; color: #6b7280; font-weight: 600; text-align: left; padding: 0.6rem 0.9rem; border-bottom: 1px solid #e5e7eb; }
+    .ss-table td { padding: 0.6rem 0.9rem; border-bottom: 1px solid #f1f2f4; }
+    .ss-sim { font-weight: 600; }
+    .ss-acc { font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.82rem; }
+    .ss-acc.good { background: #dcfce7; color: #166534; }
+    .ss-acc.mid { background: #fef3c7; color: #92400e; }
+    .ss-acc.low { background: #fee2e2; color: #b91c1c; }
+    </style>
+    <script>
+    function ssShow(btn, id) {
+        document.querySelectorAll('.ss-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.ss-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(id).classList.add('active');
+    }
+    </script>
 
     <!-- Tab Content: Groups -->
     <div class="tab-content active" id="groups">

@@ -1,12 +1,12 @@
 from django.contrib import admin
-from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote
+from .models import Group, Enrollment, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote
 
 
-class GroupStudentInline(admin.TabularInline):
+class EnrollmentInline(admin.TabularInline):
     """Inline pentru elevi în grupă"""
-    model = GroupStudent
+    model = Enrollment
     extra = 0
-    fields = ['student', 'enrolled_date', 'is_active', 'lessons_attended', 'lessons_missed']
+    fields = ['student', 'enrolled_date', 'status', 'is_active', 'lessons_attended', 'lessons_missed']
     readonly_fields = ['enrolled_date']
 
 
@@ -16,7 +16,7 @@ class GroupAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'course', 'module', 'location', 'weekday', 'teacher']
     search_fields = ['name', 'code', 'teacher__first_name', 'teacher__last_name', 'course__title']
     readonly_fields = ['code', 'created_at', 'updated_at']
-    inlines = [GroupStudentInline]
+    inlines = [EnrollmentInline]
 
     fieldsets = (
         ('Informații Principale', {
@@ -44,16 +44,16 @@ class GroupAdmin(admin.ModelAdmin):
         return self.readonly_fields
 
 
-@admin.register(GroupStudent)
-class GroupStudentAdmin(admin.ModelAdmin):
-    list_display = ['student', 'group', 'enrolled_date', 'is_active', 'lessons_attended', 'lessons_missed', 'get_attendance_rate']
-    list_filter = ['is_active', 'group', 'enrolled_date']
+@admin.register(Enrollment)
+class EnrollmentAdmin(admin.ModelAdmin):
+    list_display = ['student', 'group', 'enrolled_date', 'status', 'is_active', 'lessons_attended', 'lessons_missed', 'get_attendance_rate']
+    list_filter = ['status', 'is_active', 'group', 'enrolled_date']
     search_fields = ['student__first_name', 'student__last_name', 'group__name']
     readonly_fields = ['enrolled_date', 'get_attendance_rate']
 
     fieldsets = (
         ('Elev și Grupă', {
-            'fields': ('student', 'group', 'enrolled_date', 'is_active')
+            'fields': ('student', 'group', 'enrolled_date', 'status', 'is_active', 'end_date')
         }),
         ('Progres', {
             'fields': ('lessons_attended', 'lessons_missed', 'get_attendance_rate')
@@ -167,3 +167,26 @@ class LessonNoteAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+from .models import SimulatorAssignment, SimulatorTask, SimulatorTaskResult
+
+
+class SimulatorTaskInline(admin.TabularInline):
+    model = SimulatorTask
+    extra = 1
+
+
+@admin.register(SimulatorAssignment)
+class SimulatorAssignmentAdmin(admin.ModelAdmin):
+    list_display = ['title', 'group', 'student', 'start_date', 'end_date', 'created_at']
+    list_filter = ['group', 'start_date']
+    search_fields = ['title', 'group__name', 'student__first_name', 'student__last_name']
+    inlines = [SimulatorTaskInline]
+
+
+@admin.register(SimulatorTaskResult)
+class SimulatorTaskResultAdmin(admin.ModelAdmin):
+    list_display = ['student', 'task', 'completed_exercises', 'correct', 'incorrect', 'completed', 'updated_at']
+    list_filter = ['completed', 'task__simulator']
+    search_fields = ['student__first_name', 'student__last_name']

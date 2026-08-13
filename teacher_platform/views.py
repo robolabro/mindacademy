@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Count, Q, Avg
+from django.db.models import Count, Q, Avg, Sum
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
-from .models import Group, GroupStudent, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote
+from .models import Group, Enrollment, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog, LiveSession, LiveTask, LiveTaskResult, LiveParticipant, LessonMilestoneProgress
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
 from .forms import GroupForm, StudentForm, EditStudentForm, LessonForm, TeacherProfileForm
@@ -23,6 +23,31 @@ def teacher_required(view_func):
     return wrapper
 
 
+def simulator_access(view_func):
+    """
+    Decorator pentru simulatoare: acces atât pentru profesori, cât și
+    pentru elevi (antrenament liber acasă).
+    """
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.user.role not in ('teacher', 'student'):
+            messages.error(request, 'Acces restricționat.')
+            return redirect('home')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def _simulator_context(request):
+    """Context comun pentru paginile de simulatoare (profesor sau elev)."""
+    is_student = request.user.role == 'student'
+    return {
+        'base_template': 'student_platform/base_student.html' if is_student else 'teacher_platform/base_teacher.html',
+        'is_student_user': is_student,
+        'active_menu': 'simulatoare',
+    }
+
+
 @login_required
 @teacher_required
 def dashboard(request):
@@ -33,7 +58,7 @@ def dashboard(request):
 
     # Statistici generale
     total_groups = Group.objects.filter(teacher=teacher, is_active=True).count()
-    total_students = GroupStudent.objects.filter(
+    total_students = Enrollment.objects.filter(
         group__teacher=teacher,
         is_active=True
     ).distinct().count()
@@ -133,7 +158,7 @@ def group_detail(request, group_id):
     )
 
     # Studenții din grupă
-    students = GroupStudent.objects.filter(
+    students = Enrollment.objects.filter(
         group=group,
         is_active=True
     ).select_related('student', 'student__student_profile').order_by('student__first_name')
@@ -147,7 +172,10 @@ def group_detail(request, group_id):
     past_lessons = Lesson.objects.filter(
         group=group,
         date__lt=timezone.now().date()
-    ).select_related('lesson_template').order_by('-date', '-start_time')[:10]
+    ).select_related('lesson_template').annotate(
+        present_count=Count('attendances', filter=Q(attendances__is_present=True)),
+        marked_count=Count('attendances'),
+    ).order_by('-date', '-start_time')[:10]
 
     # Temele grupei
     assignments = Assignment.objects.filter(
@@ -162,6 +190,9 @@ def group_detail(request, group_id):
             is_active=True
         ).order_by('order')
 
+    # Sesiunea live activă (dacă există)
+    live_session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+
     context = {
         'group': group,
         'students': students,
@@ -169,9 +200,336 @@ def group_detail(request, group_id):
         'past_lessons': past_lessons,
         'assignments': assignments,
         'lesson_templates': lesson_templates,
+        'live_session': live_session,
+        'sim_assignments_count': SimulatorAssignment.objects.filter(group=group).count(),
+        'enrolled_count': students.count(),
     }
 
     return render(request, 'teacher_platform/group_detail.html', context)
+
+
+@login_required
+@teacher_required
+def group_homework(request, group_id):
+    """
+    Pagina dedicată Temelor pe Simulatoare ale unei grupe:
+    lista temelor cu progresul zilnic al elevilor + builder-ul de teme.
+    """
+    group = get_object_or_404(
+        Group.objects.select_related('course', 'module'),
+        id=group_id, teacher=request.user
+    )
+    students = Enrollment.objects.filter(
+        group=group, is_active=True
+    ).select_related('student').order_by('student__first_name')
+
+    # Temele pe simulatoare (de grupă + personalizate)
+    simulator_assignments = SimulatorAssignment.objects.filter(
+        group=group
+    ).select_related('student').prefetch_related('tasks').order_by('-start_date', '-created_at')[:20]
+
+    # Progresul elevilor la temele pe simulatoare (zilnic: elev × sarcină × zi)
+    from student_platform.views import assignment_day_states
+
+    _results = SimulatorTaskResult.objects.filter(
+        task__assignment__in=simulator_assignments
+    )
+    _totals = {}
+    _by_day = {}
+    for r in _results:
+        key = (r.task_id, r.student_id)
+        t = _totals.setdefault(key, {'ex': 0, 'ok': 0, 'bad': 0, 'sec': 0, 'days_done': 0})
+        t['ex'] += r.completed_exercises
+        t['ok'] += r.correct
+        t['bad'] += r.incorrect
+        t['sec'] += r.time_spent_seconds
+        if r.completed:
+            t['days_done'] += 1
+        _by_day[(r.task_id, r.student_id, r.date)] = r
+
+    _sim_short = {
+        'anzan': 'Anzan', 'flashcards': 'Cartonașe',
+        'flashcard-exercises': 'Exerciții', 'worksheet': 'Fișă',
+    }
+    _today = timezone.localdate()
+    for sa in simulator_assignments:
+        tasks = list(sa.tasks.all())
+        for t in tasks:
+            t.short_name = _sim_short.get(t.simulator, t.simulator)
+        last_day = min(_today, sa.end_date)
+        elapsed = max(0, (last_day - sa.start_date).days + 1) if sa.start_date <= _today else 0
+        roster = [sa.student] if sa.student else [gs.student for gs in students]
+        rows = []
+        for st in roster:
+            cells = []
+            for t in tasks:
+                totals = _totals.get((t.id, st.id))
+                if totals is None:
+                    cells.append({'status': 'none'})
+                    continue
+                answered = totals['ok'] + totals['bad']
+                accuracy = round(totals['ok'] / answered * 100) if answered else 0
+                cells.append({
+                    'status': 'done' if (elapsed and totals['days_done'] >= elapsed) else 'working',
+                    'days_done': totals['days_done'],
+                    'days_elapsed': elapsed,
+                    'exercises': totals['ex'],
+                    'accuracy': accuracy,
+                    'time_display': '%d:%02d' % divmod(totals['sec'], 60),
+                })
+            student_results = {
+                (t.id, d): _by_day.get((t.id, st.id, d))
+                for t in tasks
+                for d in [sa.start_date + timedelta(days=k)
+                          for k in range((sa.end_date - sa.start_date).days + 1)]
+            }
+            days = assignment_day_states(sa, tasks, student_results, _today)
+            green_days = sum(1 for d in days if d['state'] == 'done')
+            rows.append({
+                'student': st,
+                'cells': cells,
+                'days': days,
+                'green_days': green_days,
+                'elapsed_days': elapsed,
+                'all_done': elapsed > 0 and green_days >= elapsed,
+            })
+        sa.progress_rows = rows
+        sa.students_done = sum(1 for row in rows if row['all_done'])
+        sa.students_total = len(rows)
+
+    context = {
+        'group': group,
+        'students': students,
+        'simulator_assignments': simulator_assignments,
+    }
+    return render(request, 'teacher_platform/group_homework.html', context)
+
+
+@login_required
+@teacher_required
+def group_live(request, group_id):
+    """Pagina dedicată Lecției Live a unei grupe."""
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    students = Enrollment.objects.filter(
+        group=group, is_active=True
+    ).select_related('student').order_by('student__first_name')
+    live_session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+
+    context = {
+        'group': group,
+        'students': students,
+        'live_session': live_session,
+    }
+    return render(request, 'teacher_platform/group_live.html', context)
+
+
+@login_required
+@teacher_required
+def group_curriculum(request, group_id):
+    """
+    Curriculumul grupei (stil code.org): Curs → Module (unități) → Lecții,
+    cu progresul milestone-urilor per lecție. Fiecare lecție are 3 secțiuni:
+    resurse profesor (PDF), resurse elevi (materiale), structura lecției
+    (checklist de milestones bifat de profesor).
+    """
+    group = get_object_or_404(
+        Group.objects.select_related('course'), id=group_id, teacher=request.user)
+
+    modules = []
+    total_milestones = done_milestones = 0
+    if group.course:
+        # progresul bifat al grupei, indexat pe milestone_id
+        done_ids = set(LessonMilestoneProgress.objects.filter(
+            group=group, is_done=True
+        ).values_list('milestone_id', flat=True))
+
+        qs = Module.objects.filter(course=group.course, is_active=True).order_by('order').prefetch_related(
+            'lesson_templates', 'lesson_templates__milestones')
+        for mod in qs:
+            lessons = []
+            mod_total = mod_done = 0
+            for lt in mod.lesson_templates.filter(is_active=True).order_by('order'):
+                mstones = [
+                    {'obj': ms, 'done': ms.id in done_ids}
+                    for ms in lt.milestones.filter(is_active=True).order_by('order')
+                ]
+                l_total = len(mstones)
+                l_done = sum(1 for m in mstones if m['done'])
+                mod_total += l_total
+                mod_done += l_done
+                lessons.append({
+                    'lt': lt,
+                    'milestones': mstones,
+                    'done': l_done,
+                    'total': l_total,
+                    'percent': round(l_done / l_total * 100) if l_total else 0,
+                    'is_current': group.module_id == mod.id,
+                })
+            total_milestones += mod_total
+            done_milestones += mod_done
+            modules.append({
+                'module': mod,
+                'lessons': lessons,
+                'done': mod_done,
+                'total': mod_total,
+                'percent': round(mod_done / mod_total * 100) if mod_total else 0,
+                'is_current': group.module_id == mod.id,
+            })
+
+    context = {
+        'group': group,
+        'modules': modules,
+        'total_milestones': total_milestones,
+        'done_milestones': done_milestones,
+        'overall_percent': round(done_milestones / total_milestones * 100) if total_milestones else 0,
+    }
+    return render(request, 'teacher_platform/group_curriculum.html', context)
+
+
+@login_required
+@teacher_required
+def milestone_toggle(request, group_id):
+    """POST: bifează/debifează un milestone pentru o grupă. JSON: {milestone_id, done}."""
+    import json
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    try:
+        data = json.loads(request.body)
+        milestone_id = int(data['milestone_id'])
+        done = bool(data.get('done'))
+    except (json.JSONDecodeError, KeyError, ValueError, TypeError):
+        return JsonResponse({'error': 'Date invalide'}, status=400)
+
+    # milestone-ul trebuie să aparțină cursului grupei
+    from courses.models import LessonMilestone
+    ms = get_object_or_404(
+        LessonMilestone.objects.select_related('lesson_template__module'),
+        id=milestone_id)
+    if not group.course_id or ms.lesson_template.module.course_id != group.course_id:
+        return JsonResponse({'error': 'Milestone-ul nu aparține cursului grupei'}, status=400)
+
+    prog, _ = LessonMilestoneProgress.objects.get_or_create(group=group, milestone=ms)
+    prog.is_done = done
+    prog.checked_at = timezone.now() if done else None
+    prog.checked_by = request.user if done else None
+    prog.save()
+    return JsonResponse({'ok': True, 'done': prog.is_done})
+
+
+@login_required
+@teacher_required
+def group_performance(request, group_id):
+    """
+    Performanța elevilor unei grupe: agregat per elev din cele 3 surse
+    (Teme, Lecții live, Antrenament liber), plus totalul grupei și
+    rezultatele ultimei lecții live. Fără modele noi — doar agregare.
+    """
+    group = get_object_or_404(
+        Group.objects.select_related('course'), id=group_id, teacher=request.user)
+    memberships = Enrollment.objects.filter(
+        group=group, is_active=True).select_related('student').order_by('student__first_name')
+    students = [m.student for m in memberships]
+    student_ids = [s.id for s in students]
+
+    def _agg(qs, ex_field):
+        """{student_id: {ex, ok, bad, sec}} dintr-un queryset agregat."""
+        out = {}
+        for row in qs.values('student_id').annotate(
+            ex=Sum(ex_field), ok=Sum('correct'), bad=Sum('incorrect'),
+            sec=Sum('time_spent_seconds')):
+            out[row['student_id']] = {
+                'ex': row['ex'] or 0, 'ok': row['ok'] or 0,
+                'bad': row['bad'] or 0, 'sec': row['sec'] or 0,
+            }
+        return out
+
+    hw = _agg(SimulatorTaskResult.objects.filter(
+        task__assignment__group=group, student_id__in=student_ids), 'completed_exercises')
+    live = _agg(LiveTaskResult.objects.filter(
+        task__session__group=group, student_id__in=student_ids), 'completed_exercises')
+    practice_qs = SimulatorPracticeLog.objects.filter(student_id__in=student_ids)
+    if group.start_date:
+        practice_qs = practice_qs.filter(date__gte=group.start_date)
+    practice = _agg(practice_qs, 'exercises')
+
+    def _acc(ok, bad):
+        answered = ok + bad
+        return round(ok / answered * 100) if answered else 0
+
+    def _cell(d):
+        return {'ex': d['ex'], 'acc': _acc(d['ok'], d['bad'])} if d else {'ex': 0, 'acc': 0}
+
+    rows = []
+    g_ex = g_ok = g_bad = g_sec = 0
+    for st in students:
+        h = hw.get(st.id, {'ex': 0, 'ok': 0, 'bad': 0, 'sec': 0})
+        l = live.get(st.id, {'ex': 0, 'ok': 0, 'bad': 0, 'sec': 0})
+        p = practice.get(st.id, {'ex': 0, 'ok': 0, 'bad': 0, 'sec': 0})
+        tex = h['ex'] + l['ex'] + p['ex']
+        tok = h['ok'] + l['ok'] + p['ok']
+        tbad = h['bad'] + l['bad'] + p['bad']
+        tsec = h['sec'] + l['sec'] + p['sec']
+        g_ex += tex; g_ok += tok; g_bad += tbad; g_sec += tsec
+        rows.append({
+            'student': st,
+            'hw': _cell(h), 'live': _cell(l), 'practice': _cell(p),
+            'total_ex': tex,
+            'total_acc': _acc(tok, tbad),
+            'time_display': '%d:%02d' % divmod(tsec, 60),
+        })
+
+    # ranking după numărul total de exerciții
+    ranked = sorted(rows, key=lambda r: r['total_ex'], reverse=True)
+    for i, r in enumerate(ranked):
+        r['rank'] = i + 1 if r['total_ex'] > 0 else None
+
+    # rezultatele ultimei lecții live (performanța „în timpul lecției")
+    last_session = LiveSession.objects.filter(group=group).order_by('-started_at').first()
+    last_live = None
+    if last_session:
+        from student_platform.views import _live_progress  # reutilizăm formatarea
+        tasks = list(last_session.tasks.select_related('student').order_by('order'))
+        results = {(r.task_id, r.student_id): r
+                   for r in LiveTaskResult.objects.filter(task__session=last_session)}
+        sim_names = dict(SimulatorTask.SIMULATOR_CHOICES)
+        ll_rows = []
+        for st in students:
+            cells = []
+            for t in tasks:
+                if t.student_id and t.student_id != st.id:
+                    cells.append(None); continue
+                r = results.get((t.id, st.id))
+                if r is None:
+                    cells.append({'status': 'none'})
+                else:
+                    answered = r.correct + r.incorrect
+                    cells.append({
+                        'status': 'done' if r.completed else 'working',
+                        'ex': r.completed_exercises, 'correct': r.correct, 'incorrect': r.incorrect,
+                        'acc': round(r.correct / answered * 100) if answered else 0,
+                    })
+            ll_rows.append({'student': st, 'cells': cells})
+        last_live = {
+            'session': last_session,
+            'active': last_session.is_active,
+            'tasks': [{'order': t.order, 'name': sim_names.get(t.simulator, t.simulator),
+                       'student': t.student.get_full_name() if t.student else None} for t in tasks],
+            'rows': ll_rows,
+        }
+
+    context = {
+        'group': group,
+        'rows': rows,
+        'ranked': ranked[:3],
+        'group_total_ex': g_ex,
+        'group_total_acc': _acc(g_ok, g_bad),
+        'group_time_display': '%d:%02d' % divmod(g_sec, 60),
+        'group_avg_ex': round(g_ex / len(students)) if students else 0,
+        'students_count': len(students),
+        'last_live': last_live,
+    }
+    return render(request, 'teacher_platform/group_performance.html', context)
 
 
 @login_required
@@ -282,7 +640,7 @@ def students_list(request):
     group_filter = request.GET.get('group', '')
 
     # Obține elevii din grupe
-    students_in_groups = GroupStudent.objects.filter(
+    students_in_groups = Enrollment.objects.filter(
         group__teacher=teacher,
         is_active=True
     ).select_related('student', 'student__student_profile', 'group')
@@ -301,7 +659,7 @@ def students_list(request):
         students_with_groups_ids = students_in_groups.values_list('student_id', flat=True)
         for profile in student_profiles:
             if profile.user.id not in students_with_groups_ids:
-                # Creează un obiect pseudo-GroupStudent pentru consistență în template
+                # Creează un obiect pseudo-Enrollment pentru consistență în template
                 class StudentWithoutGroup:
                     def __init__(self, student):
                         self.student = student
@@ -347,7 +705,7 @@ def student_detail(request, student_id):
 
     # Verifică dacă profesorul are acces la acest student
     # (fie prin grupă, fie dacă l-a creat el direct)
-    group_student = GroupStudent.objects.filter(
+    group_student = Enrollment.objects.filter(
         student=student,
         group__teacher=request.user
     ).first()
@@ -360,7 +718,7 @@ def student_detail(request, student_id):
         return redirect('teacher_platform:students_list')
 
     # Grupele studentului
-    student_groups = GroupStudent.objects.filter(
+    student_groups = Enrollment.objects.filter(
         student=student,
         is_active=True
     ).select_related('group', 'group__course', 'group__module')
@@ -389,6 +747,50 @@ def student_detail(request, student_id):
         performance_rating__isnull=False
     ).aggregate(Avg('performance_rating'))['performance_rating__avg']
 
+    # Statistici lunare pe simulatoare (teme vs antrenament liber)
+    today = timezone.localdate()
+    try:
+        year, month = map(int, (request.GET.get('luna') or '').split('-'))
+        stats_month = datetime(year, month, 1).date()
+    except (ValueError, TypeError):
+        stats_month = today.replace(day=1)
+    prev_month = (stats_month - timedelta(days=1)).replace(day=1)
+    next_month = (stats_month + timedelta(days=32)).replace(day=1)
+
+    sim_names = dict(SimulatorTask.SIMULATOR_CHOICES)
+
+    def _stat_rows(queryset, sim_field):
+        rows = []
+        for row in queryset:
+            answered = (row['ok'] or 0) + (row['bad'] or 0)
+            rows.append({
+                'simulator': sim_names.get(row[sim_field], row[sim_field]),
+                'exercises': row['ex'] or 0,
+                'correct': row['ok'] or 0,
+                'accuracy': round((row['ok'] or 0) / answered * 100) if answered else 0,
+                'time_display': '%d:%02d' % divmod(row['sec'] or 0, 60),
+            })
+        return rows
+
+    homework_stats = _stat_rows(
+        SimulatorTaskResult.objects.filter(
+            student=student, date__year=stats_month.year, date__month=stats_month.month
+        ).values('task__simulator').annotate(
+            ex=Sum('completed_exercises'), ok=Sum('correct'),
+            bad=Sum('incorrect'), sec=Sum('time_spent_seconds')
+        ).order_by('task__simulator'),
+        'task__simulator'
+    )
+    practice_stats = _stat_rows(
+        SimulatorPracticeLog.objects.filter(
+            student=student, date__year=stats_month.year, date__month=stats_month.month
+        ).values('simulator').annotate(
+            ex=Sum('exercises'), ok=Sum('correct'),
+            bad=Sum('incorrect'), sec=Sum('time_spent_seconds')
+        ).order_by('simulator'),
+        'simulator'
+    )
+
     context = {
         'student': student,
         'group_student': group_student,
@@ -397,6 +799,12 @@ def student_detail(request, student_id):
         'submissions': submissions,
         'attendance_rate': attendance_rate,
         'avg_performance': round(avg_performance, 2) if avg_performance else None,
+        'stats_month': stats_month,
+        'prev_month': prev_month.strftime('%Y-%m'),
+        'next_month': next_month.strftime('%Y-%m'),
+        'show_next_month': next_month <= today,
+        'homework_stats': homework_stats,
+        'practice_stats': practice_stats,
     }
 
     return render(request, 'teacher_platform/student_detail.html', context)
@@ -416,7 +824,7 @@ def lesson_detail(request, lesson_id):
 
     # Studenții din grupă și prezența lor
     students_data = []
-    group_students = GroupStudent.objects.filter(
+    group_students = Enrollment.objects.filter(
         group=lesson.group,
         is_active=True
     ).select_related('student')
@@ -443,42 +851,150 @@ def lesson_detail(request, lesson_id):
 
 @login_required
 @teacher_required
+def lesson_manage(request, lesson_id):
+    """
+    Ecran unificat de lecție: prezență + „ce s-a lucrat" + milestones +
+    pornire lecție live, într-un singur loc. La salvare, prezențele și
+    takeaways se marchează pentru trimitere automată în Airtable (push).
+    """
+    lesson = get_object_or_404(
+        Lesson.objects.select_related('group', 'lesson_template', 'group__course'),
+        id=lesson_id, group__teacher=request.user)
+    group = lesson.group
+    enrollments = list(Enrollment.objects.filter(group=group, is_active=True)
+                       .select_related('student').order_by('student__first_name', 'student__last_name'))
+
+    if request.method == 'POST':
+        for enr in enrollments:
+            sid = enr.student_id
+            present = request.POST.get(f'present_{sid}')
+            if present is None:
+                continue  # elevul nu a fost marcat
+            rating = (request.POST.get(f'rating_{sid}') or '').strip()
+            Attendance.objects.update_or_create(
+                lesson=lesson, student_id=sid,
+                defaults=dict(
+                    is_present=(present == '1'),
+                    absenta_anuntata=bool(request.POST.get(f'anuntata_{sid}')),
+                    genereaza_recuperare=bool(request.POST.get(f'recuperare_{sid}')),
+                    performance_rating=int(rating) if rating.isdigit() else None,
+                    notes=request.POST.get(f'notes_{sid}', '').strip(),
+                    enrollment=enr,
+                ))
+        # contoare prezență per înscriere
+        for enr in enrollments:
+            total = Attendance.objects.filter(lesson__group=group, student_id=enr.student_id).count()
+            att_c = Attendance.objects.filter(lesson__group=group, student_id=enr.student_id, is_present=True).count()
+            Enrollment.objects.filter(pk=enr.pk).update(lessons_attended=att_c, lessons_missed=total - att_c)
+
+        lesson.lesson_takeaways = request.POST.get('takeaways', '').strip()
+        lesson.homework = request.POST.get('homework', '').strip()
+        if request.POST.get('completed'):
+            lesson.status = 'completed'
+        lesson.save()
+        messages.success(request, 'Lecția a fost salvată. Prezențele și „ce s-a lucrat" se trimit automat în Airtable.')
+        return redirect('teacher_platform:lesson_manage', lesson_id=lesson.id)
+
+    # GET
+    rows = []
+    for enr in enrollments:
+        att = Attendance.objects.filter(lesson=lesson, student=enr.student).first()
+        rows.append({'enr': enr, 'student': enr.student, 'att': att})
+
+    milestones = []
+    if lesson.lesson_template_id:
+        done_ids = set(LessonMilestoneProgress.objects.filter(group=group, is_done=True)
+                       .values_list('milestone_id', flat=True))
+        for ms in lesson.lesson_template.milestones.filter(is_active=True).order_by('order'):
+            milestones.append({'ms': ms, 'done': ms.id in done_ids})
+
+    live = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+    present_count = sum(1 for r in rows if r['att'] and r['att'].is_present)
+    absent_count = sum(1 for r in rows if r['att'] and not r['att'].is_present)
+    context = {
+        'lesson': lesson, 'group': group, 'rows': rows,
+        'milestones': milestones,
+        'ms_done': sum(1 for m in milestones if m['done']), 'ms_total': len(milestones),
+        'live': live, 'present_count': present_count, 'absent_count': absent_count,
+        'rating_range': [1, 2, 3, 4, 5],
+    }
+    return render(request, 'teacher_platform/lesson_manage.html', context)
+
+
+@login_required
+@teacher_required
 def assignments_list(request):
     """
-    Lista tuturor temelor create de profesor
+    Integrator: toate temele pe simulatoare din toate grupele profesorului,
+    cu progresul elevilor, grupate pe active / viitoare / încheiate.
     """
     teacher = request.user
-
-    # Filtrare
-    status_filter = request.GET.get('status', 'all')
+    today = timezone.localdate()
     group_filter = request.GET.get('group', '')
 
-    assignments_query = Assignment.objects.filter(
+    assignments_query = SimulatorAssignment.objects.filter(
         group__teacher=teacher
-    ).select_related('group').prefetch_related('submissions')
+    ).select_related('group', 'student').prefetch_related('tasks')
 
     if group_filter:
         assignments_query = assignments_query.filter(group_id=group_filter)
 
-    today = timezone.now().date()
+    assignments = list(assignments_query.order_by('-start_date', '-created_at'))
 
-    if status_filter == 'upcoming':
-        assignments_query = assignments_query.filter(due_date__gte=today)
-    elif status_filter == 'past':
-        assignments_query = assignments_query.filter(due_date__lt=today)
+    # Progres: elevi care au terminat toate zilele scurse din temă
+    results = SimulatorTaskResult.objects.filter(
+        task__assignment__in=assignments
+    ).values('task__assignment_id', 'student_id', 'date').annotate(
+        tasks_done=Count('id', filter=Q(completed=True))
+    )
+    done_map = {}
+    for row in results:
+        done_map.setdefault((row['task__assignment_id'], row['student_id']), {})[row['date']] = row['tasks_done']
 
-    assignments = assignments_query.order_by('-due_date')
+    memberships = Enrollment.objects.filter(
+        group__teacher=teacher, is_active=True
+    ).values_list('group_id', 'student_id')
+    roster = {}
+    for gid, sid in memberships:
+        roster.setdefault(gid, []).append(sid)
 
-    # Grupele pentru filtru
-    groups = Group.objects.filter(
-        teacher=teacher,
-        is_active=True
-    ).order_by('name')
+    active, upcoming, past = [], [], []
+    for sa in assignments:
+        task_count = len(sa.tasks.all())
+        student_ids = [sa.student_id] if sa.student_id else roster.get(sa.group_id, [])
+        last_day = min(today, sa.end_date)
+        elapsed = max(0, (last_day - sa.start_date).days + 1) if sa.start_date <= today else 0
+        students_ok = 0
+        for sid in student_ids:
+            days = done_map.get((sa.id, sid), {})
+            ok_days = sum(
+                1 for d, n in days.items()
+                if sa.start_date <= d <= last_day and n >= task_count
+            )
+            if elapsed > 0 and ok_days >= elapsed:
+                students_ok += 1
+        entry = {
+            'assignment': sa,
+            'task_count': task_count,
+            'students_total': len(student_ids),
+            'students_ok': students_ok,
+            'elapsed_days': elapsed,
+            'total_days': (sa.end_date - sa.start_date).days + 1,
+        }
+        if sa.start_date > today:
+            upcoming.append(entry)
+        elif sa.end_date < today:
+            past.append(entry)
+        else:
+            active.append(entry)
+
+    groups = Group.objects.filter(teacher=teacher, is_active=True).order_by('name')
 
     context = {
-        'assignments': assignments,
+        'active_entries': active,
+        'upcoming_entries': upcoming,
+        'past_entries': past[:20],
         'groups': groups,
-        'status_filter': status_filter,
         'group_filter': group_filter,
         'today': today,
     }
@@ -505,7 +1021,7 @@ def assignment_detail(request, assignment_id):
 
     # Studenții care nu au predat
     students_submitted = submissions.values_list('student_id', flat=True)
-    students_not_submitted = GroupStudent.objects.filter(
+    students_not_submitted = Enrollment.objects.filter(
         group=assignment.group,
         is_active=True
     ).exclude(student_id__in=students_submitted).select_related('student')
@@ -601,7 +1117,7 @@ def student_add(request):
             student = form.save()
 
             # Verifică dacă studentul a fost adăugat într-o grupă
-            group_student = GroupStudent.objects.filter(
+            group_student = Enrollment.objects.filter(
                 student=student,
                 group__teacher=teacher
             ).first()
@@ -640,7 +1156,7 @@ def student_edit(request, student_id):
     student = get_object_or_404(User, id=student_id, role='student')
 
     # Verifică dacă profesorul are acces la acest student
-    group_student = GroupStudent.objects.filter(
+    group_student = Enrollment.objects.filter(
         student=student,
         group__teacher=request.user
     ).first()
@@ -666,6 +1182,40 @@ def student_edit(request, student_id):
         'title': f'Editează Elev: {student.get_full_name()}'
     }
     return render(request, 'teacher_platform/student_form.html', context)
+
+
+@login_required
+@teacher_required
+def student_reset_password(request, student_id):
+    """
+    Resetează parola unui elev la valoarea temporară (username-ul lui).
+    Elevul va fi obligat să-și aleagă o parolă nouă la următoarea logare.
+    """
+    if request.method != 'POST':
+        return redirect('teacher_platform:student_detail', student_id=student_id)
+
+    student = get_object_or_404(User, id=student_id, role='student')
+
+    has_access = Enrollment.objects.filter(
+        student=student, group__teacher=request.user
+    ).exists() or (
+        hasattr(student, 'student_profile') and student.student_profile.teacher == request.user
+    )
+    if not has_access:
+        messages.error(request, 'Nu aveți acces la acest student.')
+        return redirect('teacher_platform:students_list')
+
+    student.set_password(student.username)
+    student.must_change_password = True
+    student.save(update_fields=['password', 'must_change_password'])
+
+    messages.success(
+        request,
+        f'Parola elevului {student.get_full_name()} a fost resetată. '
+        f'Username: {student.username}, Parolă temporară: {student.username} '
+        f'(va trebui schimbată la prima autentificare).'
+    )
+    return redirect('teacher_platform:student_detail', student_id=student.id)
 
 
 @login_required
@@ -800,7 +1350,7 @@ def mark_attendance(request, lesson_id):
     student = get_object_or_404(User, id=student_id, role='student')
 
     # Verifică că studentul e în grupă
-    if not GroupStudent.objects.filter(group=lesson.group, student=student, is_active=True).exists():
+    if not Enrollment.objects.filter(group=lesson.group, student=student, is_active=True).exists():
         return JsonResponse({'error': 'Student not in this group'}, status=400)
 
     # Creează sau actualizează attendance
@@ -814,8 +1364,8 @@ def mark_attendance(request, lesson_id):
         }
     )
 
-    # Actualizează contoarele în GroupStudent
-    group_student = GroupStudent.objects.get(group=lesson.group, student=student)
+    # Actualizează contoarele în Enrollment
+    group_student = Enrollment.objects.get(group=lesson.group, student=student)
     total_lessons = Attendance.objects.filter(
         lesson__group=lesson.group,
         student=student
@@ -909,7 +1459,7 @@ def teacher_profile(request):
 
 
 @login_required
-@teacher_required
+@simulator_access
 def simulators_list(request):
     """
     Lista tuturor simulatoarelor disponibile
@@ -936,37 +1486,303 @@ def simulators_list(request):
             'url': 'teacher_platform:anzan_simulator',
             'color': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
         },
+        {
+            'name': 'Exerciții Abac',
+            'description': 'Exerciții pe ecran cu răspuns direct în platformă și verificare imediată',
+            'icon': '✏️',
+            'url': 'teacher_platform:abacus_exercises',
+            'color': 'linear-gradient(135deg, #10b981 0%, #34d399 100%)'
+        },
         # Aici se vor adăuga alte simulatoare în viitor
     ]
 
     context = {
         'simulators': simulators,
+        **_simulator_context(request),
     }
     return render(request, 'teacher_platform/simulators_list.html', context)
 
 
 @login_required
-@teacher_required
+@simulator_access
 def abacus_simulator(request):
     """
     Simulator interactiv de abac
     """
-    return render(request, 'teacher_platform/abacus_simulator.html')
+    return render(request, 'teacher_platform/abacus_simulator.html', _simulator_context(request))
 
 
 @login_required
-@teacher_required
+@simulator_access
+def abacus_exercises(request):
+    """
+    Exerciții Abac - exerciții tip fișă de lucru rezolvate pe ecran,
+    cu răspuns tastat direct și verificare imediată sau la final de set
+    """
+    return render(request, 'teacher_platform/abacus_exercises.html', _simulator_context(request))
+
+
+@login_required
+@simulator_access
 def flashcard_simulator(request):
     """
     Simulator de cartonașe flash pentru recunoașterea numerelor pe soroban
     """
-    return render(request, 'teacher_platform/flashcard_simulator.html')
+    return render(request, 'teacher_platform/flashcard_simulator.html', _simulator_context(request))
 
 
 @login_required
-@teacher_required
+@simulator_access
 def anzan_simulator(request):
     """
     Simulator Anzan pentru calcul mental rapid cu soroban imaginar
     """
-    return render(request, 'teacher_platform/anzan_simulator.html')
+    return render(request, 'teacher_platform/anzan_simulator.html', _simulator_context(request))
+
+
+# ==================== TEME SIMULATOARE ====================
+
+@login_required
+@teacher_required
+def simulator_assignment_create(request, group_id):
+    """
+    Creează o temă pe simulatoare pentru o grupă (sau personalizată
+    pentru un elev). Primește JSON:
+    { title, start_date, end_date, student_id (opțional),
+      tasks: [ { simulator, settings: {...}, target_type, target_value } ] }
+    """
+    import json
+
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({'error': 'JSON invalid'}, status=400)
+
+    tasks = data.get('tasks') or []
+    if not tasks:
+        return JsonResponse({'error': 'Tema trebuie să conțină cel puțin o sarcină'}, status=400)
+    if not data.get('start_date') or not data.get('end_date'):
+        return JsonResponse({'error': 'Perioada temei este obligatorie'}, status=400)
+
+    student = None
+    if data.get('student_id'):
+        membership = Enrollment.objects.filter(
+            group=group, student_id=data['student_id'], is_active=True
+        ).select_related('student').first()
+        if not membership:
+            return JsonResponse({'error': 'Elevul nu face parte din această grupă'}, status=400)
+        student = membership.student
+
+    assignment = SimulatorAssignment.objects.create(
+        group=group,
+        student=student,
+        title=(data.get('title') or 'Temă de casă')[:200],
+        start_date=data['start_date'],
+        end_date=data['end_date'],
+    )
+
+    valid_simulators = dict(SimulatorTask.SIMULATOR_CHOICES)
+    for i, t in enumerate(tasks):
+        if t.get('simulator') not in valid_simulators:
+            continue
+        SimulatorTask.objects.create(
+            assignment=assignment,
+            order=i + 1,
+            simulator=t['simulator'],
+            settings=t.get('settings') or {},
+            target_type=t.get('target_type') if t.get('target_type') in ('count', 'minutes') else 'count',
+            target_value=max(1, min(999, int(t.get('target_value') or 5))),
+        )
+
+    return JsonResponse({'ok': True, 'assignment_id': assignment.id})
+
+
+@login_required
+@teacher_required
+def simulator_assignment_delete(request, assignment_id):
+    """Șterge o temă pe simulatoare (doar ale profesorului curent)"""
+    assignment = get_object_or_404(
+        SimulatorAssignment, id=assignment_id, group__teacher=request.user
+    )
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    assignment.delete()
+    return JsonResponse({'ok': True})
+
+
+# ==================== LECȚII LIVE ====================
+
+def _live_session_or_404(request, session_id):
+    return get_object_or_404(
+        LiveSession.objects.select_related('group'),
+        id=session_id, group__teacher=request.user
+    )
+
+
+@login_required
+@teacher_required
+def live_session_start(request, group_id):
+    """Pornește (sau returnează) sesiunea live activă a grupei."""
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+
+    session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+    if session is None:
+        session = LiveSession.objects.create(group=group, teacher=request.user)
+    return JsonResponse({'ok': True, 'session_id': session.id})
+
+
+@login_required
+@teacher_required
+def live_session_end(request, session_id):
+    """Închide sesiunea live."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    session = _live_session_or_404(request, session_id)
+    if session.ended_at is None:
+        session.ended_at = timezone.now()
+        session.save(update_fields=['ended_at'])
+    return JsonResponse({'ok': True})
+
+
+@login_required
+@teacher_required
+def live_task_create(request, session_id):
+    """
+    Adaugă o sarcină în lecția live. JSON:
+    { simulator, settings: {...}, target_type, target_value, student_id (opțional) }
+    """
+    import json
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    session = _live_session_or_404(request, session_id)
+    if session.ended_at is not None:
+        return JsonResponse({'error': 'Sesiunea este închisă'}, status=400)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({'error': 'JSON invalid'}, status=400)
+
+    if data.get('simulator') not in dict(SimulatorTask.SIMULATOR_CHOICES):
+        return JsonResponse({'error': 'Simulator necunoscut'}, status=400)
+
+    student = None
+    if data.get('student_id'):
+        membership = Enrollment.objects.filter(
+            group=session.group, student_id=data['student_id'], is_active=True
+        ).select_related('student').first()
+        if not membership:
+            return JsonResponse({'error': 'Elevul nu face parte din această grupă'}, status=400)
+        student = membership.student
+
+    task = LiveTask.objects.create(
+        session=session,
+        order=session.tasks.count() + 1,
+        student=student,
+        simulator=data['simulator'],
+        settings=data.get('settings') or {},
+        target_type=data.get('target_type') if data.get('target_type') in ('count', 'minutes') else 'count',
+        target_value=max(1, min(999, int(data.get('target_value') or 5))),
+    )
+    return JsonResponse({'ok': True, 'task_id': task.id})
+
+
+@login_required
+@teacher_required
+def live_task_delete(request, task_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST necesar'}, status=405)
+    task = get_object_or_404(
+        LiveTask.objects.select_related('session', 'session__group'),
+        id=task_id, session__group__teacher=request.user
+    )
+    task.delete()
+    return JsonResponse({'ok': True})
+
+
+def _live_state_payload(session):
+    """Starea completă a sesiunii live: sarcini, elevi, rezultate, prezență."""
+    now = timezone.now()
+    tasks = list(session.tasks.select_related('student').order_by('order'))
+    results = {
+        (r.task_id, r.student_id): r
+        for r in LiveTaskResult.objects.filter(task__session=session)
+    }
+    participants = {
+        p.student_id: p for p in session.participants.all()
+    }
+    roster = [
+        gs.student for gs in Enrollment.objects.filter(
+            group=session.group, is_active=True
+        ).select_related('student').order_by('student__first_name')
+    ]
+
+    sim_names = dict(SimulatorTask.SIMULATOR_CHOICES)
+    tasks_json = [{
+        'id': t.id,
+        'order': t.order,
+        'simulator': t.simulator,
+        'simulator_name': sim_names.get(t.simulator, t.simulator),
+        'target': t.get_target_display(),
+        'student_id': t.student_id,
+        'student_name': t.student.get_full_name() if t.student else None,
+        'settings': t.settings,
+    } for t in tasks]
+
+    students_json = []
+    for st in roster:
+        p = participants.get(st.id)
+        connected = bool(p and (now - p.last_seen).total_seconds() < 30)
+        cells = []
+        for t in tasks:
+            if t.student_id and t.student_id != st.id:
+                cells.append(None)  # sarcină individuală a altui elev
+                continue
+            r = results.get((t.id, st.id))
+            if r is None:
+                cells.append({'status': 'none'})
+            else:
+                if t.target_type == 'minutes':
+                    percent = min(100, round(r.time_spent_seconds / (t.target_value * 60) * 100)) if t.target_value else 0
+                else:
+                    percent = min(100, round(r.completed_exercises / t.target_value * 100)) if t.target_value else 0
+                cells.append({
+                    'status': 'done' if r.completed else 'working',
+                    'exercises': r.completed_exercises,
+                    'correct': r.correct,
+                    'incorrect': r.incorrect,
+                    'time_display': '%d:%02d' % divmod(r.time_spent_seconds, 60),
+                    'percent': 100 if r.completed else percent,
+                    'log': (r.exercise_log or [])[-50:],
+                })
+        students_json.append({
+            'id': st.id,
+            'name': st.get_full_name() or st.username,
+            'connected': connected,
+            'cells': cells,
+        })
+
+    return {
+        'session_id': session.id,
+        'active': session.is_active,
+        'started_at': timezone.localtime(session.started_at).strftime('%H:%M'),
+        'tasks': tasks_json,
+        'students': students_json,
+    }
+
+
+@login_required
+@teacher_required
+def live_state(request, group_id):
+    """Polling profesor: starea sesiunii live active a grupei."""
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    session = LiveSession.objects.filter(group=group, ended_at__isnull=True).first()
+    if session is None:
+        return JsonResponse({'ok': True, 'active': False})
+    return JsonResponse({'ok': True, **_live_state_payload(session)})

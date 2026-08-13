@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Location, AgeGroup, Course, Testimonial, DemoLesson, ContactMessage, Module, LessonTemplate
+from .models import Location, AgeGroup, Course, Testimonial, DemoLesson, ContactMessage, Module, LessonTemplate, LessonMilestone
 
 
 @admin.register(Location)
@@ -100,22 +100,38 @@ class ModuleAdmin(admin.ModelAdmin):
     color_badge.allow_tags = True
 
 
+class LessonMilestoneInline(admin.TabularInline):
+    """Milestones (structura lecției) definite de admin per lecție."""
+    model = LessonMilestone
+    extra = 3
+    fields = ['order', 'title', 'is_active']
+    ordering = ['order']
+
+
 @admin.register(LessonTemplate)
 class LessonTemplateAdmin(admin.ModelAdmin):
-    list_display = ['name', 'module', 'order', 'is_active']
+    inlines = [LessonMilestoneInline]
+    list_display = ['name', 'module', 'order', 'milestone_count', 'is_active']
+
+    def milestone_count(self, obj):
+        return obj.milestones.count()
+    milestone_count.short_description = 'Milestones'
     list_filter = ['is_active', 'module__course', 'module']
     search_fields = ['name', 'description', 'module__name']
     ordering = ['module', 'order']
+
+    readonly_fields = ['airtable_record_id', 'airtable_synced_at', 'sync_status']
 
     fieldsets = (
         ('Informații Principale', {
             'fields': ('module', 'name', 'description', 'order')
         }),
         ('Conținut Lecție', {
-            'fields': ('lesson_steps', 'lesson_plan_file'),
-            'description': 'Pașii lecției și planul de lecție (PDF/document)'
+            'fields': ('objectives', 'materials', 'lesson_steps', 'lesson_plan_file'),
+            'description': 'Obiective, materiale elevi, pașii lecției și planul de lecție (PDF/document)'
         }),
-        ('Status', {
-            'fields': ('is_active',)
+        ('Status & Sincronizare', {
+            'fields': ('is_active', 'airtable_record_id', 'airtable_synced_at', 'sync_status'),
+            'description': 'airtable_record_id se completează automat la sincronizarea din Airtable (Epic 7).'
         }),
     )

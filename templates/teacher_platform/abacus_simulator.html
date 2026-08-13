@@ -1,27 +1,38 @@
-{% extends 'teacher_platform/base_teacher.html' %}
+{% extends base_template|default:'teacher_platform/base_teacher.html' %}
 
 {% block title %}Simulator Abac{% endblock %}
 {% block page_title %}Abac Online{% endblock %}
 
 {% block extra_css %}
 <style>
+    :root {
+        --abacus-bead: #F2A93B;
+        --abacus-bead-dark: #E08E1B;
+        --abacus-bead-active: #2E9E8F;
+        --abacus-frame: #B9BEC6;
+        --abacus-text: #1F2430;
+        --accent-pink: #E91E63;
+        --primary-blue: #2563eb;
+    }
+
     .abacus-container {
-        padding: 2rem;
+        padding: 1.5rem;
         max-width: 100%;
-        height: calc(100vh - 180px);
+        min-height: calc(100vh - 180px);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        background: #f0f1f4;
     }
 
     /* Configuration Dialog */
     .config-dialog {
         background: white;
-        border-radius: 20px;
-        padding: 2.5rem;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 2rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         max-width: 500px;
         width: 90%;
         animation: slideIn 0.3s ease;
@@ -30,22 +41,16 @@
     }
 
     @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .config-title {
         text-align: center;
-        font-size: 1.8rem;
-        color: var(--text-primary);
+        font-size: 1.6rem;
+        color: var(--abacus-text);
         margin-bottom: 2rem;
-        font-weight: 600;
+        font-weight: 700;
     }
 
     .config-option {
@@ -55,7 +60,7 @@
     .config-label {
         display: block;
         font-size: 1rem;
-        color: var(--text-primary);
+        color: var(--abacus-text);
         margin-bottom: 1rem;
         font-weight: 500;
     }
@@ -67,35 +72,30 @@
     }
 
     .size-btn {
-        width: 80px;
-        height: 80px;
-        border: 2px solid #e0e0e0;
-        border-radius: 12px;
+        width: 72px;
+        height: 72px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
         background: white;
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         font-weight: 600;
-        color: var(--text-primary);
+        color: var(--abacus-text);
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.15s ease;
         display: flex;
         align-items: center;
         justify-content: center;
-        pointer-events: auto;
-        position: relative;
-        z-index: 10;
     }
 
     .size-btn:hover {
-        border-color: var(--primary-color);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        border-color: var(--primary-blue);
+        color: var(--primary-blue);
     }
 
     .size-btn.active {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        background: var(--primary-blue);
         color: white;
-        border-color: var(--primary-color);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        border-color: var(--primary-blue);
     }
 
     .toggle-option {
@@ -106,94 +106,83 @@
 
     .toggle-switch {
         position: relative;
-        width: 60px;
-        height: 30px;
-        background: #e0e0e0;
-        border-radius: 30px;
+        width: 56px;
+        height: 28px;
+        background: #d6d9e0;
+        border-radius: 28px;
         cursor: pointer;
-        transition: background 0.3s ease;
-        pointer-events: auto;
-        z-index: 10;
+        transition: background 0.2s ease;
     }
 
     .toggle-switch.active {
-        background: var(--primary-color);
+        background: var(--primary-blue);
     }
 
     .toggle-knob {
         position: absolute;
         top: 3px;
         left: 3px;
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         background: white;
         border-radius: 50%;
-        transition: transform 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
     }
 
     .toggle-switch.active .toggle-knob {
-        transform: translateX(30px);
+        transform: translateX(28px);
     }
 
     .back-to-list-btn {
         display: block;
         width: 100%;
         padding: 0.75rem;
-        background: #f0f0f0;
-        color: var(--text-primary);
-        border: 2px solid #e0e0e0;
-        border-radius: 50px;
+        background: white;
+        color: var(--abacus-text);
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
         font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.15s ease;
         margin-top: 1rem;
         text-align: center;
         text-decoration: none;
-        pointer-events: auto;
-        position: relative;
-        z-index: 10;
     }
 
     .back-to-list-btn:hover {
-        background: #e0e0e0;
-        border-color: #d0d0d0;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary-blue);
+        color: var(--primary-blue);
     }
 
     .start-btn {
         width: 100%;
-        padding: 1rem;
-        background: linear-gradient(135deg, #ff0844 0%, #ff6b9d 100%);
+        padding: 0.9rem;
+        background: var(--accent-pink);
         color: white;
         border: none;
-        border-radius: 50px;
-        font-size: 1.2rem;
-        font-weight: 600;
+        border-radius: 999px;
+        font-size: 1.15rem;
+        font-weight: 700;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: filter 0.15s ease;
         margin-top: 1rem;
-        pointer-events: auto;
-        position: relative;
-        z-index: 10;
     }
 
     .start-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 8, 68, 0.4);
+        filter: brightness(1.08);
     }
 
     /* Abacus Display */
     .abacus-display {
         display: none;
         background: white;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-        animation: fadeIn 0.5s ease;
-        max-width: 95%;
+        border-radius: 18px;
+        padding: 1.5rem 2rem 2rem;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.4s ease;
+        max-width: 98%;
         overflow-x: auto;
     }
 
@@ -202,103 +191,113 @@
     }
 
     @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     .abacus-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
         flex-wrap: wrap;
         gap: 1rem;
     }
 
     .result-display {
-        font-size: 2rem;
+        font-size: 1.8rem;
         font-weight: 700;
-        color: var(--primary-color);
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: var(--abacus-text);
     }
 
     .control-buttons {
         display: flex;
-        gap: 1rem;
+        gap: 0.75rem;
     }
 
     .clear-btn, .back-btn {
-        padding: 0.75rem 2rem;
+        padding: 0.65rem 1.8rem;
         border: none;
-        border-radius: 50px;
+        border-radius: 999px;
         font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.15s ease;
     }
 
     .clear-btn {
-        background: linear-gradient(135deg, #ff0844 0%, #ff6b9d 100%);
+        background: var(--accent-pink);
         color: white;
     }
 
     .clear-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(255, 8, 68, 0.3);
+        filter: brightness(1.08);
     }
 
     .back-btn {
-        background: #f0f0f0;
-        color: var(--text-primary);
+        background: white;
+        color: var(--abacus-text);
+        border: 1px solid #e5e7eb;
     }
 
     .back-btn:hover {
-        background: #e0e0e0;
-        transform: translateY(-2px);
+        border-color: var(--primary-blue);
+        color: var(--primary-blue);
     }
 
-    /* Abacus Structure */
+    /*
+     * Abacus geometry (per column, px):
+     *  - digits row (counter) above
+     *  - top bar 12px
+     *  - heaven bead 28px tall, rests under the bar; +40px travel to REACH the separator
+     *  - separator line at 76px from rod top (3px)
+     *  - earth beads: 4 x 30px stack resting on the bottom bar; -32px travel to reach separator
+     *  - rod height 238px, bottom bar 12px
+     */
     .abacus-frame {
-        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-        padding: 2rem;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgba(252, 182, 159, 0.3);
-        margin-top: 1rem;
-        border: 4px solid #ff6b9d;
+        background: white;
+        padding: 0.5rem 1rem 0;
+        margin-top: 0.5rem;
+    }
+
+    .frame-bar {
+        height: 12px;
+        background: var(--abacus-frame);
+        border-radius: 3px;
     }
 
     .counters-row {
         display: flex;
         justify-content: center;
-        gap: 2.2rem;
-        margin-bottom: 1rem;
-        padding: 0;
+        margin-bottom: 0.4rem;
     }
 
     .counter {
-        width: 50px;
+        width: 64px;
         text-align: center;
-        font-size: 1.5rem;
+        font-size: 1.6rem;
         font-weight: 700;
-        color: #333;
-        background: white;
-        border-radius: 8px;
-        padding: 0.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        color: var(--abacus-text);
+        font-variant-numeric: tabular-nums;
     }
 
     .abacus-rods {
         display: flex;
-        gap: 4.8rem;
         justify-content: center;
         position: relative;
+        padding: 0;
+    }
+
+    /* One continuous separator line across all rods */
+    .separator-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 76px;
+        height: 3px;
+        background: #9aa0a9;
+        z-index: 5;
+        border-radius: 2px;
     }
 
     .rod-container {
@@ -306,51 +305,56 @@
         flex-direction: column;
         align-items: center;
         position: relative;
+        width: 64px;
+    }
+
+    .labels-row {
+        display: flex;
+        justify-content: center;
     }
 
     .place-label {
-        position: absolute;
-        top: -30px;
-        font-size: 0.75rem;
-        color: #666;
+        width: 64px;
+        text-align: center;
+        font-size: 0.68rem;
+        color: #9aa0a9;
         font-weight: 600;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .rod {
-        width: 8px;
-        height: 400px;
-        background: linear-gradient(to bottom, #8e44ad 0%, #3498db 50%, #16a085 100%);
-        border-radius: 4px;
+        width: 64px;
+        height: 238px;
         position: relative;
-        box-shadow: 0 2px 8px rgba(142, 68, 173, 0.4);
     }
 
-    .divider {
-        position: absolute;
-        left: 50%;
-        top: 25%;
-        transform: translate(-50%, -50%);
-        width: calc(100% + 40px);
-        height: 8px;
-        background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
-        border-radius: 4px;
-        box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
-        z-index: 10;
-    }
-
-    .divider.has-marker::before {
+    /* the actual thin rod line */
+    .rod::before {
         content: '';
         position: absolute;
-        width: 14px;
-        height: 14px;
-        background: linear-gradient(135deg, #feca57 0%, #ff6b9d 100%);
-        border-radius: 50%;
-        top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
-        box-shadow: 0 3px 8px rgba(254, 202, 87, 0.5);
-        z-index: 11;
+        transform: translateX(-50%);
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        background: #c3c8d0;
+        border-radius: 2px;
+    }
+
+    /* unit / thousands / millions marker dot on the separator */
+    .rod.has-marker::after {
+        content: '';
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: #1F2430;
+        border-radius: 50%;
+        top: 73.5px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 6;
     }
 
     .beads-section {
@@ -362,132 +366,45 @@
     }
 
     .beads-section.top {
-        top: 0;
-        padding-top: 10px;
+        top: 4px;
     }
 
     .beads-section.bottom {
-        bottom: 0;
-        padding-bottom: 15px;
+        bottom: 4px;
     }
 
+    /* Flat "flying saucer" beads like the reference */
     .bead {
-        width: 50px;
-        height: 45px;
-        border-radius: 50% / 45%;
-        margin: 5px 0;
+        width: 58px;
+        height: 28px;
+        margin: 1px 0;
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-        box-shadow:
-            0 4px 10px rgba(0, 0, 0, 0.3),
-            inset -3px -4px 6px rgba(0, 0, 0, 0.2),
-            inset 3px 4px 6px rgba(255, 255, 255, 0.4);
+        transition: transform 0.25s cubic-bezier(0.4, 0.0, 0.2, 1), background 0.2s ease;
+        background: var(--abacus-bead);
+        clip-path: polygon(28% 0, 72% 0, 100% 50%, 72% 100%, 28% 100%, 0 50%);
         position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Bile cerești (top) - culoare turcoaz/cyan vibrant */
-    .beads-section.top .bead {
-        background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 50%, #00d2ff 100%);
-    }
-
-    .beads-section.top .bead.active {
-        background: linear-gradient(135deg, #0099cc 0%, #2e5f9e 50%, #0099cc 100%);
-        box-shadow:
-            0 8px 20px rgba(0, 153, 204, 0.6),
-            inset -3px -4px 6px rgba(0, 0, 0, 0.15),
-            inset 3px 4px 7px rgba(255, 255, 255, 0.5);
-    }
-
-    /* Bile pământene (bottom) - culoare coral/roz vibrant */
-    .beads-section.bottom .bead {
-        background: linear-gradient(135deg, #ff6b9d 0%, #feca57 50%, #ff9ff3 100%);
-    }
-
-    .beads-section.bottom .bead.active {
-        background: linear-gradient(135deg, #ee5a6f 0%, #f39c12 50%, #e84393 100%);
-        box-shadow:
-            0 8px 20px rgba(238, 90, 111, 0.6),
-            inset -3px -4px 6px rgba(0, 0, 0, 0.15),
-            inset 3px 4px 7px rgba(255, 255, 255, 0.5);
-    }
-
-    .bead::before {
-        content: '';
-        position: absolute;
-        width: 60%;
-        height: 60%;
-        background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.6), transparent 65%);
-        border-radius: 50%;
-        top: 10%;
-        left: 10%;
+        z-index: 2;
     }
 
     .bead:hover {
-        transform: scale(1.08);
-        box-shadow:
-            0 6px 16px rgba(0, 0, 0, 0.4),
-            inset -3px -4px 6px rgba(0, 0, 0, 0.2),
-            inset 3px 4px 6px rgba(255, 255, 255, 0.5);
-        filter: brightness(1.1);
+        filter: brightness(1.06);
     }
 
-    .bead::after {
-        content: '';
-        position: absolute;
-        width: 40%;
-        height: 40%;
-        background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15), transparent 70%);
-        border-radius: 50%;
-        bottom: 15%;
-        right: 15%;
+    /* Beads touching the separator are counted - they turn teal */
+    .bead.active {
+        background: var(--abacus-bead-active);
     }
 
     @media (max-width: 768px) {
-        .abacus-container {
-            padding: 1rem;
-        }
-
-        .config-dialog {
-            padding: 1.5rem;
-        }
-
-        .size-btn {
-            width: 60px;
-            height: 60px;
-            font-size: 1.2rem;
-        }
-
-        .result-display {
-            font-size: 1.5rem;
-        }
-
-        .counter {
-            width: 40px;
-            font-size: 1.2rem;
-        }
-
-        .bead {
-            width: 40px;
-            height: 40px;
-        }
-
-        .rod {
-            width: 6px;
-            height: 350px;
-            min-height: 350px;
-        }
-
-        /* Adjust bead transforms for mini version */
-        .beads-section.top .bead.active {
-            transform: translateY(35px) !important;
-        }
-
-        .beads-section.bottom .bead.active {
-            transform: translateY(-30px) !important;
-        }
+        .abacus-container { padding: 0.75rem; }
+        .config-dialog { padding: 1.5rem; }
+        .size-btn { width: 60px; height: 60px; font-size: 1.2rem; }
+        .result-display { font-size: 1.4rem; }
+        .counter { width: 44px; font-size: 1.15rem; }
+        .place-label { width: 44px; }
+        .rod-container { width: 44px; }
+        .rod { width: 44px; }
+        .bead { width: 40px; height: 20px; }
     }
 
     .hidden {
@@ -531,14 +448,17 @@
         <div class="abacus-header">
             <div class="result-display" id="resultDisplay">Total: 0</div>
             <div class="control-buttons">
-                <button class="back-btn" id="backBtn">← Back</button>
-                <button class="clear-btn" id="clearBtn">Clear</button>
+                <button class="back-btn" id="backBtn">← Înapoi</button>
+                <button class="clear-btn" id="clearBtn">Resetează</button>
             </div>
         </div>
 
         <div class="abacus-frame">
+            <div class="labels-row" id="labelsRow"></div>
             <div class="counters-row" id="countersRow"></div>
+            <div class="frame-bar"></div>
             <div class="abacus-rods" id="abacusRods"></div>
+            <div class="frame-bar"></div>
         </div>
     </div>
 </div>
@@ -621,6 +541,7 @@ function initializeAbacusSimulator() {
 
         abacusRods.innerHTML = '';
         countersRow.innerHTML = '';
+        document.getElementById('labelsRow').innerHTML = '';
         columnValues = new Array(abacusSize).fill(0);
 
         // Calculate middle column (units position)
@@ -665,7 +586,7 @@ function initializeAbacusSimulator() {
             } else if (placeValue < 0) {
                 placeLabel.textContent = `1/${Math.pow(10, Math.abs(placeValue))}`;
             }
-            rodContainer.appendChild(placeLabel);
+            document.getElementById('labelsRow').appendChild(placeLabel);
 
             // Create rod
             const rod = document.createElement('div');
@@ -679,16 +600,11 @@ function initializeAbacusSimulator() {
             topSection.appendChild(topBead);
             rod.appendChild(topSection);
 
-            // Divider
-            const divider = document.createElement('div');
-            divider.className = 'divider';
-
-            // Add class marker dots for units (0), thousands (3), millions (6)
-            if (placeValue === 0 || placeValue === 3 || placeValue === 6) {
-                divider.classList.add('has-marker');
+            // Marker dot on the separator every 3rd column, symmetric around
+            // the units column (…, -6, -3, 0, 3, 6, …)
+            if (placeValue % 3 === 0) {
+                rod.classList.add('has-marker');
             }
-
-            rod.appendChild(divider);
 
             // Bottom section (4 beads = 1 each)
             const bottomSection = document.createElement('div');
@@ -702,6 +618,11 @@ function initializeAbacusSimulator() {
             rodContainer.appendChild(rod);
             abacusRods.appendChild(rodContainer);
         }
+
+        // One continuous separator line across all columns
+        const separator = document.createElement('div');
+        separator.className = 'separator-line';
+        abacusRods.appendChild(separator);
     }
 
     // Create bead element
@@ -785,7 +706,7 @@ function initializeAbacusSimulator() {
         const topBead = rod.querySelector('.beads-section.top .bead');
         if (topBead && topBead.classList.contains('active')) {
             // Move down towards separator (careful not to cross it)
-            topBead.style.transform = 'translateY(45px)';
+            topBead.style.transform = 'translateY(43px)';
         } else if (topBead) {
             topBead.style.transform = 'translateY(0)';
         }
@@ -796,7 +717,7 @@ function initializeAbacusSimulator() {
         // Move active beads up towards separator (with better spacing)
         bottomBeads.forEach((bead) => {
             if (bead.classList.contains('active')) {
-                bead.style.transform = 'translateY(-40px)';
+                bead.style.transform = 'translateY(-35px)';
             } else {
                 bead.style.transform = 'translateY(0)';
             }

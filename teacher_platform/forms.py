@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
-from .models import Group, GroupStudent, Lesson
+from .models import Group, Enrollment, Lesson
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Course, Module, Location
 
@@ -13,13 +13,15 @@ class GroupForm(forms.ModelForm):
     class Meta:
         model = Group
         fields = [
-            'name', 'course', 'module', 'location',
+            'name', 'course', 'module', 'lesson_type', 'meeting_link', 'location',
             'weekday', 'start_time', 'duration_minutes',
             'start_date', 'end_date', 'max_occurrences',
             'max_students', 'description', 'created_date'
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Grupa Aritmetică Avansată'}),
+            'lesson_type': forms.Select(attrs={'class': 'form-select', 'id': 'id_lesson_type'}),
+            'meeting_link': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://meet.google.com/... sau https://zoom.us/j/...'}),
             'course': forms.Select(attrs={'class': 'form-select'}),
             'module': forms.Select(attrs={'class': 'form-select'}),
             'location': forms.Select(attrs={'class': 'form-select'}),
@@ -51,6 +53,13 @@ class GroupForm(forms.ModelForm):
                 pass
         elif self.instance.pk and self.instance.course:
             self.fields['module'].queryset = Module.objects.filter(course=self.instance.course, is_active=True)
+
+    def clean(self):
+        cleaned = super().clean()
+        # Link-ul are sens doar la grupele online
+        if cleaned.get('lesson_type') == 'fizic':
+            cleaned['meeting_link'] = ''
+        return cleaned
 
 
 class StudentForm(forms.ModelForm):
@@ -180,7 +189,7 @@ class StudentForm(forms.ModelForm):
             # Adaugă elevul în grupă dacă a fost selectată
             group = self.cleaned_data.get('group')
             if group:
-                GroupStudent.objects.create(
+                Enrollment.objects.create(
                     group=group,
                     student=user,
                     is_active=True

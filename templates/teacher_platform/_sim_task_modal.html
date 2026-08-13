@@ -1,0 +1,235 @@
+{# Modal partajat pentru configurarea unei sarcini de simulator.               #}
+{# Folosit de pagina de Teme (mod 'homework') și de Lecția Live (mod 'live').  #}
+{# Pagina gazdă definește window.stmOnConfirm(payload) și apelează             #}
+{# openTaskModal({ showFor: bool, targetLabel: '...' }).                        #}
+
+<div class="stm-backdrop" id="simTaskModal">
+    <div class="stm-modal">
+        <div class="stm-head">
+            <h4>Sarcină</h4>
+            <button class="stm-close" onclick="closeTaskModal()">✕</button>
+        </div>
+
+        <div class="stm-simulators">
+            <button class="stm-sim active" data-sim="anzan" onclick="stmPickSim('anzan')">🧠<span>Calcul mental</span></button>
+            <button class="stm-sim" data-sim="flashcards" onclick="stmPickSim('flashcards')">🎴<span>Cartonașe flash</span></button>
+            <button class="stm-sim" data-sim="flashcard-exercises" onclick="stmPickSim('flashcard-exercises')">✏️<span>Exerciții</span></button>
+            <button class="stm-sim" data-sim="worksheet" onclick="stmPickSim('worksheet')">📝<span>Fișă de lucru</span></button>
+        </div>
+
+        <div class="stm-fields">
+            <div class="stm-field" data-for="anzan flashcard-exercises worksheet">
+                <label>Formule (nivel)</label>
+                <select id="stmLevel"></select>
+            </div>
+            <div class="stm-field" data-for="anzan flashcards flashcard-exercises worksheet">
+                <label>Cifre</label>
+                <select id="stmDigits">
+                    <option value="1">1 cifră</option>
+                    <option value="2">2 cifre</option>
+                    <option value="3">3 cifre</option>
+                    <option value="1,2">1-2 cifre</option>
+                    <option value="2,3">2-3 cifre</option>
+                </select>
+            </div>
+            <div class="stm-field" data-for="anzan flashcard-exercises worksheet">
+                <label>Dificultate</label>
+                <select id="stmDifficulty">
+                    <option value="easy">Ușor</option>
+                    <option value="medium" selected>Mediu</option>
+                    <option value="hard">Greu</option>
+                </select>
+            </div>
+            <div class="stm-field" data-for="anzan flashcards">
+                <label>Viteză (secunde)</label>
+                <input type="number" id="stmSpeed" value="1.5" min="0.1" max="5" step="0.1">
+            </div>
+            <div class="stm-field" data-for="anzan flashcard-exercises worksheet">
+                <label>Termeni</label>
+                <input type="number" id="stmTerms" value="3" min="2" max="20">
+            </div>
+        </div>
+
+        <div class="stm-field" id="stmForField" style="display:none; margin-bottom:1.2rem;">
+            <label>Pentru</label>
+            <select id="stmForStudent">
+                <option value="">👥 Toată grupa</option>
+                {% for gs in students %}
+                <option value="{{ gs.student.id }}">👤 {{ gs.student.get_full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="stm-target">
+            <label id="stmTargetLabel">Țintă zilnică</label>
+            <div class="stm-target-row">
+                <select id="stmTargetType">
+                    <option value="count">Număr de exerciții</option>
+                    <option value="minutes">Minute de lucru</option>
+                </select>
+                <input type="number" id="stmTargetValue" value="5" min="1" max="999">
+                <span id="stmTargetUnit">exerciții / zi</span>
+            </div>
+        </div>
+
+        <div class="stm-actions">
+            <button class="btn-secondary" onclick="closeTaskModal()">Anulează</button>
+            <button class="btn-primary" onclick="stmConfirm()">OK</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.stm-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+    z-index: 500; align-items: flex-start; justify-content: center;
+    padding: 5rem 1.5rem 3rem; overflow-y: auto;
+}
+.stm-backdrop.open { display: flex; }
+.stm-modal {
+    background: white; border-radius: 16px; width: 100%; max-width: 640px;
+    padding: 1.5rem 1.7rem;
+}
+.stm-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.1rem; }
+.stm-head h4 { font-size: 1.15rem; }
+.stm-close { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #6b7280; }
+.stm-simulators { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.6rem; margin-bottom: 1.2rem; }
+.stm-sim {
+    background: #f8f9fb; border: 2px solid #e5e7eb; border-radius: 12px;
+    padding: 0.75rem 0.5rem; cursor: pointer; font-size: 1.4rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+}
+.stm-sim span { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.stm-sim.active { border-color: #2563eb; background: #eff6ff; }
+.stm-sim.active span { color: #1d4ed8; }
+.stm-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.85rem; margin-bottom: 1.2rem; }
+.stm-field label, .stm-target > label {
+    display: block; font-size: 0.8rem; font-weight: 600; color: #6b7280; margin-bottom: 0.3rem;
+}
+.stm-field select, .stm-field input, .stm-target-row select, .stm-target-row input {
+    width: 100%; padding: 0.5rem 0.6rem; border: 1px solid #d6d9e0; border-radius: 8px;
+    background: white; font-size: 0.9rem;
+}
+.stm-target { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1.2rem; }
+.stm-target-row { display: flex; gap: 0.6rem; align-items: center; }
+.stm-target-row select { flex: 1; width: auto; }
+.stm-target-row input { width: 90px; }
+.stm-target-row span { font-size: 0.85rem; color: #166534; font-weight: 600; white-space: nowrap; }
+.stm-actions { display: flex; justify-content: flex-end; gap: 0.7rem; }
+</style>
+
+<script>
+const SIM_LEVELS = [
+    ['direct-to-4', 'Calcul direct cu 4'], ['direct-to-5', 'Calcul direct cu 5'],
+    ['direct-to-9', 'Calcul direct cu 9'], ['direct-counting', 'Calcul direct'],
+    ['small-plus-1', '+1 = +5-4'], ['small-minus-1', '-1 = +4-5'],
+    ['small-plus-2', '+2 = +5-3'], ['small-minus-2', '-2 = +3-5'],
+    ['small-plus-3', '+3 = +5-2'], ['small-minus-3', '-3 = +2-5'],
+    ['small-plus-4', '+4 = +5-1'], ['small-minus-4', '-4 = +1-5'],
+    ['small-friends-all', 'Prietenii Mici (toate)'],
+    ['big-plus-1', '+1 = -9+10'], ['big-plus-2', '+2 = -8+10'], ['big-plus-3', '+3 = -7+10'],
+    ['big-plus-4', '+4 = -6+10'], ['big-plus-5', '+5 = -5+10'],
+    ['big-minus-1', '-1 = -10+9'], ['big-minus-2', '-2 = -10+8'], ['big-minus-3', '-3 = -10+7'],
+    ['big-minus-4', '-4 = -10+6'], ['big-minus-5', '-5 = -10+5'],
+    ['big-plus-9', '+9 = -1+10'], ['big-minus-9', '-9 = -10+1'],
+    ['big-plus-8', '+8 = -2+10'], ['big-minus-8', '-8 = -10+2'],
+    ['big-plus-7', '+7 = -3+10'], ['big-minus-7', '-7 = -10+3'],
+    ['big-plus-6', '+6 = -4+10'], ['big-minus-6', '-6 = -10+4'],
+    ['big-friends-all', 'Prietenii Mari (toate)'],
+    ['family-plus-6', 'Familia +6'], ['family-minus-6', 'Familia -6'],
+    ['family-plus-7', 'Familia +7'], ['family-minus-7', 'Familia -7'],
+    ['family-plus-8', 'Familia +8'], ['family-minus-8', 'Familia -8'],
+    ['family-plus-9', 'Familia +9'], ['family-minus-9', 'Familia -9'],
+    ['family-all', 'Familia (toate)'],
+    ['mix', 'Mix (toate variantele)']
+];
+const SIM_NAMES = {
+    'anzan': 'Calcul mental (Anzan)',
+    'flashcards': 'Cartonașe flash',
+    'flashcard-exercises': 'Exerciții',
+    'worksheet': 'Fișă de lucru'
+};
+
+let stmSimulator = 'anzan';
+let stmPerDay = true;  // temele au țintă zilnică; lecția live are țintă unică
+
+function openTaskModal(opts) {
+    opts = opts || {};
+    stmPerDay = opts.perDay !== false;
+    document.getElementById('stmForField').style.display = opts.showFor ? 'block' : 'none';
+    document.getElementById('stmTargetLabel').textContent = opts.targetLabel || 'Țintă';
+    // resetează la valorile implicite la fiecare deschidere
+    document.getElementById('stmDigits').value = '1';
+    document.getElementById('stmDifficulty').value = 'medium';
+    document.getElementById('stmSpeed').value = '1.5';
+    document.getElementById('stmTerms').value = '3';
+    document.getElementById('stmTargetType').value = 'count';
+    document.getElementById('stmTargetValue').value = '5';
+    if (document.getElementById('stmForStudent')) document.getElementById('stmForStudent').value = '';
+    if (document.getElementById('stmLevel')) document.getElementById('stmLevel').selectedIndex = 0;
+    stmSimulator = 'anzan';
+    stmPickSim('anzan');
+    stmTargetUnitUpdate();
+    document.getElementById('simTaskModal').classList.add('open');
+}
+
+function closeTaskModal() {
+    document.getElementById('simTaskModal').classList.remove('open');
+}
+
+function stmPickSim(sim) {
+    stmSimulator = sim;
+    document.querySelectorAll('.stm-sim').forEach(b =>
+        b.classList.toggle('active', b.dataset.sim === sim));
+    document.querySelectorAll('.stm-field[data-for]').forEach(f =>
+        f.style.display = f.dataset.for.split(' ').includes(sim) ? 'block' : 'none');
+}
+
+function stmTargetUnitUpdate() {
+    const unit = document.getElementById('stmTargetType').value === 'minutes' ? 'minute' : 'exerciții';
+    document.getElementById('stmTargetUnit').textContent = stmPerDay ? unit + ' / zi' : unit;
+}
+
+function stmConfirm() {
+    const digitsVal = document.getElementById('stmDigits').value;
+    const digitsArr = digitsVal.split(',').map(Number);
+    const settings = {
+        digits: digitsArr,
+        digits_label: digitsVal.replace(',', '-') + (digitsArr.length === 1 && digitsArr[0] === 1 ? ' cifră' : ' cifre')
+    };
+    if (stmSimulator === 'flashcards') {
+        settings.speed = parseFloat(document.getElementById('stmSpeed').value) || 1.5;
+    } else {
+        const levelSel = document.getElementById('stmLevel');
+        const difficulty = document.getElementById('stmDifficulty').value;
+        settings.complexity = levelSel.value;
+        settings.complexity_label = levelSel.options[levelSel.selectedIndex].text;
+        settings.difficulty = difficulty;
+        settings.difficulty_label = difficulty === 'easy' ? 'Ușor' : difficulty === 'hard' ? 'Greu' : 'Mediu';
+        settings.terms = parseInt(document.getElementById('stmTerms').value) || 3;
+        if (stmSimulator === 'anzan') {
+            settings.speed = parseFloat(document.getElementById('stmSpeed').value) || 1.5;
+        }
+    }
+    const payload = {
+        simulator: stmSimulator,
+        settings: settings,
+        target_type: document.getElementById('stmTargetType').value,
+        target_value: parseInt(document.getElementById('stmTargetValue').value) || 5,
+        student_id: document.getElementById('stmForStudent').value || null
+    };
+    if (window.stmOnConfirm) window.stmOnConfirm(payload);
+    closeTaskModal();
+}
+
+function getCsrf() {
+    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return el ? el.value : '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('stmLevel').innerHTML =
+        SIM_LEVELS.map(l => `<option value="${l[0]}">${l[1]}</option>`).join('');
+    document.getElementById('stmTargetType').addEventListener('change', stmTargetUnitUpdate);
+});
+</script>
