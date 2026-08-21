@@ -352,6 +352,10 @@ class PullSync:
             )
             if module is not None:
                 values['module'] = module
+                # Completează și cursul grupei din modul (Module.course), ca să nu
+                # rămână gol câmpul „Curs" în admin.
+                if getattr(module, 'course_id', None):
+                    values['course'] = module.course
 
             existing = Group.objects.filter(airtable_record_id=rec_id).first()
             if existing is None:

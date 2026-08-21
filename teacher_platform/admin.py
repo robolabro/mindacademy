@@ -8,6 +8,7 @@ class EnrollmentInline(admin.TabularInline):
     extra = 0
     fields = ['student', 'enrolled_date', 'status', 'is_active', 'lessons_attended', 'lessons_missed']
     readonly_fields = ['enrolled_date']
+    raw_id_fields = ['student']
 
 
 @admin.register(Group)
@@ -16,6 +17,8 @@ class GroupAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'course', 'module', 'location', 'weekday', 'teacher']
     search_fields = ['name', 'code', 'teacher__first_name', 'teacher__last_name', 'course__title']
     readonly_fields = ['code', 'created_at', 'updated_at']
+    # Cele mai noi grupe (ultimul curs adăugat) apar primele.
+    ordering = ['-created_at']
     inlines = [EnrollmentInline]
 
     fieldsets = (
@@ -50,6 +53,7 @@ class EnrollmentAdmin(admin.ModelAdmin):
     list_filter = ['status', 'is_active', 'group', 'enrolled_date']
     search_fields = ['student__first_name', 'student__last_name', 'group__name']
     readonly_fields = ['enrolled_date', 'get_attendance_rate']
+    raw_id_fields = ['group', 'student']
 
     fieldsets = (
         ('Elev și Grupă', {
@@ -73,6 +77,7 @@ class LessonAdmin(admin.ModelAdmin):
     list_filter = ['status', 'date', 'group__course', 'group']
     search_fields = ['group__name', 'topic', 'lesson_template__name']
     date_hierarchy = 'date'
+    raw_id_fields = ['group', 'lesson_template']
 
     fieldsets = (
         ('Grupă și Template', {
@@ -96,13 +101,17 @@ class AttendanceAdmin(admin.ModelAdmin):
     list_filter = ['is_present', 'performance_rating', 'lesson__date', 'lesson__group']
     search_fields = ['student__first_name', 'student__last_name', 'lesson__group__name']
     date_hierarchy = 'lesson__date'
+    # Evită randarea de dropdown-uri uriașe (elevi/lecții/înscrieri) care fac
+    # timeout pe pagina de editare (502).
+    raw_id_fields = ['lesson', 'student', 'enrollment']
 
     fieldsets = (
         ('Lecție și Elev', {
-            'fields': ('lesson', 'student')
+            'fields': ('lesson', 'student', 'enrollment')
         }),
         ('Prezență', {
-            'fields': ('is_present', 'performance_rating', 'notes')
+            'fields': ('is_present', 'absenta_anuntata', 'genereaza_recuperare',
+                       'performance_rating', 'notes')
         }),
     )
 
