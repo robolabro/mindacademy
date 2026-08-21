@@ -51,8 +51,8 @@
 - **Date demo**: `seed_test_data` (profesor + copii + grupă online).
 
 ### Automatizare (cron Railway)
-- **Pull nocturn** (`nightly_sync`) — `Todo` (de configurat în Railway; opțional).
-- **Push la ~10 min** (`push_to_airtable --only-pending`) — `Todo` (de configurat în Railway).
+- **Pull nocturn** (`nightly_sync`) — **Done** (serviciu `mindacademy-cron`, `0 2 * * *`, `AIRTABLE_TOKEN` read).
+- **Push nocturn** (`nightly_push`) — trimite doar execuția `pending` (prezențe + takeaways + temă); NU creează lecții noi, NU șterge duplicate. `Todo` (de configurat un al doilea serviciu cron cu token write).
 
 ---
 
@@ -63,9 +63,9 @@
 - [ ] **Mutarea legăturii Lectie↔Prezente pe `Inscriere`** (acum se folosește `Students Scheduled`). Sync-ul nostru scrie deja legătura `Inscriere` pe Prezente — partea de platformă e gata; rămâne restructurarea + automatizările în Airtable.
 
 ### Configurare (Railway)
-- [ ] Serviciu cron **push** `*/10 * * * *` → `push_to_airtable --only-pending` (token cu `data.records:write`).
-- [ ] (Opțional) Serviciu cron **pull nocturn** `0 2 * * *` → `nightly_sync`.
-- [ ] `AIRTABLE_TOKEN` cu scope write pe serviciul de cron; `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`.
+- [x] Serviciu cron **pull nocturn** `0 2 * * *` → `nightly_sync` (`mindacademy-cron`, token read).
+- [ ] Serviciu cron **push nocturn** `0 3 * * *` → `nightly_push` (token cu `data.records:write`).
+- [ ] `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` + `MISE_PYTHON_GITHUB_ATTESTATIONS=false` pe serviciul de push.
 
 ### Testare
 - [ ] Parcurgerea planului de testare (stories) — vezi `docs/test-plan` / artifact.
