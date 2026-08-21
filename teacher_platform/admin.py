@@ -16,6 +16,8 @@ class GroupAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'course', 'module', 'location', 'weekday', 'teacher']
     search_fields = ['name', 'code', 'teacher__first_name', 'teacher__last_name', 'course__title']
     readonly_fields = ['code', 'created_at', 'updated_at']
+    # Cele mai noi grupe (ultimul curs adăugat) apar primele.
+    ordering = ['-created_at']
     inlines = [EnrollmentInline]
 
     fieldsets = (
