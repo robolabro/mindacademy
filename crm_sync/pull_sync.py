@@ -658,8 +658,15 @@ class PullSync:
                                  date=sched.date(), start_time=sched.time())
                 values = dict(group=group)
                 if sched is not None:
-                    values['date'] = sched.date()
-                    values['start_time'] = sched.time()
+                    # Pentru lecțiile de recuperare editate în platformă și încă
+                    # netrimise (pending), orarul e al platformei — nu-l
+                    # suprascriem până nu se face push (evită pierderea datei
+                    # setate de profesor).
+                    keep_local_schedule = (not created and obj.is_recuperare
+                                           and obj.sync_status == 'pending')
+                    if not keep_local_schedule:
+                        values['date'] = sched.date()
+                        values['start_time'] = sched.time()
                 if template is not None:
                     values['lesson_template'] = template
                 # Nume sugestiv din șablon („Numar Lectie" + prima linie din

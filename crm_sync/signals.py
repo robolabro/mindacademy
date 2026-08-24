@@ -46,11 +46,17 @@ def register():
         # Lecțiile noi (import/creare) NU se marchează aici — push-ul lor e separat.
         instance._push_dirty = False
         if instance.pk:
-            old = sender.objects.filter(pk=instance.pk).only('lesson_takeaways', 'homework').first()
-            if old is not None and (
-                    (old.lesson_takeaways or '') != (instance.lesson_takeaways or '')
-                    or (old.homework or '') != (instance.homework or '')):
-                instance._push_dirty = True
+            old = (sender.objects.filter(pk=instance.pk)
+                   .only('lesson_takeaways', 'homework', 'date', 'start_time', 'is_recuperare').first())
+            if old is not None:
+                if ((old.lesson_takeaways or '') != (instance.lesson_takeaways or '')
+                        or (old.homework or '') != (instance.homework or '')):
+                    instance._push_dirty = True
+                # Pentru recuperări, platforma e owner pe orar: o schimbare de
+                # dată/oră trebuie trimisă în Airtable.
+                if instance.is_recuperare and (
+                        old.date != instance.date or old.start_time != instance.start_time):
+                    instance._push_dirty = True
 
     @receiver(post_save, sender=Lesson, dispatch_uid='crm_lesson_mark')
     def _lesson_post(sender, instance, created, **kw):

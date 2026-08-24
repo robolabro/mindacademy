@@ -49,13 +49,36 @@ def build_prezenta_fields(att):
     return fields
 
 
+def lesson_schedule_iso(lesson):
+    """Orarul Django (dată+oră locală Europe/Bucharest) → „Schedule" în UTC ISO."""
+    from datetime import datetime
+    if not (lesson.date and lesson.start_time):
+        return None
+    try:
+        from zoneinfo import ZoneInfo
+        local = datetime.combine(lesson.date, lesson.start_time,
+                                 tzinfo=ZoneInfo('Europe/Bucharest'))
+        return local.astimezone(ZoneInfo('UTC')).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+    except Exception:
+        return f"{lesson.date}T{lesson.start_time}"
+
+
 def build_content_fields(lesson):
     """Conținutul editat de profesor la lecție: „ce s-a lucrat" + tema pentru
-    acasă. NU trimitem „Completed"/orar — acelea rămân ale Airtable."""
-    return {
+    acasă. NU trimitem „Completed"/orar — acelea rămân ale Airtable.
+
+    Excepție: pentru lecțiile de RECUPERARE, orarul e proprietatea platformei
+    (profesorul stabilește data reală a recuperării), deci trimitem și
+    „Schedule"."""
+    fields = {
         'Lesson Takeaways': lesson.lesson_takeaways,
         'Homework': lesson.homework,
     }
+    if getattr(lesson, 'is_recuperare', False):
+        sched = lesson_schedule_iso(lesson)
+        if sched is not None:
+            fields['Schedule'] = sched
+    return fields
 
 
 def build_new_lesson_fields(lesson):
@@ -64,19 +87,13 @@ def build_new_lesson_fields(lesson):
     Orarul din Django (dată+oră locală) → „Schedule" în UTC ISO. Flag-urile care
     suprimă auto-prezențele automatizării vin din AIRTABLE_NEW_LESSON_FIELDS.
     """
-    from datetime import datetime
     fields = {}
     group = lesson.group
     if group and group.airtable_record_id:
         fields['Nume Grupa'] = [group.airtable_record_id]
-    if lesson.date and lesson.start_time:
-        try:
-            from zoneinfo import ZoneInfo
-            local = datetime.combine(lesson.date, lesson.start_time,
-                                     tzinfo=ZoneInfo('Europe/Bucharest'))
-            fields['Schedule'] = local.astimezone(ZoneInfo('UTC')).strftime('%Y-%m-%dT%H:%M:%S.000Z')
-        except Exception:
-            fields['Schedule'] = f"{lesson.date}T{lesson.start_time}"
+    sched = lesson_schedule_iso(lesson)
+    if sched is not None:
+        fields['Schedule'] = sched
     tpl = lesson.lesson_template
     if tpl is not None and getattr(tpl, 'airtable_record_id', ''):
         fields['Lectie Template'] = [tpl.airtable_record_id]
@@ -229,7 +246,10 @@ class PushSync:
         if self.only_pending:
             lessons = lessons.filter(sync_status='pending')
         else:
-            lessons = lessons.exclude(Q(lesson_takeaways='') & Q(homework=''))
+            # Trimitem lecțiile cu conținut SAU recuperările (au și orarul de
+            # trimis, chiar dacă n-au încă „ce s-a lucrat"/temă).
+            lessons = lessons.exclude(
+                Q(lesson_takeaways='') & Q(homework='') & Q(is_recuperare=False))
         for lesson in lessons:
             specs.append(dict(
                 entity='Lectii',

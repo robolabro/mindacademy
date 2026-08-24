@@ -45,6 +45,22 @@
       </div>
     </section>
 
+    {% if lesson.is_recuperare %}
+    <!-- DATA RECUPERĂRII -->
+    <section class="lm-card lm-recup-card">
+      <div class="lm-sec-h"><h2>↻ Lecție de recuperare</h2></div>
+      <div class="lm-body">
+        <p class="lm-hint">Recuperarea a fost generată pe <strong>data lecției originale</strong>. Stabilește data reală mai jos — se trimite automat în Airtable.</p>
+        <div class="lm-recup-when">
+          <label class="lm-fld" for="recupDate">Data</label>
+          <input class="lm-txt" type="date" id="recupDate" name="recup_date" value="{{ lesson.date|date:'Y-m-d' }}">
+          <label class="lm-fld" for="recupTime">Ora</label>
+          <input class="lm-txt" type="time" id="recupTime" name="recup_time" value="{{ lesson.start_time|time:'H:i' }}">
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
     <!-- ATTENDANCE -->
     <section class="lm-card">
       <div class="lm-sec-h">
@@ -170,6 +186,9 @@
   .lm-row.absent .lm-extra{display:flex}
   .lm-chk{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;color:var(--ink-soft);cursor:pointer}
   .lm-chk.recup{color:var(--warn)}
+  .lm-recup-card{border-color:var(--warn)}
+  .lm-recup-when{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin-top:.6rem}
+  .lm-recup-when .lm-txt{max-width:12rem}
   /* hint recuperare: apare doar când e bifat „Generează recuperare" */
   .lm-recup-hint{grid-column:1/-1;flex-basis:100%;display:none;margin:.1rem 0 0;
     font-size:.78rem;line-height:1.45;color:var(--warn);background:var(--warn-soft);
