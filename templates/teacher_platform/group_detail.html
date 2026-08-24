@@ -149,8 +149,16 @@
                 <div class="student-info">
                     <h4>{{ gs.student.get_full_name }}</h4>
                     <div class="student-stats">
+                        {% if gs.airtable_prezente_modul is not None %}
+                        <span title="Prezențe în modulul curent">✓ {{ gs.airtable_prezente_modul }} prezențe</span>
+                        {% else %}
                         <span>📊 {{ gs.get_attendance_rate }}% prezență</span>
+                        {% endif %}
+                        {% if gs.airtable_lectii_ramase is not None %}
+                        <span title="Lecții rămase din modul">📅 {{ gs.airtable_lectii_ramase }} rămase</span>
+                        {% else %}
                         <span>📚 {{ gs.lessons_attended }} lecții</span>
+                        {% endif %}
                     </div>
                 </div>
             </a>

@@ -49,20 +49,36 @@ class GroupAdmin(admin.ModelAdmin):
 
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
-    list_display = ['student', 'group', 'enrolled_date', 'status', 'is_active', 'lessons_attended', 'lessons_missed', 'get_attendance_rate']
+    list_display = ['student', 'group', 'enrolled_date', 'status', 'is_active',
+                    'prezente_modul', 'lectii_viitoare', 'get_attendance_rate']
     list_filter = ['status', 'is_active', 'group', 'enrolled_date']
     search_fields = ['student__first_name', 'student__last_name', 'group__name']
-    readonly_fields = ['enrolled_date', 'get_attendance_rate']
+    readonly_fields = ['enrolled_date', 'get_attendance_rate',
+                       'airtable_prezente_modul', 'airtable_lectii_ramase']
     raw_id_fields = ['group', 'student']
 
     fieldsets = (
         ('Elev și Grupă', {
             'fields': ('student', 'group', 'enrolled_date', 'status', 'is_active', 'end_date')
         }),
-        ('Progres', {
+        ('Progres (calculat în Airtable, read-only)', {
+            'fields': ('airtable_prezente_modul', 'airtable_lectii_ramase')
+        }),
+        ('Progres intern (din prezențe platformă)', {
+            'classes': ('collapse',),
             'fields': ('lessons_attended', 'lessons_missed', 'get_attendance_rate')
         }),
     )
+
+    def prezente_modul(self, obj):
+        """Total prezențe în modulul curent (din Airtable)."""
+        return obj.airtable_prezente_modul if obj.airtable_prezente_modul is not None else '—'
+    prezente_modul.short_description = 'Lecții Prezente'
+
+    def lectii_viitoare(self, obj):
+        """Lecții rămase (viitoare) din modul (din Airtable)."""
+        return obj.airtable_lectii_ramase if obj.airtable_lectii_ramase is not None else '—'
+    lectii_viitoare.short_description = 'Lecții viitoare'
 
     def get_attendance_rate(self, obj):
         """Afișează procentul de prezență"""

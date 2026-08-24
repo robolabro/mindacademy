@@ -595,6 +595,21 @@ class PullSync:
             if end:
                 from django.utils.dateparse import parse_date
                 values['end_date'] = parse_date(str(end)) or end
+            # Progres calculat în Airtable (lookup „(from Elev)" → poate veni ca
+            # listă). Read-only: îl reflectăm, nu-l scriem înapoi.
+            def _to_int(v):
+                if isinstance(v, list):
+                    v = v[0] if v else None
+                if v in (None, ''):
+                    return None
+                try:
+                    return int(float(v))
+                except (TypeError, ValueError):
+                    return None
+            values['airtable_prezente_modul'] = _to_int(
+                pick(f, 'Prezente in Modul Curent (from Elev)', 'Prezente in Modul Curent'))
+            values['airtable_lectii_ramase'] = _to_int(
+                pick(f, 'Lectii Ramase (from Elev)', 'Lectii Ramase'))
             try:
                 # Upsert după record_id; dacă lipsește (înscriere veche fără
                 # mapare), cădem pe cheia naturală (group, student).
