@@ -868,9 +868,9 @@ def lesson_manage(request, lesson_id):
     if request.method == 'POST':
         for enr in enrollments:
             sid = enr.student_id
+            # Prezența e pre-bifată prezent; checkbox debifat (lipsă din POST) =
+            # absent. Înregistrăm toți elevii din grupă la salvare.
             present = request.POST.get(f'present_{sid}')
-            if present is None:
-                continue  # elevul nu a fost marcat
             rating = (request.POST.get(f'rating_{sid}') or '').strip()
             Attendance.objects.update_or_create(
                 lesson=lesson, student_id=sid,

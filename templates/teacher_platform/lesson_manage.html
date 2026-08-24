@@ -75,11 +75,13 @@
             <span class="lm-av">{{ s.first_name|slice:":1" }}{{ s.last_name|slice:":1" }}</span>
             <div><div class="lm-nm">{{ s.get_full_name|default:s.username }}</div><div class="lm-sub">Înscris · activ</div></div>
           </div>
-          <div class="lm-seg" role="group" aria-label="Prezență {{ s.get_full_name }}">
-            <input type="radio" id="p{{ sid }}" name="present_{{ sid }}" value="1" {% if a and a.is_present %}checked{% endif %}>
-            <label for="p{{ sid }}" class="p">Prezent</label>
-            <input type="radio" id="a{{ sid }}" name="present_{{ sid }}" value="0" {% if a and not a.is_present %}checked{% endif %}>
-            <label for="a{{ sid }}" class="a">Absent</label>
+          <div class="lm-actions">
+            <label class="lm-present" title="Debifează pentru absent">
+              <input type="checkbox" class="present-cb" name="present_{{ sid }}" value="1"
+                     {% if a %}{% if a.is_present %}checked{% endif %}{% else %}checked{% endif %}>
+              <span class="lm-present-pill"><span class="on-txt">✓ Prezent</span><span class="off-txt">✕ Absent</span></span>
+            </label>
+            <button type="button" class="lm-edit-btn" aria-expanded="false">Editează</button>
           </div>
           <div class="lm-extra">
             <label class="lm-chk"><input type="checkbox" name="anuntata_{{ sid }}" {% if a and a.absenta_anuntata %}checked{% endif %}> 📣 Absență anunțată</label>
@@ -176,14 +178,25 @@
   .lm-stud{display:flex;align-items:center;gap:.7rem;min-width:0}
   .lm-av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.82rem;background:var(--brand-soft);color:var(--brand);flex:none;text-transform:uppercase}
   .lm-nm{font-weight:600} .lm-sub{font-size:.76rem;color:var(--ink-soft)}
-  .lm-seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
-  .lm-seg input{position:absolute;opacity:0;pointer-events:none}
-  .lm-seg label{padding:.4rem .75rem;font-weight:700;font-size:.82rem;color:var(--ink-soft);cursor:pointer;user-select:none}
-  .lm-seg input:checked+label.p{background:var(--present-soft);color:var(--present)}
-  .lm-seg input:checked+label.a{background:var(--absent-soft);color:var(--absent)}
-  .lm-seg input:focus-visible+label{outline:2px solid var(--brand);outline-offset:-2px}
-  .lm-extra{grid-column:1/-1;display:none;gap:.5rem;flex-wrap:wrap;align-items:center;padding:.3rem .2rem 0 3rem}
-  .lm-row.absent .lm-extra{display:flex}
+  .lm-actions{display:inline-flex;align-items:center;gap:.5rem}
+  /* Toggle prezent: pre-bifat; un click debifează → absent */
+  .lm-present{position:relative;cursor:pointer;user-select:none}
+  .lm-present input{position:absolute;opacity:0;pointer-events:none}
+  .lm-present-pill{display:inline-flex;align-items:center;min-width:6.4rem;justify-content:center;
+    padding:.42rem .8rem;border-radius:10px;font-weight:700;font-size:.82rem;
+    border:1px solid var(--line2);color:var(--ink-soft);transition:background .12s}
+  .lm-present-pill .off-txt{display:none}
+  .lm-present input:checked+.lm-present-pill{background:var(--present-soft);color:var(--present);border-color:transparent}
+  .lm-present input:not(:checked)+.lm-present-pill{background:var(--absent-soft);color:var(--absent);border-color:transparent}
+  .lm-present input:not(:checked)+.lm-present-pill .on-txt{display:none}
+  .lm-present input:not(:checked)+.lm-present-pill .off-txt{display:inline}
+  .lm-present input:focus-visible+.lm-present-pill{outline:2px solid var(--brand);outline-offset:2px}
+  .lm-edit-btn{background:none;border:1px solid var(--line2);border-radius:8px;padding:.4rem .6rem;
+    font-size:.78rem;font-weight:600;color:var(--ink-soft);cursor:pointer}
+  .lm-edit-btn.on{background:var(--brand-soft);color:var(--brand);border-color:transparent}
+  .lm-row.absent .lm-nm{opacity:.65}
+  .lm-extra{grid-column:1/-1;display:none;gap:.5rem;flex-wrap:wrap;align-items:center;padding:.4rem .2rem 0 3rem}
+  .lm-row.open .lm-extra{display:flex}
   .lm-chk{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;color:var(--ink-soft);cursor:pointer}
   .lm-chk.recup{color:var(--warn)}
   .lm-recup-card{border-color:var(--warn)}
@@ -226,13 +239,21 @@
   function recount(){
     var p=0,a=0;
     document.querySelectorAll('.lm-row').forEach(function(row){
-      var pr=row.querySelector('input[value="1"]'), ab=row.querySelector('input[value="0"]');
-      if(pr&&pr.checked)p++; if(ab&&ab.checked)a++;
-      row.classList.toggle('absent', ab&&ab.checked);
+      var cb=row.querySelector('.present-cb'); if(!cb)return;
+      if(cb.checked)p++; else a++;
+      row.classList.toggle('absent', !cb.checked);
     });
     var el=document.getElementById('attCount'); if(el)el.textContent=p+" prezenți · "+a+" absenți";
   }
-  document.querySelectorAll('.lm-seg input').forEach(function(i){i.addEventListener('change',recount);});
+  document.querySelectorAll('.present-cb').forEach(function(i){i.addEventListener('change',recount);});
+  recount(); // toți sunt pre-bifați prezenți; sincronizează afișajul
+  // „Editează" → deschide detaliile suplimentare (absență anunțată, recuperare, notă…)
+  document.querySelectorAll('.lm-edit-btn').forEach(function(b){
+    b.addEventListener('click',function(){
+      var row=b.closest('.lm-row'); var open=row.classList.toggle('open');
+      b.classList.toggle('on',open); b.setAttribute('aria-expanded',open?'true':'false');
+    });
+  });
   // hint recuperare: apare doar când e bifat „Generează recuperare"
   document.querySelectorAll('.recup-cb').forEach(function(cb){
     function sync(){var row=cb.closest('.lm-row'); if(row)row.classList.toggle('show-recup',cb.checked);}
