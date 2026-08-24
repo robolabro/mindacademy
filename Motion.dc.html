@@ -1,0 +1,331 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+    :root{
+      --paper:#F6F2E8; --paper-2:#FBF8F0; --card:#FFFFFF;
+      --ink:#201C17; --ink-2:#4A4238; --ink-soft:#857A69;
+      --shu:#D63E28; --shu-deep:#B23120; --kin:#A9863B;
+      --line:#EBE3D2; --hair:#F0EADB;
+      --spring:cubic-bezier(.34,1.56,.64,1);
+      --ease:cubic-bezier(.4,0,.2,1);
+      --serif:"Shippori Mincho",Georgia,ui-serif,serif;
+      --sans:"Zen Kaku Gothic New",ui-sans-serif,system-ui,-apple-system,sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+      line-height:1.65;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:1080px;margin:0 auto;padding:0 clamp(1.2rem,4vw,2rem)}
+    h1,h2,h3{font-family:var(--serif);font-weight:700;line-height:1.14;letter-spacing:-.015em;margin:0;text-wrap:balance}
+    a{color:var(--ink);text-decoration:none}
+    .ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+    /* motion primitives (Emil-style: soft, springy, on-load) */
+    @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+    @keyframes fade{from{opacity:0}to{opacity:1}}
+    @keyframes drift{0%{transform:translate(-4%,-2%) scale(1)}50%{transform:translate(4%,3%) scale(1.08)}100%{transform:translate(-4%,-2%) scale(1)}}
+    @keyframes sheen{from{background-position:-120% 0}to{background-position:220% 0}}
+    .rise{opacity:0;animation:rise .8s var(--spring) forwards}
+    .d1{animation-delay:.05s}.d2{animation-delay:.13s}.d3{animation-delay:.21s}
+    .d4{animation-delay:.29s}.d5{animation-delay:.37s}.d6{animation-delay:.45s}
+
+    /* nav */
+    header.nav{position:sticky;top:0;z-index:20;background:rgba(246,242,232,.72);
+      backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--hair)}
+    header.nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+      padding-top:.85rem;padding-bottom:.85rem}
+    .brand{display:flex;align-items:center;gap:.6rem}
+    .brand .mark{font-family:var(--serif);font-weight:800;font-size:1.05rem;color:var(--shu);
+      border:2px solid var(--shu);border-radius:9px;padding:.05rem .4rem;line-height:1.25}
+    .brand b{font-family:var(--serif);font-size:1.08rem;color:var(--ink)}
+    .navlinks{display:flex;gap:1.5rem;font-size:.9rem;font-weight:500}
+    .navlinks a{color:var(--ink-soft);position:relative;padding:.2rem 0}
+    .navlinks a::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1.5px;
+      background:var(--shu);transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
+    .navlinks a:hover{color:var(--ink)}.navlinks a:hover::after{transform:scaleX(1)}
+
+    /* buttons — tactile */
+    .btn{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--sans);font-weight:700;
+      font-size:.95rem;padding:.8rem 1.4rem;border-radius:11px;border:1px solid transparent;cursor:pointer;
+      transition:transform .18s var(--spring),box-shadow .25s var(--ease),background .2s}
+    .btn.primary{background:var(--ink);color:var(--paper);box-shadow:0 8px 20px -10px rgba(32,28,23,.6)}
+    .btn.primary:hover{transform:translateY(-2px);box-shadow:0 14px 30px -12px rgba(32,28,23,.55)}
+    .btn.primary:active{transform:translateY(0) scale(.98)}
+    .btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+    .btn.ghost:hover{transform:translateY(-2px);border-color:var(--ink);box-shadow:0 10px 24px -14px rgba(32,28,23,.4)}
+    .btn.ghost:active{transform:translateY(0) scale(.98)}
+
+    /* hero */
+    .hero{position:relative;overflow:hidden;padding-top:clamp(3rem,7vw,6rem);padding-bottom:clamp(2.5rem,6vw,4.5rem)}
+    .aurora{position:absolute;inset:-20% -10% auto -10%;height:520px;z-index:0;pointer-events:none;filter:blur(60px);
+      opacity:.5;background:
+        radial-gradient(40% 55% at 70% 30%,rgba(214,62,40,.28),transparent 70%),
+        radial-gradient(45% 60% at 25% 60%,rgba(169,134,59,.26),transparent 70%);
+      animation:drift 18s ease-in-out infinite}
+    .hero .wrap{position:relative;z-index:1;text-align:center;display:flex;flex-direction:column;align-items:center}
+    .kicker{display:inline-flex;align-items:center;gap:.5rem;font-size:.76rem;font-weight:700;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--shu);background:rgba(214,62,40,.08);border:1px solid rgba(214,62,40,.18);
+      padding:.35rem .8rem;border-radius:999px}
+    .kicker .kanji{font-family:var(--serif);color:var(--kin);letter-spacing:.05em}
+    .hero h1{font-size:clamp(2.4rem,6vw,4.6rem);font-weight:800;margin:1.3rem 0 0;max-width:15ch}
+    .hero h1 .w{display:inline-block;opacity:0;animation:rise .85s var(--spring) forwards}
+    .hero h1 .shu{color:var(--shu)}
+    .hero .sub{max-width:52ch;margin:1.2rem auto 0;font-size:1.1rem;color:var(--ink-2)}
+    .hero .cta{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;margin-top:1.9rem}
+    .hero .note{margin-top:1rem;font-size:.85rem;color:var(--ink-soft)}
+
+    /* soroban chip row under hero */
+    .beadline{display:flex;gap:.5rem;justify-content:center;margin-top:2.4rem}
+    .beadline i{width:13px;height:13px;border-radius:50%;display:block;opacity:0;animation:rise .6s var(--spring) forwards}
+    .beadline i.s{background:var(--shu)} .beadline i.k{background:var(--kin)}
+
+    /* trust strip */
+    .trust{border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);background:var(--paper-2)}
+    .trust .wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;
+      padding-top:1.5rem;padding-bottom:1.5rem;text-align:center}
+    .trust .n{font-family:var(--serif);font-weight:800;font-size:clamp(1.6rem,4vw,2.2rem);color:var(--ink);
+      font-variant-numeric:tabular-nums;line-height:1}
+    .trust .l{font-size:.8rem;color:var(--ink-soft);margin-top:.3rem}
+
+    section.band{padding-top:clamp(3.2rem,7vw,6rem);padding-bottom:clamp(3.2rem,7vw,6rem)}
+    .head{max-width:56ch;margin:0 auto 3rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.7rem}
+    .head .ey{font-size:.74rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--shu)}
+    .head .ey .kanji{font-family:var(--serif);color:var(--kin);margin-right:.4rem}
+    .head h2{font-size:clamp(1.8rem,4vw,2.7rem)}
+    .head p{color:var(--ink-soft);margin:0;max-width:46ch}
+
+    /* features — clean list of tiles */
+    .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+    .tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1.5rem 1.3rem;
+      transition:transform .3s var(--spring),box-shadow .3s var(--ease),border-color .3s}
+    .tile:hover{transform:translateY(-6px);box-shadow:0 24px 44px -28px rgba(32,28,23,.5);border-color:var(--kin)}
+    .tile .k{display:inline-grid;place-items:center;width:48px;height:48px;border-radius:12px;
+      background:rgba(214,62,40,.09);color:var(--shu);font-family:var(--serif);font-weight:700;font-size:1.4rem;margin-bottom:.9rem}
+    .tile h3{font-size:1.1rem;margin-bottom:.35rem}
+    .tile p{font-size:.9rem;color:var(--ink-soft);margin:0}
+
+    /* courses */
+    .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem}
+    .course{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;
+      display:flex;flex-direction:column;transition:transform .3s var(--spring),box-shadow .3s var(--ease)}
+    .course:hover{transform:translateY(-6px);box-shadow:0 28px 50px -30px rgba(32,28,23,.5)}
+    .course .top{height:120px;display:grid;place-items:center;position:relative;overflow:hidden;
+      background:linear-gradient(135deg,rgba(169,134,59,.16),rgba(214,62,40,.14))}
+    .course .top::after{content:"";position:absolute;inset:0;
+      background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.5) 50%,transparent 70%);
+      background-size:220% 100%;animation:sheen 3.6s var(--ease) infinite}
+    .course .top .g{font-family:var(--serif);font-size:3rem;color:var(--shu);opacity:.85;position:relative;z-index:1}
+    .course .body{padding:1.3rem;display:flex;flex-direction:column;gap:.4rem;flex:1}
+    .pill{align-self:flex-start;font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      background:var(--ink);color:var(--paper);padding:.2rem .6rem;border-radius:999px}
+    .course h3{font-size:1.18rem}
+    .course .desc{font-size:.88rem;color:var(--ink-soft);margin:0}
+    .course .meta{display:flex;flex-wrap:wrap;gap:.35rem .8rem;font-size:.8rem;color:var(--ink-soft);
+      padding-top:.85rem;border-top:1px solid var(--hair);margin-top:auto}
+    .course .meta span{display:inline-flex;align-items:center;gap:.3rem}
+    .course .foot{display:flex;align-items:center;justify-content:space-between;margin-top:.9rem}
+    .price{font-family:var(--serif);font-weight:800;font-size:1.3rem}
+    .price small{font-family:var(--sans);font-weight:500;font-size:.76rem;color:var(--ink-soft)}
+    .arrow{display:inline-flex;align-items:center;gap:.3rem;font-weight:700;font-size:.88rem;color:var(--shu);
+      transition:gap .25s var(--ease)}
+    .arrow:hover{gap:.6rem}
+
+    /* big quote */
+    .quoteband{background:var(--ink);color:var(--paper);position:relative;overflow:hidden}
+    .quoteband .kbg{position:absolute;right:-3%;bottom:-34%;font-family:var(--serif);font-weight:800;
+      font-size:min(44vw,480px);color:#fff;opacity:.05;line-height:1;pointer-events:none;writing-mode:vertical-rl}
+    .quoteband .wrap{position:relative;text-align:center;max-width:44ch}
+    .quoteband .stars{display:inline-flex;gap:.15rem;margin-bottom:1rem}
+    .quoteband .stars svg{width:20px;height:20px;fill:var(--kin)}
+    .quoteband blockquote{font-family:var(--serif);font-size:clamp(1.4rem,3.2vw,2rem);line-height:1.4;margin:0;font-weight:600}
+    .quoteband .by{margin-top:1.3rem;font-size:.9rem;opacity:.8}
+
+    /* cta */
+    .cta{position:relative;overflow:hidden}
+    .cta .aurora{opacity:.6}
+    .cta .wrap{position:relative;z-index:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.5rem}
+    .cta h2{font-size:clamp(2rem,4.6vw,3.1rem)}
+    .cta .jp{font-family:var(--serif);color:var(--shu);letter-spacing:.12em;font-weight:600;margin:0}
+    .cta p{color:var(--ink-2);margin:.3rem 0 1.2rem;max-width:48ch}
+
+    footer{border-top:1px solid var(--hair);padding:2.4rem 0;background:var(--paper-2)}
+    footer .wrap{display:flex;flex-wrap:wrap;gap:1.2rem;justify-content:space-between;align-items:center}
+    footer .cols{display:flex;gap:1.4rem;flex-wrap:wrap;font-size:.9rem}
+    footer .cols a{color:var(--ink-soft)}footer .cols a:hover{color:var(--ink)}
+    .fnote{width:100%;border-top:1px solid var(--hair);margin-top:.2rem;padding-top:1rem;font-size:.8rem;color:var(--ink-soft);
+      display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+
+    @media (prefers-reduced-motion:reduce){
+      .rise,.hero h1 .w,.beadline i{opacity:1;animation:none}
+      .aurora,.course .top::after{animation:none}
+      .btn:hover,.tile:hover,.course:hover{transform:none}
+    }
+  </style>
+</helmet>
+<div>
+  <header class="nav">
+    <div class="wrap">
+      <div class="brand"><span class="mark">心</span><b>MindAcademy</b></div>
+      <nav class="navlinks">
+        <a href="#metoda">Metoda</a><a href="#cursuri">Cursuri</a>
+        <a href="#pareri">Păreri</a><a href="#demo">Demo</a>
+      </nav>
+      <a class="btn ghost" href="#demo">Rezervă demo</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="aurora"></div>
+    <div class="wrap">
+      <span class="kicker rise d1"><span class="kanji">日本の伝統</span> Aritmetică mentală · Soroban</span>
+      <h1>
+        <span class="w" style="animation-delay:.10s">Matematica,</span>
+        <span class="w" style="animation-delay:.18s">făcută</span>
+        <span class="w shu" style="animation-delay:.26s">frumoasă.</span>
+      </h1>
+      <p class="sub rise d4">O metodă japoneză care transformă cifrele într-o aventură — calcul mental,
+        concentrare și încredere, pas cu pas, pentru fiecare copil.</p>
+      <div class="cta rise d5">
+        <a class="btn primary" href="#cursuri">Explorează cursurile</a>
+        <a class="btn ghost" href="#demo">Lecție demo gratuită</a>
+      </div>
+      <p class="note rise d6">Prima lecție e gratuită · fără obligații</p>
+      <div class="beadline">
+        <i class="s" style="animation-delay:.5s"></i><i class="k" style="animation-delay:.56s"></i>
+        <i class="s" style="animation-delay:.62s"></i><i class="k" style="animation-delay:.68s"></i>
+        <i class="s" style="animation-delay:.74s"></i><i class="k" style="animation-delay:.8s"></i>
+        <i class="s" style="animation-delay:.86s"></i>
+      </div>
+    </div>
+  </section>
+
+  <div class="trust">
+    <div class="wrap">
+      <div class="rise d1"><div class="n">450+</div><div class="l">Elevi activi</div></div>
+      <div class="rise d2"><div class="n">12</div><div class="l">Ani de experiență</div></div>
+      <div class="rise d3"><div class="n">98%</div><div class="l">Părinți mulțumiți</div></div>
+      <div class="rise d4"><div class="n">6</div><div class="l">Locații în București</div></div>
+    </div>
+  </div>
+
+  <section class="band" id="metoda">
+    <div class="wrap">
+      <div class="head rise d1">
+        <span class="ey"><span class="kanji">道</span>Calea către excelență</span>
+        <h2>De ce MindAcademy?</h2>
+        <p>O metodă structurată care dezvoltă mintea copilului dincolo de cifre.</p>
+      </div>
+      <div class="grid-4">
+        <div class="tile rise d1"><span class="k">暗算</span><h3>Calcul mental</h3><p>Calcul rapid „în minte", prin metode tradiționale japoneze.</p></div>
+        <div class="tile rise d2"><span class="k">算盤</span><h3>Soroban</h3><p>Tehnica abacului japonez pentru vizualizare și precizie.</p></div>
+        <div class="tile rise d3"><span class="k">集中</span><h3>Concentrare</h3><p>Antrenăm atenția și răbdarea prin exerciții structurate.</p></div>
+        <div class="tile rise d4"><span class="k">右脳</span><h3>Creier antrenat</h3><p>Stimulăm ambele emisfere pentru gândire creativă.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="cursuri" style="background:var(--paper-2);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)">
+    <div class="wrap">
+      <div class="head rise d1">
+        <span class="ey"><span class="kanji">学び</span>Pentru toate nivelurile</span>
+        <h2>Cursurile noastre</h2>
+      </div>
+      <div class="grid-3">
+        <div class="course rise d1">
+          <div class="top"><span class="g">一</span></div>
+          <div class="body">
+            <span class="pill" style="background:var(--shu)">Cel mai popular</span>
+            <h3>Soroban Începători</h3>
+            <p class="desc">Introducere jucăușă în abac și primele operații.</p>
+            <div class="meta">
+              <span><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg> 1×/săpt.</span>
+              <span><svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M21 20a5 5 0 0 0-4-5"/></svg> max 8</span>
+              <span><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg> 5–7 ani</span>
+            </div>
+            <div class="foot"><div class="price">180 RON<small>/lună</small></div><a class="arrow" href="#">Detalii →</a></div>
+          </div>
+        </div>
+        <div class="course rise d2">
+          <div class="top"><span class="g">二</span></div>
+          <div class="body">
+            <span class="pill" style="background:var(--kin);color:#231c0b">Nivel 2</span>
+            <h3>Calcul Mental</h3>
+            <p class="desc">De la abac la vizualizare — calcul „în minte".</p>
+            <div class="meta">
+              <span><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg> 1×/săpt.</span>
+              <span><svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M21 20a5 5 0 0 0-4-5"/></svg> max 8</span>
+              <span><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg> 7–10 ani</span>
+            </div>
+            <div class="foot"><div class="price">200 RON<small>/lună</small></div><a class="arrow" href="#">Detalii →</a></div>
+          </div>
+        </div>
+        <div class="course rise d3">
+          <div class="top"><span class="g">三</span></div>
+          <div class="body">
+            <span class="pill">Avansat</span>
+            <h3>Anzan & Viteză</h3>
+            <p class="desc">Viteză și precizie pentru elevii de performanță.</p>
+            <div class="meta">
+              <span><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg> 2×/săpt.</span>
+              <span><svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M21 20a5 5 0 0 0-4-5"/></svg> max 6</span>
+              <span><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg> 9–13 ani</span>
+            </div>
+            <div class="foot"><div class="price">260 RON<small>/lună</small></div><a class="arrow" href="#">Detalii →</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band quoteband" id="pareri">
+    <span class="kbg">証</span>
+    <div class="wrap rise d1">
+      <div class="stars">
+        <svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.4 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.4 9.3l6-.7Z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.4 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.4 9.3l6-.7Z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.4 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.4 9.3l6-.7Z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.4 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.4 9.3l6-.7Z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.4 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.4 9.3l6-.7Z"/></svg>
+      </div>
+      <blockquote>„În trei luni, fiul meu face adunări în minte mai repede decât mine — dar cel mai mult contează că a prins încredere."</blockquote>
+      <div class="by">Maria A. · părinte, Soroban Începători</div>
+    </div>
+  </section>
+
+  <section class="band cta" id="demo">
+    <div class="aurora"></div>
+    <div class="wrap rise d1">
+      <p class="jp">始まり</p>
+      <h2>Gata să începi călătoria?</h2>
+      <p>Prima lecție e gratuită. Vino să vezi cum lucrează copilul tău pe soroban.</p>
+      <div class="cta" style="display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center">
+        <a class="btn primary" href="#">Rezervă lecția demo</a>
+        <a class="btn ghost" href="#">Contactează-ne</a>
+      </div>
+    </div>
+  </section>
+
+  <footer id="locatii">
+    <div class="wrap">
+      <div class="brand"><span class="mark">心</span><b>MindAcademy</b></div>
+      <div class="cols">
+        <a href="#cursuri">Cursuri</a><a href="#metoda">Metoda</a>
+        <a href="#pareri">Păreri</a><a href="#">Contact</a><a href="#">Termeni</a>
+      </div>
+      <div class="fnote">
+        <span>© 2026 MindAcademy · Aritmetică mentală & Soroban</span>
+        <span>București · mindacademy.ro</span>
+      </div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+</body>
+</html>

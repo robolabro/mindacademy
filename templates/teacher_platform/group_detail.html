@@ -149,8 +149,16 @@
                 <div class="student-info">
                     <h4>{{ gs.student.get_full_name }}</h4>
                     <div class="student-stats">
+                        {% if gs.airtable_prezente_modul is not None %}
+                        <span title="Prezențe în modulul curent">✓ {{ gs.airtable_prezente_modul }} prezențe</span>
+                        {% else %}
                         <span>📊 {{ gs.get_attendance_rate }}% prezență</span>
+                        {% endif %}
+                        {% if gs.airtable_lectii_ramase is not None %}
+                        <span title="Lecții rămase din modul">📅 {{ gs.airtable_lectii_ramase }} rămase</span>
+                        {% else %}
                         <span>📚 {{ gs.lessons_attended }} lecții</span>
+                        {% endif %}
                     </div>
                 </div>
             </a>
@@ -188,6 +196,7 @@
                             Lecție {{ lesson.date|date:"d M Y" }}
                         {% endif %}
                     </h4>
+                    {% if lesson.is_recuperare %}<span class="recup-tag">↻ Recuperare</span>{% endif %}{% if lesson.is_individual %}<span class="recup-tag indiv">👤 Individuală</span>{% endif %}
                     <div class="lesson-meta">
                         <span>🕐 {{ lesson.start_time|date:"H:i" }}</span>
                         {% if lesson.end_time %}
@@ -232,6 +241,7 @@
                             Lecție {{ lesson.date|date:"d M Y" }}
                         {% endif %}
                     </h4>
+                    {% if lesson.is_recuperare %}<span class="recup-tag">↻ Recuperare</span>{% endif %}{% if lesson.is_individual %}<span class="recup-tag indiv">👤 Individuală</span>{% endif %}
                     <div class="lesson-meta">
                         <span>🕐 {{ lesson.start_time|date:"H:i" }}</span>
                         {% if lesson.marked_count %}
@@ -312,6 +322,11 @@
 </div>
 
 <style>
+/* Etichetă lecție de recuperare / individuală */
+.recup-tag{display:inline-block;margin:.15rem 0 .1rem;background:#fbe7d6;color:#b45309;
+    font-size:.72rem;font-weight:800;padding:.12rem .55rem;border-radius:999px;letter-spacing:.01em}
+.recup-tag.indiv{background:#e0edff;color:#1d4ed8}
+@media (prefers-color-scheme:dark){.recup-tag{background:#3a2c12;color:#fbbf24}.recup-tag.indiv{background:#16233b;color:#7ea8ff}}
 /* Tip lecție + link online */
 .lesson-type-badge {
     display: inline-block; margin-left: 0.5rem;

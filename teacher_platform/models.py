@@ -235,6 +235,14 @@ class Enrollment(AirtableSyncMixin, models.Model):
     lessons_attended = models.IntegerField(default=0, verbose_name="Lecții Prezenți")
     lessons_missed = models.IntegerField(default=0, verbose_name="Lecții Absente")
 
+    # Progres calculat în Airtable (read-only, adus la pull din Inscrieri):
+    # „Prezente in Modul Curent (from Elev)" și „Lectii Ramase (from Elev)".
+    # Airtable rămâne sursa acestui calcul — noi doar îl reflectăm.
+    airtable_prezente_modul = models.IntegerField(
+        null=True, blank=True, verbose_name="Prezențe în modulul curent (Airtable)")
+    airtable_lectii_ramase = models.IntegerField(
+        null=True, blank=True, verbose_name="Lecții rămase din modul (Airtable)")
+
     class Meta:
         verbose_name = "Înscriere"
         verbose_name_plural = "Înscrieri"
@@ -283,6 +291,12 @@ class Lesson(AirtableSyncMixin, models.Model):
     end_time = models.TimeField(null=True, blank=True, verbose_name="Ora Sfârșit")
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled', verbose_name="Status")
+
+    # Tip lecție (din Airtable): marcate distinct în UI ca profesorul să le
+    # recunoască ușor. Setate la pull din câmpurile „Lectie Recuperare" /
+    # „Lectie Individuala" ale tabelului Lectii.
+    is_recuperare = models.BooleanField(default=False, verbose_name="Lecție de recuperare")
+    is_individual = models.BooleanField(default=False, verbose_name="Lecție individuală")
 
     # Conținut lecție
     topic = models.CharField(max_length=300, blank=True, verbose_name="Subiect")

@@ -5,6 +5,7 @@ from django.db.models import Count, Q, Avg, Sum
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
+from django.utils.dateparse import parse_date, parse_time
 from .models import Group, Enrollment, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog, LiveSession, LiveTask, LiveTaskResult, LiveParticipant, LessonMilestoneProgress
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
@@ -867,9 +868,9 @@ def lesson_manage(request, lesson_id):
     if request.method == 'POST':
         for enr in enrollments:
             sid = enr.student_id
+            # Prezența e pre-bifată prezent; checkbox debifat (lipsă din POST) =
+            # absent. Înregistrăm toți elevii din grupă la salvare.
             present = request.POST.get(f'present_{sid}')
-            if present is None:
-                continue  # elevul nu a fost marcat
             rating = (request.POST.get(f'rating_{sid}') or '').strip()
             Attendance.objects.update_or_create(
                 lesson=lesson, student_id=sid,
@@ -891,6 +892,18 @@ def lesson_manage(request, lesson_id):
         lesson.homework = request.POST.get('homework', '').strip()
         if request.POST.get('completed'):
             lesson.status = 'completed'
+        # Recuperări: profesorul stabilește data reală; se trimite în Airtable.
+        if lesson.is_recuperare:
+            new_date = (request.POST.get('recup_date') or '').strip()
+            new_time = (request.POST.get('recup_time') or '').strip()
+            if new_date:
+                d = parse_date(new_date)
+                if d:
+                    lesson.date = d
+            if new_time:
+                t = parse_time(new_time)
+                if t:
+                    lesson.start_time = t
         lesson.save()
         messages.success(request, 'Lecția a fost salvată. Prezențele și „ce s-a lucrat" se trimit automat în Airtable.')
         return redirect('teacher_platform:lesson_manage', lesson_id=lesson.id)

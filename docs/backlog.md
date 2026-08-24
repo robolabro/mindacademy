@@ -78,6 +78,13 @@
 - [ ] Buton „push acum" în admin pe grupă (alternativă la cron pentru cazuri urgente).
 - [ ] Buton direct „Gestionează" în calendar (acum e din pagina grupei).
 
+### În lucru (sesiunea curentă)
+- [ ] **B — Progres înscriere (read-only din Airtable):** total prezențe + lecții viitoare rămase din modul, afișate în admin (Enrollment) și în platforma profesor (per copil). Blocat pe numele câmpurilor Airtable (Progres Lectii / Inscrieri).
+- [ ] **A — Aliniere Curs:** un Curs local per „Categorie Curs" din Airtable (decizie în așteptare).
+- [ ] **Front-end mindacademy.ro — refresh vizual** (pagina mamă mai „fresh"). Direcție + livrare (mockup vs. direct) de stabilit.
+- [x] **§7 — Prezență rapidă:** pre-bifat prezent, debifare = absent, extras în „Editează" — **Done**.
+- [x] **Recuperări în platformă:** marcare distinctă + text explicativ + editare dată → push în Airtable — **Done**.
+
 ### Idei de business de evaluat (neîncepute)
 - [ ] Rol **părinte**: vizualizare progres/prezență copil în platformă.
 - [ ] Vizibilitate **contract/plată** (din Airtable) pe pagina elevului, read-only.

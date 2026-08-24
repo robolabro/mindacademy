@@ -595,6 +595,21 @@ class PullSync:
             if end:
                 from django.utils.dateparse import parse_date
                 values['end_date'] = parse_date(str(end)) or end
+            # Progres calculat în Airtable (lookup „(from Elev)" → poate veni ca
+            # listă). Read-only: îl reflectăm, nu-l scriem înapoi.
+            def _to_int(v):
+                if isinstance(v, list):
+                    v = v[0] if v else None
+                if v in (None, ''):
+                    return None
+                try:
+                    return int(float(v))
+                except (TypeError, ValueError):
+                    return None
+            values['airtable_prezente_modul'] = _to_int(
+                pick(f, 'Prezente in Modul Curent (from Elev)', 'Prezente in Modul Curent'))
+            values['airtable_lectii_ramase'] = _to_int(
+                pick(f, 'Lectii Ramase (from Elev)', 'Lectii Ramase'))
             try:
                 # Upsert după record_id; dacă lipsește (înscriere veche fără
                 # mapare), cădem pe cheia naturală (group, student).
@@ -658,8 +673,15 @@ class PullSync:
                                  date=sched.date(), start_time=sched.time())
                 values = dict(group=group)
                 if sched is not None:
-                    values['date'] = sched.date()
-                    values['start_time'] = sched.time()
+                    # Pentru lecțiile de recuperare editate în platformă și încă
+                    # netrimise (pending), orarul e al platformei — nu-l
+                    # suprascriem până nu se face push (evită pierderea datei
+                    # setate de profesor).
+                    keep_local_schedule = (not created and obj.is_recuperare
+                                           and obj.sync_status == 'pending')
+                    if not keep_local_schedule:
+                        values['date'] = sched.date()
+                        values['start_time'] = sched.time()
                 if template is not None:
                     values['lesson_template'] = template
                 # Nume sugestiv din șablon („Numar Lectie" + prima linie din
@@ -674,6 +696,10 @@ class PullSync:
                 elif airtable_topic:
                     values['topic'] = str(airtable_topic)[:300]
                 values['status'] = 'completed' if completed else (obj.status or 'scheduled')
+                # Tip lecție (Airtable owner): recuperare / individuală. Marcate
+                # distinct în platformă ca profesorul să le recunoască ușor.
+                values['is_recuperare'] = bool(pick(f, 'Lectie Recuperare', 'Lecție Recuperare', default=False))
+                values['is_individual'] = bool(pick(f, 'Lectie Individuala', 'Lecție Individuală', default=False))
                 # Takeaways/Tema = proprietatea Mind.academy: importăm din Airtable
                 # DOAR dacă în Django e gol (nu suprascriem ce a scris profesorul).
                 tk = pick(f, 'Lesson Takeaways')

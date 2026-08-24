@@ -2,267 +2,154 @@
 {% load static %}
 
 {% block title %}MindAcademy - 心の学院 | Academia ta de matematică{% endblock %}
-
-{% block meta_description %}MindAcademy oferă cursuri de matematică de calitate pentru copii și adolescenți. Metode moderne, profesori experți, rezultate garantate.{% endblock %}
-
+{% block meta_description %}MindAcademy oferă cursuri de aritmetică mentală și soroban pentru copii. Metode japoneze, profesori pasionați, rezultate reale.{% endblock %}
 {% block og_title %}MindAcademy - Descoperă Frumusețea Matematicii{% endblock %}
 {% block og_description %}Transformăm matematica dintr-o provocare într-o aventură captivantă. Cursuri personalizate pentru fiecare copil.{% endblock %}
 
+{% block body_class %}home-fresh{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}">{% endblock %}
+
 {% block content %}
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <div>
-                    <h1 class="hero-title">
-                        Descoperă <span class="highlight">Frumusețea</span> Matematicii<br>
-                        <span class="hero-japanese">日本の伝統</span>
-                    </h1>
-                    <p class="hero-subtitle">
-                        Transformăm matematica dintr-o provocare într-o aventură captivantă.
-                        Cursuri personalizate pentru fiecare copil, cu profesori pasionați și metode moderne de predare.
-                    </p>
-                    <div class="hero-calligraphy">
-                        "Călătoria de o mie de kilometri începe cu un singur pas"<br>
-                        - Proverb japonez
-                    </div>
-                    <div class="hero-buttons">
-                        <a href="{% url 'courses_list' %}" class="btn btn-primary">Explorează Cursurile</a>
-                        <a href="{% url 'demo_lesson' %}" class="btn btn-secondary">Lecție Demo Gratuită</a>
-                    </div>
-                </div>
-                <div class="hero-image">
-                    <!-- Ilustrație Soroban / Copil lucrând la soroban -->
-                    <svg viewBox="0 0 200 200" style="width: 100%; max-width: 350px; height: auto;">
-                        <!-- Soroban Frame -->
-                        <rect x="40" y="30" width="120" height="140" fill="none" stroke="#8B4513" stroke-width="4" rx="8"/>
+<div class="home-fresh">
 
-                        <!-- Horizontal divider -->
-                        <line x1="40" y1="100" x2="160" y2="100" stroke="#8B4513" stroke-width="3"/>
+  <!-- HERO -->
+  <section class="hf-hero">
+    <div class="aurora"></div>
+    <div class="wrap">
+      <span class="kicker load d1"><span class="kanji">日本の伝統</span> Aritmetică mentală · Soroban</span>
+      <h1>
+        <span class="w load" style="animation-delay:.10s">Matematica,</span>
+        <span class="w load" style="animation-delay:.18s">făcută</span>
+        <span class="w shu load" style="animation-delay:.26s">frumoasă.</span>
+      </h1>
+      <p class="sub load d4">O metodă japoneză care transformă cifrele într-o aventură — calcul mental,
+        concentrare și încredere, pas cu pas, pentru fiecare copil.</p>
+      <div class="cta load d5">
+        <a class="hf-btn primary" href="{% url 'courses_list' %}">Explorează cursurile</a>
+        <a class="hf-btn ghost" href="{% url 'demo_lesson' %}">Lecție demo gratuită</a>
+      </div>
+      <p class="note load d6">Prima lecție e gratuită · fără obligații</p>
+      <div class="beadline load d6">
+        <i class="s"></i><i class="k"></i><i class="s"></i><i class="k"></i><i class="s"></i><i class="k"></i><i class="s"></i>
+      </div>
+    </div>
+  </section>
 
-                        <!-- Soroban rods (vertical) -->
-                        <line x1="60" y1="30" x2="60" y2="170" stroke="#4A4A4A" stroke-width="2"/>
-                        <line x1="80" y1="30" x2="80" y2="170" stroke="#4A4A4A" stroke-width="2"/>
-                        <line x1="100" y1="30" x2="100" y2="170" stroke="#4A4A4A" stroke-width="2"/>
-                        <line x1="120" y1="30" x2="120" y2="170" stroke="#4A4A4A" stroke-width="2"/>
-                        <line x1="140" y1="30" x2="140" y2="170" stroke="#4A4A4A" stroke-width="2"/>
+  <!-- TRUST STRIP (numere editabile — confirmă-le) -->
+  <div class="trust">
+    <div class="wrap">
+      <div class="reveal"><div class="n">450+</div><div class="l">Elevi activi</div></div>
+      <div class="reveal"><div class="n">12</div><div class="l">Ani de experiență</div></div>
+      <div class="reveal"><div class="n">98%</div><div class="l">Părinți mulțumiți</div></div>
+      <div class="reveal"><div class="n">6</div><div class="l">Locații în București</div></div>
+    </div>
+  </div>
 
-                        <!-- Beads (top section - heaven beads) -->
-                        <circle cx="60" cy="55" r="8" fill="#D32F2F"/>
-                        <circle cx="80" cy="65" r="8" fill="#D32F2F"/>
-                        <circle cx="100" cy="55" r="8" fill="#D32F2F"/>
-                        <circle cx="120" cy="65" r="8" fill="#D32F2F"/>
-                        <circle cx="140" cy="55" r="8" fill="#D32F2F"/>
+  <!-- METODA / FEATURES -->
+  <section class="band" id="metoda">
+    <div class="wrap">
+      <div class="head reveal">
+        <span class="ey"><span class="kanji">道</span>Calea către excelență</span>
+        <h2>De ce MindAcademy?</h2>
+        <p>O metodă structurată care dezvoltă mintea copilului dincolo de cifre.</p>
+      </div>
+      <div class="grid-4">
+        <div class="tile reveal"><span class="k">暗算</span><h3>Calcul mental</h3><p>Calcul rapid „în minte", prin metode tradiționale japoneze.</p></div>
+        <div class="tile reveal"><span class="k">算盤</span><h3>Soroban</h3><p>Tehnica abacului japonez pentru vizualizare și precizie.</p></div>
+        <div class="tile reveal"><span class="k">集中</span><h3>Concentrare</h3><p>Antrenăm atenția și răbdarea prin exerciții structurate.</p></div>
+        <div class="tile reveal"><span class="k">右脳</span><h3>Creier antrenat</h3><p>Stimulăm ambele emisfere pentru gândire creativă.</p></div>
+      </div>
+    </div>
+  </section>
 
-                        <!-- Beads (bottom section - earth beads) - 4 beads per rod -->
-                        <!-- Rod 1 -->
-                        <circle cx="60" cy="115" r="8" fill="#C9A961"/>
-                        <circle cx="60" cy="130" r="8" fill="#C9A961"/>
-                        <circle cx="60" cy="145" r="8" fill="#C9A961"/>
-                        <circle cx="60" cy="160" r="8" fill="#C9A961"/>
-
-                        <!-- Rod 2 -->
-                        <circle cx="80" cy="115" r="8" fill="#C9A961"/>
-                        <circle cx="80" cy="130" r="8" fill="#C9A961"/>
-                        <circle cx="80" cy="145" r="8" fill="#C9A961"/>
-                        <circle cx="80" cy="160" r="8" fill="#C9A961"/>
-
-                        <!-- Rod 3 -->
-                        <circle cx="100" cy="115" r="8" fill="#C9A961"/>
-                        <circle cx="100" cy="130" r="8" fill="#C9A961"/>
-                        <circle cx="100" cy="145" r="8" fill="#C9A961"/>
-                        <circle cx="100" cy="160" r="8" fill="#C9A961"/>
-
-                        <!-- Rod 4 -->
-                        <circle cx="120" cy="115" r="8" fill="#C9A961"/>
-                        <circle cx="120" cy="130" r="8" fill="#C9A961"/>
-                        <circle cx="120" cy="145" r="8" fill="#C9A961"/>
-                        <circle cx="120" cy="160" r="8" fill="#C9A961"/>
-
-                        <!-- Rod 5 -->
-                        <circle cx="140" cy="115" r="8" fill="#C9A961"/>
-                        <circle cx="140" cy="130" r="8" fill="#C9A961"/>
-                        <circle cx="140" cy="145" r="8" fill="#C9A961"/>
-                        <circle cx="140" cy="160" r="8" fill="#C9A961"/>
-
-                        <!-- Decorative elements -->
-                        <text x="100" y="20" text-anchor="middle" font-size="14" fill="#D32F2F" font-weight="bold">そろばん</text>
-                    </svg>
-                </div>
+  <!-- CURSURI -->
+  <section class="band" id="cursuri" style="background:var(--paper-2);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)">
+    <div class="wrap">
+      <div class="head reveal">
+        <span class="ey"><span class="kanji">学び</span>Pentru toate nivelurile</span>
+        <h2>Cursurile noastre</h2>
+      </div>
+      {% if featured_courses %}
+      <div class="grid-3">
+        {% for course in featured_courses %}
+        <div class="course reveal">
+          <div class="top" {% if course.image %}style="background-image:url('{{ course.image.url }}')"{% endif %}>
+            {% if not course.image %}<span class="g">{% cycle '一' '二' '三' %}</span>{% endif %}
+          </div>
+          <div class="body">
+            {% if course.featured %}<span class="pill">Cel mai popular</span>{% endif %}
+            <h3>{{ course.title }}</h3>
+            <p class="desc">{{ course.description|truncatewords:16 }}</p>
+            <div class="meta">
+              {% if course.frequency %}<span><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg> {{ course.frequency }}</span>{% endif %}
+              {% if course.group_size %}<span><svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M21 20a5 5 0 0 0-4-5"/></svg> max {{ course.group_size }}</span>{% endif %}
+              {% if course.age_group %}<span><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg> {{ course.age_group.name }}</span>{% endif %}
             </div>
+            <div class="foot">
+              <div class="price">{{ course.price }} RON<small>/lună</small></div>
+              <a class="arrow" href="{% url 'course_detail' course.slug %}">Detalii →</a>
+            </div>
+          </div>
         </div>
-    </section>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="text-align:center;color:var(--ink-soft)">Cursurile vor fi disponibile în curând.</p>
+      {% endif %}
+      <div class="center reveal">
+        <a class="hf-btn primary" href="{% url 'courses_list' %}">Vezi toate cursurile</a>
+      </div>
+    </div>
+  </section>
 
+  <!-- PĂREREA PĂRINȚILOR -->
+  {% if testimonials %}
+  {% with t=testimonials.0 %}
+  <section class="band quoteband" id="pareri">
+    <span class="kbg">証</span>
+    <div class="wrap reveal">
+      <div class="stars">
+        {% for i in "12345"|make_list %}{% if forloop.counter <= t.rating %}<svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.4 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.4 9.3l6-.7Z"/></svg>{% endif %}{% endfor %}
+      </div>
+      <blockquote>„{{ t.text }}"</blockquote>
+      <div class="by">{{ t.parent_name }}{% if t.course %} · {{ t.course.title }}{% endif %}</div>
+    </div>
+  </section>
+  {% endwith %}
+  {% endif %}
 
-    <!-- Features Section -->
-    <section class="features">
-        <div class="container">
-            <h2 class="section-title">De Ce MindAcademy?</h2>
-            <p class="section-subtitle">道 - Calea către excelență în matematică</p>
+  <!-- CTA -->
+  <section class="band cta-band" id="inscriere">
+    <div class="aurora"></div>
+    <div class="wrap reveal">
+      <p class="jp">始まり</p>
+      <h2>Gata să începi călătoria?</h2>
+      <p>Prima lecție e gratuită. Vino să vezi cum lucrează copilul tău pe soroban.</p>
+      <div class="cta">
+        <a class="hf-btn primary" href="{% url 'demo_lesson' %}">Rezervă lecția demo</a>
+        <a class="hf-btn ghost" href="{% url 'contact' %}">Contactează-ne</a>
+      </div>
+    </div>
+  </section>
 
-            <div class="features-grid">
-                <!-- Feature 1 - Calcul Mental -->
-                <div class="feature-card">
-                    <div class="feature-icon">暗算</div>
-                    <div class="feature-content">
-                        <h3>Calcul Mental</h3>
-                        <p>Dezvoltăm capacitatea de calcul mental rapid prin metode tradiționale japoneze de aritmetică mentală.</p>
-                    </div>
-                </div>
-
-                <!-- Feature 2 - Soroban (Abac) -->
-                <div class="feature-card">
-                    <div class="feature-icon">算盤</div>
-                    <div class="feature-content">
-                        <h3>Soroban - Abacul Japonez</h3>
-                        <p>Învățăm tehnica tradițională soroban pentru dezvoltarea abilităților matematice și vizualizare.</p>
-                    </div>
-                </div>
-
-                <!-- Feature 3 - Atenție/Concentrare -->
-                <div class="feature-card">
-                    <div class="feature-icon">集中</div>
-                    <div class="feature-content">
-                        <h3>Atenție și Concentrare</h3>
-                        <p>Antrenăm copiii să își îmbunătățească concentrarea și atenția prin exerciții regulate și structurate.</p>
-                    </div>
-                </div>
-
-                <!-- Feature 4 - Creier Antrenat -->
-                <div class="feature-card">
-                    <div class="feature-icon">右脳</div>
-                    <div class="feature-content">
-                        <h3>Creier Antrenat</h3>
-                        <p>Stimulăm ambele emisfere ale creierului pentru dezvoltare cognitivă armonioasă și gândire creativă.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Courses Preview -->
-    <section class="courses-preview">
-        <div class="container">
-            <h2 class="section-title">Cursurile Noastre</h2>
-            <p class="section-subtitle">学び - Învățare pentru toate nivelurile</p>
-
-            <div class="courses-grid">
-                {% if featured_courses %}
-                    {% for course in featured_courses %}
-                    <div class="course-card">
-                        <div class="course-image" {% if course.image %}style="background-image: url('{{ course.image.url }}'); background-size: cover; background-position: center;"{% endif %}>
-                            {% if not course.image %}
-                            <span class="course-image-placeholder">🎓</span>
-                            {% endif %}
-                        </div>
-                        <div class="course-content">
-                            {% if course.featured %}
-                            <span class="badge badge-featured">Cel Mai Popular</span>
-                            {% endif %}
-                            <h3>{{ course.title }}</h3>
-                            <p>{{ course.description|truncatewords:20 }}</p>
-                            <div class="course-info">
-                                <span>📅 {{ course.frequency }}</span>
-                                <span>👥 Max {{ course.group_size }} copii</span>
-                                {% if course.age_group %}
-                                <span>🎯 {{ course.age_group.name }}</span>
-                                {% endif %}
-                            </div>
-                            <div class="course-meta">
-                                <div class="course-price">{{ course.price }} RON<span class="course-frequency">/lună</span></div>
-                                <a href="{% url 'course_detail' course.slug %}" class="btn btn-outline btn-sm">Detalii</a>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <!-- Mesaj dacă nu există cursuri -->
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
-                        <p style="font-size: 1.2rem; color: var(--ink-blue);">Cursurile vor fi disponibile în curând!</p>
-                    </div>
-                {% endif %}
-            </div>
-
-            <div style="text-align: center; margin-top: 3rem;">
-                <a href="{% url 'courses_list' %}" class="btn btn-primary">Vezi Toate Cursurile</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Stats Section (Opțional - dacă ai statistici în views) -->
-    {% if stats %}
-    <section class="stats-section" style="background: var(--sumi-black); color: white; padding: 4rem 0;">
-        <div class="container">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 3rem; text-align: center;">
-                <div>
-                    <div class="counter" data-target="{{ stats.students }}" style="font-size: 3rem; font-weight: 900; color: var(--gold-leaf); font-family: 'Noto Serif JP', serif;">0</div>
-                    <p style="margin-top: 0.5rem; opacity: 0.9;">Elevi Activi</p>
-                </div>
-                <div>
-                    <div class="counter" data-target="{{ stats.courses }}" style="font-size: 3rem; font-weight: 900; color: var(--gold-leaf); font-family: 'Noto Serif JP', serif;">0</div>
-                    <p style="margin-top: 0.5rem; opacity: 0.9;">Cursuri Disponibile</p>
-                </div>
-                <div>
-                    <div class="counter" data-target="{{ stats.success_rate }}" style="font-size: 3rem; font-weight: 900; color: var(--gold-leaf); font-family: 'Noto Serif JP', serif;">0</div>
-                    <p style="margin-top: 0.5rem; opacity: 0.9;">% Rată de Succes</p>
-                </div>
-                <div>
-                    <div class="counter" data-target="{{ stats.experience }}" style="font-size: 3rem; font-weight: 900; color: var(--gold-leaf); font-family: 'Noto Serif JP', serif;">0</div>
-                    <p style="margin-top: 0.5rem; opacity: 0.9;">Ani de Experiență</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    {% endif %}
-
-    <!-- Testimonials -->
-    <section class="testimonials">
-        <div class="container">
-            <h2 class="section-title">Ce Spun Elevii Noștri</h2>
-            <p class="section-subtitle">証 - Mărturii autentice</p>
-
-            <div class="testimonials-grid">
-                {% if testimonials %}
-                    {% for testimonial in testimonials %}
-                    <div class="testimonial-card">
-                        <div class="testimonial-rating">
-                            {% for i in "12345"|make_list %}
-                                {% if forloop.counter <= testimonial.rating %}⭐{% endif %}
-                            {% endfor %}
-                        </div>
-                        <p class="testimonial-text">{{ testimonial.text }}</p>
-                        <div class="testimonial-author">{{ testimonial.parent_name }}</div>
-                        <div class="testimonial-course">{{ testimonial.course.title }}</div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <!-- Mesaj dacă nu există testimoniale -->
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
-                        <p>Testimonialele elevilor noștri vor apărea în curând!</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta-section" id="inscriere">
-        <div class="container">
-            <div class="cta-content">
-                <h2>Gata să Începi Călătoria?</h2>
-                <p>始まり - Un nou început în lumea matematicii te așteaptă</p>
-                <div class="hero-buttons" style="justify-content: center;">
-                    <a href="{% url 'demo_lesson' %}" class="btn btn-secondary">Rezervă Lecția Demo</a>
-                    <a href="{% url 'contact' %}" class="btn btn-outline">Contactează-ne</a>
-                </div>
-            </div>
-        </div>
-    </section>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // JavaScript specific pentru homepage (dacă e necesar)
-    console.log('Homepage loaded successfully - 心の学院');
+  (function(){
+    var root=document.querySelector('.home-fresh');
+    if(!root)return;
+    var els=root.querySelectorAll('.reveal');
+    // Fără IO / reduced-motion / navigare cu ancoră (#) → arătăm tot, fără animație
+    if(!('IntersectionObserver' in window)||matchMedia('(prefers-reduced-motion:reduce)').matches||location.hash){return;}
+    els.forEach(function(e){e.classList.add('armed');});
+    // Plasă de siguranță: nimic nu rămâne invizibil dacă IO nu declanșează
+    setTimeout(function(){els.forEach(function(e){e.classList.add('in');});},2600);
+    var io=new IntersectionObserver(function(rows){
+      rows.forEach(function(r){if(r.isIntersecting){r.target.classList.add('in');io.unobserve(r.target);}});
+    },{threshold:.12,rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){io.observe(e);});
+  })();
 </script>
 {% endblock %}
