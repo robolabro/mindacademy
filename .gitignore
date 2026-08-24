@@ -35,3 +35,6 @@ Thumbs.db
 anzan_test_report.html
 anzan_test_report.json
 .claude/
+
+# Design canvas: generated payload (regenerable from Main.dc.html + canvas.json)
+mindacademy-landing.html
