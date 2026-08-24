@@ -23,12 +23,7 @@
 .home-fresh .ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;
   stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
-/* ---- navbar polish (doar pe homepage) ---- */
-body.home-fresh{background:#F6F2E8}
-body.home-fresh .navbar{position:sticky;top:0;background:rgba(246,242,232,.72);
-  backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);
-  border-bottom:1px solid #F0EADB;box-shadow:none}
-body.home-fresh .top-bar{background:#201C17}
+/* Chrome-ul (bară, nav, top-bar) e acum global în site.css (body.site). */
 
 /* ---- motion primitives ---- */
 @keyframes hf-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}

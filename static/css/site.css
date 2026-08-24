@@ -1,0 +1,115 @@
+/* ==========================================================================
+   MindAcademy — refresh vizual la nivel de SITE PUBLIC (direcția „Emil").
+   Încărcat DUPĂ style.css în base.html și scopat sub body.site, ca să
+   rafineze chrome-ul comun (bară, nav, footer) + componentele partajate
+   (butoane, headere, carduri, forme) pe TOATE paginile publice.
+   Nu atinge platformele interne (au base_teacher/base_student separate).
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+body.site{
+  --paper:#F6F2E8; --paper-2:#FBF8F0; --card:#FFFFFF;
+  --ink:#201C17; --ink-2:#4A4238; --ink-soft:#857A69;
+  --shu:#D63E28; --shu-deep:#B23120; --kin:#A9863B;
+  --line:#EBE3D2; --hair:#F0EADB;
+  --spring:cubic-bezier(.34,1.56,.64,1); --ease:cubic-bezier(.4,0,.2,1);
+  --serif:"Shippori Mincho",Georgia,ui-serif,serif;
+  --sans:"Zen Kaku Gothic New",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:var(--paper);color:var(--ink);font-family:var(--sans);
+}
+body.site::before{display:none!important} /* fără textura veche din style.css */
+body.site h1,body.site h2,body.site h3,body.site h4{font-family:var(--serif);letter-spacing:-.01em}
+body.site a{transition:color .2s var(--ease)}
+
+/* ---- top bar ---- */
+body.site .top-bar{background:var(--ink);color:#EDE4D2}
+body.site .top-bar a{color:#EDE4D2}
+body.site .top-bar a:hover{color:#fff}
+
+/* ---- navbar (sticky, blur) ---- */
+body.site .navbar{position:sticky;top:0;background:rgba(246,242,232,.72);
+  backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);
+  border-bottom:1px solid var(--hair);box-shadow:none}
+body.site .logo-main{font-family:var(--serif);color:var(--ink)}
+body.site .logo-seal{background:var(--shu)}
+body.site .nav-link{color:var(--ink-soft);font-weight:500}
+body.site .nav-link:hover,body.site .nav-link.active{color:var(--shu)}
+body.site .nav-link::after,body.site .nav-link:hover::after{background:var(--shu)}
+body.site .btn-demo{background:var(--ink);color:var(--paper);border-radius:11px;border:1px solid transparent;
+  transition:transform .18s var(--spring),box-shadow .25s var(--ease)}
+body.site .btn-demo:hover{background:#000;transform:translateY(-2px);box-shadow:0 12px 26px -14px rgba(32,28,23,.6)}
+
+/* ---- buttons (tactile) ---- */
+body.site .btn{border-radius:11px;font-family:var(--sans);font-weight:700;border:1px solid transparent;
+  transition:transform .18s var(--spring),box-shadow .25s var(--ease),background .2s,color .2s}
+body.site .btn-primary{background:var(--ink);color:var(--paper);box-shadow:0 8px 20px -10px rgba(32,28,23,.6)}
+body.site .btn-primary:hover{background:#000;transform:translateY(-2px);box-shadow:0 14px 30px -12px rgba(32,28,23,.55)}
+body.site .btn-primary:active{transform:translateY(0) scale(.98)}
+body.site .btn-secondary{background:var(--shu);color:#fff;box-shadow:0 8px 20px -12px var(--shu)}
+body.site .btn-secondary:hover{background:var(--shu-deep);transform:translateY(-2px)}
+body.site .btn-secondary:active{transform:translateY(0) scale(.98)}
+body.site .btn-outline{background:transparent;border-color:var(--line);color:var(--ink)}
+body.site .btn-outline:hover{background:var(--ink);color:var(--paper);border-color:var(--ink);transform:translateY(-2px)}
+
+/* ---- page header (hero paginilor interne) ---- */
+body.site .page-header{position:relative;overflow:hidden;background:var(--paper-2);
+  border-bottom:1px solid var(--hair);padding:clamp(2.6rem,6vw,4.5rem) 0;text-align:center}
+body.site .page-header::after{content:"";position:absolute;inset:-30% -10% auto auto;width:60%;height:340px;
+  z-index:0;pointer-events:none;filter:blur(60px);opacity:.45;
+  background:radial-gradient(50% 60% at 70% 30%,rgba(214,62,40,.25),transparent 70%),
+             radial-gradient(50% 60% at 30% 60%,rgba(169,134,59,.22),transparent 70%)}
+body.site .page-header>*{position:relative;z-index:1}
+body.site .page-header h1{font-family:var(--serif);font-weight:800;color:var(--ink);
+  font-size:clamp(2rem,4.6vw,3.1rem);letter-spacing:-.02em}
+body.site .page-header p{color:var(--ink-soft);max-width:52ch;margin:.7rem auto 0}
+
+/* ---- section titles ---- */
+body.site .section-title{font-family:var(--serif);font-weight:800;color:var(--ink);letter-spacing:-.015em}
+body.site .section-subtitle{color:var(--ink-soft);font-family:var(--serif)}
+
+/* ---- cards (features / courses / testimonials / benefits) ---- */
+body.site .feature-card,body.site .course-card,body.site .testimonial-card,
+body.site .demo-form-container,body.site .contact-form-container{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 2px 4px rgba(32,28,23,.04),0 18px 40px -26px rgba(32,28,23,.35);
+  transition:transform .3s var(--spring),box-shadow .3s var(--ease),border-color .3s}
+body.site .feature-card:hover,body.site .course-card:hover,body.site .testimonial-card:hover{
+  transform:translateY(-6px);box-shadow:0 26px 48px -28px rgba(32,28,23,.5);border-color:var(--kin)}
+body.site .feature-icon{color:var(--shu);font-family:var(--serif)}
+body.site .course-content h3,body.site .feature-card h3{font-family:var(--serif);color:var(--ink)}
+body.site .course-price{color:var(--ink);font-family:var(--serif);font-weight:800}
+body.site .course-image{background:linear-gradient(135deg,rgba(169,134,59,.18),rgba(214,62,40,.15))}
+body.site .course-image-placeholder{color:var(--shu);opacity:.85}
+body.site .badge-featured{background:var(--shu);color:#fff}
+body.site .testimonial-rating{color:var(--kin)}
+body.site .testimonial-text{font-family:var(--serif);color:var(--ink)}
+
+/* ---- forms ---- */
+body.site .form-group label{color:var(--ink);font-weight:700}
+body.site .form-control,body.site .form-input,body.site .form-select,body.site .form-textarea{
+  border:1px solid var(--line);border-radius:11px;background:var(--card);color:var(--ink);
+  transition:border-color .2s var(--ease),box-shadow .2s var(--ease)}
+body.site .form-control:focus,body.site .form-input:focus,body.site .form-select:focus,body.site .form-textarea:focus{
+  border-color:var(--shu);box-shadow:0 0 0 3px rgba(214,62,40,.14);outline:none}
+
+/* ---- cta section ---- */
+body.site .cta-section{position:relative;overflow:hidden;
+  background:radial-gradient(120% 140% at 100% 0%,rgba(214,62,40,.1),transparent 60%),var(--paper-2);
+  border-top:1px solid var(--hair)}
+body.site .cta-content h2{font-family:var(--serif);color:var(--ink)}
+body.site .cta-content p{color:var(--ink-2)}
+
+/* ---- footer (rafinat, rămâne închis) ---- */
+body.site .footer{background:var(--ink);color:#CFC5B2}
+body.site .footer-section h3{font-family:var(--serif);color:#F1E7D4}
+body.site .footer-logo-text{font-family:var(--serif);color:#F1E7D4}
+body.site .footer-logo-seal{background:var(--shu)}
+body.site .footer-links a{color:#CFC5B2}
+body.site .footer-links a:hover{color:#fff}
+body.site .footer-bottom{border-top-color:rgba(255,255,255,.1)}
+
+/* respectă reduced-motion */
+@media (prefers-reduced-motion:reduce){
+  body.site .btn:hover,body.site .btn-demo:hover,
+  body.site .feature-card:hover,body.site .course-card:hover,body.site .testimonial-card:hover{transform:none}
+}
