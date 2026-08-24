@@ -26,6 +26,8 @@
           <h1 class="lm-h1">{% if lesson.topic %}{{ lesson.topic }}{% elif lesson.lesson_template %}{{ lesson.lesson_template.name }}{% else %}Lecție{% endif %}</h1>
           <div class="lm-meta">{{ group.name }}{% if group.module %} · {{ group.module.name }}{% endif %} · {{ rows|length }} elevi</div>
           <div class="lm-badges">
+            {% if lesson.is_recuperare %}<span class="lm-badge recup">↻ Recuperare</span>{% endif %}
+            {% if lesson.is_individual %}<span class="lm-badge indiv">👤 Individuală</span>{% endif %}
             {% if group.lesson_type == 'online' %}<span class="lm-badge online">🌐 Online</span>{% else %}<span class="lm-badge">🏫 Fizic</span>{% endif %}
             <span class="lm-badge status">{{ lesson.get_status_display }}</span>
           </div>
@@ -65,7 +67,8 @@
           </div>
           <div class="lm-extra">
             <label class="lm-chk"><input type="checkbox" name="anuntata_{{ sid }}" {% if a and a.absenta_anuntata %}checked{% endif %}> 📣 Absență anunțată</label>
-            <label class="lm-chk"><input type="checkbox" name="recuperare_{{ sid }}" {% if a and a.genereaza_recuperare %}checked{% endif %}> ↻ Generează recuperare</label>
+            <label class="lm-chk recup"><input type="checkbox" name="recuperare_{{ sid }}" class="recup-cb" {% if a and a.genereaza_recuperare %}checked{% endif %}> ↻ Generează recuperare</label>
+            <p class="lm-recup-hint">ℹ️ Recuperarea se generează pentru <strong>data lecției originale</strong>. După ce apare în listă (marcată <em>↻ Recuperare</em>), deschide-o și <strong>modifică data</strong> la cea reală.</p>
             <span class="lm-stars" data-sid="{{ sid }}">
               {% for v in rating_range %}<button type="button" data-v="{{ v }}" aria-label="{{ v }}">★</button>{% endfor %}
               <input type="hidden" name="rating_{{ sid }}" value="{% if a and a.performance_rating %}{{ a.performance_rating }}{% endif %}">
@@ -136,6 +139,8 @@
   .lm-badge{display:inline-flex;gap:.3rem;font-size:.74rem;font-weight:700;padding:.2rem .6rem;border-radius:999px;background:var(--surface2);color:var(--ink-soft)}
   .lm-badge.online{background:var(--brand-soft);color:var(--brand)}
   .lm-badge.status{background:var(--warn-soft);color:var(--warn)}
+  .lm-badge.recup{background:var(--warn-soft);color:var(--warn)}
+  .lm-badge.indiv{background:var(--brand-soft);color:var(--brand)}
   .lm-hero{padding:1.2rem 1.3rem}
   .lm-hero-top{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start}
   .lm-h1{margin:.2rem 0 .1rem;font-size:1.4rem;letter-spacing:-.01em}
@@ -164,6 +169,12 @@
   .lm-extra{grid-column:1/-1;display:none;gap:.5rem;flex-wrap:wrap;align-items:center;padding:.3rem .2rem 0 3rem}
   .lm-row.absent .lm-extra{display:flex}
   .lm-chk{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;color:var(--ink-soft);cursor:pointer}
+  .lm-chk.recup{color:var(--warn)}
+  /* hint recuperare: apare doar când e bifat „Generează recuperare" */
+  .lm-recup-hint{grid-column:1/-1;flex-basis:100%;display:none;margin:.1rem 0 0;
+    font-size:.78rem;line-height:1.45;color:var(--warn);background:var(--warn-soft);
+    border-radius:8px;padding:.5rem .7rem}
+  .lm-row.show-recup .lm-recup-hint{display:block}
   .lm-chk input{accent-color:var(--warn);width:1rem;height:1rem}
   .lm-stars button{border:0;background:transparent;font-size:1.05rem;line-height:1;color:var(--line2);padding:.1rem;cursor:pointer}
   .lm-stars button.on{color:var(--warn)}
@@ -203,6 +214,11 @@
     var el=document.getElementById('attCount'); if(el)el.textContent=p+" prezenți · "+a+" absenți";
   }
   document.querySelectorAll('.lm-seg input').forEach(function(i){i.addEventListener('change',recount);});
+  // hint recuperare: apare doar când e bifat „Generează recuperare"
+  document.querySelectorAll('.recup-cb').forEach(function(cb){
+    function sync(){var row=cb.closest('.lm-row'); if(row)row.classList.toggle('show-recup',cb.checked);}
+    cb.addEventListener('change',sync); sync();
+  });
   // stele
   document.querySelectorAll('.lm-stars').forEach(function(box){
     var hidden=box.querySelector('input[type=hidden]');

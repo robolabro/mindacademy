@@ -284,6 +284,12 @@ class Lesson(AirtableSyncMixin, models.Model):
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled', verbose_name="Status")
 
+    # Tip lecție (din Airtable): marcate distinct în UI ca profesorul să le
+    # recunoască ușor. Setate la pull din câmpurile „Lectie Recuperare" /
+    # „Lectie Individuala" ale tabelului Lectii.
+    is_recuperare = models.BooleanField(default=False, verbose_name="Lecție de recuperare")
+    is_individual = models.BooleanField(default=False, verbose_name="Lecție individuală")
+
     # Conținut lecție
     topic = models.CharField(max_length=300, blank=True, verbose_name="Subiect")
     description = models.TextField(blank=True, verbose_name="Descriere")

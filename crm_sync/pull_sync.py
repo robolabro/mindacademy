@@ -674,6 +674,10 @@ class PullSync:
                 elif airtable_topic:
                     values['topic'] = str(airtable_topic)[:300]
                 values['status'] = 'completed' if completed else (obj.status or 'scheduled')
+                # Tip lecție (Airtable owner): recuperare / individuală. Marcate
+                # distinct în platformă ca profesorul să le recunoască ușor.
+                values['is_recuperare'] = bool(pick(f, 'Lectie Recuperare', 'Lecție Recuperare', default=False))
+                values['is_individual'] = bool(pick(f, 'Lectie Individuala', 'Lecție Individuală', default=False))
                 # Takeaways/Tema = proprietatea Mind.academy: importăm din Airtable
                 # DOAR dacă în Django e gol (nu suprascriem ce a scris profesorul).
                 tk = pick(f, 'Lesson Takeaways')

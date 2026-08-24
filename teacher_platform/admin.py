@@ -73,8 +73,8 @@ class EnrollmentAdmin(admin.ModelAdmin):
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ['group', 'lesson_template', 'date', 'start_time', 'end_time', 'status']
-    list_filter = ['status', 'date', 'group__course', 'group']
+    list_display = ['group', 'lesson_template', 'date', 'start_time', 'end_time', 'status', 'is_recuperare', 'is_individual']
+    list_filter = ['status', 'is_recuperare', 'is_individual', 'date', 'group__course', 'group']
     search_fields = ['group__name', 'topic', 'lesson_template__name']
     date_hierarchy = 'date'
     raw_id_fields = ['group', 'lesson_template']
@@ -84,7 +84,7 @@ class LessonAdmin(admin.ModelAdmin):
             'fields': ('group', 'lesson_template')
         }),
         ('Programare', {
-            'fields': ('date', 'start_time', 'end_time', 'status')
+            'fields': ('date', 'start_time', 'end_time', 'status', 'is_recuperare', 'is_individual')
         }),
         ('Conținut', {
             'fields': ('topic', 'description', 'homework', 'materials')
