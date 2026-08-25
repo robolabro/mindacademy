@@ -130,16 +130,25 @@ class PullSync:
         identice și e deja „curat" (synced, ne-arhivat), nu-l rescriem — îl
         numărăm „neschimbat". Actualizează întotdeauna map-ul + returnează acțiunea.
         """
+        # O execuție editată în platformă și încă netrimisă e „pending".
+        # Pull-ul (structură din Airtable) NU trebuie să calce peste ea, altfel
+        # push-ul --only-pending o sare și „ce s-a lucrat"/data recuperării nu
+        # mai ajung niciodată în Airtable.
+        was_pending = (not created) and obj.sync_status == 'pending'
         clean = (not created) and (not obj.is_archived) and obj.sync_status == 'synced'
-        if clean and not self._differs(obj, values):
+        differs = self._differs(obj, values)
+        if (clean or was_pending) and not differs:
             self.stats[entity]['unchanged'] += 1
             action = 'unchanged'
         else:
             for k, v in values.items():
                 setattr(obj, k, v)
             obj.is_archived = False
-            obj.sync_status = 'synced'
-            obj.sync_error = ''
+            if not was_pending:
+                # Nu marca „synced" o execuție în așteptare — o lăsăm „pending"
+                # ca push-ul să o trimită; aplicăm doar structura din Airtable.
+                obj.sync_status = 'synced'
+                obj.sync_error = ''
             obj.airtable_synced_at = timezone.now()
             if not self.dry_run:
                 obj.save()

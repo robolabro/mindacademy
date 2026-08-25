@@ -216,6 +216,13 @@ AIRTABLE_SYNC_COURSE_SLUG = config('AIRTABLE_SYNC_COURSE_SLUG', default='')
 # Lasă gol până confirmi comportamentul automatizărilor în chat-ul Airtable.
 AIRTABLE_NEW_LESSON_FIELDS = {}
 
+# La finalizarea lecției în platformă, push-ul bifează aceste câmpuri în tabelul
+# „Lectii". Numele trebuie să coincidă EXACT cu cele din Airtable — dacă diferă,
+# le corectezi din variabile de mediu, fără schimbare de cod. Pune gol ("") ca
+# să nu trimiți câmpul respectiv.
+AIRTABLE_LESSON_COMPLETED_FIELD = config('AIRTABLE_LESSON_COMPLETED_FIELD', default='Completed')
+AIRTABLE_LESSON_TEACHER_PRESENT_FIELD = config('AIRTABLE_LESSON_TEACHER_PRESENT_FIELD', default='Prezente Profesor')
+
 # CSRF Trusted Origins (pentru Railway și domeniul custom)
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
