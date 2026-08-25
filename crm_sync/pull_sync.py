@@ -718,10 +718,33 @@ class PullSync:
                 if hw is not None and not (obj.homework or '').strip():
                     values['homework'] = str(hw)
                 self._save_if_changed(entity, obj, values, created)
+                # Elevii programați SPECIFIC la această lecție (subset din grupă,
+                # ex. lecție individuală/recuperare). Gol = toată grupa.
+                self._set_scheduled_students(obj, f)
                 seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
         return seen
+
+    def _set_scheduled_students(self, lesson, f):
+        """Setează M2M `scheduled_students` din „Students Scheduled" (elevi) și/sau
+        „Inscrieri Selectate" (înscrieri). Gol dacă lecția e pentru toată grupa."""
+        if self.dry_run or not lesson.pk:
+            return
+        student_pks = set()
+        for srec in pick_link(f, 'Students Scheduled', 'Students', 'Elevi Programati'):
+            u = self.map_student.get(srec)
+            if u is not None:
+                student_pks.add(u.pk)
+        insc_recs = pick_link(f, 'Inscrieri Selectate', 'Inscriere Selectata')
+        if insc_recs:
+            for sid in Enrollment.objects.filter(
+                    airtable_record_id__in=insc_recs).values_list('student_id', flat=True):
+                if sid:
+                    student_pks.add(sid)
+        current = set(lesson.scheduled_students.values_list('id', flat=True))
+        if current != student_pks:
+            lesson.scheduled_students.set(student_pks)
 
     # -- orchestrare ---------------------------------------------------------
     def run(self):
