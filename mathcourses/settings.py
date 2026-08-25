@@ -221,7 +221,7 @@ AIRTABLE_NEW_LESSON_FIELDS = {}
 # le corectezi din variabile de mediu, fără schimbare de cod. Pune gol ("") ca
 # să nu trimiți câmpul respectiv.
 AIRTABLE_LESSON_COMPLETED_FIELD = config('AIRTABLE_LESSON_COMPLETED_FIELD', default='Completed')
-AIRTABLE_LESSON_TEACHER_PRESENT_FIELD = config('AIRTABLE_LESSON_TEACHER_PRESENT_FIELD', default='Prezente Profesor')
+AIRTABLE_LESSON_TEACHER_PRESENT_FIELD = config('AIRTABLE_LESSON_TEACHER_PRESENT_FIELD', default='Prezente profesor')
 
 # CSRF Trusted Origins (pentru Railway și domeniul custom)
 CSRF_TRUSTED_ORIGINS = config(
