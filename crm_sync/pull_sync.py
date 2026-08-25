@@ -100,6 +100,7 @@ class PullSync:
         self.map_group = {}        # rec -> Group
         self.map_student = {}      # rec -> User(student)
         self.map_teacher = {}      # rec -> User(teacher)
+        self.map_prezenta_student = {}  # rec Prezenta -> User(student)
 
     # -- utilitare -----------------------------------------------------------
     def _t(self, key):
@@ -732,10 +733,12 @@ class PullSync:
         if self.dry_run or not lesson.pk:
             return
         student_pks = set()
-        for srec in pick_link(f, 'Students Scheduled', 'Students', 'Elevi Programati'):
-            u = self.map_student.get(srec)
+        # „Students Scheduled" = Link to Prezente → elevul fiecărei prezențe legate.
+        for prec in pick_link(f, 'Students Scheduled', 'Students'):
+            u = self.map_prezenta_student.get(prec)
             if u is not None:
                 student_pks.add(u.pk)
+        # „Inscrieri Selectate" = Link to Inscrieri (varianta țintă, viitoare).
         insc_recs = pick_link(f, 'Inscrieri Selectate', 'Inscriere Selectata')
         if insc_recs:
             for sid in Enrollment.objects.filter(
@@ -764,9 +767,24 @@ class PullSync:
 
         group_ids = self.sync_grupe()
         self.sync_inscrieri(group_ids)
+        self._build_prezenta_map()
         self.sync_lectii(group_ids)
 
         return self._finish()
+
+    def _build_prezenta_map(self):
+        """Prezenta rec → User(student), din tabelul Prezente. Folosit ca să
+        rezolvăm „Students Scheduled" (Link to Prezente) → elevii programați."""
+        self.map_prezenta_student = {}
+        try:
+            records = self.fetch(self._t('AIRTABLE_TABLE_PREZENTE'))
+        except Exception:  # pragma: no cover
+            return
+        for r in records:
+            f = r.get('fields', {})
+            u = self.map_student.get(first_link(f, 'Elev', 'Elevi', 'Student'))
+            if u is not None:
+                self.map_prezenta_student[r['id']] = u
 
     def _finish(self):
         totals = dict(created=0, updated=0, unchanged=0, archived=0, skipped=0, errors=0)
