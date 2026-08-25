@@ -829,6 +829,10 @@ def lesson_detail(request, lesson_id):
         group=lesson.group,
         is_active=True
     ).select_related('student')
+    # Lecție cu elevi programați specific (individuală/recuperare) → doar ei.
+    sched_ids = set(lesson.scheduled_students.values_list('id', flat=True))
+    if sched_ids:
+        group_students = group_students.filter(student_id__in=sched_ids)
 
     for gs in group_students:
         attendance = Attendance.objects.filter(
@@ -864,6 +868,11 @@ def lesson_manage(request, lesson_id):
     group = lesson.group
     enrollments = list(Enrollment.objects.filter(group=group, is_active=True)
                        .select_related('student').order_by('student__first_name', 'student__last_name'))
+    # Dacă lecția are elevi programați SPECIFIC (lecție individuală/recuperare),
+    # afișăm/înregistrăm prezența DOAR pentru ei. Gol = toată grupa.
+    sched_ids = set(lesson.scheduled_students.values_list('id', flat=True))
+    if sched_ids:
+        enrollments = [e for e in enrollments if e.student_id in sched_ids]
 
     if request.method == 'POST':
         for enr in enrollments:

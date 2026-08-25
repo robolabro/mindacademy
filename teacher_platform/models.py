@@ -298,6 +298,14 @@ class Lesson(AirtableSyncMixin, models.Model):
     is_recuperare = models.BooleanField(default=False, verbose_name="Lecție de recuperare")
     is_individual = models.BooleanField(default=False, verbose_name="Lecție individuală")
 
+    # Elevii efectiv PROGRAMAȚI la ACEASTĂ lecție (din Airtable: „Students
+    # Scheduled" / „Inscrieri Selectate"). Gol = toată grupa (lecție normală);
+    # ne-gol = doar acești elevi (lecție individuală/recuperare pentru un subset).
+    scheduled_students = models.ManyToManyField(
+        User, blank=True, related_name='scheduled_lessons',
+        limit_choices_to={'role': 'student'},
+        verbose_name="Elevi programați (specific)")
+
     # Conținut lecție
     topic = models.CharField(max_length=300, blank=True, verbose_name="Subiect")
     description = models.TextField(blank=True, verbose_name="Descriere")
