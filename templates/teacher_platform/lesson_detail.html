@@ -30,7 +30,7 @@
                 <span class="lesson-status-badge status-{{ lesson.status }}">{{ lesson.get_status_display }}</span>
             </div>
             <div class="header-actions">
-                <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}" class="btn-primary">📚 Gestionează lecția</a>
+                <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}?next={{ request.META.HTTP_REFERER|urlencode }}" class="btn-primary">📚 Gestionează lecția</a>
                 <a href="{% url 'teacher_platform:lesson_edit' lesson.id %}" class="btn-secondary">Editează Lecție</a>
             </div>
         </div>

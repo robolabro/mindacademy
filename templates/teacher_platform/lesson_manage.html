@@ -17,6 +17,7 @@
 
   <form method="post" id="lmForm">
     {% csrf_token %}
+    <input type="hidden" name="next" value="{{ back_url }}">
 
     <!-- HERO -->
     <section class="lm-card lm-hero" id="lmHero">
@@ -158,7 +159,7 @@
     <div class="lm-savebar"><div class="lm-in">
       <span class="lm-msg">💾 Prezențele + „ce s-a lucrat" se trimit automat în Airtable</span>
       <span class="lm-sp">
-        <a class="lm-btn ghost" href="{% url 'teacher_platform:group_detail' group.id %}">Înapoi</a>
+        <a class="lm-btn ghost" href="{{ back_url }}">Înapoi</a>
         <button type="submit" class="lm-btn primary">Salvează lecția</button>
       </span>
     </div></div>
