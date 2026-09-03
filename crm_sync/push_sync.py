@@ -236,7 +236,10 @@ class PushSync:
                 # în Django pentru o lecție care are deja o Prezenta în Airtable.
                 record_id = existing[0]
             else:
-                record_id = ptr or ''   # nimic în Airtable → create
+                # ptr (dacă e setat) nu se regăsește în Airtable → e „mort"
+                # (ex. prezență ștearsă la restructurare/mutare de lecție).
+                # Creăm una nouă în loc să dăm update pe un id inexistent (403).
+                record_id = ''
             specs.append(dict(
                 entity='Prezente',
                 table=self._t('AIRTABLE_TABLE_PREZENTE'),
@@ -320,14 +323,23 @@ class PushSync:
     def _process_job(self, job):
         op = 'update' if job.target_record_id else 'create'
         try:
+            if op == 'update':
+                try:
+                    self._update(job.target_table, job.target_record_id, job.payload)
+                except Exception as exc:
+                    # Record inexistent în Airtable (șters) → creăm unul nou,
+                    # nu insistăm pe id-ul mort (403/404).
+                    m = str(exc)
+                    if any(s in m for s in ('403', '404', 'NOT_FOUND', 'MODEL_NOT_FOUND')):
+                        op = 'create'
+                    else:
+                        raise
             if op == 'create':
                 rec = self._create(job.target_table, job.payload)
                 new_id = rec['id']
                 job.target_record_id = new_id
                 self._writeback_source(
                     dict(source_kind=job.source_kind, source_id=job.source_id), new_id)
-            else:
-                self._update(job.target_table, job.target_record_id, job.payload)
             job.status = 'done'
             job.processed_at = timezone.now()
             job.attempts = job.attempts + 1
