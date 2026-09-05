@@ -6,6 +6,28 @@ from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 from django.utils.dateparse import parse_date, parse_time
+from django.urls import reverse
+from urllib.parse import urlparse, quote
+
+
+def _same_site_path(request, url):
+    """Întoarce path-ul (cu query) dacă url e din același site și nu e pagina
+    de gestionare lecție; altfel None."""
+    if not url:
+        return None
+    p = urlparse(url)
+    if (not p.netloc or p.netloc == request.get_host()) and p.path.startswith('/') \
+            and not p.path.startswith('//') and '/gestioneaza' not in p.path:
+        return p.path + (('?' + p.query) if p.query else '')
+    return None
+
+
+def _back_url(request, default):
+    """Unde duce „Înapoi": ?next=... explicit (path sau URL same-site), altfel
+    referrer-ul (dacă e din același site și nu e chiar pagina lecției)."""
+    return (_same_site_path(request, request.POST.get('next') or request.GET.get('next'))
+            or _same_site_path(request, request.META.get('HTTP_REFERER'))
+            or default)
 from .models import Group, Enrollment, Lesson, Attendance, Assignment, AssignmentSubmission, LessonNote, SimulatorAssignment, SimulatorTask, SimulatorTaskResult, SimulatorPracticeLog, LiveSession, LiveTask, LiveTaskResult, LiveParticipant, LessonMilestoneProgress
 from accounts.models import User, StudentProfile, TeacherProfile
 from courses.models import Module, LessonTemplate
@@ -874,6 +896,8 @@ def lesson_manage(request, lesson_id):
     if sched_ids:
         enrollments = [e for e in enrollments if e.student_id in sched_ids]
 
+    back_url = _back_url(request, reverse('teacher_platform:group_detail', args=[group.id]))
+
     if request.method == 'POST':
         for enr in enrollments:
             sid = enr.student_id
@@ -915,7 +939,8 @@ def lesson_manage(request, lesson_id):
                     lesson.start_time = t
         lesson.save()
         messages.success(request, 'Lecția a fost salvată. Prezențele și „ce s-a lucrat" se trimit automat în Airtable.')
-        return redirect('teacher_platform:lesson_manage', lesson_id=lesson.id)
+        url = reverse('teacher_platform:lesson_manage', args=[lesson.id])
+        return redirect(f"{url}?next={quote(back_url)}")
 
     # GET
     rows = []
@@ -938,7 +963,7 @@ def lesson_manage(request, lesson_id):
         'milestones': milestones,
         'ms_done': sum(1 for m in milestones if m['done']), 'ms_total': len(milestones),
         'live': live, 'present_count': present_count, 'absent_count': absent_count,
-        'rating_range': [1, 2, 3, 4, 5],
+        'rating_range': [1, 2, 3, 4, 5], 'back_url': back_url,
     }
     return render(request, 'teacher_platform/lesson_manage.html', context)
 
