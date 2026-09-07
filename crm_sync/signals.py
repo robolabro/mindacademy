@@ -47,10 +47,15 @@ def register():
         instance._push_dirty = False
         if instance.pk:
             old = (sender.objects.filter(pk=instance.pk)
-                   .only('lesson_takeaways', 'homework', 'date', 'start_time', 'is_recuperare').first())
+                   .only('lesson_takeaways', 'homework', 'date', 'start_time',
+                         'is_recuperare', 'status').first())
             if old is not None:
                 if ((old.lesson_takeaways or '') != (instance.lesson_takeaways or '')
                         or (old.homework or '') != (instance.homework or '')):
+                    instance._push_dirty = True
+                # Finalizarea lecției (schimbarea statusului) trebuie trimisă:
+                # push-ul bifează „Completed" + „Prezente profesor" în Airtable.
+                if old.status != instance.status:
                     instance._push_dirty = True
                 # Pentru recuperări, platforma e owner pe orar: o schimbare de
                 # dată/oră trebuie trimisă în Airtable.
