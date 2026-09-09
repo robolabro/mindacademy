@@ -120,8 +120,12 @@ def build_new_lesson_fields(lesson):
 class PushSync:
     def __init__(self, dry_run=False, grupa=None, log=None,
                  create_fn=None, update_fn=None, delete_fn=None, fetch_fn=None,
-                 cleanup_duplicates=False, only_pending=False, push_new_lessons=False):
+                 cleanup_duplicates=False, only_pending=False, push_new_lessons=False,
+                 content_all=False):
         self.dry_run = dry_run
+        # Trimite conținutul (Completed/takeaways) pentru TOATE lecțiile
+        # finalizate, nu doar cele „pending" — robust la pierderea flag-ului.
+        self.content_all = content_all
         # Filtru pe „Cod Grupa": una sau mai multe (separate prin virgulă).
         self.grupa = (grupa or '').strip()
         self.grupa_codes = {c.strip() for c in self.grupa.split(',') if c.strip()}
@@ -257,13 +261,15 @@ class PushSync:
         lessons = (Lesson.objects
                    .filter(group_id__in=group_ids)
                    .exclude(airtable_record_id__isnull=True).exclude(airtable_record_id=''))
-        if self.only_pending:
+        if self.only_pending and not self.content_all:
             lessons = lessons.filter(sync_status='pending')
         else:
-            # Trimitem lecțiile cu conținut SAU recuperările (au și orarul de
-            # trimis, chiar dacă n-au încă „ce s-a lucrat"/temă).
-            lessons = lessons.exclude(
-                Q(lesson_takeaways='') & Q(homework='') & Q(is_recuperare=False))
+            # Trimitem lecțiile FINALIZATE (Completed), recuperările și cele cu
+            # conținut — indiferent de flag-ul „pending" (robust dacă pending se
+            # pierde între finalizare și push).
+            lessons = lessons.filter(
+                Q(status='completed') | Q(is_recuperare=True)
+                | ~(Q(lesson_takeaways='') & Q(homework='')))
         for lesson in lessons:
             specs.append(dict(
                 entity='Lectii',

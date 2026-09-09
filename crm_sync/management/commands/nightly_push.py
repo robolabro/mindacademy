@@ -34,7 +34,8 @@ class Command(BaseCommand):
             push = PushSync(
                 dry_run=opts['dry_run'], grupa=None, log=self.stdout.write,
                 cleanup_duplicates=False,
-                only_pending=True,
+                only_pending=True,        # prezențe: doar ce s-a schimbat
+                content_all=True,         # lecții: Completed pt. TOATE finalizate
                 push_new_lessons=False,
             )
             result = push.run()
