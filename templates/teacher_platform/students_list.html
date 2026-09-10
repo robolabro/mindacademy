@@ -1,75 +1,150 @@
 {% extends 'teacher_platform/base_teacher.html' %}
 
-{% block title %}Studenții Mei{% endblock %}
-{% block page_title %}🎓 Studenții Mei{% endblock %}
+{% block title %}Elevi{% endblock %}
+{% block page_title %}Elevi{% endblock %}
 
 {% block content %}
-<div class="page-container">
-    <!-- Filters -->
-    <div class="filters-bar">
-        <div class="filter-group">
-            <label>Filtrează după grupă:</label>
-            <a href="?" class="filter-btn {% if not group_filter %}active{% endif %}">
-                Toți Studenții ({{ students.count }})
-            </a>
-            {% for group in groups %}
-            <a href="?group={{ group.id }}" class="filter-btn {% if group_filter == group.id|stringformat:'s' %}active{% endif %}">
-                {{ group.name }}
-            </a>
-            {% endfor %}
-        </div>
-        <a href="{% url 'teacher_platform:student_add' %}" class="btn-primary">➕ Adaugă Elev Nou</a>
-    </div>
+<div class="st">
+  <header class="st-bar">
+    <h1 class="st-title">Elevii mei</h1>
+    <label class="st-search">
+      <input type="search" id="stSearch" placeholder="Caută după nume…" autocomplete="off">
+    </label>
+    <select class="st-group" id="stGroup">
+      <option value="">Toate grupele</option>
+      {% for group in groups %}
+      <option value="{{ group.id }}" {% if group_filter == group.id|stringformat:'s' %}selected{% endif %}>
+        {{ group.name }}</option>
+      {% endfor %}
+    </select>
+  </header>
+  <p class="st-count"><span id="stCount">{{ students|length }}</span> elev{{ students|length|pluralize:",i" }}</p>
 
-    <!-- Students Grid -->
-    {% if students %}
-    <div class="students-grid-full">
-        {% for gs in students %}
-        <a href="{% url 'teacher_platform:student_detail' gs.student.id %}" class="student-card-full">
-            <div class="student-avatar-large">
-                {% if gs.student.student_profile %}
-                    <span class="avatar-icon-large">{% if gs.student.student_profile.avatar == 'boy' %}👦{% else %}👧{% endif %}</span>
-                {% else %}
-                    <span class="avatar-icon-large">🎓</span>
-                {% endif %}
-            </div>
-            <div class="student-details">
-                <h3>{{ gs.student.get_full_name }}</h3>
-                <div class="student-meta">
-                    {% if gs.group %}
-                        <span>👥 {{ gs.group.name }}</span>
-                    {% else %}
-                        <span>⚠️ Fără grupă</span>
-                    {% endif %}
-                    {% if gs.student.student_profile and gs.student.student_profile.grade %}
-                        <span>📚 Clasa {{ gs.student.student_profile.grade }}</span>
-                    {% endif %}
-                </div>
-                <div class="student-stats-grid">
-                    <div class="stat-item">
-                        <span class="stat-label">Prezență</span>
-                        <span class="stat-value">{{ gs.get_attendance_rate }}%</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Lecții</span>
-                        <span class="stat-value">{{ gs.lessons_attended }}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Absențe</span>
-                        <span class="stat-value">{{ gs.lessons_missed }}</span>
-                    </div>
-                </div>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-state-large">
-        <div class="empty-icon">🎓</div>
-        <h2>Nu ai studenți</h2>
-        <p>Adaugă studenți în grupele tale pentru a-i gestiona aici.</p>
-        <a href="{% url 'teacher_platform:student_add' %}" class="btn-primary">➕ Adaugă Elev Nou</a>
-    </div>
-    {% endif %}
+  {% if students %}
+  <div class="st-list" id="stList">
+    {% for gs in students %}
+    <a class="st-row" href="{% url 'teacher_platform:student_detail' gs.student.id %}"
+       data-name="{{ gs.student.get_full_name|default:gs.student.username|lower }}">
+      <span class="st-av">{{ gs.student.first_name|slice:":1" }}{{ gs.student.last_name|slice:":1" }}</span>
+
+      <span class="st-main">
+        <b>{{ gs.student.get_full_name|default:gs.student.username }}</b>
+        {% if gs.student.student_profile.grade %}
+          <span class="st-meta">Clasa {{ gs.student.student_profile.grade }}</span>
+        {% elif gs.group.module %}
+          <span class="st-meta">{{ gs.group.module.name }}</span>
+        {% endif %}
+      </span>
+
+      <span class="st-grp">
+        {% if gs.group %}{{ gs.group.short_name }}
+        {% else %}<i class="st-nogrp">fără grupă</i>{% endif %}
+      </span>
+
+      <span class="st-num">
+        <b>{% if gs.airtable_prezente_modul is not None %}{{ gs.airtable_prezente_modul }}{% else %}{{ gs.lessons_attended }}{% endif %}</b>
+        <small>prezențe</small>
+      </span>
+
+      <span class="st-num">
+        {% if gs.airtable_lectii_ramase is not None %}
+          <b>{{ gs.airtable_lectii_ramase }}</b><small>rămase</small>
+        {% else %}
+          <b class="soft">{{ gs.get_attendance_rate }}%</b><small>prezență</small>
+        {% endif %}
+      </span>
+
+      <span class="st-go" aria-hidden="true">›</span>
+    </a>
+    {% endfor %}
+  </div>
+  <p class="st-empty" id="stNone" hidden>Niciun elev nu se potrivește căutării.</p>
+  {% else %}
+  <p class="st-empty">
+    {% if group_filter %}Grupa selectată nu are elevi înscriși.
+    {% else %}Niciun elev încă. Elevii și înscrierile lor vin din Airtable.{% endif %}
+  </p>
+  {% endif %}
+
+  <p class="st-src">Elevii și înscrierile se gestionează în Airtable. Cifrele de progres vin de acolo.</p>
 </div>
+
+<style>
+  .st{--ink:#151b28;--soft:#6b7688;--line:#e6eaf1;--bg:#fff;--bg2:#f7f9fc;
+    --brand:#4f46e5;--brand-soft:#eef0fe;--ok:#15803d;--title:#312e81;
+    color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:15px;max-width:1040px;margin:0 auto}
+
+  .st-bar{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.35rem}
+  .st-title{margin:0;font-family:inherit;font-size:1.35rem;font-weight:700;
+    letter-spacing:-.02em;color:var(--title);flex:1;min-width:9rem}
+  .st-search input,.st-group{border:1px solid var(--line);background:var(--bg);border-radius:8px;
+    padding:.45rem .7rem;font-size:.86rem;font-family:inherit;color:var(--ink);
+    width:12rem;max-width:12rem;flex:none}
+  .st-search input:focus,.st-group:focus{outline:2px solid var(--brand);outline-offset:-1px}
+  .st-count{margin:0 0 1.1rem;font-size:.82rem;color:var(--soft)}
+
+  .st-list{display:flex;flex-direction:column;gap:.4rem}
+  .st-row{display:grid;grid-template-columns:auto 1fr auto auto auto auto;align-items:center;gap:1.1rem;
+    padding:.75rem 1rem;border:1px solid var(--line);border-radius:11px;background:var(--bg);
+    text-decoration:none;color:inherit;transition:border-color .15s,background .15s}
+  .st-row:hover{border-color:var(--brand);background:var(--bg2)}
+  .st-row[hidden]{display:none}
+  .st-av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;
+    font-size:.76rem;font-weight:700;background:var(--brand-soft);color:var(--brand);text-transform:uppercase}
+  .st-main{display:flex;flex-direction:column;gap:.08rem;min-width:0}
+  .st-main b{font-size:.96rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .st-meta{font-size:.79rem;color:var(--soft)}
+  .st-grp{font-weight:800;font-size:.78rem;letter-spacing:.02em;padding:.3rem .55rem;border-radius:6px;
+    background:var(--brand-soft);color:var(--brand);white-space:nowrap}
+  .st-nogrp{font-style:normal;font-weight:600;color:var(--soft)}
+  .st-grp:has(.st-nogrp){background:var(--bg2)}
+  .st-num{display:flex;flex-direction:column;align-items:center;min-width:3.6rem}
+  .st-num b{font-size:1rem;color:var(--ok)}
+  .st-num b.soft{color:var(--ink)}
+  .st-num small{font-size:.68rem;color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
+  .st-go{color:var(--line);font-size:1.3rem;line-height:1}
+  .st-row:hover .st-go{color:var(--brand)}
+
+  .st-empty{color:var(--soft);font-size:.9rem;padding:2.5rem;text-align:center;
+    border:1px dashed var(--line);border-radius:11px;margin:0}
+  .st-src{margin:1.2rem 0 0;font-size:.76rem;color:var(--soft)}
+
+  @media(max-width:820px){
+    .st-row{grid-template-columns:auto 1fr auto;gap:.7rem}
+    .st-num{grid-row:2;justify-self:start;align-items:flex-start}
+    .st-go{display:none}
+    .st-title{width:100%;flex:none}
+  }
+  @media (prefers-color-scheme:dark){
+    .st{--ink:#e9edf6;--soft:#98a2b8;--line:#2a3347;--bg:#151c2a;--bg2:#1a2333;
+      --brand:#8b8cf8;--brand-soft:#1f2547;--ok:#4ade80;--title:#c7c9ff}
+  }
+</style>
+
+<script>
+(function(){
+  // Filtrul de grupă e pe server (schimbă adresa); căutarea după nume e locală.
+  var sel = document.getElementById('stGroup');
+  if (sel) sel.addEventListener('change', function(){
+    window.location = sel.value ? '?group=' + encodeURIComponent(sel.value) : '?';
+  });
+
+  var box = document.getElementById('stSearch'),
+      list = document.getElementById('stList'),
+      none = document.getElementById('stNone'),
+      count = document.getElementById('stCount');
+  if (!box || !list) return;
+  box.addEventListener('input', function(){
+    var q = box.value.trim().toLowerCase(), shown = 0;
+    list.querySelectorAll('.st-row').forEach(function(row){
+      var hit = !q || row.dataset.name.indexOf(q) !== -1;
+      row.hidden = !hit;
+      if (hit) shown++;
+    });
+    if (count) count.textContent = shown;
+    if (none) none.hidden = shown > 0;
+  });
+})();
+</script>
 {% endblock %}

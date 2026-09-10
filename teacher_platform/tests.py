@@ -422,3 +422,62 @@ class GrupeTests(TestCase):
         self.client.force_login(strain)
         self.assertEqual(self.client.get(
             reverse('teacher_platform:group_detail', args=[self.group.id])).status_code, 404)
+
+
+class EleviTests(TestCase):
+    """Elevii vin din Airtable; pagina lor e listă + căutare, fără creare."""
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='prof_e', password='Test1234!', role='teacher')
+        age = AgeGroup.objects.create(name='7-10 ani', min_age=7, max_age=10)
+        course = Course.objects.create(
+            title='Soroban', slug='soroban-e', description='x', age_group=age,
+            price=0, frequency='saptamanal', group_size=6)
+        self.group = Group.objects.create(
+            name='A0131 · Modul A', teacher=self.teacher, course=course, weekday=1,
+            start_time=datetime.time(18, 0), start_date=datetime.date(2026, 1, 12))
+        self.ana = User.objects.create_user(
+            username='ana_e', password='Test1234!', role='student',
+            first_name='Ana', last_name='Pop')
+        self.bogdan = User.objects.create_user(
+            username='bogdan_e', password='Test1234!', role='student',
+            first_name='Bogdan', last_name='Ion')
+        Enrollment.objects.create(group=self.group, student=self.ana, is_active=True,
+                                  airtable_prezente_modul=7, airtable_lectii_ramase=13)
+        Enrollment.objects.create(group=self.group, student=self.bogdan, is_active=True)
+        self.client.force_login(self.teacher)
+        self.url = reverse('teacher_platform:students_list')
+
+    def test_lista_nu_ofera_adaugare_de_elev(self):
+        self.assertNotIn('Adaugă Elev', self.client.get(self.url).content.decode())
+
+    def test_ruta_de_adaugare_doar_redirectioneaza(self):
+        inainte = User.objects.filter(role='student').count()
+        self.assertRedirects(self.client.get(reverse('teacher_platform:student_add')),
+                             self.url)
+        self.assertEqual(User.objects.filter(role='student').count(), inainte)
+
+    def test_arata_cifrele_din_airtable_cand_exista(self):
+        html = self.client.get(self.url).content.decode()
+        self.assertIn('>7<', html)   # prezențe în modul
+        self.assertIn('>13<', html)  # lecții rămase
+
+    def test_contorul_numara_corect(self):
+        """`students` e o listă, deci `.count` nu mergea în șablon."""
+        html = self.client.get(self.url).content.decode()
+        self.assertEqual(len(self.client.get(self.url).context['students']), 2)
+        self.assertIn('id="stCount">2</span> elevi', html)
+
+    def test_filtrul_pe_grupa(self):
+        alta = Group.objects.create(
+            name='S0128 · Modul S', teacher=self.teacher, weekday=2,
+            start_time=datetime.time(18, 0), start_date=datetime.date(2026, 1, 12))
+        ctx = self.client.get(self.url, {'group': alta.id}).context
+        self.assertEqual(len(ctx['students']), 0)
+
+    def test_vede_doar_elevii_din_grupele_lui(self):
+        strain = User.objects.create_user(
+            username='prof_es', password='Test1234!', role='teacher')
+        self.client.force_login(strain)
+        self.assertEqual(len(self.client.get(self.url).context['students']), 0)
