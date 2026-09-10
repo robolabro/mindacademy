@@ -837,43 +837,11 @@ def student_detail(request, student_id):
 @teacher_required
 def lesson_detail(request, lesson_id):
     """
-    Detalii despre o lecție și tracking prezență
+    Rută păstrată doar pentru compatibilitate (linkuri/bookmark-uri vechi).
+    Ecranul de lecție e unul singur: „Gestionează lecția".
     """
-    lesson = get_object_or_404(
-        Lesson.objects.select_related('group', 'lesson_template'),
-        id=lesson_id,
-        group__teacher=request.user
-    )
-
-    # Studenții din grupă și prezența lor
-    students_data = []
-    group_students = Enrollment.objects.filter(
-        group=lesson.group,
-        is_active=True
-    ).select_related('student')
-    # Lecție cu elevi programați specific (individuală/recuperare) → doar ei.
-    sched_ids = set(lesson.scheduled_students.values_list('id', flat=True))
-    if sched_ids:
-        group_students = group_students.filter(student_id__in=sched_ids)
-
-    for gs in group_students:
-        attendance = Attendance.objects.filter(
-            lesson=lesson,
-            student=gs.student
-        ).first()
-
-        students_data.append({
-            'group_student': gs,
-            'student': gs.student,
-            'attendance': attendance,
-        })
-
-    context = {
-        'lesson': lesson,
-        'students_data': students_data,
-    }
-
-    return render(request, 'teacher_platform/lesson_detail.html', context)
+    get_object_or_404(Lesson, id=lesson_id, group__teacher=request.user)
+    return redirect('teacher_platform:lesson_manage', lesson_id=lesson_id)
 
 
 @login_required
@@ -1314,7 +1282,7 @@ def lesson_create(request, group_id=None):
                 lesson.save()
 
                 messages.success(request, f'Lecția a fost creată cu succes pentru {lesson.date.strftime("%d %B %Y")}!')
-                return redirect('teacher_platform:lesson_detail', lesson_id=lesson.id)
+                return redirect('teacher_platform:lesson_manage', lesson_id=lesson.id)
 
             else:  # recurring
                 # Creează lecții recurente
@@ -1377,106 +1345,14 @@ def lesson_create(request, group_id=None):
 
 @login_required
 @teacher_required
-def mark_attendance(request, lesson_id):
-    """
-    AJAX endpoint pentru marcarea/actualizarea prezenței
-    """
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-
-    lesson = get_object_or_404(
-        Lesson.objects.select_related('group'),
-        id=lesson_id,
-        group__teacher=request.user
-    )
-
-    student_id = request.POST.get('student_id')
-    is_present = request.POST.get('is_present') == 'true'
-    performance_rating = request.POST.get('performance_rating')
-    notes = request.POST.get('notes', '')
-
-    if not student_id:
-        return JsonResponse({'error': 'Student ID is required'}, status=400)
-
-    student = get_object_or_404(User, id=student_id, role='student')
-
-    # Verifică că studentul e în grupă
-    if not Enrollment.objects.filter(group=lesson.group, student=student, is_active=True).exists():
-        return JsonResponse({'error': 'Student not in this group'}, status=400)
-
-    # Creează sau actualizează attendance
-    attendance, created = Attendance.objects.update_or_create(
-        lesson=lesson,
-        student=student,
-        defaults={
-            'is_present': is_present,
-            'notes': notes,
-            'performance_rating': int(performance_rating) if performance_rating and performance_rating != '' else None
-        }
-    )
-
-    # Actualizează contoarele în Enrollment
-    group_student = Enrollment.objects.get(group=lesson.group, student=student)
-    total_lessons = Attendance.objects.filter(
-        lesson__group=lesson.group,
-        student=student
-    ).count()
-
-    attended_lessons = Attendance.objects.filter(
-        lesson__group=lesson.group,
-        student=student,
-        is_present=True
-    ).count()
-
-    group_student.lessons_attended = attended_lessons
-    group_student.lessons_missed = total_lessons - attended_lessons
-    group_student.save()
-
-    return JsonResponse({
-        'success': True,
-        'created': created,
-        'attendance': {
-            'is_present': attendance.is_present,
-            'performance_rating': attendance.performance_rating,
-            'notes': attendance.notes,
-        }
-    })
-
-
-@login_required
-@teacher_required
 def lesson_edit(request, lesson_id):
     """
-    Editează o lecție existentă
+    Rută păstrată doar pentru compatibilitate. Structura lecției (dată, grupă,
+    șablon) e a Airtable-ului — se editează acolo, altfel pull-ul nocturn o
+    suprascrie. Excepția, data recuperării, se editează în „Gestionează lecția".
     """
-    lesson = get_object_or_404(
-        Lesson.objects.select_related('group'),
-        id=lesson_id,
-        group__teacher=request.user
-    )
-
-    if request.method == 'POST':
-        # Pentru editare, folosim doar câmpurile relevante (nu lesson_type)
-        form = LessonForm(request.POST, instance=lesson, teacher=request.user)
-        # Ignorăm câmpurile de recurență pentru editare
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Lecția a fost actualizată cu succes!')
-            return redirect('teacher_platform:lesson_detail', lesson_id=lesson.id)
-        else:
-            messages.error(request, 'Te rog corectează erorile din formular.')
-    else:
-        form = LessonForm(instance=lesson, teacher=request.user)
-        # Setează lesson_type la single pentru editare
-        form.initial['lesson_type'] = 'single'
-
-    context = {
-        'form': form,
-        'lesson': lesson,
-        'title': f'Editează Lecție: {lesson.date.strftime("%d %B %Y")}',
-        'is_edit': True,
-    }
-    return render(request, 'teacher_platform/lesson_form.html', context)
+    get_object_or_404(Lesson, id=lesson_id, group__teacher=request.user)
+    return redirect('teacher_platform:lesson_manage', lesson_id=lesson_id)
 
 
 @login_required

@@ -2,97 +2,108 @@
 {% load static %}
 
 {% block title %}Lecție · {{ group.name }}{% endblock %}
-{% block page_title %}📚 Gestionează lecția{% endblock %}
+{% block page_title %}Lecția{% endblock %}
 
 {% block content %}
-<div class="lm-screen">
-  <div class="lm-crumb">
-    <a href="{% url 'teacher_platform:group_detail' group.id %}">{{ group.name }}</a> ›
-    <span>Lecția {{ lesson.date|date:"d M" }}</span>
-  </div>
+<div class="lm">
+  <nav class="lm-crumb">
+    <a href="{{ back_url }}">‹ Înapoi</a>
+    <span>·</span>
+    <a href="{% url 'teacher_platform:group_detail' group.id %}">{{ group.name }}</a>
+  </nav>
 
-  {% if messages %}
-    {% for m in messages %}<div class="lm-flash">{{ m }}</div>{% endfor %}
-  {% endif %}
+  {% if messages %}{% for m in messages %}<p class="lm-flash">{{ m }}</p>{% endfor %}{% endif %}
 
   <form method="post" id="lmForm">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ back_url }}">
 
-    <!-- HERO -->
-    <section class="lm-card lm-hero" id="lmHero">
-      <div class="lm-hero-top">
-        <div>
-          <div class="lm-meta">{{ lesson.date|date:"l, d F" }} · {{ lesson.start_time|time:"H:i" }}{% if lesson.end_time %}–{{ lesson.end_time|time:"H:i" }}{% endif %}</div>
-          <h1 class="lm-h1">{% if lesson.topic %}{{ lesson.topic }}{% elif lesson.lesson_template %}{{ lesson.lesson_template.name }}{% else %}Lecție{% endif %}</h1>
-          <div class="lm-meta">{{ group.name }}{% if group.module %} · {{ group.module.name }}{% endif %} · {{ rows|length }} elevi</div>
-          <div class="lm-badges">
-            {% if lesson.is_recuperare %}<span class="lm-badge recup">↻ Recuperare</span>{% endif %}
-            {% if lesson.is_individual %}<span class="lm-badge indiv">👤 Individuală</span>{% endif %}
-            {% if group.lesson_type == 'online' %}<span class="lm-badge online">🌐 Online</span>{% else %}<span class="lm-badge">🏫 Fizic</span>{% endif %}
-            <span class="lm-badge status">{{ lesson.get_status_display }}</span>
-          </div>
-        </div>
-        <div class="lm-hero-actions">
-          {% if group.lesson_type == 'online' and group.meeting_link %}
-            <a class="lm-btn ghost" href="{{ group.meeting_link }}" target="_blank" rel="noopener">🎥 Deschide call</a>
-          {% endif %}
-          <button type="button" class="lm-btn live" id="liveBtn"
-                  data-start="{% url 'teacher_platform:live_session_start' group.id %}"
-                  data-panel="{% url 'teacher_platform:group_live' group.id %}">
-            {% if live %}● Mergi la panoul live{% else %}▶ Pornește lecția live{% endif %}
-          </button>
+    <!-- ANTET -->
+    <header class="lm-head">
+      <div>
+        <p class="lm-when">{{ lesson.date|date:"l, j F" }} · {{ lesson.start_time|time:"H:i" }}{% if lesson.end_time %}–{{ lesson.end_time|time:"H:i" }}{% endif %}</p>
+        <h1>{% if lesson.topic %}{{ lesson.topic }}{% elif lesson.lesson_template %}{{ lesson.lesson_template.name }}{% else %}Lecție{% endif %}</h1>
+        <p class="lm-sub">{{ group.name }}{% if group.module %} · {{ group.module.name }}{% endif %} · {{ rows|length }} elevi</p>
+        <div class="lm-tags">
+          {% if lesson.is_recuperare %}<span class="lm-tag warn">Recuperare</span>{% endif %}
+          {% if lesson.is_individual %}<span class="lm-tag brand">Individuală</span>{% endif %}
+          {% if lesson.status == 'completed' %}<span class="lm-tag ok">Finalizată</span>{% endif %}
         </div>
       </div>
-    </section>
+      <div class="lm-head-act">
+        {% if group.lesson_type == 'online' and group.meeting_link %}
+          <a class="lm-btn ghost" href="{{ group.meeting_link }}" target="_blank" rel="noopener">Deschide call</a>
+        {% endif %}
+        <button type="button" class="lm-btn live" id="liveBtn"
+                data-start="{% url 'teacher_platform:live_session_start' group.id %}"
+                data-panel="{% url 'teacher_platform:group_live' group.id %}">
+          {% if live %}Mergi la panoul live{% else %}Pornește lecția live{% endif %}
+        </button>
+      </div>
+    </header>
 
     {% if lesson.is_recuperare %}
     <!-- DATA RECUPERĂRII -->
-    <section class="lm-card lm-recup-card">
-      <div class="lm-sec-h"><h2>↻ Lecție de recuperare</h2></div>
-      <div class="lm-body">
-        <p class="lm-hint">Recuperarea a fost generată pe <strong>data lecției originale</strong>. Stabilește data reală mai jos — se trimite automat în Airtable.</p>
-        <div class="lm-recup-when">
-          <label class="lm-fld" for="recupDate">Data</label>
-          <input class="lm-txt" type="date" id="recupDate" name="recup_date" value="{{ lesson.date|date:'Y-m-d' }}">
-          <label class="lm-fld" for="recupTime">Ora</label>
-          <input class="lm-txt" type="time" id="recupTime" name="recup_time" value="{{ lesson.start_time|time:'H:i' }}">
-        </div>
+    <section class="lm-card warn">
+      <h2>Data recuperării</h2>
+      <p class="lm-note">Recuperarea s-a generat pe data lecției originale. Pune data reală — se trimite în Airtable.</p>
+      <div class="lm-when-row">
+        <label>Data <input type="date" id="recupDate" name="recup_date" value="{{ lesson.date|date:'Y-m-d' }}"></label>
+        <label>Ora <input type="time" id="recupTime" name="recup_time" value="{{ lesson.start_time|time:'H:i' }}"></label>
       </div>
     </section>
     {% endif %}
 
-    <!-- ATTENDANCE -->
-    <section class="lm-card">
-      <div class="lm-sec-h">
-        <h2>✓ Prezență</h2>
-        <span class="lm-pill" id="attCount">{{ present_count }} prezenți · {{ absent_count }} absenți</span>
+    <!-- PLANUL LECȚIEI (referință, pliabil) -->
+    {% if lesson.lesson_template %}
+    <details class="lm-plan"{% if milestones and ms_done < ms_total %} open{% endif %}>
+      <summary>
+        <span>Planul lecției · {{ lesson.lesson_template.name }}</span>
+        {% if ms_total %}<b id="msCount">{{ ms_done }}/{{ ms_total }}</b>{% endif %}
+      </summary>
+      <div class="lm-plan-body">
+        {% if lesson.lesson_template.objectives %}
+          <p class="lm-obj">{{ lesson.lesson_template.objectives|linebreaksbr }}</p>
+        {% endif %}
+        {% if milestones %}
+          <div class="lm-bar"><i id="msBar" style="width:{% if ms_total %}{% widthratio ms_done ms_total 100 %}{% else %}0{% endif %}%"></i></div>
+          {% for m in milestones %}
+          <label class="lm-ms{% if m.done %} done{% endif %}">
+            <input type="checkbox" data-ms="{{ m.ms.id }}" {% if m.done %}checked{% endif %}>
+            <span>{{ m.ms.title }}</span>
+          </label>
+          {% endfor %}
+        {% endif %}
       </div>
+    </details>
+    {% endif %}
+
+    <!-- 1 · PREZENȚĂ -->
+    <section class="lm-card">
+      <h2><i class="lm-step">1</i> Prezență <span class="lm-count" id="attCount">{{ present_count }} prezenți · {{ absent_count }} absenți</span></h2>
       <div class="lm-att">
         {% for r in rows %}
         {% with s=r.student a=r.att sid=r.student.id %}
         <div class="lm-row{% if a and not a.is_present %} absent{% endif %}" data-sid="{{ sid }}">
-          <div class="lm-stud">
-            <span class="lm-av">{{ s.first_name|slice:":1" }}{{ s.last_name|slice:":1" }}</span>
-            <div><div class="lm-nm">{{ s.get_full_name|default:s.username }}</div><div class="lm-sub">Înscris · activ</div></div>
-          </div>
-          <div class="lm-actions">
+          <span class="lm-av">{{ s.first_name|slice:":1" }}{{ s.last_name|slice:":1" }}</span>
+          <span class="lm-nm">{{ s.get_full_name|default:s.username }}</span>
+          <span class="lm-act">
             <label class="lm-present" title="Debifează pentru absent">
               <input type="checkbox" class="present-cb" name="present_{{ sid }}" value="1"
                      {% if a %}{% if a.is_present %}checked{% endif %}{% else %}checked{% endif %}>
-              <span class="lm-present-pill"><span class="on-txt">✓ Prezent</span><span class="off-txt">✕ Absent</span></span>
+              <span class="lm-pill"><b class="on-txt">Prezent</b><b class="off-txt">Absent</b></span>
             </label>
-            <button type="button" class="lm-edit-btn" aria-expanded="false">Editează</button>
-          </div>
+            <button type="button" class="lm-more" aria-expanded="false" aria-label="Mai multe opțiuni">⋯</button>
+          </span>
           <div class="lm-extra">
-            <label class="lm-chk"><input type="checkbox" name="anuntata_{{ sid }}" {% if a and a.absenta_anuntata %}checked{% endif %}> 📣 Absență anunțată</label>
-            <label class="lm-chk recup"><input type="checkbox" name="recuperare_{{ sid }}" class="recup-cb" {% if a and a.genereaza_recuperare %}checked{% endif %}> ↻ Generează recuperare</label>
-            <p class="lm-recup-hint">ℹ️ Recuperarea se generează pentru <strong>data lecției originale</strong>. După ce apare în listă (marcată <em>↻ Recuperare</em>), deschide-o și <strong>modifică data</strong> la cea reală.</p>
+            <label class="lm-chk"><input type="checkbox" name="anuntata_{{ sid }}" {% if a and a.absenta_anuntata %}checked{% endif %}> Absență anunțată</label>
+            <label class="lm-chk recup"><input type="checkbox" name="recuperare_{{ sid }}" class="recup-cb" {% if a and a.genereaza_recuperare %}checked{% endif %}> Generează recuperare</label>
             <span class="lm-stars" data-sid="{{ sid }}">
               {% for v in rating_range %}<button type="button" data-v="{{ v }}" aria-label="{{ v }}">★</button>{% endfor %}
               <input type="hidden" name="rating_{{ sid }}" value="{% if a and a.performance_rating %}{{ a.performance_rating }}{% endif %}">
             </span>
-            <input class="lm-note" type="text" name="notes_{{ sid }}" value="{{ a.notes|default:'' }}" placeholder="notiță…">
+            <input class="lm-inp sm" type="text" name="notes_{{ sid }}" value="{{ a.notes|default:'' }}" placeholder="notiță…">
+            <p class="lm-recup-hint">Recuperarea se creează în Airtable pe data lecției originale. Când apare în listă (marcată <em>Recuperare</em>), deschide-o și pune data reală.</p>
           </div>
         </div>
         {% endwith %}
@@ -102,74 +113,36 @@
       </div>
     </section>
 
-    <div class="lm-two">
-      <!-- STÂNGA: PLANUL LECȚIEI (șablon din modul + milestones) -->
-      <section class="lm-card">
-        <div class="lm-sec-h"><h2>📋 Planul lecției</h2>{% if ms_total %}<span class="lm-pill" id="msCount">{{ ms_done }}/{{ ms_total }}</span>{% endif %}</div>
-        <div class="lm-plan">
-          {% if lesson.lesson_template %}
-          <div class="lm-tpl">
-            <div class="lm-tpl-name">{{ lesson.lesson_template.name }}</div>
-            {% if lesson.lesson_template.objectives %}<div class="lm-tpl-obj">{{ lesson.lesson_template.objectives|linebreaksbr }}</div>{% endif %}
-          </div>
-          {% endif %}
-          {% if milestones %}
-          <div class="lm-plan-h">Pași de parcurs</div>
-          <div class="lm-bar"><i id="msBar" style="width:{% if ms_total %}{% widthratio ms_done ms_total 100 %}{% else %}0{% endif %}%"></i></div>
-          <div class="lm-mslist">
-          {% for m in milestones %}
-          <label class="lm-msrow{% if m.done %} done{% endif %}">
-            <input type="checkbox" data-ms="{{ m.ms.id }}" {% if m.done %}checked{% endif %}>
-            <span>{{ m.ms.title }}</span>
-          </label>
-          {% endfor %}
-          </div>
-          {% elif not lesson.lesson_template %}
-          <p class="lm-empty">Lecția nu e legată de un șablon din modul — fără plan definit.</p>
-          {% else %}
-          <p class="lm-empty">Șablonul nu are pași (milestones) definiți încă — se pot adăuga din Admin.</p>
-          {% endif %}
+    <!-- 2 · CE S-A LUCRAT -->
+    <section class="lm-card">
+      <h2><i class="lm-step">2</i> Ce s-a lucrat</h2>
+      <div class="lm-rte">
+        <div class="lm-rte-bar" role="toolbar" aria-label="Formatare">
+          <button type="button" data-md="h" title="Titlu">H</button>
+          <button type="button" data-md="ul" title="Listă cu puncte">•</button>
+          <button type="button" data-md="ol" title="Listă numerotată">1.</button>
+          <button type="button" data-md="b" title="Îngroșat"><b>B</b></button>
+          <button type="button" data-md="preview" class="lm-rte-prev" title="Previzualizare">Previzualizare</button>
         </div>
-      </section>
+        <textarea id="tk" name="takeaways" rows="7" placeholder="Ex:&#10;## Ce am lucrat&#10;- Adunarea cu prietenul mic&#10;- 20 anzan">{{ lesson.lesson_takeaways }}</textarea>
+        <div class="lm-rte-preview" id="tkPreview" hidden></div>
+      </div>
+      <p class="lm-note">Ajunge în Airtable la „Lesson Takeaways". Titluri și liste cu <code>##</code> / <code>-</code>.</p>
 
-      <!-- DREAPTA: CE S-A LUCRAT EFECTIV + TEMA -->
-      <section class="lm-card">
-        <div class="lm-sec-h"><h2>📝 Ce s-a lucrat efectiv</h2></div>
-        <div class="lm-body">
-          <label class="lm-fld" for="tk">Rezumatul lecției</label>
-          <div class="lm-rte">
-            <div class="lm-rte-bar" role="toolbar" aria-label="Formatare">
-              <button type="button" data-md="h" title="Titlu">H</button>
-              <button type="button" data-md="ul" title="Listă cu puncte">• Listă</button>
-              <button type="button" data-md="ol" title="Listă numerotată">1. Listă</button>
-              <button type="button" data-md="b" title="Îngroșat"><b>B</b></button>
-              <button type="button" data-md="preview" class="lm-rte-prev" title="Previzualizare">👁 Previzualizare</button>
-            </div>
-            <textarea id="tk" name="takeaways" rows="7" placeholder="Ex:&#10;## Ce am lucrat&#10;- Adunarea cu prietenul mic&#10;- 20 anzan">{{ lesson.lesson_takeaways }}</textarea>
-            <div class="lm-rte-preview" id="tkPreview" hidden></div>
-          </div>
-          <p class="lm-hint">Se trimite automat în Airtable („Lesson Takeaways"). Poți folosi titluri și liste (marcaje <code>##</code> / <code>-</code>).</p>
-          <label class="lm-fld" for="hw" style="margin-top:1.4rem">Temă pentru acasă</label>
-          <input class="lm-txt" id="hw" name="homework" value="{{ lesson.homework }}" placeholder="Ex: 2 fișe + 10 min Anzan zilnic">
-          <p class="lm-hint">Se trimite în Airtable („Homework").</p>
-        </div>
-      </section>
-    </div>
+      <label class="lm-lbl" for="hw">Temă pentru acasă</label>
+      <input class="lm-inp" id="hw" name="homework" value="{{ lesson.homework }}" placeholder="Ex: 2 fișe + 10 min Anzan zilnic">
+      <p class="lm-note">Ajunge în Airtable la „Homework".</p>
+    </section>
 
-    <!-- FINALIZAT (mare, vizibil) -->
-    <label class="lm-finalize{% if lesson.status == 'completed' %} on{% endif %}" id="lmFinalize">
-      <input type="checkbox" name="completed" {% if lesson.status == 'completed' %}checked{% endif %}>
-      <span class="lm-finalize-box" aria-hidden="true">✓</span>
-      <span class="lm-finalize-txt">
-        <b>Marchează lecția ca finalizată</b>
-        <small>Confirmă că lecția s-a desfășurat și e gata de trimis.</small>
-      </span>
-    </label>
-
-    <div class="lm-savebar"><div class="lm-in">
-      <span class="lm-msg">💾 Prezențele + „ce s-a lucrat" se trimit automat în Airtable</span>
-      <span class="lm-sp">
-        <a class="lm-btn ghost" href="{{ back_url }}">Înapoi</a>
+    <!-- BARĂ: FINALIZARE + SALVARE -->
+    <div class="lm-bottom"><div class="lm-bottom-in">
+      <label class="lm-fin{% if lesson.status == 'completed' %} on{% endif %}" id="lmFinalize">
+        <input type="checkbox" name="completed" {% if lesson.status == 'completed' %}checked{% endif %}>
+        <span class="lm-fin-box" aria-hidden="true">✓</span>
+        <span class="lm-fin-txt"><b>Lecție finalizată</b><small>Se bifează „Completed" în Airtable</small></span>
+      </label>
+      <span class="lm-bottom-act">
+        <a class="lm-btn ghost" href="{{ back_url }}">Renunță</a>
         <button type="submit" class="lm-btn primary">Salvează lecția</button>
       </span>
     </div></div>
@@ -177,132 +150,168 @@
 </div>
 
 <style>
-  .lm-screen{--brand:#4f46e5;--brand-soft:#eef0fe;--ink:#1c2434;--ink-soft:#5b6579;--line:#e3e8f0;--line2:#d3dae6;
-    --surface:#fff;--surface2:#f7f9fc;--present:#16a34a;--present-soft:#e6f6ec;--absent:#dc2626;--absent-soft:#fdecec;
-    --warn:#d97706;--warn-soft:#fdf1e0;--live:#e11d48;--live-soft:#fdeaf0;
-    color:var(--ink);max-width:1000px;margin:0 auto;padding-bottom:5rem;
-    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  .lm-crumb{font-size:.82rem;color:var(--ink-soft);margin:0 0 1rem}
-  .lm-crumb a{color:var(--ink-soft);text-decoration:none}
-  .lm-flash{background:var(--present-soft);color:var(--present);border:1px solid #b7e4c7;border-radius:10px;padding:.6rem .9rem;margin-bottom:1rem;font-size:.9rem;font-weight:600}
-  .lm-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(20,26,45,.05);margin-bottom:1.1rem}
-  .lm-badge{display:inline-flex;gap:.3rem;font-size:.74rem;font-weight:700;padding:.2rem .6rem;border-radius:999px;background:var(--surface2);color:var(--ink-soft)}
-  .lm-badge.online{background:var(--brand-soft);color:var(--brand)}
-  .lm-badge.status{background:var(--warn-soft);color:var(--warn)}
-  .lm-badge.recup{background:var(--warn-soft);color:var(--warn)}
-  .lm-badge.indiv{background:var(--brand-soft);color:var(--brand)}
-  .lm-hero{padding:1.2rem 1.3rem}
-  .lm-hero-top{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start}
-  .lm-h1{margin:.2rem 0 .1rem;font-size:1.4rem;letter-spacing:-.01em}
-  .lm-meta{color:var(--ink-soft);font-size:.9rem}
-  .lm-badges{display:flex;gap:.4rem;margin-top:.55rem;flex-wrap:wrap}
-  .lm-hero-actions{display:flex;gap:.5rem;flex-wrap:wrap}
-  .lm-btn{border:1px solid transparent;border-radius:10px;padding:.55rem .95rem;font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:.4rem;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .lm{--brand:#4f46e5;--brand-soft:#eef0fe;--ink:#151b28;--soft:#6b7688;--line:#e6eaf1;
+    --bg:#fff;--bg2:#f7f9fc;--ok:#15803d;--ok-soft:#e8f6ed;--no:#dc2626;--no-soft:#fdeded;
+    --warn:#b45309;--warn-soft:#fdf5e7;--live:#e11d48;
+    color:var(--ink);max-width:780px;margin:0 auto;padding-bottom:6rem;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px}
+  .lm-crumb{font-size:.85rem;color:var(--soft);margin:0 0 1.5rem;display:flex;gap:.5rem}
+  .lm-crumb a{color:var(--soft);text-decoration:none}
+  .lm-crumb a:hover{color:var(--brand)}
+  .lm-flash{background:var(--ok-soft);color:var(--ok);border-radius:8px;padding:.7rem .9rem;
+    margin:0 0 1.2rem;font-size:.9rem;font-weight:600}
+
+  /* antet — fără chenar, doar tipografie */
+  .lm-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1.5rem;
+    flex-wrap:wrap;padding-bottom:1.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--line)}
+  .lm-head h1{margin:.15rem 0 .3rem;font-size:1.6rem;letter-spacing:-.02em;line-height:1.15}
+  .lm-when{margin:0;font-size:.85rem;font-weight:600;color:var(--brand);text-transform:capitalize}
+  .lm-sub{margin:0;font-size:.9rem;color:var(--soft)}
+  .lm-tags{display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap}
+  .lm-tag{font-size:.72rem;font-weight:700;padding:.18rem .55rem;border-radius:5px;
+    background:var(--bg2);color:var(--soft)}
+  .lm-tag.warn{background:var(--warn-soft);color:var(--warn)}
+  .lm-tag.brand{background:var(--brand-soft);color:var(--brand)}
+  .lm-tag.ok{background:var(--ok-soft);color:var(--ok)}
+  .lm-head-act{display:flex;gap:.5rem;flex-wrap:wrap}
+
+  .lm-btn{border:1px solid transparent;border-radius:8px;padding:.55rem .95rem;font-weight:600;
+    font-size:.88rem;cursor:pointer;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center}
   .lm-btn.live{background:var(--live);color:#fff}
-  .lm-btn.ghost{background:transparent;color:var(--brand);border-color:var(--line2)}
+  .lm-btn.ghost{background:transparent;color:var(--soft);border-color:var(--line)}
+  .lm-btn.ghost:hover{color:var(--ink)}
   .lm-btn.primary{background:var(--brand);color:#fff}
-  .lm-sec-h{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.4rem .5rem}
-  .lm-sec-h h2{font-size:1.08rem;margin:0}
-  .lm-pill{font-size:.78rem;font-weight:700;color:var(--ink-soft);background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:.15rem .6rem}
-  .lm-att{padding:.4rem .6rem 1rem}
-  .lm-row{display:grid;grid-template-columns:1fr auto;gap:.5rem 1rem;align-items:center;padding:.6rem .7rem}
+
+  /* secțiuni */
+  .lm-card{border:1px solid var(--line);border-radius:12px;background:var(--bg);
+    padding:1.3rem 1.4rem;margin-bottom:1.1rem}
+  .lm-card.warn{border-color:#e9c98a;background:var(--warn-soft)}
+  .lm-card h2{margin:0 0 1rem;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:.6rem}
+  .lm-step{width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-style:normal;
+    font-size:.75rem;font-weight:700;display:grid;place-items:center;flex:none}
+  .lm-count{margin-left:auto;font-size:.78rem;font-weight:600;color:var(--soft)}
+  .lm-note{font-size:.8rem;color:var(--soft);margin:.5rem 0 0;line-height:1.5}
+  .lm-note code{background:var(--bg2);border-radius:3px;padding:0 .25rem;font-size:.92em}
+
+  /* prezență */
+  .lm-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.75rem;padding:.55rem 0}
   .lm-row+.lm-row{border-top:1px solid var(--line)}
-  .lm-stud{display:flex;align-items:center;gap:.7rem;min-width:0}
-  .lm-av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.82rem;background:var(--brand-soft);color:var(--brand);flex:none;text-transform:uppercase}
-  .lm-nm{font-weight:600} .lm-sub{font-size:.76rem;color:var(--ink-soft)}
-  .lm-actions{display:inline-flex;align-items:center;gap:.5rem}
-  /* Toggle prezent: pre-bifat; un click debifează → absent */
-  .lm-present{position:relative;cursor:pointer;user-select:none}
+  .lm-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;
+    font-weight:700;background:var(--brand-soft);color:var(--brand);text-transform:uppercase}
+  .lm-nm{font-weight:600;min-width:0}
+  .lm-row.absent .lm-nm{color:var(--soft)}
+  .lm-act{display:inline-flex;align-items:center;gap:.4rem}
+  .lm-present{cursor:pointer;user-select:none}
   .lm-present input{position:absolute;opacity:0;pointer-events:none}
-  .lm-present-pill{display:inline-flex;align-items:center;min-width:6.4rem;justify-content:center;
-    padding:.42rem .8rem;border-radius:10px;font-weight:700;font-size:.82rem;
-    border:1px solid var(--line2);color:var(--ink-soft);transition:background .12s}
-  .lm-present-pill .off-txt{display:none}
-  .lm-present input:checked+.lm-present-pill{background:var(--present-soft);color:var(--present);border-color:transparent}
-  .lm-present input:not(:checked)+.lm-present-pill{background:var(--absent-soft);color:var(--absent);border-color:transparent}
-  .lm-present input:not(:checked)+.lm-present-pill .on-txt{display:none}
-  .lm-present input:not(:checked)+.lm-present-pill .off-txt{display:inline}
-  .lm-present input:focus-visible+.lm-present-pill{outline:2px solid var(--brand);outline-offset:2px}
-  .lm-edit-btn{background:none;border:1px solid var(--line2);border-radius:8px;padding:.4rem .6rem;
-    font-size:.78rem;font-weight:600;color:var(--ink-soft);cursor:pointer}
-  .lm-edit-btn.on{background:var(--brand-soft);color:var(--brand);border-color:transparent}
-  .lm-row.absent .lm-nm{opacity:.65}
-  .lm-extra{grid-column:1/-1;display:none;gap:.5rem;flex-wrap:wrap;align-items:center;padding:.4rem .2rem 0 3rem}
+  .lm-pill{display:inline-flex;align-items:center;justify-content:center;min-width:5.6rem;
+    padding:.35rem .7rem;border-radius:7px;font-size:.8rem;transition:background .12s}
+  .lm-pill .off-txt{display:none}
+  .lm-present input:checked+.lm-pill{background:var(--ok-soft);color:var(--ok)}
+  .lm-present input:not(:checked)+.lm-pill{background:var(--no-soft);color:var(--no)}
+  .lm-present input:not(:checked)+.lm-pill .on-txt{display:none}
+  .lm-present input:not(:checked)+.lm-pill .off-txt{display:inline}
+  .lm-present input:focus-visible+.lm-pill{outline:2px solid var(--brand);outline-offset:2px}
+  .lm-more{background:none;border:0;color:var(--soft);font-size:1.1rem;line-height:1;cursor:pointer;
+    padding:.3rem .45rem;border-radius:6px}
+  .lm-more:hover,.lm-more.on{background:var(--bg2);color:var(--ink)}
+  .lm-extra{grid-column:1/-1;display:none;gap:.6rem 1rem;flex-wrap:wrap;align-items:center;
+    padding:.7rem 0 .3rem 2.6rem}
   .lm-row.open .lm-extra{display:flex}
-  .lm-chk{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;color:var(--ink-soft);cursor:pointer}
+  .lm-chk{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;
+    color:var(--soft);cursor:pointer}
   .lm-chk.recup{color:var(--warn)}
-  .lm-recup-card{border-color:var(--warn)}
-  .lm-recup-when{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin-top:.6rem}
-  .lm-recup-when .lm-txt{max-width:12rem}
-  /* hint recuperare: apare doar când e bifat „Generează recuperare" */
-  .lm-recup-hint{grid-column:1/-1;flex-basis:100%;display:none;margin:.1rem 0 0;
-    font-size:.78rem;line-height:1.45;color:var(--warn);background:var(--warn-soft);
-    border-radius:8px;padding:.5rem .7rem}
+  .lm-chk input{accent-color:currentColor;width:1rem;height:1rem}
+  .lm-stars button{border:0;background:transparent;font-size:1rem;line-height:1;color:var(--line);
+    padding:.1rem;cursor:pointer}
+  .lm-stars button.on{color:#eab308}
+  .lm-recup-hint{flex-basis:100%;display:none;margin:0;font-size:.78rem;line-height:1.5;
+    color:var(--warn);background:var(--warn-soft);border-radius:7px;padding:.55rem .7rem}
   .lm-row.show-recup .lm-recup-hint{display:block}
-  .lm-chk input{accent-color:var(--warn);width:1rem;height:1rem}
-  .lm-stars button{border:0;background:transparent;font-size:1.05rem;line-height:1;color:var(--line2);padding:.1rem;cursor:pointer}
-  .lm-stars button.on{color:var(--warn)}
-  .lm-note{border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:.3rem .55rem;font-size:.8rem;color:var(--ink);width:150px}
-  .lm-two{display:grid;grid-template-columns:1fr 1.12fr;gap:1.3rem;align-items:start}
-  @media(max-width:820px){.lm-two{grid-template-columns:1fr}}
-  .lm-body{padding:.5rem 1.4rem 1.5rem}
-  .lm-fld{display:block;font-size:.76rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:0 0 .45rem}
-  .lm-screen textarea,.lm-txt{width:100%;border:1px solid var(--line2);background:var(--surface2);border-radius:10px;padding:.7rem .8rem;font-family:inherit;font-size:.92rem;color:var(--ink);resize:vertical}
-  .lm-hint{font-size:.78rem;color:var(--ink-soft);margin:.4rem 0 0}
-  .lm-hint code{font-size:.9em;background:var(--surface2);border:1px solid var(--line);border-radius:4px;padding:0 .25rem}
-  /* mini rich-text (markdown) pt. „ce s-a lucrat" */
-  .lm-rte-bar{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.45rem}
-  .lm-rte-bar button{font-size:.8rem;font-weight:600;padding:.3rem .6rem;border:1px solid var(--line2);
-    background:var(--surface);border-radius:8px;cursor:pointer;color:var(--ink-soft);line-height:1}
-  .lm-rte-bar button:hover{background:var(--surface2);color:var(--ink)}
+  .lm-empty{color:var(--soft);font-size:.88rem;margin:0}
+
+  /* câmpuri */
+  .lm-lbl{display:block;font-size:.8rem;font-weight:700;margin:1.4rem 0 .45rem}
+  .lm-inp,.lm textarea,.lm-when-row input{width:100%;border:1px solid var(--line);background:var(--bg2);
+    border-radius:8px;padding:.65rem .8rem;font-family:inherit;font-size:.92rem;color:var(--ink);resize:vertical}
+  .lm-inp:focus,.lm textarea:focus{outline:2px solid var(--brand);outline-offset:-1px;background:var(--bg)}
+  .lm-inp.sm{width:150px;padding:.35rem .55rem;font-size:.82rem}
+  .lm-when-row{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.8rem}
+  .lm-when-row label{font-size:.8rem;font-weight:700;display:flex;flex-direction:column;gap:.35rem}
+  .lm-when-row input{background:var(--bg);width:auto;min-width:9rem}
+
+  /* editor */
+  .lm-rte-bar{display:flex;gap:.3rem;margin-bottom:.5rem;flex-wrap:wrap}
+  .lm-rte-bar button{font-size:.8rem;font-weight:600;min-width:2rem;padding:.3rem .55rem;
+    border:1px solid var(--line);background:var(--bg);border-radius:6px;cursor:pointer;color:var(--soft);line-height:1.3}
+  .lm-rte-bar button:hover{background:var(--bg2);color:var(--ink)}
+  .lm-rte-bar .lm-rte-prev{margin-left:auto}
   .lm-rte-bar .lm-rte-prev.on{background:var(--brand-soft);color:var(--brand);border-color:transparent}
-  .lm-rte-preview{border:1px solid var(--line2);border-radius:10px;background:var(--surface2);
-    padding:.75rem .9rem;font-size:.92rem;line-height:1.6;color:var(--ink);min-height:6rem}
-  .lm-rte-preview h3{font-size:1.02rem;margin:.7rem 0 .3rem;font-family:inherit}
+  .lm-rte-preview{border:1px solid var(--line);border-radius:8px;background:var(--bg2);
+    padding:.75rem .9rem;font-size:.92rem;line-height:1.6;min-height:6rem}
+  .lm-rte-preview h3{font-size:1rem;margin:.7rem 0 .3rem}
   .lm-rte-preview h3:first-child{margin-top:0}
   .lm-rte-preview ul,.lm-rte-preview ol{margin:.3rem 0 .5rem 1.25rem;padding:0}
-  .lm-rte-preview li{margin:.12rem 0}
   .lm-rte-preview p{margin:.35rem 0}
-  .lm-rte-preview .empty{color:var(--ink-soft)}
-  /* --- Planul lecției (stânga) --- */
-  .lm-plan{padding:.5rem 1.4rem 1.5rem}
-  .lm-tpl{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:.8rem .9rem;margin-bottom:1rem}
-  .lm-tpl-name{font-weight:700;font-size:.95rem;color:var(--ink)}
-  .lm-tpl-obj{font-size:.86rem;color:var(--ink-soft);margin-top:.3rem;line-height:1.5}
-  .lm-plan-h{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:.2rem 0 .5rem}
-  .lm-bar{height:7px;border-radius:999px;background:var(--surface2);overflow:hidden;margin:.2rem 0 .9rem;border:1px solid var(--line)}
-  .lm-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#6366f1)}
-  .lm-mslist{display:flex;flex-direction:column;gap:.15rem}
-  .lm-msrow{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem .55rem;font-size:.9rem;cursor:pointer;border-radius:9px;transition:background .15s}
-  .lm-msrow:hover{background:var(--surface2)}
-  .lm-msrow input{margin-top:.15rem;accent-color:var(--brand);width:1.1rem;height:1.1rem;flex:none}
-  .lm-msrow.done span{color:var(--ink-soft);text-decoration:line-through}
-  .lm-empty{color:var(--ink-soft);font-size:.88rem;padding:.6rem .2rem;line-height:1.5}
-  /* --- Finalizat (bară mare, vizibilă) --- */
-  .lm-finalize{display:flex;align-items:center;gap:1rem;background:var(--surface);border:1.5px solid var(--line2);
-    border-radius:14px;padding:1.05rem 1.3rem;margin:0 0 1.1rem;cursor:pointer;
-    transition:border-color .2s,background .2s;box-shadow:0 1px 2px rgba(20,26,45,.05)}
-  .lm-finalize input{position:absolute;opacity:0;pointer-events:none}
-  .lm-finalize-box{width:34px;height:34px;border-radius:9px;border:2px solid var(--line2);flex:none;
-    display:grid;place-items:center;font-size:1.15rem;font-weight:800;color:transparent;transition:all .18s}
-  .lm-finalize-txt{display:flex;flex-direction:column;line-height:1.3}
-  .lm-finalize-txt b{font-size:1.02rem;color:var(--ink)}
-  .lm-finalize-txt small{font-size:.83rem;color:var(--ink-soft)}
-  .lm-finalize.on{border-color:var(--present);background:var(--present-soft)}
-  .lm-finalize.on .lm-finalize-box{background:var(--present);border-color:var(--present);color:#fff}
-  .lm-finalize:focus-within{outline:2px solid var(--brand);outline-offset:2px}
-  .lm-savebar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:.7rem 1.5rem;z-index:30}
-  .lm-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
-  .lm-msg{color:var(--ink-soft);font-size:.84rem}
-  .lm-sp{margin-left:auto;display:flex;gap:.6rem}
-  @media (prefers-color-scheme:dark){.lm-screen{--ink:#e8ecf5;--ink-soft:#9aa4bb;--line:#28324a;--line2:#334063;--surface:#161d2c;--surface2:#1b2436;--brand:#8b8cf8;--brand-soft:#20264a;--present:#4ade80;--present-soft:#12291c;--absent:#f87171;--absent-soft:#2c1618;--warn:#fbbf24;--warn-soft:#2a2011;--live:#fb7185}
-    .lm-savebar{background:rgba(22,29,44,.92)}}
+  .lm-rte-preview .empty{color:var(--soft)}
+
+  /* plan pliabil */
+  .lm-plan{border:1px solid var(--line);border-radius:12px;margin-bottom:1.1rem;background:var(--bg)}
+  .lm-plan summary{cursor:pointer;padding:.85rem 1.4rem;font-size:.9rem;font-weight:600;
+    display:flex;align-items:center;gap:.75rem;list-style:none}
+  .lm-plan summary::-webkit-details-marker{display:none}
+  .lm-plan summary::before{content:'▸';color:var(--soft);font-size:.8rem;transition:transform .15s}
+  .lm-plan[open] summary::before{transform:rotate(90deg)}
+  .lm-plan summary b{margin-left:auto;font-size:.78rem;color:var(--soft);font-weight:600}
+  .lm-plan-body{padding:0 1.4rem 1.2rem 2.6rem}
+  .lm-obj{font-size:.87rem;color:var(--soft);line-height:1.55;margin:0 0 .9rem}
+  .lm-bar{height:5px;border-radius:99px;background:var(--bg2);overflow:hidden;margin:0 0 .8rem}
+  .lm-bar i{display:block;height:100%;background:var(--brand);transition:width .2s}
+  .lm-ms{display:flex;gap:.6rem;align-items:flex-start;padding:.42rem .5rem;font-size:.89rem;
+    cursor:pointer;border-radius:7px;margin-left:-.5rem}
+  .lm-ms:hover{background:var(--bg2)}
+  .lm-ms input{margin-top:.15rem;accent-color:var(--brand);width:1.05rem;height:1.05rem;flex:none}
+  .lm-ms.done span{color:var(--soft);text-decoration:line-through}
+
+  /* bară jos: finalizare + salvare */
+  .lm-bottom{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.94);
+    backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:.7rem 1.5rem;z-index:30}
+  .lm-bottom-in{max-width:780px;margin:0 auto;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+  .lm-bottom-act{margin-left:auto;display:flex;gap:.6rem}
+  .lm-fin{display:inline-flex;align-items:center;gap:.65rem;cursor:pointer;user-select:none;
+    padding:.4rem .75rem .4rem .5rem;border-radius:9px;border:1.5px solid var(--line);transition:.15s}
+  .lm-fin input{position:absolute;opacity:0;pointer-events:none}
+  .lm-fin-box{width:26px;height:26px;border-radius:7px;border:2px solid var(--line);flex:none;
+    display:grid;place-items:center;font-size:.9rem;font-weight:800;color:transparent;transition:.15s}
+  .lm-fin-txt{display:flex;flex-direction:column;line-height:1.25}
+  .lm-fin-txt b{font-size:.88rem}
+  .lm-fin-txt small{font-size:.74rem;color:var(--soft)}
+  .lm-fin.on{border-color:var(--ok);background:var(--ok-soft)}
+  .lm-fin.on .lm-fin-box{background:var(--ok);border-color:var(--ok);color:#fff}
+  .lm-fin.on .lm-fin-txt small{color:var(--ok)}
+  .lm-fin:focus-within{outline:2px solid var(--brand);outline-offset:2px}
+
+  @media(max-width:620px){
+    .lm-head h1{font-size:1.35rem}
+    .lm-extra{padding-left:0}
+    .lm-fin-txt small{display:none}
+    .lm-bottom-act{width:100%;margin-left:0}
+    .lm-bottom-act .lm-btn.primary{flex:1;justify-content:center}
+  }
+  @media (prefers-color-scheme:dark){
+    .lm{--ink:#e9edf6;--soft:#98a2b8;--line:#2a3347;--bg:#151c2a;--bg2:#1a2333;
+      --brand:#8b8cf8;--brand-soft:#1f2547;--ok:#4ade80;--ok-soft:#13291d;--no:#f87171;--no-soft:#2b1618;
+      --warn:#fbbf24;--warn-soft:#292013;--live:#fb7185}
+    .lm-step{background:var(--brand)}
+    .lm-card.warn{border-color:#5a4620}
+    .lm-bottom{background:rgba(21,28,42,.94)}
+  }
 </style>
 
 <script>
 (function(){
   var CSRF="{{ csrf_token }}";
-  // prezent/absent → toggle extras + count
+
+  // prezent/absent → contor + stare rând
   function recount(){
     var p=0,a=0;
     document.querySelectorAll('.lm-row').forEach(function(row){
@@ -310,23 +319,50 @@
       if(cb.checked)p++; else a++;
       row.classList.toggle('absent', !cb.checked);
     });
-    var el=document.getElementById('attCount'); if(el)el.textContent=p+" prezenți · "+a+" absenți";
+    var el=document.getElementById('attCount');
+    if(el)el.textContent=p+" prezenți · "+a+" absenți";
   }
   document.querySelectorAll('.present-cb').forEach(function(i){i.addEventListener('change',recount);});
-  recount(); // toți sunt pre-bifați prezenți; sincronizează afișajul
-  // Finalizat → stare vizuală (verde) la bifare
-  (function(){
-    var fin=document.getElementById('lmFinalize');
-    if(fin){var cb=fin.querySelector('input');
-      cb.addEventListener('change',function(){fin.classList.toggle('on',cb.checked);});}
-  })();
-  // Mini rich-text (markdown) pentru „ce s-a lucrat": titluri, liste, bold + previzualizare
+  recount();
+
+  // finalizat → stare vizuală
+  var fin=document.getElementById('lmFinalize');
+  if(fin){var fcb=fin.querySelector('input');
+    fcb.addEventListener('change',function(){fin.classList.toggle('on',fcb.checked);});}
+
+  // „⋯" → opțiuni suplimentare pe elev
+  document.querySelectorAll('.lm-more').forEach(function(b){
+    b.addEventListener('click',function(){
+      var row=b.closest('.lm-row'), open=row.classList.toggle('open');
+      b.classList.toggle('on',open); b.setAttribute('aria-expanded',open?'true':'false');
+    });
+  });
+
+  // hint recuperare: doar când e bifat „Generează recuperare"
+  document.querySelectorAll('.recup-cb').forEach(function(cb){
+    function sync(){var row=cb.closest('.lm-row'); if(row)row.classList.toggle('show-recup',cb.checked);}
+    cb.addEventListener('change',function(){sync(); if(cb.checked)cb.closest('.lm-row').classList.add('open');});
+    sync(); if(cb.checked)cb.closest('.lm-row').classList.add('open');
+  });
+
+  // stele
+  document.querySelectorAll('.lm-stars').forEach(function(box){
+    var hidden=box.querySelector('input[type=hidden]');
+    function paint(n){box.querySelectorAll('button').forEach(function(b,j){b.classList.toggle('on',j<n);});}
+    paint(parseInt(hidden.value||'0',10));
+    box.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+      var v=parseInt(b.dataset.v,10);
+      if(v===parseInt(hidden.value||'0',10)){v=0;}
+      hidden.value=v?v:''; paint(v);});});
+  });
+
+  // mini rich-text (markdown) pentru „ce s-a lucrat"
   (function(){
     var ta=document.getElementById('tk'); if(!ta) return;
-    var box=ta.closest('.lm-rte'); var preview=document.getElementById('tkPreview');
-    var pbtn=box.querySelector('.lm-rte-prev'); var on=false;
+    var box=ta.closest('.lm-rte'), preview=document.getElementById('tkPreview');
+    var pbtn=box.querySelector('.lm-rte-prev'), on=false;
     function eachLine(fn){
-      var v=ta.value, s=ta.selectionStart, e=ta.selectionEnd;
+      var v=ta.value,s=ta.selectionStart,e=ta.selectionEnd;
       var ls=v.lastIndexOf('\n',s-1)+1, le=v.indexOf('\n',e); if(le<0)le=v.length;
       var out=v.slice(ls,le).split('\n').map(fn).join('\n');
       ta.value=v.slice(0,ls)+out+v.slice(le); ta.focus(); ta.setSelectionRange(ls,ls+out.length);
@@ -360,41 +396,37 @@
       });
     });
   })();
-  // „Editează" → deschide detaliile suplimentare (absență anunțată, recuperare, notă…)
-  document.querySelectorAll('.lm-edit-btn').forEach(function(b){
-    b.addEventListener('click',function(){
-      var row=b.closest('.lm-row'); var open=row.classList.toggle('open');
-      b.classList.toggle('on',open); b.setAttribute('aria-expanded',open?'true':'false');
-    });
-  });
-  // hint recuperare: apare doar când e bifat „Generează recuperare"
-  document.querySelectorAll('.recup-cb').forEach(function(cb){
-    function sync(){var row=cb.closest('.lm-row'); if(row)row.classList.toggle('show-recup',cb.checked);}
-    cb.addEventListener('change',sync); sync();
-  });
-  // stele
-  document.querySelectorAll('.lm-stars').forEach(function(box){
-    var hidden=box.querySelector('input[type=hidden]');
-    var cur=parseInt(hidden.value||'0',10);
-    function paint(n){box.querySelectorAll('button').forEach(function(b,j){b.classList.toggle('on',j<n);});}
-    paint(cur);
-    box.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
-      var v=parseInt(b.dataset.v,10); if(v===parseInt(hidden.value||'0',10)){v=0;} hidden.value=v?v:''; paint(v);});});
-  });
+
   // milestones (salvare imediată)
-  document.querySelectorAll('.lm-msrow input').forEach(function(cb){
+  document.querySelectorAll('.lm-ms input').forEach(function(cb){
     cb.addEventListener('change',function(){
-      var row=cb.closest('.lm-msrow'); row.classList.toggle('done',cb.checked);
+      var row=cb.closest('.lm-ms'); row.classList.toggle('done',cb.checked);
       fetch("{% url 'teacher_platform:milestone_toggle' group.id %}",{method:'POST',
         headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
         body:JSON.stringify({milestone_id:parseInt(cb.dataset.ms,10),done:cb.checked})})
         .then(function(r){return r.json();}).then(function(){
-          var all=document.querySelectorAll('.lm-msrow input'),done=document.querySelectorAll('.lm-msrow input:checked').length;
-          document.getElementById('msBar').style.width=(all.length?done/all.length*100:0)+'%';
-          document.getElementById('msCount').textContent=done+"/"+all.length;
+          var all=document.querySelectorAll('.lm-ms input'),
+              done=document.querySelectorAll('.lm-ms input:checked').length;
+          var bar=document.getElementById('msBar'), cnt=document.getElementById('msCount');
+          if(bar)bar.style.width=(all.length?done/all.length*100:0)+'%';
+          if(cnt)cnt.textContent=done+"/"+all.length;
         }).catch(function(){cb.checked=!cb.checked;row.classList.toggle('done',cb.checked);});
     });
   });
+
+  // bara fixă de jos: se aliniază după meniul lateral (260px / 70px pliat / 0 pe mobil)
+  (function(){
+    var bar=document.querySelector('.lm-bottom'), sb=document.getElementById('sidebar');
+    if(!bar) return;
+    function place(){
+      var w=(sb && window.innerWidth>768) ? sb.getBoundingClientRect().width : 0;
+      bar.style.left=w+'px';
+    }
+    place();
+    window.addEventListener('resize',place);
+    if(sb && window.ResizeObserver) new ResizeObserver(place).observe(sb);
+  })();
+
   // live
   var lb=document.getElementById('liveBtn');
   if(lb)lb.addEventListener('click',function(){
@@ -403,7 +435,6 @@
       .then(function(r){return r.json();}).then(function(){window.location=lb.dataset.panel;})
       .catch(function(){lb.disabled=false;});
   });
-  recount();
 })();
 </script>
 {% endblock %}
