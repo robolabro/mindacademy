@@ -352,14 +352,25 @@ class Lesson(AirtableSyncMixin, models.Model):
     # profesorul să le recunoască dintr-o privire în calendar.
 
     @property
+    def is_overdue(self):
+        """Lecție trecută și nefinalizată: ori nu s-a ținut (și trebuie
+        reprogramată în Airtable), ori profesorul n-a apucat s-o completeze.
+        În ambele cazuri cere o acțiune, deci se scoate în evidență."""
+        return self.status != 'completed' and self.date < timezone.localdate()
+
+    @property
     def status_kind(self):
         """Cheie scurtă pentru culoarea/eticheta din interfață."""
+        if self.is_overdue:
+            return 'overdue'
         if self.is_recuperare:
             return 'recuperare-done' if self.status == 'completed' else 'recuperare'
         return self.status
 
     @property
     def status_label(self):
+        if self.is_overdue:
+            return 'De completat'
         if self.is_recuperare:
             return 'Recuperată' if self.status == 'completed' else 'Recuperare'
         return self.get_status_display()

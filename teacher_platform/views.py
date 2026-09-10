@@ -568,7 +568,7 @@ def calendar_view(request):
     today = timezone.localdate()
 
     view_mode = request.GET.get('view', 'week')
-    if view_mode not in ('day', 'week', 'month'):
+    if view_mode not in ('day', 'week', 'month', 'list'):
         view_mode = 'week'
     anchor = parse_date(request.GET.get('d', '') or '') or today
 
@@ -579,6 +579,7 @@ def calendar_view(request):
         start = anchor - timedelta(days=anchor.weekday())
         end = start + timedelta(days=6)
     else:
+        # luna și lista acoperă aceeași perioadă
         start = anchor.replace(day=1)
         end = (start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
 
@@ -599,14 +600,18 @@ def calendar_view(request):
 
     days, day = [], grid_start
     while day <= grid_end:
+        day_lessons = by_date.get(day, [])
         days.append({
             'date': day,
-            'lessons': by_date.get(day, []),
+            'lessons': day_lessons,
             'is_today': day == today,
             'is_past': day < today,
             'outside': not (start <= day <= end),
         })
         day += timedelta(days=1)
+
+    # Lista sare peste zilele goale: e un jurnal, nu o grilă.
+    listing = [d for d in days if d['lessons']] if view_mode == 'list' else []
 
     weeks = [days[i:i + 7] for i in range(0, len(days), 7)] if view_mode == 'month' else []
 
@@ -627,6 +632,9 @@ def calendar_view(request):
         'same_month': start.month == end.month and start.year == end.year,
         'days': days,
         'weeks': weeks,
+        'listing': listing,
+        'overdue_count': sum(1 for l in lessons
+                             if start <= l.date <= end and l.is_overdue),
         'lesson_count': sum(1 for l in lessons if start <= l.date <= end),
         'prev_anchor': prev_anchor,
         'next_anchor': next_anchor,
