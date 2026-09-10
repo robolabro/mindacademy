@@ -923,8 +923,12 @@ def lesson_manage(request, lesson_id):
 
         lesson.lesson_takeaways = request.POST.get('takeaways', '').strip()
         lesson.homework = request.POST.get('homework', '').strip()
+        # Toggle bidirecțional: bifat → finalizată; debifat → înapoi la
+        # „programată" (profesorul poate corecta o finalizare greșită).
         if request.POST.get('completed'):
             lesson.status = 'completed'
+        elif lesson.status == 'completed':
+            lesson.status = 'scheduled'
         # Recuperări: profesorul stabilește data reală; se trimite în Airtable.
         if lesson.is_recuperare:
             new_date = (request.POST.get('recup_date') or '').strip()
