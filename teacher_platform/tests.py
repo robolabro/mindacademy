@@ -359,3 +359,66 @@ class CalendarListTests(TestCase):
             ctx = self.client.get(self.url, {'view': 'list',
                                              'd': self.today.isoformat()}).context
             self.assertEqual(ctx['overdue_count'], 1)
+
+
+class GrupeTests(TestCase):
+    """Grupele și înscrierile vin din Airtable — platforma nu le creează."""
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='prof_g', password='Test1234!', role='teacher')
+        self.student = User.objects.create_user(
+            username='elev_g', password='Test1234!', role='student',
+            first_name='Ana', last_name='Test')
+        age = AgeGroup.objects.create(name='7-10 ani', min_age=7, max_age=10)
+        course = Course.objects.create(
+            title='Soroban', slug='soroban-g', description='x', age_group=age,
+            price=0, frequency='saptamanal', group_size=6)
+        module = Module.objects.create(course=course, name='Modul A', order=1)
+        self.group = Group.objects.create(
+            name='A0131 · Modul A', teacher=self.teacher, course=course, module=module,
+            weekday=1, start_time=datetime.time(18, 0),
+            start_date=datetime.date(2026, 1, 12))
+        Enrollment.objects.create(group=self.group, student=self.student, is_active=True)
+        self.client.force_login(self.teacher)
+
+    def test_lista_nu_ofera_creare_de_grupa(self):
+        html = self.client.get(reverse('teacher_platform:groups_list')).content.decode()
+        self.assertNotIn('Creează Grupă', html)
+
+    def test_ruta_de_creare_doar_redirectioneaza(self):
+        self.assertRedirects(self.client.get(reverse('teacher_platform:group_add')),
+                             reverse('teacher_platform:groups_list'))
+        self.assertEqual(Group.objects.count(), 1)
+
+    def test_filtrul_de_status(self):
+        inactiva = Group.objects.create(
+            name='X0001 · Modul X', teacher=self.teacher, weekday=1,
+            start_time=datetime.time(18, 0), start_date=datetime.date(2026, 1, 12),
+            is_active=False)
+        url = reverse('teacher_platform:groups_list')
+        self.assertNotIn(inactiva, list(self.client.get(url).context['groups']))
+        self.assertIn(inactiva, list(self.client.get(url, {'status': 'inactive'}).context['groups']))
+        self.assertEqual(len(self.client.get(url, {'status': 'all'}).context['groups']), 2)
+
+    def test_detaliul_arata_elevii_sus_fara_buton_de_adaugare(self):
+        html = self.client.get(
+            reverse('teacher_platform:group_detail', args=[self.group.id])).content.decode()
+        self.assertIn('Ana Test', html)
+        self.assertNotIn('Adaugă Student', html)
+        self.assertNotIn('Adaugă Lecție', html)
+        # elevii apar înaintea secțiunilor secundare (performanță, curriculum)
+        self.assertLess(html.index('Ana Test'), html.index('Performanță'))
+
+    def test_detaliul_are_data_de_azi_pentru_temele_expirate(self):
+        """Lipsea din context, deci nicio temă nu apărea vreodată expirată."""
+        ctx = self.client.get(
+            reverse('teacher_platform:group_detail', args=[self.group.id])).context
+        self.assertEqual(ctx['today'], timezone.localdate())
+
+    def test_un_profesor_nu_vede_grupa_altuia(self):
+        strain = User.objects.create_user(
+            username='prof_gs', password='Test1234!', role='teacher')
+        self.client.force_login(strain)
+        self.assertEqual(self.client.get(
+            reverse('teacher_platform:group_detail', args=[self.group.id])).status_code, 404)

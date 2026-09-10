@@ -1,126 +1,103 @@
 {% extends 'teacher_platform/base_teacher.html' %}
 
-{% block title %}Grupele Mele{% endblock %}
-{% block page_title %}👥 Grupele Mele{% endblock %}
+{% block title %}Grupe{% endblock %}
+{% block page_title %}Grupe{% endblock %}
 
 {% block content %}
-<div class="page-container">
-    <!-- Filters -->
-    <div class="filters-bar">
-        <div class="filter-group">
-            <label>Filtrează:</label>
-            <a href="?status=active" class="filter-btn {% if status_filter == 'active' %}active{% endif %}">
-                Active ({{ groups|length }})
-            </a>
-            <a href="?status=inactive" class="filter-btn {% if status_filter == 'inactive' %}active{% endif %}">
-                Inactive
-            </a>
-            <a href="?status=all" class="filter-btn {% if status_filter == 'all' %}active{% endif %}">
-                Toate
-            </a>
-        </div>
-        <a href="{% url 'teacher_platform:group_add' %}" class="btn-primary">➕ Creează Grupă Nouă</a>
-    </div>
+<div class="gl">
+  <header class="gl-bar">
+    <h1 class="gl-title">Grupele mele</h1>
+    <nav class="gl-filters">
+      <a href="?status=active"   class="{% if status_filter == 'active' %}on{% endif %}">Active</a>
+      <a href="?status=inactive" class="{% if status_filter == 'inactive' %}on{% endif %}">Inactive</a>
+      <a href="?status=all"      class="{% if status_filter == 'all' %}on{% endif %}">Toate</a>
+    </nav>
+  </header>
+  <p class="gl-count">{{ groups|length }} grup{{ groups|length|pluralize:"ă,e" }}</p>
 
-    <!-- Groups Grid -->
-    {% if groups %}
-    <div class="groups-grid-full">
-        {% for group in groups %}
-        <div class="group-card-full">
-            <div class="group-card-header">
-                <div>
-                    <h3>{{ group.name }}</h3>
-                    <span class="group-code-badge">{{ group.code }}</span>
-                    {% if group.lesson_type == 'online' %}
-                    <span class="group-code-badge" style="background:#e0edff; color:#1d4ed8;">🌐 Online</span>
-                    {% else %}
-                    <span class="group-code-badge" style="background:#f1f5f9; color:#475569;">🏫 Fizic</span>
-                    {% endif %}
-                </div>
-                <div class="group-actions">
-                    <a href="{% url 'teacher_platform:group_detail' group.id %}" class="btn-secondary">Vezi Detalii</a>
-                    <a href="{% url 'teacher_platform:group_edit' group.id %}" class="btn-secondary">Editează</a>
-                </div>
-            </div>
+  <div class="gl-list">
+    {% for group in groups %}
+    <a class="gl-row" href="{% url 'teacher_platform:group_detail' group.id %}">
+      <span class="gl-code">{{ group.short_name }}</span>
 
-            <div class="group-card-body">
-                <div class="group-info-grid">
-                    <div class="info-item">
-                        <span class="info-label">📚 Curs:</span>
-                        <span class="info-value">{{ group.course.title }}</span>
-                    </div>
-                    {% if group.module %}
-                    <div class="info-item">
-                        <span class="info-label">📖 Modul:</span>
-                        <span class="info-value">
-                            <span class="module-badge" style="background-color: {{ group.module.color }}20; color: {{ group.module.color }};">
-                                {{ group.module.name }}
-                            </span>
-                        </span>
-                    </div>
-                    {% endif %}
-                    {% if group.location %}
-                    <div class="info-item">
-                        <span class="info-label">📍 Locație:</span>
-                        <span class="info-value">{{ group.location.name }}</span>
-                    </div>
-                    {% endif %}
-                    <div class="info-item">
-                        <span class="info-label">📅 Program:</span>
-                        <span class="info-value">{{ group.get_weekday_display }}, {{ group.start_time|date:"H:i" }} ({{ group.duration_minutes }} min)</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">👥 Studenți:</span>
-                        <span class="info-value">
-                            <span class="student-count {% if group.student_count >= group.max_students %}full{% endif %}">
-                                {{ group.student_count }} / {{ group.max_students }}
-                            </span>
-                            {% if group.student_count < group.max_students %}
-                                <span class="status-badge status-available">Locuri disponibile</span>
-                            {% else %}
-                                <span class="status-badge status-full">Complet</span>
-                            {% endif %}
-                        </span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">📆 Perioada:</span>
-                        <span class="info-value">
-                            {{ group.start_date|date:"d M Y" }}
-                            {% if group.end_date %}
-                                - {{ group.end_date|date:"d M Y" }}
-                            {% else %}
-                                - Continuu
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
+      <span class="gl-main">
+        <b>{% if group.module %}{{ group.module.name }}{% else %}{{ group.name }}{% endif %}</b>
+        <span class="gl-meta">
+          {% if group.course %}{{ group.course.title }}{% endif %}
+          {% if group.location %} · {{ group.location.name }}{% endif %}
+        </span>
+      </span>
 
-                {% if group.description %}
-                <div class="group-description">
-                    <strong>Descriere:</strong>
-                    <p>{{ group.description }}</p>
-                </div>
-                {% endif %}
-            </div>
+      <span class="gl-when">
+        {{ group.get_weekday_display }}, {{ group.start_time|time:"H:i" }}
+        <small>{{ group.duration_minutes }} min · {% if group.lesson_type == 'online' %}online{% else %}fizic{% endif %}</small>
+      </span>
 
-            <div class="group-card-footer">
-                <div class="footer-stats">
-                    <span>Creată: {{ group.created_date|date:"d M Y" }}</span>
-                    {% if not group.is_active %}
-                        <span class="status-badge status-inactive">Inactivă</span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-state-large">
-        <div class="empty-icon">👥</div>
-        <h2>Nu ai grupe {% if status_filter == 'active' %}active{% elif status_filter == 'inactive' %}inactive{% endif %}</h2>
-        <p>Creează prima ta grupă pentru a începe să organizezi lecții și studenți.</p>
-        <a href="{% url 'teacher_platform:group_add' %}" class="btn-primary">➕ Creează Grupă Nouă</a>
-    </div>
-    {% endif %}
+      <span class="gl-students{% if group.student_count >= group.max_students %} full{% endif %}">
+        <b>{{ group.student_count }}<i>/{{ group.max_students }}</i></b>
+        <small>elevi</small>
+      </span>
+
+      <span class="gl-go" aria-hidden="true">›</span>
+    </a>
+    {% empty %}
+    <p class="gl-empty">
+      Nicio grupă {% if status_filter == 'active' %}activă{% elif status_filter == 'inactive' %}inactivă{% endif %}.
+    </p>
+    {% endfor %}
+  </div>
+
+  <p class="gl-src">Grupele se creează în Airtable — aici se consultă și se lucrează cu ele.</p>
 </div>
+
+<style>
+  .gl{--ink:#151b28;--soft:#6b7688;--line:#e6eaf1;--bg:#fff;--bg2:#f7f9fc;
+    --brand:#4f46e5;--brand-soft:#eef0fe;--ok:#15803d;--ok-soft:#e8f6ed;--title:#312e81;
+    color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:15px;max-width:1040px;margin:0 auto}
+
+  .gl-bar{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.35rem}
+  .gl-title{margin:0;font-family:inherit;font-size:1.35rem;font-weight:700;
+    letter-spacing:-.02em;color:var(--title);flex:1;min-width:10rem}
+  .gl-filters{display:inline-flex;background:var(--bg2);border:1px solid var(--line);
+    border-radius:9px;padding:2px}
+  .gl-filters a{padding:.38rem .8rem;border-radius:7px;font-size:.85rem;font-weight:600;
+    color:var(--soft);text-decoration:none}
+  .gl-filters a.on{background:var(--bg);color:var(--ink);box-shadow:0 1px 2px rgba(20,26,45,.08)}
+  .gl-count{margin:0 0 1.1rem;font-size:.82rem;color:var(--soft)}
+
+  .gl-list{display:flex;flex-direction:column;gap:.5rem}
+  .gl-row{display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:1.2rem;
+    padding:.9rem 1.1rem;border:1px solid var(--line);border-radius:11px;background:var(--bg);
+    text-decoration:none;color:inherit;transition:border-color .15s,background .15s}
+  .gl-row:hover{border-color:var(--brand);background:var(--bg2)}
+  .gl-code{font-weight:800;font-size:.82rem;letter-spacing:.02em;padding:.35rem .6rem;
+    border-radius:7px;background:var(--brand-soft);color:var(--brand);white-space:nowrap}
+  .gl-main{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+  .gl-main b{font-size:.98rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gl-meta{font-size:.82rem;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gl-when{display:flex;flex-direction:column;font-size:.86rem;font-weight:600;text-align:right;white-space:nowrap}
+  .gl-when small{font-size:.76rem;font-weight:500;color:var(--soft)}
+  .gl-students{display:flex;flex-direction:column;align-items:center;min-width:3.2rem}
+  .gl-students b{font-size:1rem;color:var(--ok)}
+  .gl-students i{font-style:normal;font-weight:600;color:var(--soft);font-size:.82rem}
+  .gl-students small{font-size:.7rem;color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
+  .gl-students.full b{color:var(--soft)}
+  .gl-go{color:var(--line);font-size:1.3rem;line-height:1}
+  .gl-row:hover .gl-go{color:var(--brand)}
+
+  .gl-empty{color:var(--soft);font-size:.9rem;padding:2.5rem;text-align:center;
+    border:1px dashed var(--line);border-radius:11px;margin:0}
+  .gl-src{margin:1.2rem 0 0;font-size:.76rem;color:var(--soft)}
+
+  @media(max-width:760px){
+    .gl-row{grid-template-columns:auto 1fr auto;gap:.7rem}
+    .gl-when{grid-column:2/-1;text-align:left;flex-direction:row;gap:.5rem;align-items:baseline}
+    .gl-go{display:none}
+  }
+  @media (prefers-color-scheme:dark){
+    .gl{--ink:#e9edf6;--soft:#98a2b8;--line:#2a3347;--bg:#151c2a;--bg2:#1a2333;
+      --brand:#8b8cf8;--brand-soft:#1f2547;--ok:#4ade80;--ok-soft:#13291d;--title:#c7c9ff}
+  }
+</style>
 {% endblock %}

@@ -1,426 +1,268 @@
 {% extends 'teacher_platform/base_teacher.html' %}
 
 {% block title %}{{ group.name }}{% endblock %}
-{% block page_title %}👥 {{ group.name }} ({{ group.code }}){% endblock %}
+{% block page_title %}Grupă{% endblock %}
 
 {% block content %}
-<div class="page-container">
-    <!-- Breadcrumb -->
-    <div class="breadcrumb">
-        <a href="{% url 'teacher_platform:groups_list' %}">Grupe</a>
-        <span>/</span>
-        <span>{{ group.name }}</span>
+<div class="gd">
+  <nav class="gd-crumb">
+    <a href="{% url 'teacher_platform:groups_list' %}">‹ Grupe</a>
+  </nav>
+
+  <!-- ANTET -->
+  <header class="gd-head">
+    <div>
+      <p class="gd-code">{{ group.code }}</p>
+      <h1>{{ group.name }}</h1>
+      <p class="gd-facts">
+        {% if group.course %}{{ group.course.title }} · {% endif %}
+        {{ group.get_weekday_display }}, {{ group.start_time|time:"H:i" }} · {{ group.duration_minutes }} min
+        {% if group.location %} · {{ group.location.name }}{% endif %}
+        · {% if group.lesson_type == 'online' %}online{% else %}fizic{% endif %}
+      </p>
     </div>
+    <a href="{% url 'teacher_platform:group_edit' group.id %}" class="gd-btn ghost">Editează grupa</a>
+  </header>
 
-    <!-- Group Overview -->
-    <div class="detail-card">
-        <div class="detail-header">
-            <div>
-                <h2>{{ group.name }}</h2>
-                <span class="group-code-badge">{{ group.code }}</span>
-                {% if group.lesson_type == 'online' %}
-                <span class="lesson-type-badge online">🌐 Online</span>
-                {% else %}
-                <span class="lesson-type-badge">🏫 Fizic</span>
-                {% endif %}
-            </div>
-            <div class="header-actions">
-                <a href="{% url 'teacher_platform:group_edit' group.id %}" class="btn-secondary">Editează Grupă</a>
-                <a href="{% url 'teacher_platform:lesson_create_for_group' group.id %}" class="btn-primary">➕ Adaugă Lecție</a>
-            </div>
-        </div>
-
-        <div class="info-grid">
-            <div class="info-item">
-                <span class="info-label">📚 Curs:</span>
-                <span class="info-value">{{ group.course.title }}</span>
-            </div>
-            {% if group.module %}
-            <div class="info-item">
-                <span class="info-label">📖 Modul:</span>
-                <span class="info-value">
-                    <span class="module-badge" style="background-color: {{ group.module.color }}20; color: {{ group.module.color }};">
-                        {{ group.module.name }}
-                    </span>
-                </span>
-            </div>
-            {% endif %}
-            {% if group.location %}
-            <div class="info-item">
-                <span class="info-label">📍 Locație:</span>
-                <span class="info-value">{{ group.location.name }}</span>
-            </div>
-            {% endif %}
-            <div class="info-item">
-                <span class="info-label">📅 Program:</span>
-                <span class="info-value">{{ group.get_weekday_display }}, {{ group.start_time|date:"H:i" }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">⏱️ Durată:</span>
-                <span class="info-value">{{ group.duration_minutes }} minute</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">👥 Studenți:</span>
-                <span class="info-value">{{ students.count }} / {{ group.max_students }}</span>
-            </div>
-        </div>
-
-        {% if group.lesson_type == 'online' %}
-        <div class="meeting-link-box">
-            <span class="meeting-link-label">🎥 Link lecție online:</span>
-            {% if group.meeting_link %}
-            <code class="meeting-link-url" id="meetingLinkValue">{{ group.meeting_link }}</code>
-            <button class="btn-copy-link" id="copyLinkBtn" onclick="copyMeetingLink()">📋 Copiază link</button>
-            {% else %}
-            <span class="meeting-link-missing">Niciun link setat încă —
-                <a href="{% url 'teacher_platform:group_edit' group.id %}">adaugă-l din Editează Grupă</a></span>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        {% if group.description %}
-        <div class="group-description">
-            <strong>Descriere:</strong>
-            <p>{{ group.description }}</p>
-        </div>
-        {% endif %}
-
-        <!-- Acțiuni principale: teme + lecție live -->
-        <div class="group-main-actions">
-            <a href="{% url 'teacher_platform:group_homework' group.id %}" class="gma-card gma-homework">
-                <span class="gma-icon">🎯</span>
-                <span class="gma-text">
-                    <strong>Teme Simulatoare</strong>
-                    <small>{{ sim_assignments_count }} tem{{ sim_assignments_count|pluralize:"ă,e" }} · alocare și progres zilnic</small>
-                </span>
-                <span class="gma-arrow">→</span>
-            </a>
-            <a href="{% url 'teacher_platform:group_live' group.id %}" class="gma-card gma-live">
-                <span class="gma-icon">🔴</span>
-                <span class="gma-text">
-                    <strong>Lecție Live{% if live_session %} <span class="live-dot"></span> în desfășurare{% endif %}</strong>
-                    <small>sarcini în timpul lecției + urmărire în timp real</small>
-                </span>
-                <span class="gma-arrow">→</span>
-            </a>
-            <a href="{% url 'teacher_platform:group_curriculum' group.id %}" class="gma-card gma-curriculum">
-                <span class="gma-icon">📚</span>
-                <span class="gma-text">
-                    <strong>Curriculum</strong>
-                    <small>curs → module → lecții, cu milestones și resurse</small>
-                </span>
-                <span class="gma-arrow">→</span>
-            </a>
-            <a href="{% url 'teacher_platform:group_performance' group.id %}" class="gma-card gma-performance">
-                <span class="gma-icon">📊</span>
-                <span class="gma-text">
-                    <strong>Performanță</strong>
-                    <small>rezultate per elev + agregat: teme, live, antrenament</small>
-                </span>
-                <span class="gma-arrow">→</span>
-            </a>
-        </div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="students">👥 Studenți ({{ students.count }})</button>
-        <button class="tab-btn" data-tab="upcoming-lessons">📅 Lecții Viitoare ({{ upcoming_lessons.count }})</button>
-        <button class="tab-btn" data-tab="past-lessons">📚 Lecții Trecute ({{ past_lessons.count }})</button>
-        <button class="tab-btn" data-tab="assignments">📝 Teme ({{ assignments.count }})</button>
-        {% if lesson_templates %}
-        <button class="tab-btn" data-tab="templates">📖 Șabloane Lecții ({{ lesson_templates.count }})</button>
-        {% endif %}
-    </div>
-
-    <!-- Tab Content: Students -->
-    <div class="tab-content active" id="students">
-        {% if students %}
-        <div class="students-grid">
-            {% for gs in students %}
-            <a href="{% url 'teacher_platform:student_detail' gs.student.id %}" class="student-card">
-                <div class="student-avatar">
-                    {% if gs.student.student_profile %}
-                        <span class="avatar-icon">{% if gs.student.student_profile.avatar == 'boy' %}👦{% else %}👧{% endif %}</span>
-                    {% else %}
-                        <span class="avatar-icon">🎓</span>
-                    {% endif %}
-                </div>
-                <div class="student-info">
-                    <h4>{{ gs.student.get_full_name }}</h4>
-                    <div class="student-stats">
-                        {% if gs.airtable_prezente_modul is not None %}
-                        <span title="Prezențe în modulul curent">✓ {{ gs.airtable_prezente_modul }} prezențe</span>
-                        {% else %}
-                        <span>📊 {{ gs.get_attendance_rate }}% prezență</span>
-                        {% endif %}
-                        {% if gs.airtable_lectii_ramase is not None %}
-                        <span title="Lecții rămase din modul">📅 {{ gs.airtable_lectii_ramase }} rămase</span>
-                        {% else %}
-                        <span>📚 {{ gs.lessons_attended }} lecții</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        <div class="card-footer">
-            <a href="{% url 'teacher_platform:student_add' %}?group={{ group.id }}" class="btn-primary">➕ Adaugă Student în Grupă</a>
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>Nu sunt studenți înscriși în această grupă.</p>
-            <a href="{% url 'teacher_platform:student_add' %}?group={{ group.id }}" class="btn-primary">➕ Adaugă Primul Student</a>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Tab Content: Upcoming Lessons -->
-    <div class="tab-content" id="upcoming-lessons">
-        {% if upcoming_lessons %}
-        <div class="lessons-list-detailed">
-            {% for lesson in upcoming_lessons %}
-            <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}" class="lesson-card-detailed" title="Gestionează lecția">
-                <div class="lesson-date-box">
-                    <div class="date-day">{{ lesson.date|date:"d" }}</div>
-                    <div class="date-month">{{ lesson.date|date:"M" }}</div>
-                    <div class="date-year">{{ lesson.date|date:"Y" }}</div>
-                </div>
-                <div class="lesson-details">
-                    <h4>
-                        {% if lesson.lesson_template %}
-                            {{ lesson.lesson_template.name }}
-                        {% elif lesson.topic %}
-                            {{ lesson.topic }}
-                        {% else %}
-                            Lecție {{ lesson.date|date:"d M Y" }}
-                        {% endif %}
-                    </h4>
-                    {% if lesson.is_recuperare %}<span class="recup-tag">↻ Recuperare</span>{% endif %}{% if lesson.is_individual %}<span class="recup-tag indiv">👤 Individuală</span>{% endif %}
-                    <div class="lesson-meta">
-                        <span>🕐 {{ lesson.start_time|date:"H:i" }}</span>
-                        {% if lesson.end_time %}
-                            <span>- {{ lesson.end_time|date:"H:i" }}</span>
-                        {% endif %}
-                    </div>
-                    {% if lesson.description %}
-                    <p class="lesson-desc">{{ lesson.description|truncatewords:20 }}</p>
-                    {% endif %}
-                </div>
-                <div class="lesson-status-badge status-{{ lesson.status }}">
-                    {{ lesson.get_status_display }}
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>Nu sunt lecții programate pentru viitor.</p>
-            <a href="/admin/teacher_platform/lesson/add/?group={{ group.id }}" class="btn-primary">➕ Programează o Lecție</a>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Tab Content: Past Lessons -->
-    <div class="tab-content" id="past-lessons">
-        {% if past_lessons %}
-        <div class="lessons-list-detailed">
-            {% for lesson in past_lessons %}
-            <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}" class="lesson-card-detailed" title="Gestionează lecția">
-                <div class="lesson-date-box past">
-                    <div class="date-day">{{ lesson.date|date:"d" }}</div>
-                    <div class="date-month">{{ lesson.date|date:"M" }}</div>
-                </div>
-                <div class="lesson-details">
-                    <h4>
-                        {% if lesson.lesson_template %}
-                            {{ lesson.lesson_template.name }}
-                        {% elif lesson.topic %}
-                            {{ lesson.topic }}
-                        {% else %}
-                            Lecție {{ lesson.date|date:"d M Y" }}
-                        {% endif %}
-                    </h4>
-                    {% if lesson.is_recuperare %}<span class="recup-tag">↻ Recuperare</span>{% endif %}{% if lesson.is_individual %}<span class="recup-tag indiv">👤 Individuală</span>{% endif %}
-                    <div class="lesson-meta">
-                        <span>🕐 {{ lesson.start_time|date:"H:i" }}</span>
-                        {% if lesson.marked_count %}
-                        <span title="Prezenți din total marcați">✓ {{ lesson.present_count }}/{{ lesson.marked_count }} prezenți</span>
-                        {% else %}
-                        <span style="opacity:.6">— fără prezență</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="lesson-status-badge status-{{ lesson.status }}">
-                    {{ lesson.get_status_display }}
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>Nu sunt lecții trecute înregistrate.</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Tab Content: Assignments -->
-    <div class="tab-content" id="assignments">
-        {% if assignments %}
-        <div class="assignments-list-detailed">
-            {% for assignment in assignments %}
-            <a href="{% url 'teacher_platform:assignment_detail' assignment.id %}" class="assignment-card-detailed">
-                <div class="assignment-header">
-                    <h4>{{ assignment.title }}</h4>
-                    <span class="due-date-badge {% if assignment.due_date < today %}overdue{% endif %}">
-                        📅 {{ assignment.due_date|date:"d M Y" }}
-                    </span>
-                </div>
-                <p class="assignment-desc">{{ assignment.description|truncatewords:30 }}</p>
-                <div class="assignment-footer">
-                    <span>📝 {{ assignment.submissions.count }} predări</span>
-                    <span>💯 Max: {{ assignment.max_points }} puncte</span>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        <div class="card-footer">
-            <a href="/admin/teacher_platform/assignment/add/?group={{ group.id }}" class="btn-primary">➕ Creează Temă Nouă</a>
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>Nu sunt teme create pentru această grupă.</p>
-            <a href="/admin/teacher_platform/assignment/add/?group={{ group.id }}" class="btn-primary">➕ Creează Prima Temă</a>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Tab Content: Lesson Templates -->
-    {% if lesson_templates %}
-    <div class="tab-content" id="templates">
-        <div class="templates-list">
-            {% for template in lesson_templates %}
-            <div class="template-card">
-                <div class="template-order">{{ template.order }}</div>
-                <div class="template-info">
-                    <h4>{{ template.name }}</h4>
-                    {% if template.description %}
-                    <p>{{ template.description|truncatewords:20 }}</p>
-                    {% endif %}
-                </div>
-                <div class="template-actions">
-                    {% if template.lesson_plan_file %}
-                    <a href="{{ template.lesson_plan_file.url }}" target="_blank" class="btn-secondary">📄 Vezi Plan</a>
-                    {% endif %}
-                    <a href="/admin/teacher_platform/lesson/add/?group={{ group.id }}&lesson_template={{ template.id }}" class="btn-primary">➕ Programează</a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
+  {% if group.lesson_type == 'online' %}
+  <div class="gd-meet">
+    {% if group.meeting_link %}
+      <span>Link lecție online</span>
+      <code id="meetingLinkValue">{{ group.meeting_link }}</code>
+      <button type="button" class="gd-btn ghost" id="copyLinkBtn">Copiază</button>
+      <a class="gd-btn" href="{{ group.meeting_link }}" target="_blank" rel="noopener">Deschide</a>
+    {% else %}
+      <span>Niciun link de call setat —
+        <a href="{% url 'teacher_platform:group_edit' group.id %}">adaugă-l din „Editează grupa"</a></span>
     {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- 1 · ELEVII -->
+  <section class="gd-card">
+    <h2>Elevi <span class="gd-pill">{{ enrolled_count }} din {{ group.max_students }} locuri</span></h2>
+    {% if students %}
+    <div class="gd-students">
+      {% for gs in students %}
+      <a class="gd-stud" href="{% url 'teacher_platform:student_detail' gs.student.id %}">
+        <span class="gd-av">{{ gs.student.first_name|slice:":1" }}{{ gs.student.last_name|slice:":1" }}</span>
+        <span class="gd-stud-txt">
+          <b>{{ gs.student.get_full_name|default:gs.student.username }}</b>
+          <small>
+            {% if gs.airtable_prezente_modul is not None %}{{ gs.airtable_prezente_modul }} prezențe în modul
+            {% else %}{{ gs.get_attendance_rate }}% prezență{% endif %}
+            {% if gs.airtable_lectii_ramase is not None %} · {{ gs.airtable_lectii_ramase }} rămase{% endif %}
+          </small>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gd-empty">Niciun elev înscris. Înscrierile se fac în Airtable.</p>
+    {% endif %}
+  </section>
+
+  <!-- 2 · LECȚIILE GRUPEI -->
+  <section class="gd-card">
+    <h2>Lecții
+      <nav class="gd-switch" role="tablist">
+        <button type="button" class="on" data-pane="next">Viitoare ({{ upcoming_lessons|length }})</button>
+        <button type="button" data-pane="prev">Trecute ({{ past_lessons|length }})</button>
+      </nav>
+    </h2>
+
+    <div class="gd-pane" id="pane-next">
+      {% for lesson in upcoming_lessons %}
+      <a class="gd-lesson k-{{ lesson.status_kind }}" href="{% url 'teacher_platform:lesson_manage' lesson.id %}">
+        <span class="gd-when"><b>{{ lesson.date|date:"j M" }}</b><small>{{ lesson.start_time|time:"H:i" }}</small></span>
+        <span class="gd-lesson-txt">
+          <b>{% if lesson.lesson_template %}{{ lesson.lesson_template.name }}{% elif lesson.topic %}{{ lesson.topic }}{% else %}Lecție{% endif %}</b>
+          {% if lesson.is_individual %}<small>individuală</small>{% endif %}
+        </span>
+        <span class="gd-badge">{{ lesson.status_label }}</span>
+      </a>
+      {% empty %}
+      <p class="gd-empty">Nicio lecție viitoare. Lecțiile se generează în Airtable.</p>
+      {% endfor %}
+    </div>
+
+    <div class="gd-pane" id="pane-prev" hidden>
+      {% for lesson in past_lessons %}
+      <a class="gd-lesson k-{{ lesson.status_kind }}" href="{% url 'teacher_platform:lesson_manage' lesson.id %}">
+        <span class="gd-when"><b>{{ lesson.date|date:"j M" }}</b><small>{{ lesson.start_time|time:"H:i" }}</small></span>
+        <span class="gd-lesson-txt">
+          <b>{% if lesson.lesson_template %}{{ lesson.lesson_template.name }}{% elif lesson.topic %}{{ lesson.topic }}{% else %}Lecție{% endif %}</b>
+          <small>{% if lesson.marked_count %}{{ lesson.present_count }}/{{ lesson.marked_count }} prezenți{% else %}fără prezență{% endif %}</small>
+        </span>
+        <span class="gd-badge">{{ lesson.status_label }}</span>
+      </a>
+      {% empty %}
+      <p class="gd-empty">Nicio lecție trecută.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- 3 · TEME -->
+  <section class="gd-card">
+    <h2>Teme
+      <a class="gd-pill link" href="{% url 'teacher_platform:group_homework' group.id %}">
+        {{ sim_assignments_count }} pe simulatoare ›</a>
+    </h2>
+    {% if assignments %}
+    <div class="gd-pane">
+      {% for a in assignments %}
+      <a class="gd-lesson" href="{% url 'teacher_platform:assignment_detail' a.id %}">
+        <span class="gd-when"><b>{{ a.due_date|date:"j M" }}</b><small>termen</small></span>
+        <span class="gd-lesson-txt">
+          <b>{{ a.title }}</b>
+          <small>{{ a.submissions.count }} predări · max {{ a.max_points }} p</small>
+        </span>
+        {% if a.due_date < today %}<span class="gd-badge k-overdue">Expirată</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gd-empty">Nicio temă clasică. Temele pe simulatoare se alocă din pagina dedicată.</p>
+    {% endif %}
+  </section>
+
+  <!-- 4 · MAI DEPARTE -->
+  <nav class="gd-more">
+    <a href="{% url 'teacher_platform:group_live' group.id %}" class="gd-more-card{% if live_session %} live{% endif %}">
+      <b>Lecție live{% if live_session %} · în desfășurare{% endif %}</b>
+      <small>sarcini în timpul lecției, urmărite în timp real</small>
+    </a>
+    <a href="{% url 'teacher_platform:group_performance' group.id %}" class="gd-more-card">
+      <b>Performanță</b>
+      <small>rezultate per elev: teme, live, antrenament</small>
+    </a>
+    <a href="{% url 'teacher_platform:group_curriculum' group.id %}" class="gd-more-card">
+      <b>Curriculum</b>
+      <small>{{ lesson_templates|length }} șabloane de lecție, milestones, resurse</small>
+    </a>
+  </nav>
+
+  <p class="gd-src">Grupa, elevii și lecțiile vin din Airtable. Aici se lucrează cu ele.</p>
 </div>
 
 <style>
-/* Etichetă lecție de recuperare / individuală */
-.recup-tag{display:inline-block;margin:.15rem 0 .1rem;background:#fbe7d6;color:#b45309;
-    font-size:.72rem;font-weight:800;padding:.12rem .55rem;border-radius:999px;letter-spacing:.01em}
-.recup-tag.indiv{background:#e0edff;color:#1d4ed8}
-@media (prefers-color-scheme:dark){.recup-tag{background:#3a2c12;color:#fbbf24}.recup-tag.indiv{background:#16233b;color:#7ea8ff}}
-/* Tip lecție + link online */
-.lesson-type-badge {
-    display: inline-block; margin-left: 0.5rem;
-    background: #f1f5f9; color: #475569;
-    font-size: 0.8rem; font-weight: 700;
-    padding: 0.25rem 0.7rem; border-radius: 999px;
-}
-.lesson-type-badge.online { background: #e0edff; color: #1d4ed8; }
-.meeting-link-box {
-    display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
-    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
-    padding: 0.7rem 1rem; margin-top: 1rem;
-}
-.meeting-link-label { font-weight: 600; color: #1e40af; font-size: 0.9rem; }
-.meeting-link-url {
-    background: white; border: 1px solid #d6d9e0; border-radius: 7px;
-    padding: 0.3rem 0.65rem; font-size: 0.85rem; color: #374151;
-    max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.btn-copy-link {
-    background: #2563eb; color: white; border: none; border-radius: 8px;
-    padding: 0.45rem 1rem; font-size: 0.86rem; font-weight: 600; cursor: pointer;
-    transition: background 0.15s ease;
-}
-.btn-copy-link:hover { background: #1d4ed8; }
-.btn-copy-link.copied { background: #10b981; }
-.meeting-link-missing { color: #6b7280; font-size: 0.88rem; }
+  .gd{--ink:#151b28;--soft:#6b7688;--line:#e6eaf1;--bg:#fff;--bg2:#f7f9fc;
+    --brand:#4f46e5;--brand-soft:#eef0fe;--ok:#15803d;--ok-soft:#e8f6ed;
+    --warn:#b45309;--warn-soft:#fdf5e7;--late:#be123c;--late-soft:#fdeaef;
+    --live:#e11d48;--title:#312e81;
+    color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:15px;max-width:900px;margin:0 auto}
 
+  .gd-crumb{font-size:.85rem;margin:0 0 1.4rem}
+  .gd-crumb a{color:var(--soft);text-decoration:none}
+  .gd-crumb a:hover{color:var(--brand)}
 
-/* Punct roșu animat (lecție live în desfășurare) */
-.live-dot {
-    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
-    background: #ef4444; animation: livePulse 1.4s infinite;
-}
-@keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .gd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1.5rem;
+    flex-wrap:wrap;padding-bottom:1.4rem;margin-bottom:1.4rem;border-bottom:1px solid var(--line)}
+  .gd-head h1{margin:.1rem 0 .35rem;font-family:inherit;font-size:1.6rem;font-weight:700;
+    letter-spacing:-.02em;color:var(--title);line-height:1.15}
+  .gd-code{margin:0;font-size:.78rem;font-weight:800;letter-spacing:.06em;color:var(--brand)}
+  .gd-facts{margin:0;font-size:.88rem;color:var(--soft)}
 
-/* Carduri de acțiuni principale */
-.group-main-actions {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem; margin-top: 1.2rem;
-}
-.gma-card {
-    display: flex; align-items: center; gap: 1rem;
-    background: white; border: 2px solid #e5e7eb; border-radius: 14px;
-    padding: 1.1rem 1.3rem; text-decoration: none; color: #1f2430;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-}
-.gma-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-.gma-homework:hover { border-color: #2563eb; }
-.gma-live:hover { border-color: #ef4444; }
-.gma-curriculum:hover { border-color: #10b981; }
-.gma-performance:hover { border-color: #7c3aed; }
-.gma-icon { font-size: 1.9rem; }
-.gma-text { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }
-.gma-text strong { font-size: 1.02rem; }
-.gma-text small { color: #6b7280; font-size: 0.84rem; }
-.gma-arrow { font-size: 1.3rem; color: #9ca3af; font-weight: 700; }
+  .gd-btn{border:1px solid transparent;border-radius:8px;padding:.5rem .9rem;font-weight:600;
+    font-size:.85rem;cursor:pointer;text-decoration:none;white-space:nowrap;
+    background:var(--brand);color:#fff;display:inline-flex;align-items:center}
+  .gd-btn.ghost{background:transparent;color:var(--soft);border-color:var(--line)}
+  .gd-btn.ghost:hover{color:var(--ink)}
+
+  .gd-meet{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;font-size:.85rem;
+    background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+    padding:.7rem .9rem;margin-bottom:1.1rem;color:var(--soft)}
+  .gd-meet code{font-size:.82rem;color:var(--ink);overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;max-width:24rem}
+  .gd-meet span a{color:var(--brand)}
+
+  .gd-card{border:1px solid var(--line);border-radius:12px;background:var(--bg);
+    padding:1.2rem 1.3rem;margin-bottom:1.1rem}
+  .gd-card h2{margin:0 0 1rem;font-family:inherit;font-size:1rem;font-weight:700;
+    display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;color:var(--ink)}
+  .gd-pill{margin-left:auto;font-size:.78rem;font-weight:600;color:var(--soft)}
+  .gd-pill.link{text-decoration:none;color:var(--brand)}
+
+  /* elevi */
+  .gd-students{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.5rem}
+  .gd-stud{display:flex;align-items:center;gap:.7rem;padding:.6rem .7rem;border-radius:9px;
+    text-decoration:none;color:inherit;border:1px solid var(--line);min-width:0}
+  .gd-stud:hover{border-color:var(--brand);background:var(--bg2)}
+  .gd-av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;
+    font-size:.74rem;font-weight:700;background:var(--brand-soft);color:var(--brand);text-transform:uppercase}
+  .gd-stud-txt{display:flex;flex-direction:column;min-width:0}
+  .gd-stud-txt b{font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gd-stud-txt small{font-size:.76rem;color:var(--soft)}
+
+  /* lecții + teme */
+  .gd-switch{margin-left:auto;display:inline-flex;background:var(--bg2);border:1px solid var(--line);
+    border-radius:8px;padding:2px}
+  .gd-switch button{border:0;background:none;padding:.3rem .7rem;border-radius:6px;cursor:pointer;
+    font-size:.8rem;font-weight:600;color:var(--soft);font-family:inherit}
+  .gd-switch button.on{background:var(--bg);color:var(--ink);box-shadow:0 1px 2px rgba(20,26,45,.08)}
+  .gd-pane{display:flex;flex-direction:column;gap:.35rem}
+  .gd-lesson{display:flex;align-items:center;gap:1rem;padding:.6rem .75rem;border-radius:9px;
+    text-decoration:none;color:inherit;border:1px solid var(--line);
+    border-left:3px solid var(--c,var(--line))}
+  .gd-lesson:hover{background:var(--bg2)}
+  .gd-when{display:flex;flex-direction:column;line-height:1.2;min-width:3.6rem}
+  .gd-when b{font-size:.88rem}
+  .gd-when small{font-size:.74rem;color:var(--soft)}
+  .gd-lesson-txt{display:flex;flex-direction:column;min-width:0;flex:1}
+  .gd-lesson-txt b{font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gd-lesson-txt small{font-size:.76rem;color:var(--soft)}
+  .gd-badge{font-size:.72rem;font-weight:700;padding:.2rem .55rem;border-radius:6px;
+    background:var(--cs,var(--bg2));color:var(--c,var(--soft));white-space:nowrap}
+
+  .k-scheduled{--c:var(--brand);--cs:var(--brand-soft)}
+  .k-completed{--c:var(--ok);--cs:var(--ok-soft)}
+  .k-recuperare,.k-recuperare-done{--c:var(--warn);--cs:var(--warn-soft)}
+  .k-ongoing{--c:var(--brand);--cs:var(--brand-soft)}
+  .k-overdue{--c:var(--late);--cs:var(--late-soft)}
+
+  /* mai departe */
+  .gd-more{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:.6rem;margin-bottom:1.2rem}
+  .gd-more-card{display:flex;flex-direction:column;gap:.2rem;padding:.85rem 1rem;border-radius:10px;
+    border:1px solid var(--line);background:var(--bg);text-decoration:none;color:inherit}
+  .gd-more-card:hover{border-color:var(--brand);background:var(--bg2)}
+  .gd-more-card b{font-size:.9rem}
+  .gd-more-card small{font-size:.77rem;color:var(--soft);line-height:1.4}
+  .gd-more-card.live{border-color:var(--live)}
+  .gd-more-card.live b{color:var(--live)}
+
+  .gd-empty{color:var(--soft);font-size:.86rem;margin:0;padding:.5rem 0}
+  .gd-src{margin:0;font-size:.76rem;color:var(--soft)}
+
+  @media (prefers-color-scheme:dark){
+    .gd{--ink:#e9edf6;--soft:#98a2b8;--line:#2a3347;--bg:#151c2a;--bg2:#1a2333;
+      --brand:#8b8cf8;--brand-soft:#1f2547;--ok:#4ade80;--ok-soft:#13291d;
+      --warn:#fbbf24;--warn-soft:#292013;--late:#fb7185;--late-soft:#2c1620;
+      --live:#fb7185;--title:#c7c9ff}
+  }
 </style>
 
 <script>
-function copyMeetingLink() {
-    const link = document.getElementById('meetingLinkValue').textContent.trim();
-    const btn = document.getElementById('copyLinkBtn');
-    const done = () => {
-        btn.textContent = '✓ Copiat!';
-        btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = '📋 Copiază link'; btn.classList.remove('copied'); }, 2000);
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(link).then(done);
-    } else {
-        // fallback pentru browsere vechi / http
-        const ta = document.createElement('textarea');
-        ta.value = link;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        ta.remove();
-        done();
-    }
-}
+(function(){
+  // Lecții: viitoare / trecute
+  var sw = document.querySelector('.gd-switch');
+  if (sw) sw.addEventListener('click', function(e){
+    var btn = e.target.closest('button'); if (!btn) return;
+    sw.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b === btn); });
+    document.getElementById('pane-next').hidden = btn.dataset.pane !== 'next';
+    document.getElementById('pane-prev').hidden = btn.dataset.pane !== 'prev';
+  });
 
-// Tab switching
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        // Remove active class from all tabs and contents
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-        // Add active class to clicked tab
-        btn.classList.add('active');
-        const tabId = btn.dataset.tab;
-        document.getElementById(tabId).classList.add('active');
+  // Copiază linkul de call
+  var copy = document.getElementById('copyLinkBtn');
+  if (copy) copy.addEventListener('click', function(){
+    var v = document.getElementById('meetingLinkValue');
+    if (!v) return;
+    navigator.clipboard.writeText(v.textContent.trim()).then(function(){
+      var old = copy.textContent; copy.textContent = 'Copiat';
+      setTimeout(function(){ copy.textContent = old; }, 1500);
     });
-});
+  });
+})();
 </script>
 {% endblock %}
