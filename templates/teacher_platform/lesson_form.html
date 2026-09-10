@@ -158,7 +158,7 @@
                     {% if group_id %}
                     <a href="{% url 'teacher_platform:group_detail' group_id %}" class="btn-secondary">❌ Anulează</a>
                     {% elif lesson %}
-                    <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}" class="btn-secondary">❌ Anulează</a>
+                    <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}" class="btn-secondary">❌ Anulează</a>
                     {% else %}
                     <a href="{% url 'teacher_platform:calendar' %}" class="btn-secondary">❌ Anulează</a>
                     {% endif %}

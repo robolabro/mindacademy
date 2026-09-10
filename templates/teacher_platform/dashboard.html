@@ -52,7 +52,7 @@
                 {% if upcoming_lessons %}
                     <div class="lessons-list">
                         {% for lesson in upcoming_lessons %}
-                        <a href="{% url 'teacher_platform:lesson_detail' lesson.id %}" class="lesson-item">
+                        <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}" class="lesson-item">
                             <div class="lesson-date">
                                 <div class="date-day">{{ lesson.date|date:"d" }}</div>
                                 <div class="date-month">{{ lesson.date|date:"M" }}</div>
