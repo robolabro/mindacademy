@@ -1091,55 +1091,11 @@ def group_edit(request, group_id):
 @teacher_required
 def student_add(request):
     """
-    Adaugă un elev nou
+    Rută păstrată pentru compatibilitate. Elevii și înscrierile lor vin din
+    Airtable — unul creat aici n-ar avea înscriere, prezențe sau progres.
     """
-    teacher = request.user
-    group_id = request.GET.get('group')
-    selected_group = None
-
-    # Verifică dacă există un parametru de grup și dacă profesorul are acces la acel grup
-    if group_id:
-        try:
-            selected_group = Group.objects.get(id=group_id, teacher=teacher, is_active=True)
-        except Group.DoesNotExist:
-            messages.error(request, 'Grupa selectată nu a fost găsită.')
-            return redirect('teacher_platform:groups_list')
-
-    if request.method == 'POST':
-        form = StudentForm(request.POST, teacher=teacher)
-        if form.is_valid():
-            student = form.save()
-
-            # Verifică dacă studentul a fost adăugat într-o grupă
-            group_student = Enrollment.objects.filter(
-                student=student,
-                group__teacher=teacher
-            ).first()
-
-            messages.success(
-                request,
-                f'Elevul {student.get_full_name()} a fost creat cu succes! '
-                f'Username: {student.username}, Parolă: {student.username} (trebuie schimbată la prima autentificare)'
-            )
-
-            # Redirect către detalii student după creare
-            return redirect('teacher_platform:student_detail', student_id=student.id)
-        else:
-            messages.error(request, 'Te rog corectează erorile din formular.')
-    else:
-        # Pre-selectează grupa în formular dacă este furnizată
-        initial_data = {}
-        if selected_group:
-            initial_data['group'] = selected_group
-        form = StudentForm(teacher=teacher, initial=initial_data)
-
-    context = {
-        'form': form,
-        'title': 'Adaugă Elev Nou',
-        'selected_group': selected_group
-    }
-    return render(request, 'teacher_platform/student_form.html', context)
-
+    messages.info(request, 'Elevii se adaugă în Airtable, nu în platformă.')
+    return redirect('teacher_platform:students_list')
 
 @login_required
 @teacher_required
