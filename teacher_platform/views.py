@@ -559,93 +559,78 @@ def group_performance(request, group_id):
 @teacher_required
 def calendar_view(request):
     """
-    Calendar cu toate lecțiile profesorului
-    Suportă view_mode: 'list' (timeline) sau 'calendar' (grid)
+    Calendarul profesorului: zi / săptămână / lună, ancorat implicit pe azi.
+
+    Lecțiile sunt generate în Airtable — aici doar se consultă și se deschid;
+    nu se creează lecții din calendar.
     """
     teacher = request.user
+    today = timezone.localdate()
 
-    # Obține luna și anul din query params sau folosește luna curentă
-    now = timezone.now()
-    year = int(request.GET.get('year', now.year))
-    month = int(request.GET.get('month', now.month))
-    view_mode = request.GET.get('view', 'list')  # 'list' sau 'calendar'
+    view_mode = request.GET.get('view', 'week')
+    if view_mode not in ('day', 'week', 'month'):
+        view_mode = 'week'
+    anchor = parse_date(request.GET.get('d', '') or '') or today
 
-    # Prima și ultima zi a lunii
-    first_day = datetime(year, month, 1).date()
-    if month == 12:
-        last_day = datetime(year + 1, 1, 1).date() - timedelta(days=1)
+    # Intervalul afișat…
+    if view_mode == 'day':
+        start = end = anchor
+    elif view_mode == 'week':
+        start = anchor - timedelta(days=anchor.weekday())
+        end = start + timedelta(days=6)
     else:
-        last_day = datetime(year, month + 1, 1).date() - timedelta(days=1)
+        start = anchor.replace(day=1)
+        end = (start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
 
-    # Lecții pentru luna selectată
-    lessons = Lesson.objects.filter(
-        group__teacher=teacher,
-        date__range=[first_day, last_day]
-    ).select_related('group', 'group__module', 'lesson_template').order_by('date', 'start_time')
+    # …iar pentru lună, grila se completează până la săptămâni întregi.
+    grid_start, grid_end = start, end
+    if view_mode == 'month':
+        grid_start = start - timedelta(days=start.weekday())
+        grid_end = end + timedelta(days=6 - end.weekday())
 
-    # Grupuri pentru calendar view
-    groups = Group.objects.filter(
-        teacher=teacher,
-        is_active=True
-    ).select_related('course', 'module')
+    lessons = list(Lesson.objects.filter(
+        group__teacher=teacher, date__range=[grid_start, grid_end]
+    ).select_related('group', 'group__module', 'lesson_template')
+     .order_by('date', 'start_time'))
 
-    # Calculează luna anterioară și următoare pentru navigare
-    if month == 1:
-        prev_month = 12
-        prev_year = year - 1
+    by_date = {}
+    for lesson in lessons:
+        by_date.setdefault(lesson.date, []).append(lesson)
+
+    days, day = [], grid_start
+    while day <= grid_end:
+        days.append({
+            'date': day,
+            'lessons': by_date.get(day, []),
+            'is_today': day == today,
+            'is_past': day < today,
+            'outside': not (start <= day <= end),
+        })
+        day += timedelta(days=1)
+
+    weeks = [days[i:i + 7] for i in range(0, len(days), 7)] if view_mode == 'month' else []
+
+    # Navigare: un pas = o zi / o săptămână / o lună.
+    if view_mode == 'day':
+        prev_anchor, next_anchor = anchor - timedelta(days=1), anchor + timedelta(days=1)
+    elif view_mode == 'week':
+        prev_anchor, next_anchor = anchor - timedelta(days=7), anchor + timedelta(days=7)
     else:
-        prev_month = month - 1
-        prev_year = year
-
-    if month == 12:
-        next_month = 1
-        next_year = year + 1
-    else:
-        next_month = month + 1
-        next_year = year
-
-    # Pentru calendar grid view, calculează săptămânile și zilele
-    calendar_weeks = []
-    if view_mode == 'calendar':
-        import calendar as cal
-        month_calendar = cal.monthcalendar(year, month)
-
-        # Creează un dicționar cu lecțiile organizate pe zile
-        lessons_by_date = {}
-        for lesson in lessons:
-            if lesson.date not in lessons_by_date:
-                lessons_by_date[lesson.date] = []
-            lessons_by_date[lesson.date].append(lesson)
-
-        # Construiește săptămânile cu informații despre lecții
-        for week in month_calendar:
-            week_days = []
-            for day in week:
-                if day == 0:
-                    week_days.append({'day': None, 'lessons': []})
-                else:
-                    date_obj = datetime(year, month, day).date()
-                    week_days.append({
-                        'day': day,
-                        'date': date_obj,
-                        'lessons': lessons_by_date.get(date_obj, []),
-                        'is_today': date_obj == timezone.now().date()
-                    })
-            calendar_weeks.append(week_days)
+        prev_anchor, next_anchor = start - timedelta(days=1), end + timedelta(days=1)
 
     context = {
-        'lessons': lessons,
-        'groups': groups,
-        'current_year': year,
-        'current_month': month,
-        'month_name': datetime(year, month, 1).strftime('%B'),
-        'prev_month': prev_month,
-        'prev_year': prev_year,
-        'next_month': next_month,
-        'next_year': next_year,
-        'today': timezone.now().date(),
         'view_mode': view_mode,
-        'calendar_weeks': calendar_weeks,
+        'anchor': anchor,
+        'today': today,
+        'range_start': start,
+        'range_end': end,
+        'same_month': start.month == end.month and start.year == end.year,
+        'days': days,
+        'weeks': weeks,
+        'lesson_count': sum(1 for l in lessons if start <= l.date <= end),
+        'prev_anchor': prev_anchor,
+        'next_anchor': next_anchor,
+        'shows_today': start <= today <= end,
     }
 
     return render(request, 'teacher_platform/calendar.html', context)

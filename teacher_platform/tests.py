@@ -9,6 +9,7 @@ Rulare:
 import datetime
 
 from django.test import TestCase
+from django.utils import timezone
 from django.urls import reverse
 
 from accounts.models import User
@@ -219,3 +220,77 @@ class LessonRoutesTests(TestCase):
         self.client.force_login(strain)
         url = reverse('teacher_platform:lesson_manage', args=[self.lesson.id])
         self.assertEqual(self.client.get(url).status_code, 404)
+
+
+class CalendarTests(TestCase):
+    """Calendarul: zi / săptămână / lună, ancorat pe azi."""
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='prof_cal', password='Test1234!', role='teacher')
+        age = AgeGroup.objects.create(name='7-10 ani', min_age=7, max_age=10)
+        course = Course.objects.create(
+            title='Soroban', slug='soroban-c', description='x', age_group=age,
+            price=0, frequency='saptamanal', group_size=6)
+        self.group = Group.objects.create(
+            name='A0131 · Modul A', teacher=self.teacher, course=course, weekday=1,
+            start_time=datetime.time(18, 0), start_date=datetime.date(2026, 1, 12))
+        self.client.force_login(self.teacher)
+        self.url = reverse('teacher_platform:calendar')
+
+    def _lesson(self, day, **kw):
+        return Lesson.objects.create(
+            group=self.group, date=day, start_time=datetime.time(18, 0), **kw)
+
+    def test_implicit_arata_saptamana_cu_ziua_de_azi(self):
+        ctx = self.client.get(self.url).context
+        self.assertEqual(ctx['view_mode'], 'week')
+        self.assertTrue(ctx['range_start'] <= ctx['today'] <= ctx['range_end'])
+        self.assertEqual((ctx['range_end'] - ctx['range_start']).days, 6)
+
+    def test_saptamana_incepe_luni(self):
+        ctx = self.client.get(self.url, {'view': 'week', 'd': '2026-09-10'}).context
+        self.assertEqual(ctx['range_start'], datetime.date(2026, 9, 7))
+        self.assertEqual(ctx['range_end'], datetime.date(2026, 9, 13))
+
+    def test_vederea_pe_zi_arata_o_singura_zi(self):
+        self._lesson(datetime.date(2026, 9, 10))
+        self._lesson(datetime.date(2026, 9, 11))
+        ctx = self.client.get(self.url, {'view': 'day', 'd': '2026-09-10'}).context
+        self.assertEqual(ctx['lesson_count'], 1)
+        self.assertEqual(len(ctx['days']), 1)
+
+    def test_grila_lunii_are_saptamani_intregi(self):
+        ctx = self.client.get(self.url, {'view': 'month', 'd': '2026-09-10'}).context
+        self.assertEqual(ctx['range_start'], datetime.date(2026, 9, 1))
+        self.assertEqual(ctx['range_end'], datetime.date(2026, 9, 30))
+        self.assertTrue(all(len(w) == 7 for w in ctx['weeks']))
+        # zilele din lunile vecine sunt marcate, ca să se vadă estompate
+        self.assertTrue(any(d['outside'] for d in ctx['days']))
+
+    def test_navigarea_muta_cu_un_pas(self):
+        ctx = self.client.get(self.url, {'view': 'week', 'd': '2026-09-10'}).context
+        self.assertEqual(ctx['prev_anchor'], datetime.date(2026, 9, 3))
+        self.assertEqual(ctx['next_anchor'], datetime.date(2026, 9, 17))
+
+    def test_o_recuperare_se_vede_langa_lectia_cu_care_se_suprapune(self):
+        """Recuperările pot fi la aceeași oră cu altă lecție — se afișează ambele."""
+        day = datetime.date(2026, 9, 15)
+        self._lesson(day)
+        self._lesson(day, is_recuperare=True)
+        ctx = self.client.get(self.url, {'view': 'day', 'd': day.isoformat()}).context
+        self.assertEqual(len(ctx['days'][0]['lessons']), 2)
+
+    def test_nu_se_creeaza_lectii_din_calendar(self):
+        """Lecțiile vin din Airtable — butonul de adăugare a fost scos."""
+        self.assertNotContains(self.client.get(self.url), 'Adaugă Lecție')
+
+    def test_calendarul_arata_doar_lectiile_profesorului(self):
+        strain = User.objects.create_user(
+            username='prof_alt', password='Test1234!', role='teacher')
+        alt_group = Group.objects.create(
+            name='X0001 · Modul X', teacher=strain, weekday=1,
+            start_time=datetime.time(18, 0), start_date=datetime.date(2026, 1, 12))
+        Lesson.objects.create(group=alt_group, date=timezone.localdate(),
+                              start_time=datetime.time(18, 0))
+        self.assertEqual(self.client.get(self.url).context['lesson_count'], 0)

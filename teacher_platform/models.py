@@ -163,6 +163,15 @@ class Group(AirtableSyncMixin, models.Model):
             return f"{self.name} ({self.code})"
         return f"{self.name} - {self.get_weekday_display()} {self.start_time}"
 
+    @property
+    def short_name(self):
+        """Doar codul grupei, pentru spații înguste (calendar).
+
+        Numele vine din Airtable ca „A0131 · Modul A"; în celulele calendarului
+        încape doar prima parte, care e oricum identificatorul folosit zilnic.
+        """
+        return (self.name or '').split('·')[0].strip() or self.name
+
     def get_current_students_count(self):
         """Returnează numărul curent de elevi din grupă"""
         return self.students.filter(is_active=True).count()
@@ -266,11 +275,13 @@ class Lesson(AirtableSyncMixin, models.Model):
     Sincronizarea face DOAR UPDATE pe lecțiile existente (găsite după
     airtable_record_id), niciodată CREATE.
     """
+    # „Anulată" a fost scoasă: lecțiile nu se anulează niciodată — Airtable le
+    # reprogramează, iar absențele se rezolvă prin recuperări. Nimic nu seta
+    # vreodată statusul ăsta.
     STATUS_CHOICES = [
         ('scheduled', 'Programată'),
         ('ongoing', 'În Desfășurare'),
         ('completed', 'Finalizată'),
-        ('cancelled', 'Anulată'),
     ]
 
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='lessons', verbose_name="Grupă")
@@ -334,6 +345,24 @@ class Lesson(AirtableSyncMixin, models.Model):
 
     def __str__(self):
         return f"{self.group.name} - {self.date} {self.start_time}"
+
+    # --- cum se vede lecția în interfață ---------------------------------
+    # Recuperările sunt lecții separate, generate de Airtable când un elev
+    # lipsește. Se afișează cu eticheta lor, nu cu statusul obișnuit, ca
+    # profesorul să le recunoască dintr-o privire în calendar.
+
+    @property
+    def status_kind(self):
+        """Cheie scurtă pentru culoarea/eticheta din interfață."""
+        if self.is_recuperare:
+            return 'recuperare-done' if self.status == 'completed' else 'recuperare'
+        return self.status
+
+    @property
+    def status_label(self):
+        if self.is_recuperare:
+            return 'Recuperată' if self.status == 'completed' else 'Recuperare'
+        return self.get_status_display()
 
 
 class Attendance(AirtableSyncMixin, models.Model):

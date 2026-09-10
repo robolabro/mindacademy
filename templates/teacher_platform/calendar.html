@@ -1,150 +1,222 @@
 {% extends 'teacher_platform/base_teacher.html' %}
 
 {% block title %}Calendar{% endblock %}
-{% block page_title %}📅 Calendar Lecții{% endblock %}
+{% block page_title %}Calendar{% endblock %}
 
 {% block content %}
-<div class="page-container">
-    <!-- Calendar Navigation -->
-    <div class="calendar-nav">
-        <div class="calendar-nav-left">
-            <a href="?year={{ prev_year }}&month={{ prev_month }}&view={{ view_mode }}" class="btn-secondary">← Luna Anterioară</a>
-            <h2 class="current-month">{{ month_name }} {{ current_year }}</h2>
-            <a href="?year={{ next_year }}&month={{ next_month }}&view={{ view_mode }}" class="btn-secondary">Luna Următoare →</a>
-        </div>
-        <div class="calendar-nav-right">
-            <!-- View Toggle -->
-            <div class="view-toggle">
-                <a href="?year={{ current_year }}&month={{ current_month }}&view=list" class="view-btn {% if view_mode == 'list' %}active{% endif %}" title="Vizualizare listă">
-                    📋 Listă
-                </a>
-                <a href="?year={{ current_year }}&month={{ current_month }}&view=calendar" class="view-btn {% if view_mode == 'calendar' %}active{% endif %}" title="Vizualizare calendar">
-                    📅 Calendar
-                </a>
-            </div>
-            <a href="{% url 'teacher_platform:lesson_create' %}" class="btn-primary">➕ Adaugă Lecție</a>
-        </div>
+<div class="cal">
+
+  <!-- BARĂ: perioadă + navigare + zi/săptămână/lună -->
+  <header class="cal-bar">
+    <div class="cal-nav">
+      <a class="cal-arrow" href="?view={{ view_mode }}&d={{ prev_anchor|date:'Y-m-d' }}" aria-label="Înapoi">‹</a>
+      <a class="cal-arrow" href="?view={{ view_mode }}&d={{ next_anchor|date:'Y-m-d' }}" aria-label="Înainte">›</a>
+      {% if not shows_today %}<a class="cal-today" href="?view={{ view_mode }}">Azi</a>{% endif %}
     </div>
 
-    {% if view_mode == 'calendar' %}
-    <!-- Calendar Grid View -->
-    <div class="calendar-grid-view">
-        <div class="calendar-grid">
-            <!-- Weekday Headers -->
-            <div class="calendar-weekdays">
-                <div class="weekday">Luni</div>
-                <div class="weekday">Marți</div>
-                <div class="weekday">Miercuri</div>
-                <div class="weekday">Joi</div>
-                <div class="weekday">Vineri</div>
-                <div class="weekday">Sâmbătă</div>
-                <div class="weekday">Duminică</div>
-            </div>
-            <!-- Calendar Days -->
-            <div class="calendar-days">
-                {% for week in calendar_weeks %}
-                    {% for day_info in week %}
-                        {% if day_info.day %}
-                        <div class="calendar-day {% if day_info.is_today %}today{% endif %} {% if day_info.lessons %}has-lessons{% endif %}">
-                            <div class="day-number">{{ day_info.day }}</div>
-                            <div class="day-lessons">
-                                {% for lesson in day_info.lessons %}
-                                <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}"
-                                   class="day-lesson"
-                                   style="background-color: {% if lesson.group.module %}{{ lesson.group.module.color }}{% else %}#667eea{% endif %}20; border-left: 3px solid {% if lesson.group.module %}{{ lesson.group.module.color }}{% else %}#667eea{% endif %};"
-                                   title="{{ lesson.group.name }} - {{ lesson.start_time|date:'H:i' }}">
-                                    <div class="lesson-time-small">{{ lesson.start_time|date:"H:i" }}</div>
-                                    <div class="lesson-title-small">{{ lesson.group.name }}</div>
-                                </a>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="calendar-day empty"></div>
-                        {% endif %}
-                    {% endfor %}
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <!-- Lessons List View (Timeline) -->
-    <div class="calendar-lessons">
-        {% if lessons %}
-        <div class="lessons-timeline">
-            {% regroup lessons by date as lessons_by_date %}
-            {% for date_group in lessons_by_date %}
-            <div class="timeline-day">
-                <div class="timeline-date">
-                    <div class="date-day">{{ date_group.grouper|date:"d" }}</div>
-                    <div class="date-info">
-                        <div class="date-weekday">{{ date_group.grouper|date:"l" }}</div>
-                        <div class="date-month">{{ date_group.grouper|date:"F Y" }}</div>
-                    </div>
-                </div>
-                <div class="timeline-lessons">
-                    {% for lesson in date_group.list %}
-                    <a href="{% url 'teacher_platform:lesson_manage' lesson.id %}" class="timeline-lesson" style="border-left: 4px solid {% if lesson.group.module %}{{ lesson.group.module.color }}{% else %}#667eea{% endif %};">
-                        <div class="lesson-time">{{ lesson.start_time|date:"H:i" }}</div>
-                        <div class="lesson-content">
-                            <h4>{{ lesson.group.name }}</h4>
-                            {% if lesson.lesson_template %}
-                            <p>{{ lesson.lesson_template.name }}</p>
-                            {% elif lesson.topic %}
-                            <p>{{ lesson.topic }}</p>
-                            {% endif %}
-                            {% if lesson.group.module %}
-                            <span class="module-badge-small" style="background-color: {{ lesson.group.module.color }}20; color: {{ lesson.group.module.color }};">
-                                {{ lesson.group.module.name }}
-                            </span>
-                            {% endif %}
-                        </div>
-                        <div class="lesson-status-small status-{{ lesson.status }}">
-                            {{ lesson.get_status_display }}
-                        </div>
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state-large">
-            <div class="empty-icon">📅</div>
-            <h2>Nu ai lecții programate în {{ month_name }} {{ current_year }}</h2>
-            <p>Programează lecții pentru a le vedea aici.</p>
-            <a href="{% url 'teacher_platform:lesson_create' %}" class="btn-primary">➕ Programează o Lecție</a>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
+    <h1 class="cal-title">
+      {% if view_mode == 'day' %}{{ range_start|date:"l, j F Y" }}
+      {% elif view_mode == 'week' %}
+        {% if same_month %}{{ range_start|date:"j" }}–{{ range_end|date:"j F Y" }}
+        {% else %}{{ range_start|date:"j M" }} – {{ range_end|date:"j M Y" }}{% endif %}
+      {% else %}{{ range_start|date:"F Y" }}{% endif %}
+    </h1>
 
-    <!-- Legend -->
-    <div class="calendar-legend">
-        <h3>Legendă Status:</h3>
-        <div class="legend-items">
-            <span class="legend-item"><span class="status-dot status-scheduled"></span> Programată</span>
-            <span class="legend-item"><span class="status-dot status-ongoing"></span> În Desfășurare</span>
-            <span class="legend-item"><span class="status-dot status-completed"></span> Finalizată</span>
-            <span class="legend-item"><span class="status-dot status-cancelled"></span> Anulată</span>
-        </div>
+    <nav class="cal-modes">
+      <a href="?view=day&d={{ anchor|date:'Y-m-d' }}"   class="{% if view_mode == 'day' %}on{% endif %}">Zi</a>
+      <a href="?view=week&d={{ anchor|date:'Y-m-d' }}"  class="{% if view_mode == 'week' %}on{% endif %}">Săptămână</a>
+      <a href="?view=month&d={{ anchor|date:'Y-m-d' }}" class="{% if view_mode == 'month' %}on{% endif %}">Lună</a>
+    </nav>
+  </header>
+
+  <p class="cal-count">{{ lesson_count }} lecți{{ lesson_count|pluralize:"e,i" }}</p>
+
+  {# ---------- ZI: agendă cu ora în stânga ---------- #}
+  {% if view_mode == 'day' %}
+    <div class="cal-day">
+      {% for d in days %}
+        {% for l in d.lessons %}
+        <a class="cal-item k-{{ l.status_kind }}" href="{% url 'teacher_platform:lesson_manage' l.id %}">
+          <span class="cal-hour">{{ l.start_time|time:"H:i" }}{% if l.end_time %}<small>{{ l.end_time|time:"H:i" }}</small>{% endif %}</span>
+          <span class="cal-body">
+            <b>{{ l.group.name }}</b>
+            <span class="cal-meta">{% if l.topic %}{{ l.topic }}{% elif l.lesson_template %}{{ l.lesson_template.name }}{% endif %}{% if l.group.module %} · {{ l.group.module.name }}{% endif %}</span>
+          </span>
+          <span class="cal-badge">{{ l.status_label }}</span>
+        </a>
+        {% empty %}
+        <p class="cal-empty">Nicio lecție în această zi.</p>
+        {% endfor %}
+      {% endfor %}
     </div>
 
-    <!-- Groups Legend (colors) -->
-    {% if groups %}
-    <div class="calendar-legend">
-        <h3>Grupele Tale:</h3>
-        <div class="legend-items">
-            {% for group in groups %}
-            {% if group.module %}
-            <span class="legend-item">
-                <span class="color-dot" style="background-color: {{ group.module.color }};"></span>
-                {{ group.name }}
-            </span>
-            {% endif %}
-            {% endfor %}
+  {# ---------- SĂPTĂMÂNĂ: 7 coloane, toate lecțiile vizibile ---------- #}
+  {% elif view_mode == 'week' %}
+    <div class="cal-week">
+      {% for d in days %}
+      <section class="cal-col{% if d.is_today %} today{% endif %}{% if d.is_past %} past{% endif %}">
+        <a class="cal-colh" href="?view=day&d={{ d.date|date:'Y-m-d' }}">
+          <span class="cal-dow">{{ d.date|date:"D" }}</span>
+          <span class="cal-dnum">{{ d.date|date:"j" }}</span>
+        </a>
+        <div class="cal-colb">
+          {% for l in d.lessons %}
+          <a class="cal-chip k-{{ l.status_kind }}" href="{% url 'teacher_platform:lesson_manage' l.id %}"
+             title="{{ l.start_time|time:'H:i' }} · {{ l.group.name }} · {{ l.status_label }}">
+            <b>{{ l.start_time|time:"H:i" }}</b>
+            <span>{{ l.group.short_name }}</span>
+            {% if l.group.module %}<em>{{ l.group.module.name }}</em>{% endif %}
+            {% if l.is_recuperare %}<i class="cal-r">recuperare</i>{% endif %}
+          </a>
+          {% endfor %}
         </div>
+      </section>
+      {% endfor %}
     </div>
-    {% endif %}
+
+  {# ---------- LUNĂ: grilă compactă ---------- #}
+  {% else %}
+    <div class="cal-month">
+      <div class="cal-dows">
+        {% for n in "0123456" %}<span>{% cycle 'Lun' 'Mar' 'Mie' 'Joi' 'Vin' 'Sâm' 'Dum' %}</span>{% endfor %}
+      </div>
+      {% for week in weeks %}
+      <div class="cal-mrow">
+        {% for d in week %}
+        <div class="cal-cell{% if d.is_today %} today{% endif %}{% if d.outside %} outside{% endif %}">
+          <a class="cal-cnum" href="?view=day&d={{ d.date|date:'Y-m-d' }}">{{ d.date|date:"j" }}</a>
+          {% for l in d.lessons|slice:":3" %}
+          <a class="cal-chip sm k-{{ l.status_kind }}" href="{% url 'teacher_platform:lesson_manage' l.id %}"
+             title="{{ l.start_time|time:'H:i' }} · {{ l.group.name }} · {{ l.status_label }}">
+            <b>{{ l.start_time|time:"H:i" }}</b>
+            <span>{{ l.group.short_name }}</span>
+          </a>
+          {% endfor %}
+          {% if d.lessons|length > 3 %}
+          <a class="cal-more" href="?view=day&d={{ d.date|date:'Y-m-d' }}">+{{ d.lessons|length|add:"-3" }} încă</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <p class="cal-legend">
+    <span class="k-scheduled">Programată</span>
+    <span class="k-completed">Finalizată</span>
+    <span class="k-recuperare">Recuperare</span>
+    <span class="k-recuperare-done">Recuperată</span>
+  </p>
+  <p class="cal-src">Lecțiile sunt generate în Airtable — aici se consultă și se completează.</p>
 </div>
+
+<style>
+  .cal{--ink:#151b28;--soft:#6b7688;--line:#e6eaf1;--bg:#fff;--bg2:#f7f9fc;
+    --brand:#4f46e5;--brand-soft:#eef0fe;--ok:#15803d;--ok-soft:#e8f6ed;
+    --warn:#b45309;--warn-soft:#fdf5e7;--today:#4f46e5;
+    color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:15px;max-width:1180px;margin:0 auto}
+
+  /* bară */
+  .cal-bar{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.35rem}
+  .cal-nav{display:flex;gap:.35rem;align-items:center}
+  .cal-arrow{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);
+    border-radius:8px;color:var(--soft);text-decoration:none;font-size:1.1rem;line-height:1;background:var(--bg)}
+  .cal-arrow:hover{color:var(--ink);border-color:var(--soft)}
+  .cal-today{border:1px solid var(--line);border-radius:8px;padding:.4rem .7rem;font-size:.82rem;
+    font-weight:600;color:var(--brand);text-decoration:none;background:var(--bg)}
+  .cal-title{margin:0;font-size:1.3rem;letter-spacing:-.02em;text-transform:capitalize;flex:1;min-width:12rem}
+  .cal-modes{display:inline-flex;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:2px}
+  .cal-modes a{padding:.38rem .8rem;border-radius:7px;font-size:.85rem;font-weight:600;
+    color:var(--soft);text-decoration:none}
+  .cal-modes a.on{background:var(--bg);color:var(--ink);box-shadow:0 1px 2px rgba(20,26,45,.08)}
+  .cal-count{margin:0 0 1.1rem;font-size:.82rem;color:var(--soft)}
+
+  /* culori de status, comune tuturor vederilor */
+  .k-scheduled{--c:var(--brand);--cs:var(--brand-soft)}
+  .k-completed{--c:var(--ok);--cs:var(--ok-soft)}
+  .k-recuperare,.k-recuperare-done{--c:var(--warn);--cs:var(--warn-soft)}
+  .k-ongoing{--c:var(--brand);--cs:var(--brand-soft)}
+
+  /* ZI */
+  .cal-day{display:flex;flex-direction:column;gap:.5rem}
+  .cal-item{display:flex;align-items:center;gap:1rem;text-decoration:none;color:inherit;
+    border:1px solid var(--line);border-left:3px solid var(--c,var(--line));border-radius:10px;
+    background:var(--bg);padding:.85rem 1rem}
+  .cal-item:hover{border-color:var(--c,var(--soft));background:var(--bg2)}
+  .cal-hour{font-weight:700;font-size:.95rem;min-width:3.4rem;display:flex;flex-direction:column;line-height:1.2}
+  .cal-hour small{font-size:.75rem;font-weight:500;color:var(--soft)}
+  .cal-body{display:flex;flex-direction:column;gap:.15rem;min-width:0;flex:1}
+  .cal-body b{font-size:.98rem}
+  .cal-meta{font-size:.83rem;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cal-badge{font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:6px;
+    background:var(--cs,var(--bg2));color:var(--c,var(--soft));white-space:nowrap}
+
+  /* SĂPTĂMÂNĂ */
+  .cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:.5rem;align-items:start}
+  .cal-col{border:1px solid var(--line);border-radius:10px;background:var(--bg);overflow:hidden;min-width:0;min-height:7rem}
+  .cal-col.past{background:var(--bg2)}
+  .cal-col.today{border-color:var(--today);box-shadow:0 0 0 1px var(--today)}
+  .cal-colh{display:flex;align-items:baseline;gap:.4rem;padding:.55rem .7rem;text-decoration:none;
+    color:var(--soft);border-bottom:1px solid var(--line)}
+  .cal-col.today .cal-colh{color:var(--today)}
+  .cal-dow{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .cal-dnum{font-size:1rem;font-weight:700;color:var(--ink)}
+  .cal-col.today .cal-dnum{color:var(--today)}
+  .cal-colb{padding:.4rem;display:flex;flex-direction:column;gap:.3rem}
+  .cal-chip{display:flex;flex-direction:column;gap:.05rem;text-decoration:none;padding:.4rem .5rem;
+    border-radius:7px;background:var(--cs,var(--bg2));border-left:3px solid var(--c,var(--line));
+    color:var(--ink);font-size:.8rem;line-height:1.3;overflow:hidden;min-width:0}
+  .cal-chip:hover{filter:brightness(.97)}
+  .cal-chip b{font-size:.76rem;color:var(--c,var(--soft));font-weight:700}
+  .cal-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+  .cal-chip em{font-style:normal;font-size:.72rem;color:var(--soft);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cal-r{font-style:normal;font-size:.68rem;font-weight:700;text-transform:uppercase;
+    letter-spacing:.04em;color:var(--c)}
+
+  /* LUNĂ */
+  .cal-month{border:1px solid var(--line);border-radius:12px;background:var(--bg);overflow:hidden}
+  .cal-dows{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line);background:var(--bg2)}
+  .cal-dows span{padding:.5rem .6rem;font-size:.72rem;font-weight:700;color:var(--soft);
+    text-transform:uppercase;letter-spacing:.04em}
+  .cal-mrow{display:grid;grid-template-columns:repeat(7,1fr)}
+  .cal-mrow+.cal-mrow{border-top:1px solid var(--line)}
+  .cal-cell{min-height:6.2rem;min-width:0;padding:.4rem;display:flex;flex-direction:column;gap:.25rem}
+  .cal-cell+.cal-cell{border-left:1px solid var(--line)}
+  .cal-cell.outside{background:var(--bg2)}
+  .cal-cell.outside .cal-cnum{color:#c3cad6}
+  .cal-cell.today{background:var(--brand-soft)}
+  .cal-cnum{font-size:.82rem;font-weight:700;color:var(--soft);text-decoration:none;align-self:flex-start;
+    padding:.1rem .35rem;border-radius:5px}
+  .cal-cell.today .cal-cnum{background:var(--today);color:#fff}
+  .cal-chip.sm{padding:.22rem .4rem;font-size:.74rem;flex-direction:row;align-items:baseline;gap:.35rem}
+  .cal-chip.sm b{font-size:.7rem}
+  .cal-more{font-size:.72rem;color:var(--soft);text-decoration:none;padding-left:.4rem}
+  .cal-more:hover{color:var(--brand)}
+
+  .cal-empty{color:var(--soft);font-size:.9rem;padding:2rem;text-align:center;
+    border:1px dashed var(--line);border-radius:10px;margin:0}
+  .cal-legend{display:flex;gap:1rem;flex-wrap:wrap;margin:1.2rem 0 .3rem;font-size:.76rem;color:var(--soft)}
+  .cal-legend span{display:inline-flex;align-items:center;gap:.4rem}
+  .cal-legend span::before{content:'';width:9px;height:9px;border-radius:3px;background:var(--c)}
+  .cal-src{margin:0;font-size:.76rem;color:var(--soft)}
+
+  @media(max-width:900px){
+    .cal-week{grid-template-columns:1fr}
+    .cal-col{min-height:0}
+    .cal-colh{border-bottom:0}
+    .cal-cell{min-height:4.5rem}
+    .cal-chip.sm span{display:none}
+    .cal-title{order:-1;width:100%;flex:none}
+  }
+  @media (prefers-color-scheme:dark){
+    .cal{--ink:#e9edf6;--soft:#98a2b8;--line:#2a3347;--bg:#151c2a;--bg2:#1a2333;
+      --brand:#8b8cf8;--brand-soft:#1f2547;--ok:#4ade80;--ok-soft:#13291d;
+      --warn:#fbbf24;--warn-soft:#292013;--today:#8b8cf8}
+    .cal-cell.outside .cal-cnum{color:#41506e}
+    .cal-chip:hover{filter:brightness(1.15)}
+  }
+</style>
 {% endblock %}
