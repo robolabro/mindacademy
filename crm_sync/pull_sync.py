@@ -705,7 +705,13 @@ class PullSync:
                                        else first_line or label or str(airtable_topic or ''))[:300]
                 elif airtable_topic:
                     values['topic'] = str(airtable_topic)[:300]
-                values['status'] = 'completed' if completed else (obj.status or 'scheduled')
+                # Finalizarea e a platformei: profesorul o bifează/debifează în
+                # Mind.academy, iar push-ul duce „Completed" în Airtable. Cât
+                # timp lecția are modificări netrimise (pending) nu o atingem,
+                # altfel pull-ul (02:00) ar anula definalizarea înainte ca
+                # push-ul (03:00) s-o apuce să o trimită.
+                if created or obj.sync_status != 'pending':
+                    values['status'] = 'completed' if completed else (obj.status or 'scheduled')
                 # Tip lecție (Airtable owner): recuperare / individuală. Marcate
                 # distinct în platformă ca profesorul să le recunoască ușor.
                 values['is_recuperare'] = bool(pick(f, 'Lectie Recuperare', 'Lecție Recuperare', default=False))

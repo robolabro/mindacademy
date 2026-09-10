@@ -64,27 +64,30 @@ def lesson_schedule_iso(lesson):
 
 
 def build_content_fields(lesson):
-    """Conținutul editat de profesor la lecție: „ce s-a lucrat" + tema pentru
-    acasă. NU trimitem „Completed"/orar — acelea rămân ale Airtable.
+    """Execuția lecției, așa cum a consemnat-o profesorul: „ce s-a lucrat",
+    tema, și dacă lecția s-a ținut.
 
-    Excepție: pentru lecțiile de RECUPERARE, orarul e proprietatea platformei
-    (profesorul stabilește data reală a recuperării), deci trimitem și
+    Finalizarea („Completed") e proprietatea Mind.academy: trimitem starea
+    reală — bifat CÂND e finalizată, debifat când profesorul o definalizează.
+    Altfel definalizarea s-ar pierde: pull-ul de noapte citește „Completed"
+    din Airtable și ar repune lecția pe „Finalizată".
+
+    Excepție de orar: pentru lecțiile de RECUPERARE platforma deține data
+    (profesorul stabilește când are loc recuperarea), deci trimitem și
     „Schedule"."""
     fields = {
         'Lesson Takeaways': lesson.lesson_takeaways,
         'Homework': lesson.homework,
     }
-    # Lecție finalizată în platformă → bifează „Completed" + prezența profesorului
-    # în Airtable. Denumirile câmpurilor sunt configurabile (ca să nu crape push-ul
-    # la o denumire ușor diferită). Trimitem DOAR când e finalizată (nu bifăm/debifăm
-    # lecțiile ne-finalizate).
-    if lesson.status == 'completed':
-        completed_field = getattr(settings, 'AIRTABLE_LESSON_COMPLETED_FIELD', 'Completed')
-        teacher_field = getattr(settings, 'AIRTABLE_LESSON_TEACHER_PRESENT_FIELD', 'Prezente Profesor')
-        if completed_field:
-            fields[completed_field] = True
-        if teacher_field:
-            fields[teacher_field] = True
+    # Denumirile câmpurilor sunt configurabile (ca să nu crape push-ul la o
+    # denumire ușor diferită în bază).
+    done = lesson.status == 'completed'
+    completed_field = getattr(settings, 'AIRTABLE_LESSON_COMPLETED_FIELD', 'Completed')
+    teacher_field = getattr(settings, 'AIRTABLE_LESSON_TEACHER_PRESENT_FIELD', 'Prezente Profesor')
+    if completed_field:
+        fields[completed_field] = done
+    if teacher_field:
+        fields[teacher_field] = done
     if getattr(lesson, 'is_recuperare', False):
         sched = lesson_schedule_iso(lesson)
         if sched is not None:
