@@ -82,8 +82,10 @@ class LessonDisplayTests(TestCase):
             start_time=datetime.time(18, 0), start_date=datetime.date(2026, 1, 12))
 
     def _lesson(self, **kw):
+        # în viitor, ca să nu fie „de completat" (etichetă pentru restanțe)
+        from django.utils import timezone
         return Lesson.objects.create(
-            group=self.group, date=datetime.date(2026, 9, 15),
+            group=self.group, date=timezone.localdate() + datetime.timedelta(days=5),
             start_time=datetime.time(18, 0), **kw)
 
     def test_recuperarile_au_eticheta_lor(self):

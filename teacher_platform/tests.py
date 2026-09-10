@@ -294,3 +294,68 @@ class CalendarTests(TestCase):
         Lesson.objects.create(group=alt_group, date=timezone.localdate(),
                               start_time=datetime.time(18, 0))
         self.assertEqual(self.client.get(self.url).context['lesson_count'], 0)
+
+
+class CalendarListTests(TestCase):
+    """Vederea „Listă": jurnal pe zile, pornit de la azi, cu lecțiile restante."""
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='prof_list', password='Test1234!', role='teacher')
+        age = AgeGroup.objects.create(name='7-10 ani', min_age=7, max_age=10)
+        course = Course.objects.create(
+            title='Soroban', slug='soroban-l', description='x', age_group=age,
+            price=0, frequency='saptamanal', group_size=6)
+        self.group = Group.objects.create(
+            name='A0131 · Modul A', teacher=self.teacher, course=course, weekday=1,
+            start_time=datetime.time(18, 0), start_date=datetime.date(2026, 1, 12))
+        self.client.force_login(self.teacher)
+        self.url = reverse('teacher_platform:calendar')
+        self.today = timezone.localdate()
+
+    def _lesson(self, day, **kw):
+        return Lesson.objects.create(
+            group=self.group, date=day, start_time=datetime.time(18, 0), **kw)
+
+    def test_lista_e_o_vedere_valida_dar_nu_cea_implicita(self):
+        self.assertEqual(self.client.get(self.url).context['view_mode'], 'week')
+        self.assertEqual(
+            self.client.get(self.url, {'view': 'list'}).context['view_mode'], 'list')
+
+    def test_lista_sare_peste_zilele_goale(self):
+        self._lesson(self.today)
+        ctx = self.client.get(self.url, {'view': 'list',
+                                         'd': self.today.isoformat()}).context
+        self.assertTrue(all(d['lessons'] for d in ctx['listing']))
+        self.assertEqual(len(ctx['listing']), 1)
+
+    def test_lista_ancoreaza_ziua_curenta(self):
+        self._lesson(self.today)
+        html = self.client.get(self.url, {'view': 'list'}).content.decode()
+        self.assertIn('id="today"', html)
+
+    def test_lectiile_trecute_necompletate_sunt_semnalate(self):
+        ieri = self.today - datetime.timedelta(days=1)
+        restanta = self._lesson(ieri, status='scheduled')
+        facuta = self._lesson(ieri, status='completed')
+        self.assertTrue(restanta.is_overdue)
+        self.assertEqual(restanta.status_label, 'De completat')
+        self.assertFalse(facuta.is_overdue)
+
+    def test_o_recuperare_netinuta_apare_tot_ca_de_completat(self):
+        """Cazul real: recuperarea nu s-a ținut și trebuie reprogramată."""
+        ieri = self.today - datetime.timedelta(days=1)
+        recup = self._lesson(ieri, is_recuperare=True, status='scheduled')
+        self.assertEqual(recup.status_kind, 'overdue')
+
+    def test_lectiile_viitoare_nu_sunt_restante(self):
+        maine = self.today + datetime.timedelta(days=1)
+        self.assertFalse(self._lesson(maine).is_overdue)
+
+    def test_contorul_de_restante(self):
+        prima = self.today.replace(day=1)
+        if prima < self.today:
+            self._lesson(prima, status='scheduled')
+            ctx = self.client.get(self.url, {'view': 'list',
+                                             'd': self.today.isoformat()}).context
+            self.assertEqual(ctx['overdue_count'], 1)
