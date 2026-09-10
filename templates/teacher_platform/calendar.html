@@ -1,27 +1,7 @@
 {% extends 'teacher_platform/base_teacher.html' %}
 
-{% block title %}Calendar<script>
-(function(){
-  // Lista pornește de la ziua curentă (sau de la prima lecție de completat,
-  // dacă s-a venit din semnalul „N de completat"), ca să nu dai scroll.
-  var target = null;
-  if (location.hash === '#overdue') target = document.querySelector('.cal-item.k-overdue');
-  if (!target) target = document.getElementById('today');
-  if (target) target.scrollIntoView({block: 'center'});
-})();
-</script>
-{% endblock %}
-{% block page_title %}Calendar<script>
-(function(){
-  // Lista pornește de la ziua curentă (sau de la prima lecție de completat,
-  // dacă s-a venit din semnalul „N de completat"), ca să nu dai scroll.
-  var target = null;
-  if (location.hash === '#overdue') target = document.querySelector('.cal-item.k-overdue');
-  if (!target) target = document.getElementById('today');
-  if (target) target.scrollIntoView({block: 'center'});
-})();
-</script>
-{% endblock %}
+{% block title %}Calendar{% endblock %}
+{% block page_title %}Calendar{% endblock %}
 
 {% block content %}
 <div class="cal">
@@ -164,7 +144,7 @@
 <style>
   .cal{--ink:#151b28;--soft:#6b7688;--line:#e6eaf1;--bg:#fff;--bg2:#f7f9fc;
     --brand:#4f46e5;--brand-soft:#eef0fe;--ok:#15803d;--ok-soft:#e8f6ed;
-    --warn:#b45309;--warn-soft:#fdf5e7;--late:#be123c;--late-soft:#fdeaef;--today:#4f46e5;
+    --warn:#b45309;--warn-soft:#fdf5e7;--late:#be123c;--late-soft:#fdeaef;--today:#4f46e5;--title:#312e81;
     color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     font-size:15px;max-width:1180px;margin:0 auto}
 
@@ -176,7 +156,11 @@
   .cal-arrow:hover{color:var(--ink);border-color:var(--soft)}
   .cal-today{border:1px solid var(--line);border-radius:8px;padding:.4rem .7rem;font-size:.82rem;
     font-weight:600;color:var(--brand);text-decoration:none;background:var(--bg)}
-  .cal-title{margin:0;font-size:1.3rem;letter-spacing:-.02em;text-transform:capitalize;flex:1;min-width:12rem}
+  /* Titlul perioadei: culoare și font explicite — altfel regula globală pentru
+     h1 din tema profesorului îl lasă șters pe fundal întunecat. */
+  .cal-title{margin:0;font-family:inherit;font-size:1.35rem;font-weight:700;
+    letter-spacing:-.02em;text-transform:capitalize;color:var(--title);
+    flex:1;min-width:12rem}
   .cal-modes{display:inline-flex;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:2px}
   .cal-modes a{padding:.38rem .8rem;border-radius:7px;font-size:.85rem;font-weight:600;
     color:var(--soft);text-decoration:none}
@@ -277,7 +261,7 @@
   @media (prefers-color-scheme:dark){
     .cal{--ink:#e9edf6;--soft:#98a2b8;--line:#2a3347;--bg:#151c2a;--bg2:#1a2333;
       --brand:#8b8cf8;--brand-soft:#1f2547;--ok:#4ade80;--ok-soft:#13291d;
-      --warn:#fbbf24;--warn-soft:#292013;--late:#fb7185;--late-soft:#2c1620;--today:#8b8cf8}
+      --warn:#fbbf24;--warn-soft:#292013;--late:#fb7185;--late-soft:#2c1620;--today:#8b8cf8;--title:#c7c9ff}
     .cal-cell.outside .cal-cnum{color:#41506e}
     .cal-chip:hover{filter:brightness(1.15)}
   }
