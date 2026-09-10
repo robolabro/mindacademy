@@ -226,6 +226,7 @@ def group_detail(request, group_id):
         'live_session': live_session,
         'sim_assignments_count': SimulatorAssignment.objects.filter(group=group).count(),
         'enrolled_count': students.count(),
+        'today': timezone.localdate(),
     }
 
     return render(request, 'teacher_platform/group_detail.html', context)
@@ -1052,30 +1053,11 @@ def assignment_detail(request, assignment_id):
 @teacher_required
 def group_add(request):
     """
-    Adaugă o grupă nouă
+    Rută păstrată pentru compatibilitate. Grupele se creează în Airtable —
+    una creată aici n-ar exista acolo și n-ar primi niciodată lecții.
     """
-    teacher = request.user
-
-    if request.method == 'POST':
-        form = GroupForm(request.POST, teacher=teacher)
-        if form.is_valid():
-            group = form.save(commit=False)
-            group.teacher = teacher
-            group.save()
-            group.generate_code()
-            group.save()
-            messages.success(request, f'Grupa "{group.name}" a fost creată cu succes! Cod: {group.code}')
-            return redirect('teacher_platform:group_detail', group_id=group.id)
-        else:
-            messages.error(request, 'Te rog corectează erorile din formular.')
-    else:
-        form = GroupForm(teacher=teacher)
-
-    context = {
-        'form': form,
-        'title': 'Adaugă Grupă Nouă'
-    }
-    return render(request, 'teacher_platform/group_form.html', context)
+    messages.info(request, 'Grupele se creează în Airtable, nu în platformă.')
+    return redirect('teacher_platform:groups_list')
 
 
 @login_required
