@@ -481,3 +481,31 @@ class EleviTests(TestCase):
             username='prof_es', password='Test1234!', role='teacher')
         self.client.force_login(strain)
         self.assertEqual(len(self.client.get(self.url).context['students']), 0)
+
+
+class LectiiArhivateTests(TestCase):
+    """O lecție ștearsă în Airtable (arhivată) dispare din toate listele."""
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='prof_arh', password='Test1234!', role='teacher')
+        self.group = Group.objects.create(
+            name='S0130 · Modul S', teacher=self.teacher, weekday=3,
+            start_time=datetime.time(17, 30), start_date=datetime.date(2026, 1, 12))
+        self.day = timezone.localdate() + datetime.timedelta(days=2)
+        self.vie = Lesson.objects.create(
+            group=self.group, date=self.day, start_time=datetime.time(17, 0))
+        self.fantoma = Lesson.objects.create(
+            group=self.group, date=self.day, start_time=datetime.time(17, 30),
+            is_archived=True)
+        self.client.force_login(self.teacher)
+
+    def test_calendarul_nu_arata_lectia_arhivata(self):
+        ctx = self.client.get(reverse('teacher_platform:calendar'),
+                              {'view': 'day', 'd': self.day.isoformat()}).context
+        self.assertEqual([l.id for l in ctx['days'][0]['lessons']], [self.vie.id])
+
+    def test_grupa_nu_arata_lectia_arhivata(self):
+        ctx = self.client.get(
+            reverse('teacher_platform:group_detail', args=[self.group.id])).context
+        self.assertEqual([l.id for l in ctx['upcoming_lessons']], [self.vie.id])

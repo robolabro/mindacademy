@@ -657,6 +657,7 @@ class PullSync:
             grp_rec = first_link(f, 'Nume Grupa', 'Grupa', 'Grupă', 'Group')
             if grp_rec not in group_ids:
                 continue
+            seen.add(rec_id)
             group = self.map_group.get(grp_rec)
             if group is None:
                 self.stats[entity]['skipped'] += 1
@@ -728,9 +729,17 @@ class PullSync:
                 # Elevii programați SPECIFIC la această lecție (subset din grupă,
                 # ex. lecție individuală/recuperare). Gol = toată grupa.
                 self._set_scheduled_students(obj, f)
-                seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
+
+        # Lecțiile șterse în Airtable se ARHIVEAZĂ (nu se șterg): dispar din
+        # calendar și push-ul nu le mai trimite. Doar pentru grupele sincronizate
+        # acum (altfel o rulare-pilot pe o grupă ar arhiva restul), și doar dacă
+        # am primit ceva din Airtable (un răspuns gol n-are voie să arhiveze tot).
+        if records:
+            self._archive_missing(
+                entity, Lesson, seen,
+                base_qs=Lesson.objects.filter(group__airtable_record_id__in=list(group_ids)))
         return seen
 
     def _set_scheduled_students(self, lesson, f):
