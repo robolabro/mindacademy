@@ -149,6 +149,11 @@
   .gd{--ink:#151b28;--soft:#6b7688;--line:#e6eaf1;--bg:#fff;--bg2:#f7f9fc;
     --brand:#4f46e5;--brand-soft:#eef0fe;--ok:#15803d;--ok-soft:#e8f6ed;
     --warn:#b45309;--warn-soft:#fdf5e7;--late:#be123c;--late-soft:#fdeaef;
+    --st-sched:#2563eb;--st-sched-soft:#eaf1ff;
+    --st-done:#15803d;--st-done-soft:#e8f6ed;
+    --st-recup:#7c3aed;--st-recup-soft:#f2e9ff;
+    --st-recupd:#0d9488;--st-recupd-soft:#d8f5f0;
+    --st-late:#dc2626;--st-late-soft:#fdeaea;
     --live:#e11d48;--title:#312e81;
     color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     font-size:15px;max-width:900px;margin:0 auto}
@@ -215,11 +220,13 @@
   .gd-badge{font-size:.72rem;font-weight:700;padding:.2rem .55rem;border-radius:6px;
     background:var(--cs,var(--bg2));color:var(--c,var(--soft));white-space:nowrap}
 
-  .k-scheduled{--c:var(--brand);--cs:var(--brand-soft)}
-  .k-completed{--c:var(--ok);--cs:var(--ok-soft)}
-  .k-recuperare,.k-recuperare-done{--c:var(--warn);--cs:var(--warn-soft)}
-  .k-ongoing{--c:var(--brand);--cs:var(--brand-soft)}
-  .k-overdue{--c:var(--late);--cs:var(--late-soft)}
+  /* Statusuri — cinci nuanțe separate: albastru/violet = urmează,
+     verde/turcoaz = s-a ținut, roșu = cere atenție. */
+  .k-scheduled,.k-ongoing{--c:var(--st-sched);--cs:var(--st-sched-soft)}
+  .k-completed{--c:var(--st-done);--cs:var(--st-done-soft)}
+  .k-recuperare{--c:var(--st-recup);--cs:var(--st-recup-soft)}
+  .k-recuperare-done{--c:var(--st-recupd);--cs:var(--st-recupd-soft)}
+  .k-overdue{--c:var(--st-late);--cs:var(--st-late-soft)}
 
   /* mai departe */
   .gd-more{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:.6rem;margin-bottom:1.2rem}
@@ -238,6 +245,11 @@
     .gd{--ink:#e9edf6;--soft:#98a2b8;--line:#2a3347;--bg:#151c2a;--bg2:#1a2333;
       --brand:#8b8cf8;--brand-soft:#1f2547;--ok:#4ade80;--ok-soft:#13291d;
       --warn:#fbbf24;--warn-soft:#292013;--late:#fb7185;--late-soft:#2c1620;
+      --st-sched:#7aa8ff;--st-sched-soft:#16233f;
+      --st-done:#4ade80;--st-done-soft:#13291d;
+      --st-recup:#b69cff;--st-recup-soft:#241b42;
+      --st-recupd:#2dd4bf;--st-recupd-soft:#0f312d;
+      --st-late:#ff8080;--st-late-soft:#301619;
       --live:#fb7185;--title:#c7c9ff}
   }
 </style>

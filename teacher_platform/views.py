@@ -92,7 +92,7 @@ def dashboard(request):
     week_end = week_start + timedelta(days=6)
 
     weekly_lessons = Lesson.objects.filter(
-        group__teacher=teacher,
+        group__teacher=teacher, is_archived=False,
         date__range=[week_start, week_end]
     ).count()
 
@@ -104,7 +104,7 @@ def dashboard(request):
 
     # Lecțiile următoare (următoarele 5)
     upcoming_lessons = Lesson.objects.filter(
-        group__teacher=teacher,
+        group__teacher=teacher, is_archived=False,
         date__gte=today,
         status='scheduled'
     ).select_related('group', 'lesson_template').order_by('date', 'start_time')[:5]
@@ -187,13 +187,14 @@ def group_detail(request, group_id):
     ).select_related('student', 'student__student_profile').order_by('student__first_name')
 
     # Lecțiile grupei (următoarele și trecute)
+    # Lecțiile arhivate = șterse în Airtable; nu se mai afișează.
     upcoming_lessons = Lesson.objects.filter(
-        group=group,
+        group=group, is_archived=False,
         date__gte=timezone.now().date()
     ).select_related('lesson_template').order_by('date', 'start_time')[:10]
 
     past_lessons = Lesson.objects.filter(
-        group=group,
+        group=group, is_archived=False,
         date__lt=timezone.now().date()
     ).select_related('lesson_template').annotate(
         present_count=Count('attendances', filter=Q(attendances__is_present=True)),
@@ -590,8 +591,9 @@ def calendar_view(request):
         grid_start = start - timedelta(days=start.weekday())
         grid_end = end + timedelta(days=6 - end.weekday())
 
+    # Lecțiile arhivate (șterse în Airtable) nu apar în calendar.
     lessons = list(Lesson.objects.filter(
-        group__teacher=teacher, date__range=[grid_start, grid_end]
+        group__teacher=teacher, is_archived=False, date__range=[grid_start, grid_end]
     ).select_related('group', 'group__module', 'lesson_template')
      .order_by('date', 'start_time'))
 

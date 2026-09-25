@@ -202,8 +202,9 @@ class PushSync:
         groups = list(self._target_groups())
         group_ids = [g.id for g in groups]
 
+        # Lecțiile arhivate (șterse în Airtable) nu mai au unde fi trimise.
         atts = (Attendance.objects
-                .filter(lesson__group_id__in=group_ids)
+                .filter(lesson__group_id__in=group_ids, lesson__is_archived=False)
                 .select_related('student', 'lesson', 'lesson__group', 'enrollment'))
         if self.only_pending:
             atts = atts.filter(sync_status='pending')
@@ -262,7 +263,7 @@ class PushSync:
         # „Completed" rămân ale Airtable; noi scriem doar Lesson Takeaways + Homework.
         from django.db.models import Q
         lessons = (Lesson.objects
-                   .filter(group_id__in=group_ids)
+                   .filter(group_id__in=group_ids, is_archived=False)
                    .exclude(airtable_record_id__isnull=True).exclude(airtable_record_id=''))
         if self.only_pending and not self.content_all:
             lessons = lessons.filter(sync_status='pending')
@@ -329,6 +330,21 @@ class PushSync:
         job.save()
         return job
 
+    def _archive_dead_lesson(self, job):
+        """Lecția nu mai există în Airtable: o arhivăm (nu o ștergem) ca să
+        dispară din calendar și să nu mai fie trimisă. Dacă reapare în Airtable,
+        pull-ul o dezarhivează."""
+        Lesson.objects.filter(pk=job.source_id).update(
+            is_archived=True, sync_status='synced', airtable_synced_at=timezone.now())
+        job.status = 'skipped'
+        job.processed_at = timezone.now()
+        job.attempts = job.attempts + 1
+        job.last_error = (f"Lecția {job.target_record_id} nu mai există în Airtable — "
+                          f"arhivată în platformă, nu a fost recreată.")
+        job.save()
+        self.stats['Lectii']['skipped'] += 1
+        self.log(f"  ~ {job.last_error}")
+
     def _process_job(self, job):
         op = 'update' if job.target_record_id else 'create'
         try:
@@ -336,13 +352,19 @@ class PushSync:
                 try:
                     self._update(job.target_table, job.target_record_id, job.payload)
                 except Exception as exc:
-                    # Record inexistent în Airtable (șters) → creăm unul nou,
-                    # nu insistăm pe id-ul mort (403/404).
                     m = str(exc)
-                    if any(s in m for s in ('403', '404', 'NOT_FOUND', 'MODEL_NOT_FOUND')):
-                        op = 'create'
-                    else:
+                    if not any(s in m for s in ('403', '404', 'NOT_FOUND', 'MODEL_NOT_FOUND')):
                         raise
+                    if job.source_kind != 'prezenta':
+                        # O LECȚIE ștearsă în Airtable nu se recreează niciodată:
+                        # payload-ul de conținut n-are grupă, deci ar ieși un
+                        # record gol („fantomă") — la fiecare rulare, cât timp
+                        # lecția din platformă indică spre id-ul mort. Structura
+                        # e a Airtable-ului: dacă a dispărut acolo, o arhivăm aici.
+                        self._archive_dead_lesson(job)
+                        return
+                    # Prezență ștearsă → o recreăm (payload-ul are elev + lecție).
+                    op = 'create'
             if op == 'create':
                 rec = self._create(job.target_table, job.payload)
                 new_id = rec['id']
