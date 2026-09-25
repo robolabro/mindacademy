@@ -257,3 +257,54 @@ class PullArhiveazaLectiiTests(TestCase):
         self._pull([self._rec('recVIE')])
         self._pull([self._rec('recVIE'), self._rec('recSTEARSA')])
         self.assertFalse(self.stearsa.is_archived)
+
+
+class PauzaTests(TestCase):
+    """O înscriere trecută pe Inactiv în Airtable iese și din platformă.
+
+    Până acum sync-ul doar o sărea, deci elevul pus pe pauză rămânea în lista
+    de prezență a profesorului la nesfârșit.
+    """
+
+    def setUp(self):
+        from teacher_platform.models import Enrollment
+        teacher = User.objects.create_user(
+            username='prof_pz', password='Test1234!', role='teacher')
+        self.student = User.objects.create_user(
+            username='mara', password='Test1234!', role='student',
+            airtable_record_id='recMARA')
+        self.group = Group.objects.create(
+            name='M0134 · Modul M', teacher=teacher, weekday=0,
+            start_time=datetime.time(17, 30), start_date=datetime.date(2026, 1, 12),
+            airtable_record_id='recGRUPA')
+        self.enr = Enrollment.objects.create(
+            group=self.group, student=self.student, is_active=True,
+            airtable_record_id='recINSCR')
+
+    def _pull(self, status):
+        from crm_sync.pull_sync import PullSync
+        tables = {
+            settings.AIRTABLE_TABLE_INSCRIERI: [{'id': 'recINSCR', 'fields': {
+                'Grupa': ['recGRUPA'], 'Elev': ['recMARA'], 'Status': status}}],
+            settings.AIRTABLE_TABLE_ELEVI: [{'id': 'recMARA', 'fields': {
+                'Prenume Copil': 'Mara', 'Nume Familie Copil': 'Nistor'}}],
+        }
+        pull = PullSync(fetch=lambda t: tables.get(t, []))
+        pull.map_group = {'recGRUPA': self.group}
+        pull.sync_inscrieri({'recGRUPA'})
+        self.enr.refresh_from_db()
+
+    def test_pauza_in_airtable_scoate_elevul_din_platforma(self):
+        self._pull('Inactiv')
+        self.assertFalse(self.enr.is_active)
+        self.assertEqual(self.enr.status, 'inactiv')
+
+    def test_revenirea_il_readuce(self):
+        self._pull('Inactiv')
+        self._pull('Activ')
+        self.assertTrue(self.enr.is_active)
+
+    def test_finalizat_se_pastreaza_ca_atare(self):
+        self._pull('Finalizat')
+        self.assertFalse(self.enr.is_active)
+        self.assertEqual(self.enr.status, 'finalizat')

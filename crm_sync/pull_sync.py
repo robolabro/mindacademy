@@ -575,6 +575,7 @@ class PullSync:
         records = self.fetch(self._t('AIRTABLE_TABLE_INSCRIERI'))
         enrolled_student_recs = set()
         rows = []
+        inactive = {}   # rec_id -> status Django, pentru înscrierile scoase din activ
         for r in records:
             rec_id, f = r['id'], r.get('fields', {})
             grp_rec = first_link(f, 'Grupa', 'Grupă', 'Group')
@@ -584,6 +585,7 @@ class PullSync:
             # Doar înscrierile ACTIVE sunt mapate (decizia A). În Airtable
             # statusul activ este „Activ" (opțiunile: Draft/Activ/Inactiv/Finalizat).
             if status not in ('activ', 'inscris', 'înscris'):
+                inactive[rec_id] = status if status in ('draft', 'inactiv', 'finalizat') else 'inactiv'
                 self.stats[entity]['skipped'] += 1
                 continue
             stud_rec = first_link(f, 'Elev', 'Elevi', 'Student')
@@ -638,6 +640,17 @@ class PullSync:
                 seen.add(rec_id)
             except Exception as exc:  # pragma: no cover
                 self._err(entity, rec_id, exc)
+
+        # O înscriere trecută pe Inactiv/Finalizat în Airtable (ex. pauză)
+        # trebuie să iasă și din platformă — altfel elevul rămâne în lista de
+        # prezență. Nu ștergem nimic: doar dezactivăm; prezențele trecute rămân.
+        for st in set(inactive.values()):
+            ids = [rid for rid, s_ in inactive.items() if s_ == st]
+            qs = Enrollment.objects.filter(airtable_record_id__in=ids, is_active=True)
+            n = qs.count()
+            if n and not self.dry_run:
+                qs.update(is_active=False, status=st, airtable_synced_at=timezone.now())
+            self.stats[entity]['archived'] += n
         return seen
 
     def sync_lectii(self, group_ids):
