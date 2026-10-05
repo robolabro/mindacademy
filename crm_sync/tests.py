@@ -308,3 +308,77 @@ class PauzaTests(TestCase):
         self._pull('Finalizat')
         self.assertFalse(self.enr.is_active)
         self.assertEqual(self.enr.status, 'finalizat')
+
+
+class CursaPushTests(TestCase):
+    """O prezență salvată CÂT TIMP rulează push-ul nu are voie să fie pierdută.
+
+    Cazul real (Vlad, 2.10): platforma arăta `PREZENT · synced`, dar în Airtable
+    nu ajunsese niciodată „prezent". Push-ul citea prezențele la început și le
+    marca „trimise" la sfârșit — inclusiv valoarea salvată între timp.
+    """
+
+    def setUp(self):
+        from teacher_platform.models import Attendance, Enrollment
+        teacher = User.objects.create_user(
+            username='prof_c', password='Test1234!', role='teacher')
+        self.student = User.objects.create_user(
+            username='vlad', password='Test1234!', role='student',
+            airtable_record_id='recVLAD')
+        self.group = Group.objects.create(
+            name='S0136 · Modul S', teacher=teacher, weekday=0,
+            start_time=datetime.time(18, 0), start_date=datetime.date(2026, 1, 12),
+            airtable_record_id='recGRUPA')
+        Enrollment.objects.create(group=self.group, student=self.student, is_active=True)
+        self.lesson = Lesson.objects.create(
+            group=self.group, date=datetime.date(2026, 10, 2),
+            start_time=datetime.time(17, 0), airtable_record_id='recLECTIE')
+        self.att = Attendance.objects.create(
+            lesson=self.lesson, student=self.student, is_present=False,
+            airtable_record_id='recPREZ')
+        Attendance.objects.filter(pk=self.att.pk).update(sync_status='pending')
+
+    def _push(self, during_update=None):
+        from crm_sync import push_sync
+        from crm_sync.push_sync import PushSync
+        self.sent = []
+
+        def update(table, rec_id, fields):
+            self.sent.append((table, dict(fields)))
+            if during_update and table == settings.AIRTABLE_TABLE_PREZENTE:
+                during_update()
+            return {'id': rec_id}
+
+        orig = push_sync.PushSync._load_existing_prezente
+        push_sync.PushSync._load_existing_prezente = (
+            lambda self, ids: {('recVLAD', 'recLECTIE'): ['recPREZ']})
+        try:
+            PushSync(create_fn=lambda t, f: {'id': 'recNOU'}, update_fn=update,
+                     delete_fn=lambda *a: None, fetch_fn=lambda *a, **k: [],
+                     only_pending=True, content_all=True).run()
+        finally:
+            push_sync.PushSync._load_existing_prezente = orig
+        self.att.refresh_from_db()
+
+    def _profesorul_salveaza_prezent(self):
+        from teacher_platform.models import Attendance
+        a = Attendance.objects.get(pk=self.att.pk)
+        a.is_present = True
+        a.save()   # semnalele o marchează „pending" (deja era)
+
+    def test_prezenta_trimisa_neschimbata_devine_synced(self):
+        self._push()
+        self.assertEqual(self.att.sync_status, 'synced')
+
+    def test_salvarea_din_timpul_pushului_nu_se_pierde(self):
+        self._push(during_update=self._profesorul_salveaza_prezent)
+        self.assertTrue(self.att.is_present)
+        self.assertEqual(self.att.sync_status, 'pending',
+                         'valoarea nouă a fost marcată „trimisă" fără să plece')
+
+    def test_rularea_urmatoare_trimite_valoarea_noua(self):
+        self._push(during_update=self._profesorul_salveaza_prezent)
+        self._push()
+        prezente = [f for t, f in self.sent if t == settings.AIRTABLE_TABLE_PREZENTE]
+        self.assertIs(prezente[-1]['Attended'], True)
+        self.assertEqual(self.att.sync_status, 'synced')
