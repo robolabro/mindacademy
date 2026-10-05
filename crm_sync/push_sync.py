@@ -310,9 +310,10 @@ class PushSync:
     def _writeback_source(self, spec, new_record_id):
         """După un CREATE, scrie record-id-ul Airtable înapoi pe obiectul Django."""
         if spec['source_kind'] == 'prezenta':
+            # Doar pointerul. Starea „synced" o decide run(), după ce verifică
+            # faptul că prezența n-a fost modificată cât timp rula push-ul.
             Attendance.objects.filter(pk=spec['source_id']).update(
-                airtable_record_id=new_record_id, sync_status='synced',
-                airtable_synced_at=timezone.now())
+                airtable_record_id=new_record_id)
 
     def _upsert_job(self, spec):
         """Un singur job per sursă (reutilizat între rulări); îi reîmprospătăm
@@ -409,17 +410,28 @@ class PushSync:
             if job.status != 'done':
                 continue
             if s['source_kind'] == 'prezenta':
-                # Pointer corect pe att (record_id final: existent/creat) + synced.
-                Attendance.objects.filter(pk=s['source_id']).update(
-                    airtable_record_id=job.target_record_id, sync_status='synced',
-                    airtable_synced_at=timezone.now())
+                # Pointer corect pe att (record_id final: existent/creat). „synced"
+                # DOAR dacă prezența e încă exact cea trimisă: dacă profesorul a
+                # salvat-o între timp (push-ul durează minute), noua valoare n-a
+                # plecat nicăieri și trebuie să rămână „pending" pentru rularea
+                # următoare — altfel se pierde în tăcere.
+                att = (Attendance.objects
+                       .select_related('student', 'lesson', 'lesson__group', 'enrollment')
+                       .filter(pk=s['source_id']).first())
+                done = {'airtable_record_id': job.target_record_id}
+                if att is not None and build_prezenta_fields(att) == s['payload']:
+                    done.update(sync_status='synced', airtable_synced_at=timezone.now())
+                Attendance.objects.filter(pk=s['source_id']).update(**done)
                 if s.get('orphan') and s['orphan'] != job.target_record_id:
                     self._orphans.append((s['source_id'], s['orphan']))
                 if s.get('dupe'):
                     self._dupes.append(s['dupe'])
             elif s['source_kind'] == 'lectie':
-                Lesson.objects.filter(pk=s['source_id']).update(
-                    sync_status='synced', airtable_synced_at=timezone.now())
+                lesson = (Lesson.objects.select_related('group')
+                          .filter(pk=s['source_id']).first())
+                if lesson is not None and build_content_fields(lesson) == s['payload']:
+                    Lesson.objects.filter(pk=s['source_id']).update(
+                        sync_status='synced', airtable_synced_at=timezone.now())
             elif s['source_kind'] == 'lectie_nou':
                 # Lecție nou-creată în Airtable → salvăm record-id-ul pe lecția
                 # Django (devine „mapată"; nu se mai recreează).
