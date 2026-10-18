@@ -80,9 +80,10 @@ def dashboard(request):
     teacher = request.user
 
     # Statistici generale
-    total_groups = Group.objects.filter(teacher=teacher, is_active=True).count()
+    total_groups = Group.objects.filter(teacher=teacher, is_active=True,
+                                        is_archived=False).count()
     total_students = Enrollment.objects.filter(
-        group__teacher=teacher,
+        group__teacher=teacher, group__is_archived=False,
         is_active=True
     ).distinct().count()
 
@@ -112,7 +113,7 @@ def dashboard(request):
     # Grupele active
     active_groups = Group.objects.filter(
         teacher=teacher,
-        is_active=True
+        is_active=True, is_archived=False
     ).annotate(
         student_count=Count('students', filter=Q(students__is_active=True))
     ).select_related('course', 'module', 'location')[:6]
@@ -151,10 +152,12 @@ def groups_list(request):
 
     groups_query = Group.objects.filter(teacher=teacher)
 
+    # O grupă arhivată (trecută pe Graduated sau scoasă din Airtable) nu mai e
+    # activă, chiar dacă flag-ul local is_active n-a fost atins.
     if status_filter == 'active':
-        groups_query = groups_query.filter(is_active=True)
+        groups_query = groups_query.filter(is_active=True, is_archived=False)
     elif status_filter == 'inactive':
-        groups_query = groups_query.filter(is_active=False)
+        groups_query = groups_query.filter(Q(is_active=False) | Q(is_archived=True))
 
     groups = groups_query.annotate(
         student_count=Count('students', filter=Q(students__is_active=True))
@@ -659,8 +662,9 @@ def students_list(request):
     group_filter = request.GET.get('group', '')
 
     # Obține elevii din grupe
+    # Elevii grupelor arhivate (Graduated) nu mai apar în lista de lucru.
     students_in_groups = Enrollment.objects.filter(
-        group__teacher=teacher,
+        group__teacher=teacher, group__is_archived=False,
         is_active=True
     ).select_related('student', 'student__student_profile', 'group')
 
@@ -674,8 +678,10 @@ def students_list(request):
             teacher=teacher
         ).select_related('user')
 
-        # Exclude elevii care sunt deja în grupe
-        students_with_groups_ids = students_in_groups.values_list('student_id', flat=True)
+        # Exclude elevii care au (sau au avut) o grupă — inclusiv una arhivată:
+        # un elev dintr-o grupă Graduated nu e „fără grupă".
+        students_with_groups_ids = set(Enrollment.objects.filter(
+            group__teacher=teacher).values_list('student_id', flat=True))
         for profile in student_profiles:
             if profile.user.id not in students_with_groups_ids:
                 # Creează un obiect pseudo-Enrollment pentru consistență în template
@@ -697,7 +703,7 @@ def students_list(request):
     # Grupele pentru filtru
     groups = Group.objects.filter(
         teacher=teacher,
-        is_active=True
+        is_active=True, is_archived=False
     ).order_by('name')
 
     context = {

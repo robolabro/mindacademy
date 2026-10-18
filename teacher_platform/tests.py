@@ -509,3 +509,44 @@ class LectiiArhivateTests(TestCase):
         ctx = self.client.get(
             reverse('teacher_platform:group_detail', args=[self.group.id])).context
         self.assertEqual([l.id for l in ctx['upcoming_lessons']], [self.vie.id])
+
+
+class GrupaGraduatedTests(TestCase):
+    """O grupă arhivată (Graduated în Airtable) iese din listele de lucru."""
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='prof_gr', password='Test1234!', role='teacher')
+        self.asaf = User.objects.create_user(
+            username='asaf', password='Test1234!', role='student',
+            first_name='Asaf', last_name='Burloiu')
+        from accounts.models import StudentProfile
+        StudentProfile.objects.get_or_create(user=self.asaf, defaults={'teacher': self.teacher})
+        self.group = Group.objects.create(
+            name='S0138 · Modul S', teacher=self.teacher, weekday=3,
+            start_time=datetime.time(18, 0), start_date=datetime.date(2026, 1, 12),
+            is_archived=True)
+        Enrollment.objects.create(group=self.group, student=self.asaf, is_active=True)
+        self.trecuta = Lesson.objects.create(
+            group=self.group, date=timezone.localdate() - datetime.timedelta(days=20),
+            start_time=datetime.time(18, 0), status='completed')
+        self.client.force_login(self.teacher)
+
+    def test_grupa_nu_mai_apare_la_active(self):
+        url = reverse('teacher_platform:groups_list')
+        self.assertNotIn(self.group, list(self.client.get(url).context['groups']))
+
+    def test_grupa_apare_la_inactive(self):
+        url = reverse('teacher_platform:groups_list')
+        self.assertIn(self.group,
+                      list(self.client.get(url, {'status': 'inactive'}).context['groups']))
+
+    def test_elevul_nu_mai_apare_si_nici_ca_fara_grupa(self):
+        ctx = self.client.get(reverse('teacher_platform:students_list')).context
+        self.assertEqual([gs.student for gs in ctx['students']], [])
+
+    def test_istoricul_lectiilor_ramane_in_calendar(self):
+        """Lecțiile ținute (nesterse în Airtable) rămân vizibile ca istoric."""
+        ctx = self.client.get(reverse('teacher_platform:calendar'),
+                              {'view': 'day', 'd': self.trecuta.date.isoformat()}).context
+        self.assertEqual([l.id for l in ctx['days'][0]['lessons']], [self.trecuta.id])

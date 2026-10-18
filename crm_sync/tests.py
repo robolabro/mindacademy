@@ -243,9 +243,20 @@ class PullArhiveazaLectiiTests(TestCase):
         self.assertFalse(self.vie.is_archived)
 
     def test_nu_atinge_lectiile_grupelor_nesincronizate(self):
-        """O rulare-pilot pe o grupă nu are voie să arhiveze restul."""
-        self._pull([self._rec('recVIE')])
+        """O rulare-pilot pe o grupă nu are voie să arhiveze restul: lecțiile
+        celorlalte grupe EXISTĂ în tabel, doar nu le sincronizăm acum."""
+        alta = {'id': 'recALTALECTIE', 'fields': {'Nume Grupa': ['recALTA'],
+                                                  'Schedule': '2026-09-17T15:00:00.000Z'}}
+        self._pull([self._rec('recVIE'), alta])
         self.assertFalse(self.din_alta_grupa.is_archived)
+
+    def test_lectiile_sterse_ale_unei_grupe_graduated_se_arhiveaza(self):
+        """Cazul Asaf (S0138): grupa trece pe Graduated, deci iese din
+        sincronizare, iar lecțiile rămase se șterg din Airtable. Trebuie să
+        dispară și din platformă."""
+        # A0131 (recALTA) nu e sincronizată; lecția ei nu mai e în tabel.
+        self._pull([self._rec('recVIE')])
+        self.assertTrue(self.din_alta_grupa.is_archived)
 
     def test_un_raspuns_gol_nu_arhiveaza_nimic(self):
         """Dacă Airtable nu întoarce nimic (eroare, filtru), nu golim calendarul."""
