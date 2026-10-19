@@ -746,13 +746,14 @@ class PullSync:
                 self._err(entity, rec_id, exc)
 
         # Lecțiile șterse în Airtable se ARHIVEAZĂ (nu se șterg): dispar din
-        # calendar și push-ul nu le mai trimite. Doar pentru grupele sincronizate
-        # acum (altfel o rulare-pilot pe o grupă ar arhiva restul), și doar dacă
-        # am primit ceva din Airtable (un răspuns gol n-are voie să arhiveze tot).
+        # calendar și push-ul nu le mai trimite. Comparăm cu TOT tabelul Lectii
+        # (îl citim integral, fără filtre), nu doar cu grupele sincronizate acum:
+        # o grupă trecută pe Graduated iese din sincronizare, dar lecțiile ei
+        # șterse trebuie să dispară și ele. O rulare-pilot pe o grupă rămâne
+        # sigură — lecțiile celorlalte grupe există în tabel. Un răspuns gol
+        # din Airtable n-are voie să arhiveze nimic.
         if records:
-            self._archive_missing(
-                entity, Lesson, seen,
-                base_qs=Lesson.objects.filter(group__airtable_record_id__in=list(group_ids)))
+            self._archive_missing(entity, Lesson, {r['id'] for r in records})
         return seen
 
     def _set_scheduled_students(self, lesson, f):
