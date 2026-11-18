@@ -229,6 +229,19 @@ CSRF_TRUSTED_ORIGINS = config(
     default='http://127.0.0.1:8000,http://localhost:8000',
     cast=Csv()
 )
+# Domeniul public e acceptat ÎNTOTDEAUNA, adăugat peste variabila de mediu (nu
+# în locul ei): dacă variabila din Railway se pierde sau e suprascrisă greșit,
+# login-ul nu mai pică cu „Verificarea CSRF nereușită" (403).
+for _origin in ('https://mindacademy.ro', 'https://www.mindacademy.ro'):
+    if _origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_origin)
+
+# Railway (și Cloudflare) termină HTTPS în fața aplicației: cererea ajunge la
+# Django pe http, cu antetul X-Forwarded-Proto: https. Fără setarea asta Django
+# crede că cererea e nesecurizată, iar originea „https://…" trimisă de browser
+# nu se potrivește cu „http://…" → CSRF respins. Local (fără proxy) antetul
+# lipsește, deci setarea nu schimbă nimic.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Security settings for production
 if not DEBUG:
